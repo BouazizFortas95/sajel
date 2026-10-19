@@ -1,0 +1,399 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Enums\DailyLogStatus;
+use App\Enums\LessonPhaseType;
+use App\Filament\Resources\DailyLogResource\Pages;
+use App\Models\DailyLog;
+use App\Models\Schedule;
+use Filament\Actions;
+use Filament\Forms\Components\Builder;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
+
+class DailyLogResource extends Resource
+{
+    protected static ?string $model = DailyLog::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-book-open';
+
+    protected static ?string $navigationLabel = 'دفتر النصوص';
+
+    protected static ?string $modelLabel = 'سجل يومي';
+
+    protected static ?string $pluralModelLabel = 'السجلات اليومية';
+
+    protected static ?string $navigationGroup = 'التشغيل اليومي';
+
+    protected static ?int $navigationSort = 70;
+
+    /**
+     * MVP scoping: each teacher sees only their own logs.
+     * Replace with a tenant scope when multi-tenancy lands.
+     */
+    public static function getEloquentQuery(): EloquentBuilder
+    {
+        return parent::getEloquentQuery()
+            ->whereHas('schedule', fn (EloquentBuilder $query) => $query->where('user_id', Auth::id()));
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $plannedToday = static::getModel()::query()
+            ->forTeacher(Auth::id())
+            ->forDate(today())
+            ->where('status', DailyLogStatus::Planned->value)
+            ->count();
+
+        return $plannedToday > 0 ? (string) $plannedToday : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
+    }
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Tabs::make('daily_log_tabs')
+                    ->tabs([
+                        Tabs\Tab::make('التحضير المسبق')
+                            ->icon('heroicon-o-pencil-square')
+                            ->schema([
+                                Section::make('بيانات الحصة')
+                                    ->columns(2)
+                                    ->schema([
+                                        Select::make('schedule_id')
+                                            ->label('الحصة')
+                                            ->options(fn (): array => Schedule::query()
+                                                ->forTeacher(Auth::id())
+                                                ->with(['subject', 'classroom.level', 'group'])
+                                                ->get()
+                                                ->mapWithKeys(fn (Schedule $schedule): array => [$schedule->id => $schedule->label()])
+                                                ->all())
+                                            ->searchable()
+                                            ->preload()
+                                            ->live()
+                                            ->required()
+                                            ->afterStateUpdated(function (Set $set, Get $get, ?string $state): void {
+                                                if (blank($get('title')) && filled($state)) {
+                                                    $schedule = Schedule::query()->with('subject')->find($state);
+
+                                                    if ($schedule) {
+                                                        $set('title', 'درس: '.($schedule->subject?->name ?? ''));
+                                                    }
+                                                }
+                                            })
+                                            ->rule(fn (Get $get, ?DailyLog $record): Rule => Rule::unique(DailyLog::class, 'schedule_id')
+                                                ->where(fn (EloquentBuilder $query) => $query->whereDate('date', $get('date')))
+                                                ->ignore($record?->id)),
+
+                                        DatePicker::make('date')
+                                            ->label('التاريخ')
+                                            ->required()
+                                            ->live()
+                                            ->default(today())
+                                            ->maxDate(today()),
+
+                                        TextInput::make('title')
+                                            ->label('عنوان الحصة')
+                                            ->required()
+                                            ->maxLength(255)
+                                            ->columnSpanFull(),
+
+                                        Select::make('status')
+                                            ->label('الحالة')
+                                            ->options(DailyLogStatus::options())
+                                            ->default(DailyLogStatus::Planned->value)
+                                            ->disabledOn('edit')
+                                            ->required(),
+                                    ]),
+
+                                Section::make('المحتوى المخطط (ديناميكي)')
+                                    ->description('ابنِ التحضير عبر كتل مرنة: درس المرحلة المتوسطة، تمهيد، أو درس عام.')
+                                    ->schema([
+                                        Builder::make('content_data')
+                                            ->label('عناصر التحضير')
+                                            ->blocks(static::getContentDataBlocks())
+                                            ->addActionLabel('إضافة عنصر للتحضير')
+                                            ->columnSpanFull()
+                                            ->helperText('تُحفظ كل كتلة ديناميكياً في قاعدة البيانات وتُلخَّص تلقائياً عند تأكيد الإنجاز.'),
+                                    ]),
+                            ]),
+
+                        Tabs\Tab::make('مرحلة الإنجاز')
+                            ->icon('heroicon-o-check-badge')
+                            ->schema([
+                                Section::make('الأداء الفعلي في القسم')
+                                    ->schema([
+                                        RichEditor::make('actual_content')
+                                            ->label('المحتوى المنجز فعلياً')
+                                            ->columnSpanFull()
+                                            ->toolbarButtons([
+                                                'bold',
+                                                'italic',
+                                                'underline',
+                                                'bulletedList',
+                                                'orderedList',
+                                                'link',
+                                            ])
+                                            ->helperText('يُملأ بعد الحصة. عند تأكيد الإنجاز دون إدخال أي نص، يُنسخ ملخص التحضير تلقائياً ليصبح السجل الرسمي.'),
+
+                                        Textarea::make('homework')
+                                            ->label('الواجب المنزلي')
+                                            ->rows(3)
+                                            ->columnSpanFull(),
+
+                                        Textarea::make('observations')
+                                            ->label('ملاحظات المعلم')
+                                            ->rows(3)
+                                            ->columnSpanFull(),
+                                    ]),
+                            ]),
+                    ])
+                    ->columnSpanFull(),
+            ]);
+    }
+
+    /**
+     * The dynamic block definitions for the preparation builder.
+     *
+     * @return list<Builder\Block>
+     */
+    public static function getContentDataBlocks(): array
+    {
+        return [
+            Builder\Block::make('middle_school_lesson')
+                ->label('درس المرحلة المتوسطة')
+                ->icon('heroicon-o-academic-cap')
+                ->schema([
+                    TextInput::make('lesson_title')
+                        ->label('عنوان الدرس')
+                        ->required()
+                        ->columnSpanFull(),
+
+                    TextInput::make('competence')
+                        ->label('الكفاءة المستهدفة')
+                        ->placeholder('مثال: يحلّ التلميذ مسائل على الكسور')
+                        ->columnSpanFull(),
+
+                    Select::make('pedagogical_situation')
+                        ->label('الموقف البيداغوجي')
+                        ->options([
+                            'daily_life' => 'سياق حياتي',
+                            'problem' => 'وضعية إشكالية',
+                            'project' => 'مشروع',
+                            'review' => 'مراجعة',
+                        ])
+                        ->searchable()
+                        ->preload(),
+
+                    Repeater::make('phases')
+                        ->label('مراحل الدرس')
+                        ->schema([
+                            Select::make('type')
+                                ->label('المرحلة')
+                                ->options(LessonPhaseType::options())
+                                ->default(LessonPhaseType::Warmup->value)
+                                ->required(),
+
+                            TextInput::make('duration')
+                                ->label('المدة')
+                                ->numeric()
+                                ->suffix('دقيقة'),
+
+                            Textarea::make('description')
+                                ->label('الوصف')
+                                ->rows(2)
+                                ->columnSpanFull(),
+
+                            TextInput::make('strategy')
+                                ->label('استراتيجية التدريس')
+                                ->placeholder('حوار، عمل في أفواج، عرض توضيحي...')
+                                ->columnSpanFull(),
+                        ])
+                        ->columns(2)
+                        ->defaultItems(1)
+                        ->reorderable()
+                        ->collapsible()
+                        ->itemLabel(fn (array $state): ?string => LessonPhaseType::tryFrom($state['type'] ?? '')?->label()),
+                ])
+                ->columnSpanFull(),
+
+            Builder\Block::make('warmup')
+                ->label('تمهيد / تصحيح الفرض')
+                ->icon('heroicon-o-fire')
+                ->schema([
+                    Textarea::make('description')
+                        ->label('وصف التمهيد')
+                        ->rows(2)
+                        ->required()
+                        ->columnSpanFull(),
+
+                    TextInput::make('duration')
+                        ->label('المدة')
+                        ->numeric()
+                        ->suffix('دقيقة'),
+                ]),
+
+            Builder\Block::make('general_lesson')
+                ->label('درس عام')
+                ->icon('heroicon-o-document-text')
+                ->schema([
+                    TextInput::make('title')
+                        ->label('عنوان المحتوى')
+                        ->required()
+                        ->columnSpanFull(),
+
+                    Textarea::make('objectives')
+                        ->label('الأهداف')
+                        ->rows(2)
+                        ->columnSpanFull(),
+
+                    Textarea::make('content')
+                        ->label('محتوى الدرس')
+                        ->rows(4)
+                        ->columnSpanFull(),
+                ]),
+        ];
+    }
+
+    /**
+     * Shared "Confirm Completion" configuration.
+     *
+     * Filament v3 requires actions inside a table to be Tables\Actions\Action
+     * (bound to the table via ->table()), while page headers use the unified
+     * Actions\Action. Hence the same definition is applied to two
+     * context-specific instances.
+     *
+     * @param  Actions\Action|Tables\Actions\Action  $action
+     * @return Actions\Action|Tables\Actions\Action
+     */
+    protected static function configureConfirmCompletion(Actions\Action | Tables\Actions\Action $action): Actions\Action | Tables\Actions\Action
+    {
+        return $action
+            ->label('تأكيد الإنجاز')
+            ->icon('heroicon-o-check-badge')
+            ->color('success')
+            ->requiresConfirmation()
+            ->modalHeading('تأكيد إنجاز الحصة')
+            ->modalDescription('سيتم تغيير الحالة إلى "منجز" ونسخ ملخص المحتوى المخطط إلى حقل الأداء الفعلي ليصبح السجل الرسمي.')
+            ->modalSubmitActionLabel('تأكيد')
+            ->visible(fn (DailyLog $record): bool => $record->isPlanned())
+            ->action(function (DailyLog $record): void {
+                $record->markAsCompleted();
+
+                Notification::make()
+                    ->title('تم تأكيد الإنجاز')
+                    ->body('أصبح هذا السجل هو المحتوى الرسمي لهذه الحصة.')
+                    ->success()
+                    ->send();
+            });
+    }
+
+    /**
+     * Shared "Confirm Completion" action for page headers (e.g. the edit page).
+     */
+    public static function confirmCompletionAction(): Actions\Action
+    {
+        return static::configureConfirmCompletion(
+            Actions\Action::make('confirmCompletion'),
+        );
+    }
+
+    /**
+     * Shared "Confirm Completion" action for table rows.
+     */
+    public static function confirmCompletionTableAction(): Tables\Actions\Action
+    {
+        return static::configureConfirmCompletion(
+            Tables\Actions\Action::make('confirmCompletion'),
+        );
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->defaultSort('date', 'desc')
+            ->columns([
+                Tables\Columns\TextColumn::make('date')
+                    ->label('التاريخ')
+                    ->date('Y/m/d')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('title')
+                    ->label('العنوان')
+                    ->searchable()
+                    ->limit(35)
+                    ->description(fn (DailyLog $record): ?string => $record->schedule?->label()),
+
+                Tables\Columns\TextColumn::make('schedule.subject.name')
+                    ->label('المادة')
+                    ->badge()
+                    ->color(fn (DailyLog $record): string => $record->schedule?->subject?->color ?? 'gray'),
+
+                Tables\Columns\TextColumn::make('schedule.classroom.name')
+                    ->label('القسم')
+                    ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('الحالة')
+                    ->badge()
+                    ->formatStateUsing(fn (DailyLogStatus $state): string => $state->label())
+                    ->color(fn (DailyLogStatus $state): string => $state->color())
+                    ->sortable(),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('الحالة')
+                    ->options(DailyLogStatus::options()),
+
+                Tables\Filters\Filter::make('today')
+                    ->label('سجلات اليوم')
+                    ->query(fn (EloquentBuilder $query) => $query->forDate(today())),
+            ])
+            ->actions([
+                static::confirmCompletionTableAction(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListDailyLogs::route('/'),
+            'create' => Pages\CreateDailyLog::route('/create'),
+            'edit' => Pages\EditDailyLog::route('/{record}/edit'),
+        ];
+    }
+}

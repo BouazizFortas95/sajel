@@ -1,0 +1,138 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Enums\DailyLogStatus;
+use App\Enums\DayOfWeek;
+use App\Models\Classroom;
+use App\Models\EducationPhase;
+use App\Models\Group;
+use App\Models\Level;
+use App\Models\Schedule;
+use App\Models\Subject;
+use App\Models\User;
+use Illuminate\Database\Seeder;
+
+class SajelSeeder extends Seeder
+{
+    /**
+     * Seed a complete demo structure: one teacher, a middle school phase,
+     * levels, classrooms, groups, subjects, a weekly schedule and one
+     * planned daily log ready to be confirmed.
+     */
+    public function run(): void
+    {
+        $teacher = User::firstOrCreate(
+            ['email' => 'teacher@sajel.test'],
+            ['name' => 'أستاذ تجريبي', 'password' => 'password'],
+        );
+
+        $middleSchool = EducationPhase::firstOrCreate(
+            ['code' => 'middle'],
+            [
+                'name' => 'المرحلة المتوسطة',
+                'settings' => [
+                    'period_minutes' => 50,
+                    'default_status' => DailyLogStatus::Planned->value,
+                ],
+            ],
+        );
+
+        $firstYear = Level::firstOrCreate(
+            ['education_phase_id' => $middleSchool->id, 'name' => 'السنة الأولى متوسطة'],
+        );
+        $secondYear = Level::firstOrCreate(
+            ['education_phase_id' => $middleSchool->id, 'name' => 'السنة الثانية متوسطة'],
+        );
+
+        $classroom = Classroom::firstOrCreate(
+            ['level_id' => $firstYear->id, 'name' => '1م - أ', 'academic_year' => '2025-2026'],
+        );
+        Classroom::firstOrCreate(
+            ['level_id' => $secondYear->id, 'name' => '2م - ب', 'academic_year' => '2025-2026'],
+        );
+
+        $groupA = Group::firstOrCreate(['classroom_id' => $classroom->id, 'name' => 'المجموعة أ']);
+        Group::firstOrCreate(['classroom_id' => $classroom->id, 'name' => 'المجموعة ب']);
+
+        $math = Subject::firstOrCreate(['name' => 'الرياضيات'], ['color' => '#4f46e5']);
+        Subject::firstOrCreate(['name' => 'اللغة العربية'], ['color' => '#059669']);
+        Subject::firstOrCreate(['name' => 'اللغة الفرنسية'], ['color' => '#d97706']);
+
+        $schedule = Schedule::firstOrCreate(
+            [
+                'user_id' => $teacher->id,
+                'classroom_id' => $classroom->id,
+                'group_id' => $groupA->id,
+                'subject_id' => $math->id,
+                'day_of_week' => DayOfWeek::Sunday->value,
+                'start_time' => '08:00',
+                'end_time' => '09:00',
+            ],
+        );
+
+        Schedule::firstOrCreate(
+            [
+                'user_id' => $teacher->id,
+                'classroom_id' => $classroom->id,
+                'group_id' => null,
+                'subject_id' => Subject::where('name', 'اللغة العربية')->first()->id,
+                'day_of_week' => DayOfWeek::Monday->value,
+                'start_time' => '10:00',
+                'end_time' => '11:00',
+            ],
+        );
+
+        $schedule->dailyLogs()->firstOrCreate(
+            ['date' => now()->toDateString()],
+            [
+                'title' => 'درس: جمع الكسور المختلفة المقامات',
+                'content_data' => [
+                    [
+                        'type' => 'warmup',
+                        'data' => [
+                            'description' => 'تمرين سريع حول المضاعفات المشتركة لتهيئة التلاميذ.',
+                            'duration' => 5,
+                        ],
+                    ],
+                    [
+                        'type' => 'middle_school_lesson',
+                        'data' => [
+                            'lesson_title' => 'جمع وطرح الكسور',
+                            'competence' => 'يحسب التلميذ مجموعات وفروق الكسور في سياق حياتي',
+                            'pedagogical_situation' => 'تحضير وجبة فطور جماعية',
+                            'phases' => [
+                                [
+                                    'type' => 'warmup',
+                                    'duration' => 5,
+                                    'description' => 'وضعية الانطلاق: كيف نجمع كسرين مختلفي المقامات؟',
+                                    'strategy' => 'الحوار',
+                                ],
+                                [
+                                    'type' => 'discovery',
+                                    'duration' => 20,
+                                    'description' => 'استكشاف طرق جمع الكسور المختلفة المقامات بالوسائل المحسوسة.',
+                                    'strategy' => 'العمل في أفواج',
+                                ],
+                                [
+                                    'type' => 'institutionalization',
+                                    'duration' => 15,
+                                    'description' => 'ترسيخ قاعدة جمع الكسور المختلفة المقامات.',
+                                    'strategy' => 'العرض التوضيحي',
+                                ],
+                                [
+                                    'type' => 'evaluation',
+                                    'duration' => 10,
+                                    'description' => 'تمارين إدماجية من دفتر النشاط.',
+                                    'strategy' => 'فردي',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                'homework' => 'حل التمارين 3 و 5 ص 42 من الكتاب المدرسي.',
+                'status' => DailyLogStatus::Planned->value,
+            ],
+        );
+    }
+}
