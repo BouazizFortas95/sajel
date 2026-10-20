@@ -3,22 +3,28 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Widgets\QuickLinks;
-use App\Filament\Widgets\SajelStats;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Widgets\AccountWidget;
 
 class Dashboard extends BaseDashboard
 {
     /**
-     * Widgets shown on the Sajel dashboard: overview stats,
-     * quick navigation links, then the account widget.
+     * The view used to render the dashboard page.
+     * Includes the Livewire dashboard-stats component for dark-mode-safe stat cards.
+     */
+    public function getView(): string
+    {
+        return 'filament.pages.dashboard';
+    }
+
+    /**
+     * Widgets shown on the Sajel dashboard (stats are now handled by the Livewire component).
      *
      * @return list<class-string>
      */
     public function getWidgets(): array
     {
         return [
-            SajelStats::class,
             QuickLinks::class,
             AccountWidget::class,
         ];

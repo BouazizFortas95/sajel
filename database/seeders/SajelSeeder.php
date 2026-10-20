@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\DailyLogStatus;
 use App\Enums\DayOfWeek;
+use App\Enums\Role;
 use App\Models\Classroom;
 use App\Models\EducationPhase;
 use App\Models\Group;
@@ -25,6 +26,15 @@ class SajelSeeder extends Seeder
         $teacher = User::firstOrCreate(
             ['email' => 'teacher@sajel.test'],
             ['name' => 'أستاذ تجريبي', 'password' => 'password'],
+        );
+
+        User::firstOrCreate(
+            ['email' => 'admin@sajel.test'],
+            [
+                'name' => 'مدير المنصة',
+                'password' => 'password',
+                'role' => Role::Admin->value,
+            ],
         );
 
         $middleSchool = EducationPhase::firstOrCreate(

@@ -36,12 +36,16 @@ class ScheduleResource extends Resource
     protected static ?int $navigationSort = 60;
 
     /**
-     * MVP scoping: each teacher sees only their own schedules.
-     * Replace with a tenant scope when multi-tenancy lands.
+     * Teachers see only their own schedules; admins see everything.
+     * Data isolation for other resources lives in their policies.
      */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('user_id', Auth::id());
+        $query = parent::getEloquentQuery();
+
+        return auth()->user()?->isAdmin()
+            ? $query
+            : $query->where('user_id', Auth::id());
     }
 
     public static function form(Form $form): Form

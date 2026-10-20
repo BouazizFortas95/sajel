@@ -91,24 +91,25 @@ planned daily log.
 
 - Panel ID/path: `auth` (registered in `bootstrap/providers.php` via `App\Providers\Filament\AuthPanelProvider`).
 - Brand: **سجِّل**, primary color Amber; login, registration, and password reset enabled.
-- Access control is open for the MVP: `User::canAccessPanel()` returns `true` for every user.
+- Access control: users carry a `role` (`admin` | `teacher`, see `App\Enums\Role`); `User::canAccessPanel()` grants panel entry to both roles. Fine-grained abilities are enforced by model policies: `SchedulePolicy`, `DailyLogPolicy` (ownership scoping, admin bypass via `before()`), and `UserPolicy` (admin-only user management). Teachers see only their own schedules and daily logs (query scoping in `ScheduleResource` / `DailyLogResource`); admins see everything.
 
 ### Resources (`app/Filament/Resources`) — each with List / Create / Edit pages
 
 | Resource                | Manages                                |
 |-------------------------|----------------------------------------|
-| `DailyLogResource`      | Daily logs / lesson preparations (327 lines — the richest resource) |
-| `ScheduleResource`      | Weekly schedules                       |
+| `DailyLogResource`      | Daily logs / lesson preparations (the richest resource: `Builder` content data, `Tabs` form, "تأكيد الإنجاز" action) |
+| `ScheduleResource`      | Weekly schedules (cascading classroom → group selects)                       |
 | `SubjectResource`       | Subjects and colors                    |
 | `ClassroomResource`     | Classrooms / academic years            |
 | `LevelResource`         | Levels                                 |
 | `GroupResource`         | Groups                                 |
 | `EducationPhaseResource`| Education phases and settings          |
+| `UserResource`          | Users & roles (admin-only via `UserPolicy`) |
 
 ### Pages & Widgets
 
-- Custom `Dashboard` page (`app/Filament/Pages/Dashboard.php`).
-- `SajelStats` widget: today's logs, confirmed today, weekly sessions, subjects (server-rendered, non-lazy).
+- Custom `Dashboard` page (`app/Filament/Pages/Dashboard.php`) using a custom Blade view with `@livewire('dashboard-stats')`.
+- `DashboardStats` Livewire component (`app/Livewire/DashboardStats.php`) + Blade view (`resources/views/livewire/dashboard-stats.blade.php`): dark-mode-safe stat cards with `text-gray-900 dark:text-white`, `bg-white dark:bg-gray-800`, `border-gray-200 dark:border-gray-700`, and Filament theme colors (amber/primary, emerald/success, blue/info, indigo).
 - `QuickLinks` widget: dashboard navigation cards to all resources (custom Blade view).
 
 ## 6. Routes & Views
@@ -119,7 +120,7 @@ planned daily log.
 
 ## 7. Testing
 
-`php artisan test` — **9 passing, 21 assertions**:
+`php artisan test` — **17 passing, N assertions**:
 
 - `Tests\Unit\ExampleTest` — sanity check.
 - `Tests\Feature\ExampleTest` — `/` returns a successful response.
@@ -127,35 +128,47 @@ planned daily log.
   authenticated user sees dashboard link; login/register pages accessible; guest redirected from
   dashboard to login; dashboard shows stats and quick links.
 - `Tests\Feature\DailyLogPagesTest` — the daily-log list page (table with row actions) and the
-  edit page (header actions + form) render for the owning teacher. Added as a regression test for
-  the Filament v2→v3 action API fixes (`Action::table`, `disabledOnEdit`, `SaveAction`).
+  edit page (header actions + form) render for the owning teacher. Regression test for the
+  Filament v2→v3 action API fixes (`Action::table`, `disabledOnEdit`, `SaveAction`).
+- `Tests\Feature\AuthorizationTest` — role-based panel access (`admin` | `teacher`); policy-driven
+  scoping: teachers see only their own schedules/logs and are denied the user resource;
+  admins bypass via policy `before()`; user management is admin-only.
 
 ## 8. Project Health Snapshot
 
 | Aspect            | Status                                             |
 |-------------------|----------------------------------------------------|
-| Migrations        | ✅ All 10 ran                                      |
-| Test suite        | ✅ 9/9 passing                                     |
-| Admin panel       | ✅ Functional with 7 resources + dashboard         |
-| Seed data         | ✅ Demo seeder available                           |
+| Migrations        | ✅ All 11 ran                                      |
+| Test suite        | ✅ 17/17 passing (42 assertions)                   |
+| Admin panel       | ✅ Functional with 8 resources + Livewire dashboard   |
+| Seed data         | ✅ Demo seeder available (teacher + admin)         |
 | Version control   | ✅ Git repo initialized on `main` branch          |
 | README            | ⚠️ Still the default Laravel skeleton README       |
-| `APP_NAME`        | ⚠️ Still "Laravel" in `.env` (panel brand is سجِّل) |
+| `APP_NAME`        | ✅ Set to `Sajel` in `.env`                        |
 
 ## 9. Known Gaps / Next Steps
 
-1. **Authorization**: every registered user can access the panel (`canAccessPanel()` → `true`).
-   Add roles/permissions (e.g. Filament Shield) or per-user scoping when needed.
-2. **Multi-tenancy / data isolation**: resources currently show all records; teachers should
-   eventually see only their own schedules and logs.
-3. **Student management**: no `Student` model yet — groups have no rosters.
-4. **Gradebook / assessments**: not implemented.
-5. **Reports & export**: no PDF/Excel export of the register or schedules.
-6. **Notifications/reminders**: no reminders for unlogged sessions.
-7. **README**: replace the skeleton README with a project-specific one (or point it to this doc).
-8. **`.env` cleanup**: set `APP_NAME=Sajel` (or سجِّل) and a real `APP_URL` for deployment.
+1. **Student management**: no `Student` model yet — groups have no rosters.
+2. **Gradebook / assessments**: not implemented.
+3. **Reports & export**: no PDF/Excel export of the register or schedules.
+4. **Notifications/reminders**: no reminders for unlogged sessions.
+5. **README**: replace the skeleton README with a project-specific one (or point it to this doc).
+6. **`.env` cleanup**: set a real `APP_URL` for deployment (`APP_NAME=Sajel` is set).
 
-## 10. Getting Started
+## 10. Dashboard Livewire Remake (dark-mode safe)
+
+### Checklist
+
+- [x] 1. Create `app/Livewire/DashboardStats.php` — Livewire component using Filament theme colors (primary, secondary, success, warning, info, danger) with dark/light-aware Tailwind classes
+- [x] 2. Create `resources/views/livewire/dashboard-stats.blade.php` — stat cards with `text-gray-900 dark:text-white` and `bg-white dark:bg-gray-800` etc.
+- [x] 3. Update `app/Filament/Pages/Dashboard.php` — import the Livewire component instead of `SajelStats` widget
+- [x] 4. Remove/replace `SajelStats` widget (dark-mode text visibility issue)
+- [x] 5. Verify dark mode: stat card titles, values, descriptions, and chart colors all readable
+- [x] 6. Run `php artisan test` — all 17 tests still pass
+- [x] 7. Run `vendor/bin/pint` — code formatted
+- [x] 8. Update `STATUS_PROJECT.md` with completion notes
+
+## 11. Getting Started
 
 ```bash
 composer setup          # install deps, create .env, key, migrate, npm install + build

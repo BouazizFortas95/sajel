@@ -45,19 +45,21 @@ class DailyLogResource extends Resource
     protected static ?int $navigationSort = 70;
 
     /**
-     * MVP scoping: each teacher sees only their own logs.
-     * Replace with a tenant scope when multi-tenancy lands.
+     * Teachers see only their logs; admins see everything
+     * (record-level abilities are enforced by DailyLogPolicy).
      */
     public static function getEloquentQuery(): EloquentBuilder
     {
-        return parent::getEloquentQuery()
-            ->whereHas('schedule', fn (EloquentBuilder $query) => $query->where('user_id', Auth::id()));
+        $query = parent::getEloquentQuery();
+
+        return auth()->user()?->isAdmin()
+            ? $query
+            : $query->whereHas('schedule', fn (EloquentBuilder $query) => $query->where('user_id', Auth::id()));
     }
 
     public static function getNavigationBadge(): ?string
     {
-        $plannedToday = static::getModel()::query()
-            ->forTeacher(Auth::id())
+        $plannedToday = static::getEloquentQuery()
             ->forDate(today())
             ->where('status', DailyLogStatus::Planned->value)
             ->count();
@@ -84,12 +86,27 @@ class DailyLogResource extends Resource
                                     ->schema([
                                         Select::make('schedule_id')
                                             ->label('الحصة')
-                                            ->options(fn (): array => Schedule::query()
-                                                ->forTeacher(Auth::id())
-                                                ->with(['subject', 'classroom.level', 'group'])
-                                                ->get()
-                                                ->mapWithKeys(fn (Schedule $schedule): array => [$schedule->id => $schedule->label()])
-                                                ->all())
+                                            ->options(function (): array {
+                                                $query = Schedule::query()
+                                                    ->with(['subject', 'classroom.level', 'group', 'user']);
+
+                                                if (! auth()->user()?->isAdmin()) {
+                                                    $query->forTeacher(Auth::id());
+                                                }
+
+                                                return $query
+                                                    ->get()
+                                                    ->mapWithKeys(function (Schedule $schedule): array {
+                                                        $label = $schedule->label();
+
+                                                        if (auth()->user()?->isAdmin()) {
+                                                            $label .= ' — ' . ($schedule->user?->name ?? '');
+                                                        }
+
+                                                        return [$schedule->id => $label];
+                                                    })
+                                                    ->all();
+                                            })
                                             ->searchable()
                                             ->preload()
                                             ->live()
