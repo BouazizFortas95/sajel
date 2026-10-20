@@ -19,13 +19,25 @@ class EducationPhaseResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-building-library';
 
-    protected static ?string $navigationLabel = 'الأساسات التعليمية';
+    public static function getNavigationLabel(): string
+    {
+        return __('الأساسات التعليمية');
+    }
 
-    protected static ?string $modelLabel = 'أساس تعليمي';
+    public static function getModelLabel(): string
+    {
+        return __('أساس تعليمي');
+    }
 
-    protected static ?string $pluralModelLabel = 'الأساسات التعليمية';
+    public static function getPluralModelLabel(): string
+    {
+        return __('الأساسات التعليمية');
+    }
 
-    protected static ?string $navigationGroup = 'البنية التربوية';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('البنية التربوية');
+    }
 
     protected static ?int $navigationSort = 10;
 
@@ -33,26 +45,26 @@ class EducationPhaseResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('معلومات الأساس التعليمي')
-                    ->description('الأساس التعليمي يمثل المرحلة (متوسطة، ابتدائية، ثانوية...) ويحتوي على مستوياته.')
+                Section::make(__('معلومات الأساس التعليمي'))
+                    ->description(__('الأساس التعليمي يمثل المرحلة (متوسطة، ابتدائية، ثانوية...) ويحتوي على مستوياته.'))
                     ->columns(2)
                     ->schema([
                         TextInput::make('name')
-                            ->label('الاسم')
+                            ->label(__('الاسم'))
                             ->required()
                             ->maxLength(255),
 
                         TextInput::make('code')
-                            ->label('الرمز')
+                            ->label(__('الرمز'))
                             ->required()
                             ->maxLength(255)
                             ->unique(ignoreRecord: true)
-                            ->helperText('رمز فريد يمثل المرحلة (مثال: middle).'),
+                            ->helperText(__('رمز فريد يمثل المرحلة (مثال: middle).')),
 
                         KeyValue::make('settings')
-                            ->label('إعدادات ديناميكية')
+                            ->label(__('إعدادات ديناميكية'))
                             ->columnSpanFull()
-                            ->helperText('إعدادات JSON تُستخدم لاحقاً (مدة الحصة الافتراضية، أيام الراحة...)'),
+                            ->helperText(__('إعدادات JSON تُستخدم لاحقاً (مدة الحصة الافتراضية، أيام الراحة...)')),
                     ]),
             ]);
     }
@@ -62,30 +74,30 @@ class EducationPhaseResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('الاسم')
+                    ->label(__('الاسم'))
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('code')
-                    ->label('الرمز')
+                    ->label(__('الرمز'))
                     ->badge()
                     ->color('info')
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('levels_count')
-                    ->label('المستويات')
+                    ->label(__('المستويات'))
                     ->counts('levels')
                     ->badge()
                     ->color('primary'),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
+                    ->label(__('تاريخ الإنشاء'))
                     ->dateTime('Y/m/d H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\Filter::make('has_levels')
-                    ->label('مربوط بمستويات')
+                    ->label(__('مربوط بمستويات'))
                     ->query(fn (Builder $query) => $query->has('levels')),
             ])
             ->actions([

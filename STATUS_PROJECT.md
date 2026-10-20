@@ -89,7 +89,11 @@ planned daily log.
 
 ## 5. Admin Panel (Filament)
 
-- Panel ID/path: `auth` (registered in `bootstrap/providers.php` via `App\Providers\Filament\AuthPanelProvider`).
+- Panel ID/path: `auth` at `/{locale}/auth` (Arabic, English, and French; registered in
+  `bootstrap/providers.php` via `App\Providers\Filament\AuthPanelProvider`).
+- The panel locale middleware sets Laravel and Filament's locale before rendering, so Filament's
+  native layout direction flips to RTL for Arabic. The language links render inside Filament's
+  existing top bar, and the sidebar is collapsible on desktop.
 - Brand: **سجِّل**, primary color Amber; login, registration, and password reset enabled.
 - Access control: users carry a `role` (`admin` | `teacher`, see `App\Enums\Role`); `User::canAccessPanel()` grants panel entry to both roles. Fine-grained abilities are enforced by model policies: `SchedulePolicy`, `DailyLogPolicy` (ownership scoping, admin bypass via `before()`), and `UserPolicy` (admin-only user management). Teachers see only their own schedules and daily logs (query scoping in `ScheduleResource` / `DailyLogResource`); admins see everything.
 
@@ -116,7 +120,8 @@ planned daily log.
 
 - `routes/web.php`: default `/` closure returning the `welcome` view (landing page with
   login/register links for guests, dashboard link for authenticated users).
-- Filament serves everything under `/auth`; the panel is the default panel.
+- The Filament panel is available at `/ar/auth`, `/en/auth`, and `/fr/auth`. The landing page
+  remains at `/`; its panel links use the configured default locale.
 
 ## 7. Testing
 

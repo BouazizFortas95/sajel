@@ -18,13 +18,25 @@ class LevelResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static ?string $navigationLabel = 'المستويات';
+    public static function getNavigationLabel(): string
+    {
+        return __('المستويات');
+    }
 
-    protected static ?string $modelLabel = 'مستوى';
+    public static function getModelLabel(): string
+    {
+        return __('مستوى');
+    }
 
-    protected static ?string $pluralModelLabel = 'المستويات';
+    public static function getPluralModelLabel(): string
+    {
+        return __('المستويات');
+    }
 
-    protected static ?string $navigationGroup = 'البنية التربوية';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('البنية التربوية');
+    }
 
     protected static ?int $navigationSort = 20;
 
@@ -32,19 +44,19 @@ class LevelResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('معلومات المستوى')
+                Section::make(__('معلومات المستوى'))
                     ->columns(2)
                     ->schema([
                         Select::make('education_phase_id')
-                            ->label('الأساس التعليمي')
+                            ->label(__('الأساس التعليمي'))
                             ->relationship('educationPhase', 'name')
                             ->searchable()
                             ->preload()
                             ->required(),
 
                         TextInput::make('name')
-                            ->label('الاسم')
-                            ->placeholder('السنة الأولى متوسطة')
+                            ->label(__('الاسم'))
+                            ->placeholder(__('السنة الأولى متوسطة'))
                             ->required()
                             ->maxLength(255),
                     ]),
@@ -56,24 +68,24 @@ class LevelResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('الاسم')
+                    ->label(__('الاسم'))
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('educationPhase.name')
-                    ->label('الأساس التعليمي')
+                    ->label(__('الأساس التعليمي'))
                     ->badge()
                     ->color('primary')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('classrooms_count')
-                    ->label('الأقسام')
+                    ->label(__('الأقسام'))
                     ->counts('classrooms')
                     ->badge()
                     ->color('info'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('education_phase_id')
-                    ->label('الأساس التعليمي')
+                    ->label(__('الأساس التعليمي'))
                     ->relationship('educationPhase', 'name'),
             ])
             ->actions([

@@ -11,9 +11,9 @@ enum DailyLogStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Planned => 'مخطط',
-            self::Completed => 'منجز',
-            self::Cancelled => 'ملغى',
+            self::Planned => __('مخطط'),
+            self::Completed => __('منجز'),
+            self::Cancelled => __('ملغى'),
         };
     }
 

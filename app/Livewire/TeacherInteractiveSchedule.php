@@ -70,8 +70,8 @@ class TeacherInteractiveSchedule extends Component
         if (filled($this->search)) {
             $query->where(function ($q): void {
                 $q->whereHas('subject', fn ($s) => $s->where('name', 'like', "%{$this->search}%"))
-                  ->orWhereHas('classroom', fn ($c) => $c->where('name', 'like', "%{$this->search}%"))
-                  ->orWhereHas('group', fn ($g) => $g->where('name', 'like', "%{$this->search}%"));
+                    ->orWhereHas('classroom', fn ($c) => $c->where('name', 'like', "%{$this->search}%"))
+                    ->orWhereHas('group', fn ($g) => $g->where('name', 'like', "%{$this->search}%"));
             });
         }
 
@@ -142,7 +142,7 @@ class TeacherInteractiveSchedule extends Component
             $log = DailyLog::create([
                 'schedule_id' => $schedule->id,
                 'date' => today(),
-                'title' => 'درس: '.($schedule->subject?->name ?? ''),
+                'title' => __('درس: ').($schedule->subject?->name ?? ''),
                 'content_data' => [],
                 'status' => DailyLogStatus::Planned->value,
             ]);
@@ -153,7 +153,7 @@ class TeacherInteractiveSchedule extends Component
         $this->dispatch('schedule-updated');
 
         Notification::make()
-            ->title('تم تمييز الحصة كمنجزة')
+            ->title(__('تم تمييز الحصة كمنجزة'))
             ->success()
             ->send();
     }
@@ -175,7 +175,7 @@ class TeacherInteractiveSchedule extends Component
             $log = DailyLog::create([
                 'schedule_id' => $schedule->id,
                 'date' => today(),
-                'title' => 'درس: '.($schedule->subject?->name ?? ''),
+                'title' => __('درس: ').($schedule->subject?->name ?? ''),
                 'content_data' => [],
                 'status' => DailyLogStatus::Cancelled->value,
             ]);
@@ -187,7 +187,7 @@ class TeacherInteractiveSchedule extends Component
         $this->dispatch('schedule-updated');
 
         Notification::make()
-            ->title('تم إلغاء الحصة')
+            ->title(__('تم إلغاء الحصة'))
             ->warning()
             ->send();
     }

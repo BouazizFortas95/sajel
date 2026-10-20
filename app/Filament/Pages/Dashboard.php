@@ -4,13 +4,11 @@ namespace App\Filament\Pages;
 
 use App\Filament\Widgets\QuickLinks;
 use Filament\Pages\Dashboard as BaseDashboard;
-use Filament\Widgets\AccountWidget;
 
 class Dashboard extends BaseDashboard
 {
     /**
-     * The view used to render the dashboard page.
-     * Includes the Livewire dashboard-stats component for dark-mode-safe stat cards.
+     * The view keeps Filament's native page shell around the dashboard content.
      */
     public function getView(): string
     {
@@ -26,7 +24,11 @@ class Dashboard extends BaseDashboard
     {
         return [
             QuickLinks::class,
-            AccountWidget::class,
         ];
+    }
+
+    public function getColumns(): int|string|array
+    {
+        return 1;
     }
 }

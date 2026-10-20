@@ -42,10 +42,10 @@
     {{-- Stat summary ---------------------------------------------------- --}}
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         @foreach ([
-            ['label' => 'إجمالي الحصص', 'value' => $stats['total'], 'icon' => 'heroicon-o-calendar-days'],
-            ['label' => 'مخططة', 'value' => $stats['planned'], 'icon' => 'heroicon-o-pencil-square'],
-            ['label' => 'منجزة', 'value' => $stats['completed'], 'icon' => 'heroicon-o-check-circle'],
-            ['label' => 'ملغاة', 'value' => $stats['cancelled'], 'icon' => 'heroicon-o-x-circle'],
+            ['label' => __('إجمالي الحصص'), 'value' => $stats['total'], 'icon' => 'heroicon-o-calendar-days'],
+            ['label' => __('مخططة'), 'value' => $stats['planned'], 'icon' => 'heroicon-o-pencil-square'],
+            ['label' => __('منجزة'), 'value' => $stats['completed'], 'icon' => 'heroicon-o-check-circle'],
+            ['label' => __('ملغاة'), 'value' => $stats['cancelled'], 'icon' => 'heroicon-o-x-circle'],
         ] as $stat)
             <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
                 <div class="grid gap-y-2">
@@ -70,8 +70,8 @@
 
     {{-- Schedule --------------------------------------------------------- --}}
     <x-filament::section
-        :heading="'جدول الحصص — ' . (DayOfWeek::tryFrom($selectedDay)?->label() ?? '')"
-        description="اختر اليوم لعرض حصصك، واستخدم البحث للوصول السريع."
+        :heading="__('جدول الحصص — :day', ['day' => DayOfWeek::tryFrom($selectedDay)?->label() ?? ''])"
+        :description="__('اختر اليوم لعرض حصصك، واستخدم البحث للوصول السريع.')"
         icon="heroicon-o-calendar-days"
     >
         <x-slot name="headerEnd">
@@ -79,14 +79,14 @@
                 :icon="$isGrid ? 'heroicon-o-squares-2x2' : 'heroicon-o-list-bullet'"
                 :color="$isGrid ? 'primary' : 'gray'"
                 wire:click="$set('viewMode', $isGrid ? 'list' : 'grid')"
-                :label="$isGrid ? 'عرض كقائمة' : 'عرض كشبكة'"
+                :label="$isGrid ? __('عرض كقائمة') : __('عرض كشبكة')"
             />
         </x-slot>
 
         {{-- Day picker --}}
         <x-filament::tabs
             class="mb-4"
-            label="اختر اليوم"
+            :label="__('اختر اليوم')"
         >
             @foreach ($days as $dayValue => $dayLabel)
                 <x-filament::tabs.item
@@ -107,7 +107,7 @@
                 <x-filament::input
                     type="search"
                     wire:model.live.debounce.300ms="search"
-                    placeholder="ابحث باسم المادة أو القسم أو المجموعة"
+                    :placeholder="__('ابحث باسم المادة أو القسم أو المجموعة')"
                 />
             </x-filament::input.wrapper>
         </div>
@@ -116,8 +116,8 @@
         @if ($schedules->isEmpty())
             <x-filament-tables::empty-state
                 icon="heroicon-o-calendar-days"
-                heading="لا توجد حصص"
-                description="لا توجد حصص مسجّلة لهذا اليوم. جرّب اختيار يوم آخر أو أضف حصة جديدة."
+                :heading="__('لا توجد حصص')"
+                :description="__('لا توجد حصص مسجّلة لهذا اليوم. جرّب اختيار يوم آخر أو أضف حصة جديدة.')"
             />
         @else
             <div
@@ -149,7 +149,7 @@
                                     />
 
                                     <span class="truncate text-sm font-semibold text-gray-950 dark:text-white">
-                                        {{ $subject?->name ?? 'بدون مادة' }}
+                                        {{ $subject?->name ?? __('بدون مادة') }}
                                     </span>
                                 </div>
 
@@ -193,7 +193,7 @@
                                         @if (filled($log?->actual_content))
                                             <div>
                                                 <div class="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                                    نص الحصة
+                                                    {{ __('نص الحصة') }}
                                                 </div>
                                                 <div class="text-sm text-gray-950 dark:text-white">
                                                     {{ $log->actual_content }}
@@ -204,7 +204,7 @@
                                         @if (filled($log?->homework))
                                             <div>
                                                 <div class="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                                    الواجب
+                                                    {{ __('الواجب') }}
                                                 </div>
                                                 <div class="text-sm text-gray-950 dark:text-white">
                                                     {{ $log->homework }}
@@ -215,7 +215,7 @@
                                         @if (filled($log?->observations))
                                             <div>
                                                 <div class="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                                    ملاحظات
+                                                    {{ __('ملاحظات') }}
                                                 </div>
                                                 <div class="text-sm text-gray-950 dark:text-white">
                                                     {{ $log->observations }}
@@ -235,7 +235,7 @@
                                     wire:loading.attr="disabled"
                                     wire:target="markCompleted({{ $schedule->id }})"
                                 >
-                                    تمييز كمنجز
+                                    {{ __('تمييز كمنجز') }}
                                 </x-filament::button>
 
                                 <x-filament::button
@@ -247,7 +247,7 @@
                                     wire:loading.attr="disabled"
                                     wire:target="cancelLog({{ $schedule->id }})"
                                 >
-                                    إلغاء
+                                    {{ __('إلغاء') }}
                                 </x-filament::button>
 
                                 <x-filament::icon-button
@@ -255,7 +255,7 @@
                                     color="gray"
                                     :icon="$isExpanded ? 'heroicon-m-chevron-up' : 'heroicon-m-chevron-down'"
                                     wire:click="toggleCard({{ $schedule->id }})"
-                                    label="عرض التفاصيل"
+                                    :label="__('عرض التفاصيل')"
                                 />
                             </div>
                         </div>

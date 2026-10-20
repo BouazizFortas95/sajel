@@ -25,13 +25,25 @@ class ScheduleResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static ?string $navigationLabel = 'الحصص';
+    public static function getNavigationLabel(): string
+    {
+        return __('الحصص');
+    }
 
-    protected static ?string $modelLabel = 'حصة';
+    public static function getModelLabel(): string
+    {
+        return __('حصة');
+    }
 
-    protected static ?string $pluralModelLabel = 'الحصص';
+    public static function getPluralModelLabel(): string
+    {
+        return __('الحصص');
+    }
 
-    protected static ?string $navigationGroup = 'التشغيل اليومي';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('التشغيل اليومي');
+    }
 
     protected static ?int $navigationSort = 60;
 
@@ -52,11 +64,11 @@ class ScheduleResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('بيانات الحصة')
+                Section::make(__('بيانات الحصة'))
                     ->columns(2)
                     ->schema([
                         Select::make('user_id')
-                            ->label('المعلم')
+                            ->label(__('المعلم'))
                             ->relationship('user', 'name')
                             ->searchable()
                             ->preload()
@@ -64,14 +76,14 @@ class ScheduleResource extends Resource
                             ->required(),
 
                         Select::make('subject_id')
-                            ->label('المادة')
+                            ->label(__('المادة'))
                             ->relationship('subject', 'name')
                             ->searchable()
                             ->preload()
                             ->required(),
 
                         Select::make('classroom_id')
-                            ->label('القسم')
+                            ->label(__('القسم'))
                             ->options(fn (): array => Classroom::query()
                                 ->with('level.educationPhase')
                                 ->get()
@@ -83,7 +95,7 @@ class ScheduleResource extends Resource
                             ->afterStateUpdated(fn (Set $set) => $set('group_id', null)),
 
                         Select::make('group_id')
-                            ->label('المجموعة (اختياري)')
+                            ->label(__('المجموعة (اختياري)'))
                             ->options(fn (Get $get): array => filled($get('classroom_id'))
                                 ? Group::query()
                                     ->where('classroom_id', $get('classroom_id'))
@@ -92,32 +104,32 @@ class ScheduleResource extends Resource
                                 : [])
                             ->searchable()
                             ->disabled(fn (Get $get) => blank($get('classroom_id')))
-                            ->helperText('اتركه فارغاً لجدولة الحصة على القسم كاملاً.'),
+                            ->helperText(__('اتركه فارغاً لجدولة الحصة على القسم كاملاً.')),
 
                         Select::make('day_of_week')
-                            ->label('اليوم')
+                            ->label(__('اليوم'))
                             ->options(DayOfWeek::options())
                             ->native(false)
                             ->required(),
                     ]),
 
-                Section::make('توقيت الحصة')
-                    ->description('يمنع تجاوز وقت النهاية لوقت البداية.')
+                Section::make(__('توقيت الحصة'))
+                    ->description(__('يمنع تجاوز وقت النهاية لوقت البداية.'))
                     ->columns(2)
                     ->schema([
                         TimePicker::make('start_time')
-                            ->label('بداية الحصة')
+                            ->label(__('بداية الحصة'))
                             ->seconds(false)
                             ->required(),
 
                         TimePicker::make('end_time')
-                            ->label('نهاية الحصة')
+                            ->label(__('نهاية الحصة'))
                             ->seconds(false)
                             ->required()
                             ->rule(function (Get $get) {
                                 return function (string $attribute, callable $fail, mixed $value) use ($get): void {
                                     if (filled($value) && filled($get('start_time')) && $value <= $get('start_time')) {
-                                        $fail('وقت النهاية يجب أن يكون بعد وقت البداية.');
+                                        $fail(__('وقت النهاية يجب أن يكون بعد وقت البداية.'));
                                     }
                                 };
                             }),
@@ -131,14 +143,14 @@ class ScheduleResource extends Resource
             ->defaultSort('day_of_week')
             ->columns([
                 Tables\Columns\TextColumn::make('day_of_week')
-                    ->label('اليوم')
+                    ->label(__('اليوم'))
                     ->badge()
                     ->formatStateUsing(fn (DayOfWeek $state): string => $state->label())
                     ->color(fn (DayOfWeek $state): string => $state->color())
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('time_range')
-                    ->label('التوقيت')
+                    ->label(__('التوقيت'))
                     ->state(fn (Schedule $record): string => sprintf(
                         '%s - %s',
                         $record->start_time?->format('H:i'),
@@ -146,26 +158,26 @@ class ScheduleResource extends Resource
                     )),
 
                 Tables\Columns\TextColumn::make('subject.name')
-                    ->label('المادة')
+                    ->label(__('المادة'))
                     ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('classroom.name')
-                    ->label('القسم')
+                    ->label(__('القسم'))
                     ->description(fn (Schedule $record): ?string => $record->classroom?->level?->name)
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('group.name')
-                    ->label('المجموعة')
-                    ->placeholder('القسم كاملاً'),
+                    ->label(__('المجموعة'))
+                    ->placeholder(__('القسم كاملاً')),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('day_of_week')
-                    ->label('اليوم')
+                    ->label(__('اليوم'))
                     ->options(DayOfWeek::options()),
 
                 Tables\Filters\SelectFilter::make('subject_id')
-                    ->label('المادة')
+                    ->label(__('المادة'))
                     ->relationship('subject', 'name'),
             ])
             ->actions([

@@ -120,7 +120,7 @@ class TeacherInteractiveScheduleTest extends TestCase
         $this->assertStringContainsString('dark:text-custom-400', $html);
 
         // The status badge uses Filament's named palette.
-        $this->assertStringContainsString('منجز', $html);
+        $this->assertStringContainsString('Completed', $html);
     }
 
     public function test_it_falls_back_to_a_safe_colour_for_an_invalid_subject_colour(): void
@@ -153,7 +153,23 @@ class TeacherInteractiveScheduleTest extends TestCase
             ->html();
 
         $this->assertStringContainsString('fi-ta-empty-state', $html);
-        $this->assertStringContainsString('لا توجد حصص', $html);
+        $this->assertStringContainsString('No lessons', $html);
+    }
+
+    public function test_schedule_component_translates_its_controls_into_french(): void
+    {
+        app()->setLocale('fr');
+
+        $user = $this->makeTeacher();
+        $this->actingAs($user);
+
+        $html = Livewire::test(TeacherInteractiveSchedule::class)
+            ->assertOk()
+            ->html();
+
+        $this->assertStringContainsString('Nombre total de cours', $html);
+        $this->assertStringContainsString('Choisir un jour', $html);
+        $this->assertStringContainsString('Aucun cours', $html);
     }
 
     public function test_it_uses_theme_safe_classes_for_dark_mode(): void

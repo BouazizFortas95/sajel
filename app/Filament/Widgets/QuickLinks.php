@@ -21,6 +21,8 @@ class QuickLinks extends Widget
      */
     protected static bool $isLazy = false;
 
+    protected int|string|array $columnSpan = 'full';
+
     public function render(): View
     {
         return view(static::$view, [
@@ -37,50 +39,50 @@ class QuickLinks extends Widget
     {
         return [
             [
-                'label' => 'دفتر النصوص',
-                'description' => 'سجلاتك اليومية والتحضير',
+                'label' => __('دفتر النصوص'),
+                'description' => __('سجلاتك اليومية والتحضير'),
                 'icon' => 'book',
                 'url' => DailyLogResource::getUrl(),
             ],
             [
-                'label' => 'سجل يومي جديد',
-                'description' => 'ابدأ تحضير حصة اليوم',
+                'label' => __('سجل يومي جديد'),
+                'description' => __('ابدأ تحضير حصة اليوم'),
                 'icon' => 'plus',
                 'url' => DailyLogResource::getUrl('create'),
             ],
             [
-                'label' => 'الحصص',
-                'description' => 'جدولك الأسبوعي',
+                'label' => __('الحصص'),
+                'description' => __('جدولك الأسبوعي'),
                 'icon' => 'calendar',
                 'url' => ScheduleResource::getUrl(),
             ],
             [
-                'label' => 'المواد',
-                'description' => 'إدارة المواد وألوانها',
+                'label' => __('المواد'),
+                'description' => __('إدارة المواد وألوانها'),
                 'icon' => 'palette',
                 'url' => SubjectResource::getUrl(),
             ],
             [
-                'label' => 'الأقسام',
-                'description' => 'الأقسام والسنوات الدراسية',
+                'label' => __('الأقسام'),
+                'description' => __('الأقسام والسنوات الدراسية'),
                 'icon' => 'users',
                 'url' => ClassroomResource::getUrl(),
             ],
             [
-                'label' => 'المستويات',
-                'description' => 'مستويات كل أساس تعليمي',
+                'label' => __('المستويات'),
+                'description' => __('مستويات كل أساس تعليمي'),
                 'icon' => 'academic',
                 'url' => LevelResource::getUrl(),
             ],
             [
-                'label' => 'المجموعات',
-                'description' => 'تقسيمات الأقسام الفرعية',
+                'label' => __('المجموعات'),
+                'description' => __('تقسيمات الأقسام الفرعية'),
                 'icon' => 'user-group',
                 'url' => GroupResource::getUrl(),
             ],
             [
-                'label' => 'الأساسات التعليمية',
-                'description' => 'المراحل وإعداداتها',
+                'label' => __('الأساسات التعليمية'),
+                'description' => __('المراحل وإعداداتها'),
                 'icon' => 'building',
                 'url' => EducationPhaseResource::getUrl(),
             ],

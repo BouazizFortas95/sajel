@@ -19,13 +19,25 @@ class GroupResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
-    protected static ?string $navigationLabel = 'المجموعات';
+    public static function getNavigationLabel(): string
+    {
+        return __('المجموعات');
+    }
 
-    protected static ?string $modelLabel = 'مجموعة';
+    public static function getModelLabel(): string
+    {
+        return __('مجموعة');
+    }
 
-    protected static ?string $pluralModelLabel = 'المجموعات';
+    public static function getPluralModelLabel(): string
+    {
+        return __('المجموعات');
+    }
 
-    protected static ?string $navigationGroup = 'البنية التربوية';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('البنية التربوية');
+    }
 
     protected static ?int $navigationSort = 40;
 
@@ -33,11 +45,11 @@ class GroupResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('معلومات المجموعة')
+                Section::make(__('معلومات المجموعة'))
                     ->columns(2)
                     ->schema([
                         Select::make('classroom_id')
-                            ->label('القسم')
+                            ->label(__('القسم'))
                             ->options(fn (): array => Classroom::query()
                                 ->with('level.educationPhase')
                                 ->get()
@@ -48,8 +60,8 @@ class GroupResource extends Resource
                             ->required(),
 
                         TextInput::make('name')
-                            ->label('اسم المجموعة')
-                            ->placeholder('المجموعة أ')
+                            ->label(__('اسم المجموعة'))
+                            ->placeholder(__('المجموعة أ'))
                             ->required()
                             ->maxLength(255),
                     ]),
@@ -61,26 +73,26 @@ class GroupResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('classroom.level.name')
-                    ->label('المستوى')
+                    ->label(__('المستوى'))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('classroom.name')
-                    ->label('القسم')
+                    ->label(__('القسم'))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('name')
-                    ->label('المجموعة')
+                    ->label(__('المجموعة'))
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('schedules_count')
-                    ->label('الحصص')
+                    ->label(__('الحصص'))
                     ->counts('schedules')
                     ->badge()
                     ->color('info'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('classroom_id')
-                    ->label('القسم')
+                    ->label(__('القسم'))
                     ->relationship('classroom', 'name'),
             ])
             ->actions([

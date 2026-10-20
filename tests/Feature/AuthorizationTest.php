@@ -30,14 +30,14 @@ class AuthorizationTest extends TestCase
     {
         $teacher = User::factory()->create();
 
-        $this->actingAs($teacher)->get('/auth/users')->assertForbidden();
+        $this->actingAs($teacher)->get('/en/auth/users')->assertForbidden();
     }
 
     public function test_admin_can_access_the_user_resource(): void
     {
         $admin = User::factory()->create(['role' => Role::Admin->value]);
 
-        $this->actingAs($admin)->get('/auth/users')->assertOk();
+        $this->actingAs($admin)->get('/en/auth/users')->assertOk();
     }
 
     public function test_teacher_cannot_open_another_teachers_daily_log(): void
@@ -48,7 +48,7 @@ class AuthorizationTest extends TestCase
         // The teacher-scoped query hides the record entirely (404, not 403),
         // so its existence is never revealed.
         $this->actingAs($teacher)
-            ->get("/auth/daily-logs/{$otherLog->id}/edit")
+            ->get("/en/auth/daily-logs/{$otherLog->id}/edit")
             ->assertNotFound();
     }
 
@@ -58,7 +58,7 @@ class AuthorizationTest extends TestCase
         $log = DailyLog::factory()->create(); // another teacher's log
 
         $this->actingAs($admin)
-            ->get("/auth/daily-logs/{$log->id}/edit")
+            ->get("/en/auth/daily-logs/{$log->id}/edit")
             ->assertOk();
     }
 
@@ -79,7 +79,7 @@ class AuthorizationTest extends TestCase
             'group_id' => null,
         ]);
 
-        $response = $this->actingAs($teacher)->get('/auth/schedules');
+        $response = $this->actingAs($teacher)->get('/en/auth/schedules');
 
         $response->assertOk();
         $response->assertSee('قاعة الأمل');
@@ -96,7 +96,7 @@ class AuthorizationTest extends TestCase
         Schedule::factory()->create(['classroom_id' => $classroomA->id, 'group_id' => null]);
         Schedule::factory()->create(['classroom_id' => $classroomB->id, 'group_id' => null]);
 
-        $response = $this->actingAs($admin)->get('/auth/schedules');
+        $response = $this->actingAs($admin)->get('/en/auth/schedules');
 
         $response->assertOk();
         $response->assertSee('قاعة الشروق');

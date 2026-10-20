@@ -3,7 +3,6 @@
         {{ $this->filtersForm }}
     @endif
 
-    {{-- Livewire dashboard stats — dark-mode safe stat cards --}}
     <div class="mb-6">
         @livewire('dashboard-stats')
     </div>

@@ -19,13 +19,25 @@ class SubjectResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-swatch';
 
-    protected static ?string $navigationLabel = 'المواد';
+    public static function getNavigationLabel(): string
+    {
+        return __('المواد');
+    }
 
-    protected static ?string $modelLabel = 'مادة';
+    public static function getModelLabel(): string
+    {
+        return __('مادة');
+    }
 
-    protected static ?string $pluralModelLabel = 'المواد';
+    public static function getPluralModelLabel(): string
+    {
+        return __('المواد');
+    }
 
-    protected static ?string $navigationGroup = 'البنية التربوية';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('البنية التربوية');
+    }
 
     protected static ?int $navigationSort = 50;
 
@@ -33,16 +45,16 @@ class SubjectResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('معلومات المادة')
+                Section::make(__('معلومات المادة'))
                     ->columns(2)
                     ->schema([
                         TextInput::make('name')
-                            ->label('الاسم')
+                            ->label(__('الاسم'))
                             ->required()
                             ->maxLength(255),
 
                         ColorPicker::make('color')
-                            ->label('اللون')
+                            ->label(__('اللون'))
                             ->default('#4f46e5')
                             ->enableSwatches()
                             ->swatches([
@@ -53,7 +65,7 @@ class SubjectResource extends Resource
                                 '#0891b2',
                                 '#7c3aed',
                             ])
-                            ->helperText('يُستخدم لتمييز المادة في الجداول والسجلات.'),
+                            ->helperText(__('يُستخدم لتمييز المادة في الجداول والسجلات.')),
                     ]),
             ]);
     }
@@ -63,18 +75,18 @@ class SubjectResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('الاسم')
+                    ->label(__('الاسم'))
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('color')
-                    ->label('اللون')
+                    ->label(__('اللون'))
                     ->formatStateUsing(fn (string $state): HtmlString => new HtmlString(
                         '<span class="inline-block h-5 w-5 rounded-full ring-1 ring-gray-900/10" style="background-color: '.e($state ?: '#9ca3af').'"></span>'
                     ))
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('schedules_count')
-                    ->label('الحصص')
+                    ->label(__('الحصص'))
                     ->counts('schedules')
                     ->badge()
                     ->color('info'),

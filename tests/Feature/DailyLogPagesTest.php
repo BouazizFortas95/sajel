@@ -20,10 +20,10 @@ class DailyLogPagesTest extends TestCase
         $schedule = Schedule::factory()->create(['user_id' => $user->id]);
         DailyLog::factory()->create(['schedule_id' => $schedule->id]);
 
-        $response = $this->actingAs($user)->get('/auth/daily-logs');
+        $response = $this->actingAs($user)->get('/en/auth/daily-logs');
 
         $response->assertOk();
-        $response->assertSee('السجلات اليومية');
+        $response->assertSee('New Daily log');
     }
 
     public function test_edit_daily_log_page_renders_for_teacher(): void
@@ -34,9 +34,9 @@ class DailyLogPagesTest extends TestCase
         $schedule = Schedule::factory()->create(['user_id' => $user->id]);
         $log = DailyLog::factory()->create(['schedule_id' => $schedule->id]);
 
-        $response = $this->actingAs($user)->get("/auth/daily-logs/{$log->id}/edit");
+        $response = $this->actingAs($user)->get("/en/auth/daily-logs/{$log->id}/edit");
 
         $response->assertOk();
-        $response->assertSee('تأكيد الإنجاز');
+        $response->assertSee('Confirm completion');
     }
 }

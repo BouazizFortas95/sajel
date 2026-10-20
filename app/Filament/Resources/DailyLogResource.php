@@ -34,13 +34,25 @@ class DailyLogResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-book-open';
 
-    protected static ?string $navigationLabel = 'دفتر النصوص';
+    public static function getNavigationLabel(): string
+    {
+        return __('دفتر النصوص');
+    }
 
-    protected static ?string $modelLabel = 'سجل يومي';
+    public static function getModelLabel(): string
+    {
+        return __('سجل يومي');
+    }
 
-    protected static ?string $pluralModelLabel = 'السجلات اليومية';
+    public static function getPluralModelLabel(): string
+    {
+        return __('السجلات اليومية');
+    }
 
-    protected static ?string $navigationGroup = 'التشغيل اليومي';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('التشغيل اليومي');
+    }
 
     protected static ?int $navigationSort = 70;
 
@@ -78,14 +90,14 @@ class DailyLogResource extends Resource
             ->schema([
                 Tabs::make('daily_log_tabs')
                     ->tabs([
-                        Tabs\Tab::make('التحضير المسبق')
+                        Tabs\Tab::make(__('التحضير المسبق'))
                             ->icon('heroicon-o-pencil-square')
                             ->schema([
-                                Section::make('بيانات الحصة')
+                                Section::make(__('بيانات الحصة'))
                                     ->columns(2)
                                     ->schema([
                                         Select::make('schedule_id')
-                                            ->label('الحصة')
+                                            ->label(__('الحصة'))
                                             ->options(function (): array {
                                                 $query = Schedule::query()
                                                     ->with(['subject', 'classroom.level', 'group', 'user']);
@@ -100,7 +112,7 @@ class DailyLogResource extends Resource
                                                         $label = $schedule->label();
 
                                                         if (auth()->user()?->isAdmin()) {
-                                                            $label .= ' — ' . ($schedule->user?->name ?? '');
+                                                            $label .= ' — '.($schedule->user?->name ?? '');
                                                         }
 
                                                         return [$schedule->id => $label];
@@ -116,7 +128,7 @@ class DailyLogResource extends Resource
                                                     $schedule = Schedule::query()->with('subject')->find($state);
 
                                                     if ($schedule) {
-                                                        $set('title', 'درس: '.($schedule->subject?->name ?? ''));
+                                                        $set('title', __('درس: ').($schedule->subject?->name ?? ''));
                                                     }
                                                 }
                                             })
@@ -125,45 +137,45 @@ class DailyLogResource extends Resource
                                                 ->ignore($record?->id)),
 
                                         DatePicker::make('date')
-                                            ->label('التاريخ')
+                                            ->label(__('التاريخ'))
                                             ->required()
                                             ->live()
                                             ->default(today())
                                             ->maxDate(today()),
 
                                         TextInput::make('title')
-                                            ->label('عنوان الحصة')
+                                            ->label(__('عنوان الحصة'))
                                             ->required()
                                             ->maxLength(255)
                                             ->columnSpanFull(),
 
                                         Select::make('status')
-                                            ->label('الحالة')
+                                            ->label(__('الحالة'))
                                             ->options(DailyLogStatus::options())
                                             ->default(DailyLogStatus::Planned->value)
                                             ->disabledOn('edit')
                                             ->required(),
                                     ]),
 
-                                Section::make('المحتوى المخطط (ديناميكي)')
-                                    ->description('ابنِ التحضير عبر كتل مرنة: درس المرحلة المتوسطة، تمهيد، أو درس عام.')
+                                Section::make(__('المحتوى المخطط (ديناميكي)'))
+                                    ->description(__('ابنِ التحضير عبر كتل مرنة: درس المرحلة المتوسطة، تمهيد، أو درس عام.'))
                                     ->schema([
                                         Builder::make('content_data')
-                                            ->label('عناصر التحضير')
+                                            ->label(__('عناصر التحضير'))
                                             ->blocks(static::getContentDataBlocks())
-                                            ->addActionLabel('إضافة عنصر للتحضير')
+                                            ->addActionLabel(__('إضافة عنصر للتحضير'))
                                             ->columnSpanFull()
-                                            ->helperText('تُحفظ كل كتلة ديناميكياً في قاعدة البيانات وتُلخَّص تلقائياً عند تأكيد الإنجاز.'),
+                                            ->helperText(__('تُحفظ كل كتلة ديناميكياً في قاعدة البيانات وتُلخَّص تلقائياً عند تأكيد الإنجاز.')),
                                     ]),
                             ]),
 
-                        Tabs\Tab::make('مرحلة الإنجاز')
+                        Tabs\Tab::make(__('مرحلة الإنجاز'))
                             ->icon('heroicon-o-check-badge')
                             ->schema([
-                                Section::make('الأداء الفعلي في القسم')
+                                Section::make(__('الأداء الفعلي في القسم'))
                                     ->schema([
                                         RichEditor::make('actual_content')
-                                            ->label('المحتوى المنجز فعلياً')
+                                            ->label(__('المحتوى المنجز فعلياً'))
                                             ->columnSpanFull()
                                             ->toolbarButtons([
                                                 'bold',
@@ -173,15 +185,15 @@ class DailyLogResource extends Resource
                                                 'orderedList',
                                                 'link',
                                             ])
-                                            ->helperText('يُملأ بعد الحصة. عند تأكيد الإنجاز دون إدخال أي نص، يُنسخ ملخص التحضير تلقائياً ليصبح السجل الرسمي.'),
+                                            ->helperText(__('يُملأ بعد الحصة. عند تأكيد الإنجاز دون إدخال أي نص، يُنسخ ملخص التحضير تلقائياً ليصبح السجل الرسمي.')),
 
                                         Textarea::make('homework')
-                                            ->label('الواجب المنزلي')
+                                            ->label(__('الواجب المنزلي'))
                                             ->rows(3)
                                             ->columnSpanFull(),
 
                                         Textarea::make('observations')
-                                            ->label('ملاحظات المعلم')
+                                            ->label(__('ملاحظات المعلم'))
                                             ->rows(3)
                                             ->columnSpanFull(),
                                     ]),
@@ -200,52 +212,52 @@ class DailyLogResource extends Resource
     {
         return [
             Builder\Block::make('middle_school_lesson')
-                ->label('درس المرحلة المتوسطة')
+                ->label(__('درس المرحلة المتوسطة'))
                 ->icon('heroicon-o-academic-cap')
                 ->schema([
                     TextInput::make('lesson_title')
-                        ->label('عنوان الدرس')
+                        ->label(__('عنوان الدرس'))
                         ->required()
                         ->columnSpanFull(),
 
                     TextInput::make('competence')
-                        ->label('الكفاءة المستهدفة')
-                        ->placeholder('مثال: يحلّ التلميذ مسائل على الكسور')
+                        ->label(__('الكفاءة المستهدفة'))
+                        ->placeholder(__('مثال: يحلّ التلميذ مسائل على الكسور'))
                         ->columnSpanFull(),
 
                     Select::make('pedagogical_situation')
-                        ->label('الموقف البيداغوجي')
+                        ->label(__('الموقف البيداغوجي'))
                         ->options([
-                            'daily_life' => 'سياق حياتي',
-                            'problem' => 'وضعية إشكالية',
-                            'project' => 'مشروع',
-                            'review' => 'مراجعة',
+                            'daily_life' => __('سياق حياتي'),
+                            'problem' => __('وضعية إشكالية'),
+                            'project' => __('مشروع'),
+                            'review' => __('مراجعة'),
                         ])
                         ->searchable()
                         ->preload(),
 
                     Repeater::make('phases')
-                        ->label('مراحل الدرس')
+                        ->label(__('مراحل الدرس'))
                         ->schema([
                             Select::make('type')
-                                ->label('المرحلة')
+                                ->label(__('المرحلة'))
                                 ->options(LessonPhaseType::options())
                                 ->default(LessonPhaseType::Warmup->value)
                                 ->required(),
 
                             TextInput::make('duration')
-                                ->label('المدة')
+                                ->label(__('المدة'))
                                 ->numeric()
-                                ->suffix('دقيقة'),
+                                ->suffix(__('دقيقة')),
 
                             Textarea::make('description')
-                                ->label('الوصف')
+                                ->label(__('الوصف'))
                                 ->rows(2)
                                 ->columnSpanFull(),
 
                             TextInput::make('strategy')
-                                ->label('استراتيجية التدريس')
-                                ->placeholder('حوار، عمل في أفواج، عرض توضيحي...')
+                                ->label(__('استراتيجية التدريس'))
+                                ->placeholder(__('حوار، عمل في أفواج، عرض توضيحي...'))
                                 ->columnSpanFull(),
                         ])
                         ->columns(2)
@@ -257,37 +269,37 @@ class DailyLogResource extends Resource
                 ->columnSpanFull(),
 
             Builder\Block::make('warmup')
-                ->label('تمهيد / تصحيح الفرض')
+                ->label(__('تمهيد / تصحيح الفرض'))
                 ->icon('heroicon-o-fire')
                 ->schema([
                     Textarea::make('description')
-                        ->label('وصف التمهيد')
+                        ->label(__('وصف التمهيد'))
                         ->rows(2)
                         ->required()
                         ->columnSpanFull(),
 
                     TextInput::make('duration')
-                        ->label('المدة')
+                        ->label(__('المدة'))
                         ->numeric()
-                        ->suffix('دقيقة'),
+                        ->suffix(__('دقيقة')),
                 ]),
 
             Builder\Block::make('general_lesson')
-                ->label('درس عام')
+                ->label(__('درس عام'))
                 ->icon('heroicon-o-document-text')
                 ->schema([
                     TextInput::make('title')
-                        ->label('عنوان المحتوى')
+                        ->label(__('عنوان المحتوى'))
                         ->required()
                         ->columnSpanFull(),
 
                     Textarea::make('objectives')
-                        ->label('الأهداف')
+                        ->label(__('الأهداف'))
                         ->rows(2)
                         ->columnSpanFull(),
 
                     Textarea::make('content')
-                        ->label('محتوى الدرس')
+                        ->label(__('محتوى الدرس'))
                         ->rows(4)
                         ->columnSpanFull(),
                 ]),
@@ -301,27 +313,24 @@ class DailyLogResource extends Resource
      * (bound to the table via ->table()), while page headers use the unified
      * Actions\Action. Hence the same definition is applied to two
      * context-specific instances.
-     *
-     * @param  Actions\Action|Tables\Actions\Action  $action
-     * @return Actions\Action|Tables\Actions\Action
      */
-    protected static function configureConfirmCompletion(Actions\Action | Tables\Actions\Action $action): Actions\Action | Tables\Actions\Action
+    protected static function configureConfirmCompletion(Actions\Action|Tables\Actions\Action $action): Actions\Action|Tables\Actions\Action
     {
         return $action
-            ->label('تأكيد الإنجاز')
+            ->label(__('تأكيد الإنجاز'))
             ->icon('heroicon-o-check-badge')
             ->color('success')
             ->requiresConfirmation()
-            ->modalHeading('تأكيد إنجاز الحصة')
-            ->modalDescription('سيتم تغيير الحالة إلى "منجز" ونسخ ملخص المحتوى المخطط إلى حقل الأداء الفعلي ليصبح السجل الرسمي.')
-            ->modalSubmitActionLabel('تأكيد')
+            ->modalHeading(__('تأكيد إنجاز الحصة'))
+            ->modalDescription(__('سيتم تغيير الحالة إلى "منجز" ونسخ ملخص المحتوى المخطط إلى حقل الأداء الفعلي ليصبح السجل الرسمي.'))
+            ->modalSubmitActionLabel(__('تأكيد'))
             ->visible(fn (DailyLog $record): bool => $record->isPlanned())
             ->action(function (DailyLog $record): void {
                 $record->markAsCompleted();
 
                 Notification::make()
-                    ->title('تم تأكيد الإنجاز')
-                    ->body('أصبح هذا السجل هو المحتوى الرسمي لهذه الحصة.')
+                    ->title(__('تم تأكيد الإنجاز'))
+                    ->body(__('أصبح هذا السجل هو المحتوى الرسمي لهذه الحصة.'))
                     ->success()
                     ->send();
             });
@@ -353,27 +362,27 @@ class DailyLogResource extends Resource
             ->defaultSort('date', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('date')
-                    ->label('التاريخ')
+                    ->label(__('التاريخ'))
                     ->date('Y/m/d')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('title')
-                    ->label('العنوان')
+                    ->label(__('العنوان'))
                     ->searchable()
                     ->limit(35)
                     ->description(fn (DailyLog $record): ?string => $record->schedule?->label()),
 
                 Tables\Columns\TextColumn::make('schedule.subject.name')
-                    ->label('المادة')
+                    ->label(__('المادة'))
                     ->badge()
                     ->color(fn (DailyLog $record): string => $record->schedule?->subject?->color ?? 'gray'),
 
                 Tables\Columns\TextColumn::make('schedule.classroom.name')
-                    ->label('القسم')
+                    ->label(__('القسم'))
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('status')
-                    ->label('الحالة')
+                    ->label(__('الحالة'))
                     ->badge()
                     ->formatStateUsing(fn (DailyLogStatus $state): string => $state->label())
                     ->color(fn (DailyLogStatus $state): string => $state->color())
@@ -381,11 +390,11 @@ class DailyLogResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->label('الحالة')
+                    ->label(__('الحالة'))
                     ->options(DailyLogStatus::options()),
 
                 Tables\Filters\Filter::make('today')
-                    ->label('سجلات اليوم')
+                    ->label(__('سجلات اليوم'))
                     ->query(fn (EloquentBuilder $query) => $query->forDate(today())),
             ])
             ->actions([

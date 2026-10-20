@@ -13,11 +13,11 @@ enum LessonPhaseType: string
     public function label(): string
     {
         return match ($this) {
-            self::Warmup => 'التمهيد / الانطلاق',
-            self::Discovery => 'الاكتشاف',
-            self::Institutionalization => 'الترسيخ',
-            self::Application => 'التطبيق',
-            self::Evaluation => 'التقويم',
+            self::Warmup => __('التمهيد / الانطلاق'),
+            self::Discovery => __('الاكتشاف'),
+            self::Institutionalization => __('الترسيخ'),
+            self::Application => __('التطبيق'),
+            self::Evaluation => __('التقويم'),
         };
     }
 

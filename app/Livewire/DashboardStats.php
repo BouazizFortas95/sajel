@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\DailyLog;
 use App\Models\Schedule;
 use App\Models\Subject;
+use App\Models\User;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -55,13 +56,26 @@ class DashboardStats extends Component
 
     public function render()
     {
+        $user = auth()->user();
+
+        abort_unless($user instanceof User, 403);
+
+        $dailyLogQuery = DailyLog::query()
+            ->with(['schedule.subject', 'schedule.classroom', 'schedule.group'])
+            ->forDate(today());
+
+        if (! $user->isAdmin()) {
+            $dailyLogQuery->forTeacher($user);
+        }
+
         return view('livewire.dashboard-stats', [
             'dailyLogsCount' => $this->dailyLogsCount(),
             'completedCount' => $this->completedCount(),
             'schedulesCount' => $this->schedulesCount(),
             'subjectsCount' => $this->subjectsCount(),
-            'today' => Carbon::today()->format('Y/m/d'),
+            'today' => Carbon::today()->locale(app()->getLocale())->translatedFormat('Y/m/d'),
             'isAdmin' => $this->isAdmin(),
+            'dailyLog' => $dailyLogQuery->latest('updated_at')->first(),
         ]);
     }
 }

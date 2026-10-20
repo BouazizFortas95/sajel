@@ -19,13 +19,25 @@ class ClassroomResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
-    protected static ?string $navigationLabel = 'الأقسام';
+    public static function getNavigationLabel(): string
+    {
+        return __('الأقسام');
+    }
 
-    protected static ?string $modelLabel = 'قسم';
+    public static function getModelLabel(): string
+    {
+        return __('قسم');
+    }
 
-    protected static ?string $pluralModelLabel = 'الأقسام';
+    public static function getPluralModelLabel(): string
+    {
+        return __('الأقسام');
+    }
 
-    protected static ?string $navigationGroup = 'البنية التربوية';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('البنية التربوية');
+    }
 
     protected static ?int $navigationSort = 30;
 
@@ -33,11 +45,11 @@ class ClassroomResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('معلومات القسم')
+                Section::make(__('معلومات القسم'))
                     ->columns(2)
                     ->schema([
                         Select::make('level_id')
-                            ->label('المستوى')
+                            ->label(__('المستوى'))
                             ->options(fn (): array => Level::query()
                                 ->with('educationPhase')
                                 ->get()
@@ -48,13 +60,13 @@ class ClassroomResource extends Resource
                             ->required(),
 
                         TextInput::make('name')
-                            ->label('اسم القسم')
-                            ->placeholder('1م - أ')
+                            ->label(__('اسم القسم'))
+                            ->placeholder(__('1م - أ'))
                             ->required()
                             ->maxLength(255),
 
                         TextInput::make('academic_year')
-                            ->label('السنة الدراسية')
+                            ->label(__('السنة الدراسية'))
                             ->placeholder(now()->year.'-'.(now()->year + 1))
                             ->default(fn (): string => now()->year.'-'.(now()->year + 1))
                             ->maxLength(255),
@@ -67,33 +79,33 @@ class ClassroomResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('level.educationPhase.name')
-                    ->label('الأساس التعليمي')
+                    ->label(__('الأساس التعليمي'))
                     ->badge()
                     ->color('primary')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('level.name')
-                    ->label('المستوى')
+                    ->label(__('المستوى'))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('name')
-                    ->label('القسم')
+                    ->label(__('القسم'))
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('academic_year')
-                    ->label('السنة الدراسية')
+                    ->label(__('السنة الدراسية'))
                     ->badge()
                     ->color('gray'),
 
                 Tables\Columns\TextColumn::make('groups_count')
-                    ->label('المجموعات')
+                    ->label(__('المجموعات'))
                     ->counts('groups')
                     ->badge()
                     ->color('info'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('level_id')
-                    ->label('المستوى')
+                    ->label(__('المستوى'))
                     ->relationship('level', 'name'),
             ])
             ->actions([

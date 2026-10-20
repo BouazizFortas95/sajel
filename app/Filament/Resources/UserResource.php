@@ -22,13 +22,25 @@ class UserResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
-    protected static ?string $navigationLabel = 'المستخدمون';
+    public static function getNavigationLabel(): string
+    {
+        return __('المستخدمون');
+    }
 
-    protected static ?string $modelLabel = 'مستخدم';
+    public static function getModelLabel(): string
+    {
+        return __('مستخدم');
+    }
 
-    protected static ?string $pluralModelLabel = 'المستخدمون';
+    public static function getPluralModelLabel(): string
+    {
+        return __('المستخدمون');
+    }
 
-    protected static ?string $navigationGroup = 'الإدارة';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('الإدارة');
+    }
 
     protected static ?int $navigationSort = 90;
 
@@ -40,38 +52,38 @@ class UserResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('حساب المستخدم')
+                Section::make(__('حساب المستخدم'))
                     ->columns(2)
                     ->schema([
                         TextInput::make('name')
-                            ->label('الاسم')
+                            ->label(__('الاسم'))
                             ->required()
                             ->maxLength(255),
 
                         TextInput::make('email')
-                            ->label('البريد الإلكتروني')
+                            ->label(__('البريد الإلكتروني'))
                             ->email()
                             ->required()
                             ->unique(ignoreRecord: true)
                             ->maxLength(255),
 
                         Select::make('role')
-                            ->label('الدور')
+                            ->label(__('الدور'))
                             ->options(Role::options())
                             ->default(Role::Teacher->value)
                             ->native(false)
                             ->required()
                             ->disabled(fn (?User $record): bool => $record?->is(auth()->user()) ?? false)
-                            ->helperText('لا يمكنك تغيير دور حسابك الحالي.'),
+                            ->helperText(__('لا يمكنك تغيير دور حسابك الحالي.')),
 
                         Password::make('password')
-                            ->label('كلمة المرور')
+                            ->label(__('كلمة المرور'))
                             ->required(fn (string $operation): bool => $operation === 'create')
                             ->rule(PasswordRule::min(8))
                             ->revealable()
                             ->dehydrateStateUsing(fn (string $state): string => Hash::make($state))
                             ->dehydrated(fn (?string $state): bool => filled($state))
-                            ->helperText('اتركها فارغة عند التعديل للإبقاء على كلمة المرور الحالية.'),
+                            ->helperText(__('اتركها فارغة عند التعديل للإبقاء على كلمة المرور الحالية.')),
                     ]),
             ]);
     }
@@ -81,35 +93,35 @@ class UserResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('الاسم')
+                    ->label(__('الاسم'))
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('email')
-                    ->label('البريد الإلكتروني')
+                    ->label(__('البريد الإلكتروني'))
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('role')
-                    ->label('الدور')
+                    ->label(__('الدور'))
                     ->badge()
                     ->formatStateUsing(fn (Role $state): string => $state->label())
                     ->color(fn (Role $state): string => $state->color())
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('schedules_count')
-                    ->label('الحصص')
+                    ->label(__('الحصص'))
                     ->counts('schedules')
                     ->badge()
                     ->color('info'),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
+                    ->label(__('تاريخ الإنشاء'))
                     ->dateTime('Y/m/d H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('role')
-                    ->label('الدور')
+                    ->label(__('الدور'))
                     ->options(Role::options()),
             ])
             ->actions([
