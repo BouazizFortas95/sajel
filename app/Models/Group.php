@@ -31,6 +31,11 @@ class Group extends Model
         return $this->hasMany(Schedule::class);
     }
 
+    public function students(): HasMany
+    {
+        return $this->hasMany(Student::class);
+    }
+
     /**
      * A readable label: classroom full name + group name.
      */

@@ -1,8 +1,8 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-10-21
-> Verified by: running `php artisan test` (**63 passed, 221 assertions**) and
-> `php artisan migrate:status` (**11 migrations, all ran**).
+> Verified by: running `php artisan test` (**70 passed, 253 assertions**) and
+> `php artisan migrate:status` (**15 migrations, all ran**).
 
 ## 1. Overview
 
@@ -23,7 +23,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | Frontend   | Vite `^7`, Tailwind CSS `^4`, Axios      | Filament theme in `resources/css/filament.css` |
 | i18n       | `mcamara/laravel-localization` `^2.4`    | `ar`, `en`, `fr` locales                |
 | Timezone   | `Africa/Algiers`                         | `APP_TIMEZONE`, used for weekly dates   |
-| Testing    | PHPUnit `^11.5`                          | **63 tests / 221 assertions, all green** |
+| Testing    | PHPUnit `^11.5`                          | **70 tests / 253 assertions, all green** |
 | Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
 
 ## 3. Domain Model
@@ -36,6 +36,8 @@ EducationPhase (name, code, settings[])
   └─ Level (name)
        └─ Classroom (name, academic_year)
             └─ Group (name)
+                 └─ Student (first_name, last_name, registration_number?,
+                            date_of_birth?)
 
 Subject (name, color)
 
@@ -53,7 +55,8 @@ User (teacher)
 | `EducationPhase` | Educational phase (e.g. Middle School) with JSON `settings`        |
 | `Level`          | Grade/year within a phase                                          |
 | `Classroom`      | Class section within a level (+ academic year)                     |
-| `Group`          | Sub-division of a classroom                                        |
+| `Group`          | Sub-division of a classroom; has many students                    |
+| `Student`        | Enrolled student (unique nullable registration number) in a group |
 | `Subject`        | Subject with a display color                                       |
 | `Schedule`       | A teacher's weekly recurring lesson slot; `label()` for display    |
 | `DailyLog`       | Per-slot daily log; dynamic `content_data` blocks; register summary generation |
@@ -77,21 +80,29 @@ User (teacher)
 - `DailyLog::markAsCompleted(?string $actualContent = null)` flips status to `Completed` and promotes
   the supplied (or generated) content to `actual_content` (official register entry).
 - `DailyLog::isPlanned()` gates the "confirm completion" action.
+- `Group::students()` and `Student::group()` model the roster; deleting a group cascades to its
+  students. `Student::full_name` combines first and last names for tables and search.
+- Native Filament CSV import (`StudentImporter`) links each row to a group by ID, exact display
+  label, or a unique group name, and keeps blank registration numbers as `null`.
 - Query scopes: `Schedule::forTeacher/onDay`, `DailyLog::forDate/forTeacher`, `EducationPhase::search`.
 - `DayOfWeek::dateInCurrentWeek()` maps a weekday to its date in the current Sunday-first week,
   so weekly cards always act on the correct day's log.
 
 ## 4. Database
 
-All 11 migrations have run (SQLite):
+All 15 migrations have run (SQLite):
 
 - Framework tables: `users` (with sessions), `cache`, `jobs`.
-- Domain tables: `education_phases`, `levels`, `classrooms`, `groups`, `subjects`, `schedules`, `daily_logs`.
+- Domain tables: `education_phases`, `levels`, `classrooms`, `groups`, `students`, `subjects`,
+  `schedules`, `daily_logs`.
+- Filament action tables: `imports`, `exports`, `failed_import_rows` (published from
+  `filament-actions` for native CSV import).
 - `2026_10_20_000001_add_role_to_users_table` adds the `role` column (defaults to `teacher`).
 - Notable constraints: `daily_logs` has a unique `(schedule_id, date)` pair and a `date` index;
-  `schedules` is indexed on `(user_id, day_of_week)`; FKs cascade or nullify appropriately.
+  `schedules` is indexed on `(user_id, day_of_week)`; `students.registration_number` is uniquely
+  indexed but nullable; `students.group_id` cascades on group deletion.
 
-Factories exist for all 7 domain models plus `User`.
+Factories exist for all 8 domain models plus `User`.
 `Database\Seeders\SajelSeeder` seeds a full demo: a teacher (`teacher@sajel.test` / `password`),
 an admin (`admin@sajel.test` / `password`), a middle-school phase, 2 levels, 2 classrooms, 2 groups,
 3 subjects, a weekly schedule, and a planned daily log. `DatabaseSeeder` runs it automatically after
@@ -126,8 +137,15 @@ creating its test user.
 | `ClassroomResource`     | Classrooms / academic years            |
 | `LevelResource`         | Levels                                 |
 | `GroupResource`         | Groups                                 |
+| `StudentResource`       | Students, group assignment, group filter, CSV import |
 | `EducationPhaseResource`| Education phases and settings          |
 | `UserResource`          | Users & roles (admin-only via `UserPolicy`) |
+
+`StudentResource` includes a native Filament CSV import action. Expected headers are
+`first_name`, `last_name`, `registration_number`, `date_of_birth`, and `group`. The `group` value
+may be a group ID, its exact `display_name()` label, or a group name when that name is unique.
+Blank registration numbers and birth dates are stored as `null`. Imports run on the queue
+(`QUEUE_CONNECTION=database`), so a queue worker must be running; `composer dev` starts one.
 
 ### Pages & Widgets
 
@@ -165,7 +183,7 @@ creating its test user.
 
 ## 7. Testing
 
-`php artisan test` — **63 passing, 221 assertions**:
+`php artisan test` — **70 passing, 253 assertions**:
 
 | Suite                                  | Tests | Covers                                                        |
 |----------------------------------------|-------|---------------------------------------------------------------|
@@ -177,15 +195,16 @@ creating its test user.
 | `Tests\Feature\MySchedulePageTest`     | 4     | Teacher-only access, day/week views, guest redirect           |
 | `Tests\Feature\TeacherInteractiveScheduleTest` | 22 | Rendering, colours, dark mode, day/search/view/expand interactions, complete/cancel, stats, date-aware log navigation, teacher scoping |
 | `Tests\Feature\TeacherTimetableTest`   | 8     | Fixed five-day/seven-slot grid, matrix mapping, empty placeholders, teacher scoping, current-week click dates, stale-date fallback, date-aware log navigation |
+| `Tests\Feature\StudentManagementTest`  | 7     | Student/group relationships, cascade delete, resource access, form creation, unique nullable registration, group filter, CSV importer group linking |
 | `Tests\Feature\WelcomeAndDashboardTest`| 7     | Welcome page links, login/register access, guest redirect, dashboard stats/quick links, French and Arabic/RTL localization |
 
 ## 8. Project Health Snapshot
 
 | Aspect            | Status                                             |
 |-------------------|----------------------------------------------------|
-| Migrations        | ✅ All 11 ran                                      |
-| Test suite        | ✅ 63/63 passing (221 assertions)                  |
-| Admin panel       | ✅ Functional with 8 resources + Livewire dashboard + ar/en/fr locales |
+| Migrations        | ✅ All 15 ran                                      |
+| Test suite        | ✅ 70/70 passing (253 assertions)                  |
+| Admin panel       | ✅ Functional with 9 resources + Livewire dashboard + ar/en/fr locales |
 | Seed data         | ✅ Demo seeder available (teacher + admin)         |
 | Version control   | ✅ Git repo initialized on `main` branch           |
 | README            | ⚠️ Still the default Laravel skeleton README       |
@@ -194,12 +213,11 @@ creating its test user.
 
 ## 9. Known Gaps / Next Steps
 
-1. **Student management**: no `Student` model yet — groups have no rosters.
-2. **Gradebook / assessments**: not implemented.
-3. **Reports & export**: no PDF/Excel export of the register or schedules.
-4. **Notifications/reminders**: no reminders for unlogged sessions.
-5. **README**: replace the skeleton README with a project-specific one (or point it to this doc).
-6. **Default locale**: `.env` uses `APP_LOCALE=en`; the landing page falls back to English unless a
+1. **Gradebook / assessments**: not implemented.
+2. **Reports & export**: no PDF/Excel export of the register or schedules.
+3. **Notifications/reminders**: no reminders for unlogged sessions.
+4. **README**: replace the skeleton README with a project-specific one (or point it to this doc).
+5. **Default locale**: `.env` uses `APP_LOCALE=en`; the landing page falls back to English unless a
    `/{locale}` path is used.
 
 ## 10. Dashboard Livewire Remake (dark-mode safe)
@@ -211,7 +229,7 @@ creating its test user.
 - [x] 3. Update `app/Filament/Pages/Dashboard.php` — import the Livewire component instead of `SajelStats` widget
 - [x] 4. Remove/replace `SajelStats` widget (dark-mode text visibility issue)
 - [x] 5. Verify dark mode: stat card titles, values, descriptions, and chart colors all readable
-- [x] 6. Run `php artisan test` — all 63 tests pass
+- [x] 6. Run `php artisan test` — all 70 tests pass
 - [x] 7. Run `vendor/bin/pint` — code formatted
 - [x] 8. Update `STATUS_PROJECT.md` with completion notes
 
@@ -226,6 +244,9 @@ php artisan migrate
 php artisan db:seed --class=SajelSeeder   # optional demo data
 composer dev            # serve + queue + logs + vite concurrently
 ```
+
+If you run only `php artisan serve` instead of `composer dev`, also start a queue worker so CSV
+imports are processed (`php artisan queue:work`).
 
 Then open the app URL and visit `/auth` (login/register). Demo accounts:
 
