@@ -4,9 +4,11 @@ namespace App\Livewire;
 
 use App\Enums\DailyLogStatus;
 use App\Enums\DayOfWeek;
+use App\Filament\Resources\DailyLogResource;
 use App\Models\DailyLog;
 use App\Models\Schedule;
-use Carbon\Carbon;
+use App\Models\User;
+use Carbon\CarbonInterface;
 use Filament\Notifications\Notification;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -79,14 +81,23 @@ class TeacherInteractiveSchedule extends Component
     }
 
     /**
-     * Today's daily logs keyed by schedule_id for quick lookup in the view.
+     * The calendar date represented by the selected weekday in this week.
      */
     #[Computed]
-    public function todaysLogs()
+    public function selectedDate(): CarbonInterface
+    {
+        return DayOfWeek::tryFrom($this->selectedDay)?->dateInCurrentWeek() ?? today();
+    }
+
+    /**
+     * Daily logs for the selected day keyed by schedule_id for quick lookup.
+     */
+    #[Computed]
+    public function logsForSelectedDate()
     {
         return DailyLog::query()
             ->forTeacher(auth()->user())
-            ->forDate(today())
+            ->forDate($this->selectedDate)
             ->get()
             ->keyBy('schedule_id');
     }
@@ -98,7 +109,7 @@ class TeacherInteractiveSchedule extends Component
     public function scheduleStats(): array
     {
         $schedules = $this->schedules;
-        $logs = $this->todaysLogs;
+        $logs = $this->logsForSelectedDate;
 
         return [
             'total' => $schedules->count(),
@@ -126,22 +137,48 @@ class TeacherInteractiveSchedule extends Component
     }
 
     /**
-     * Mark today's daily log for a schedule as completed (create if missing).
+     * Open the daily log for a schedule: edit the log of the selected
+     * day, or open the create page with the schedule prefilled.
      */
-    public function markCompleted(int $scheduleId): void
+    public function openLog(int $scheduleId): void
     {
-        $schedule = Schedule::with('subject')->find($scheduleId);
+        $schedule = $this->findScheduleForCurrentTeacher($scheduleId);
 
         if (! $schedule) {
             return;
         }
 
-        $log = $schedule->dailyLogs()->forDate(today())->first();
+        $log = $schedule->dailyLogs()->forDate($this->selectedDate)->first();
+
+        $this->redirect($log
+            ? DailyLogResource::getUrl('edit', [
+                'record' => $log,
+                'locale' => app()->getLocale(),
+            ])
+            : DailyLogResource::getUrl('create', [
+                'schedule_id' => $schedule->id,
+                'date' => $this->selectedDate->toDateString(),
+                'locale' => app()->getLocale(),
+            ]));
+    }
+
+    /**
+     * Mark the selected day's daily log for a schedule as completed (create if missing).
+     */
+    public function markCompleted(int $scheduleId): void
+    {
+        $schedule = $this->findScheduleForCurrentTeacher($scheduleId);
+
+        if (! $schedule) {
+            return;
+        }
+
+        $log = $schedule->dailyLogs()->forDate($this->selectedDate)->first();
 
         if (! $log) {
             $log = DailyLog::create([
                 'schedule_id' => $schedule->id,
-                'date' => today(),
+                'date' => $this->selectedDate,
                 'title' => __('درس: ').($schedule->subject?->name ?? ''),
                 'content_data' => [],
                 'status' => DailyLogStatus::Planned->value,
@@ -159,22 +196,22 @@ class TeacherInteractiveSchedule extends Component
     }
 
     /**
-     * Cancel today's daily log for a schedule (create if missing).
+     * Cancel the selected day's daily log for a schedule (create if missing).
      */
     public function cancelLog(int $scheduleId): void
     {
-        $schedule = Schedule::find($scheduleId);
+        $schedule = $this->findScheduleForCurrentTeacher($scheduleId);
 
         if (! $schedule) {
             return;
         }
 
-        $log = $schedule->dailyLogs()->forDate(today())->first();
+        $log = $schedule->dailyLogs()->forDate($this->selectedDate)->first();
 
         if (! $log) {
             $log = DailyLog::create([
                 'schedule_id' => $schedule->id,
-                'date' => today(),
+                'date' => $this->selectedDate,
                 'title' => __('درس: ').($schedule->subject?->name ?? ''),
                 'content_data' => [],
                 'status' => DailyLogStatus::Cancelled->value,
@@ -190,6 +227,24 @@ class TeacherInteractiveSchedule extends Component
             ->title(__('تم إلغاء الحصة'))
             ->warning()
             ->send();
+    }
+
+    /**
+     * Resolve a schedule only when it belongs to the signed-in teacher.
+     * Prevents crafted Livewire calls from touching other teachers' data.
+     */
+    protected function findScheduleForCurrentTeacher(int $scheduleId): ?Schedule
+    {
+        $user = auth()->user();
+
+        if (! $user instanceof User) {
+            return null;
+        }
+
+        return Schedule::query()
+            ->with('subject')
+            ->forTeacher($user)
+            ->find($scheduleId);
     }
 
     public function render()

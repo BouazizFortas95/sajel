@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\DailyLogStatus;
 use App\Enums\DayOfWeek;
+use App\Filament\Resources\DailyLogResource;
 use App\Livewire\TeacherInteractiveSchedule;
 use App\Models\Classroom;
 use App\Models\DailyLog;
@@ -352,13 +353,13 @@ class TeacherInteractiveScheduleTest extends TestCase
 
         DailyLog::factory()->create([
             'schedule_id' => $completed->id,
-            'date' => today(),
+            'date' => DayOfWeek::Monday->dateInCurrentWeek(),
             'status' => DailyLogStatus::Completed,
         ]);
 
         DailyLog::factory()->create([
             'schedule_id' => $cancelled->id,
-            'date' => today(),
+            'date' => DayOfWeek::Monday->dateInCurrentWeek(),
             'status' => DailyLogStatus::Cancelled,
         ]);
 
@@ -391,6 +392,77 @@ class TeacherInteractiveScheduleTest extends TestCase
         $this->assertCount(1, $component->instance()->schedules);
     }
 
+    public function test_it_opens_the_existing_log_for_a_schedule(): void
+    {
+        $user = $this->makeTeacher();
+        $schedule = $this->makeSchedule($user, DayOfWeek::Monday);
+
+        $log = DailyLog::factory()->create([
+            'schedule_id' => $schedule->id,
+            'date' => today(),
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(TeacherInteractiveSchedule::class)
+            ->call('openLog', $schedule->id)
+            ->assertRedirect(DailyLogResource::getUrl('edit', [
+                'record' => $log,
+                'locale' => 'en',
+            ]));
+    }
+
+    public function test_it_opens_the_prefilled_create_page_when_no_log_exists(): void
+    {
+        $user = $this->makeTeacher();
+        $schedule = $this->makeSchedule($user, DayOfWeek::Monday);
+
+        $this->actingAs($user);
+
+        Livewire::test(TeacherInteractiveSchedule::class)
+            ->call('openLog', $schedule->id)
+            ->assertRedirect(DailyLogResource::getUrl('create', [
+                'schedule_id' => $schedule->id,
+                'date' => today()->toDateString(),
+                'locale' => 'en',
+            ]));
+    }
+
+    public function test_it_opens_the_create_page_for_the_selected_day(): void
+    {
+        $user = $this->makeTeacher();
+        $schedule = $this->makeSchedule($user, DayOfWeek::Monday);
+
+        $this->actingAs($user);
+
+        $monday = DayOfWeek::Monday->dateInCurrentWeek();
+
+        Livewire::test(TeacherInteractiveSchedule::class)
+            ->set('selectedDay', DayOfWeek::Monday->value)
+            ->call('openLog', $schedule->id)
+            ->assertRedirect(DailyLogResource::getUrl('create', [
+                'schedule_id' => $schedule->id,
+                'date' => $monday->toDateString(),
+                'locale' => 'en',
+            ]));
+    }
+
+    public function test_it_cannot_open_or_modify_another_teachers_schedule(): void
+    {
+        $teacher = $this->makeTeacher();
+        $other = $this->makeTeacher();
+        $otherSchedule = $this->makeSchedule($other, DayOfWeek::Monday);
+
+        $this->actingAs($teacher);
+
+        Livewire::test(TeacherInteractiveSchedule::class)
+            ->call('openLog', $otherSchedule->id)
+            ->assertNoRedirect()
+            ->call('markCompleted', $otherSchedule->id)
+            ->call('cancelLog', $otherSchedule->id);
+
+        $this->assertDatabaseCount('daily_logs', 0);
+    }
 
     public function test_it_renders_a_group_name_when_present(): void
     {
@@ -455,6 +527,6 @@ class TeacherInteractiveScheduleTest extends TestCase
             $class,
         );
 
-        return str_contains($css, '.' . $escaped);
+        return str_contains($css, '.'.$escaped);
     }
-}
+}

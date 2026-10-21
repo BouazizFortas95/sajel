@@ -229,5 +229,18 @@
     "إلغاء": "Cancel",
     "عرض التفاصيل": "View details",
     "تم تمييز الحصة كمنجزة": "Lesson marked as completed",
-    "تم إلغاء الحصة": "Lesson cancelled"
+    "تم إلغاء الحصة": "Lesson cancelled",
+    "فتح السجل": "Open log",
+    "إنشاء سجل": "Create log",
+    "جدولي الأسبوعي": "My weekly schedule",
+    "حصصك اليومية والوصول المباشر لسجلاتها": "Your lessons with direct access to their logs",
+    "طرق العرض": "View options",
+    "عرض اليوم": "Day view",
+    "عرض الأسبوع": "Week view",
+    "جدول الحصص الأسبوعي": "Weekly lesson schedule",
+    "عرض أسبوعي لحصصك. اختر أي حصة للانتقال إلى سجلها اليومي.": "A weekly view of your lessons. Choose a lesson to open its daily log.",
+    "لا توجد حصص مجدولة": "No scheduled lessons",
+    "ستظهر حصصك الأسبوعية هنا بعد إضافتها إلى جدولك.": "Your weekly lessons will appear here once you add them to your schedule.",
+    "فتح سجل الحصة: :subject، :time": "Open the lesson log: :subject, :time",
+    "اليوم الحالي": "Today"
 }

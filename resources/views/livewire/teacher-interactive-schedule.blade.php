@@ -17,7 +17,7 @@
     use Filament\Support\Colors\Color;
 
     $schedules = $this->schedules;
-    $logs = $this->todaysLogs;
+    $logs = $this->logsForSelectedDate;
     $stats = $this->scheduleStats;
 
     $isGrid = $viewMode === 'grid';
@@ -196,7 +196,7 @@
                                                     {{ __('نص الحصة') }}
                                                 </div>
                                                 <div class="text-sm text-gray-950 dark:text-white">
-                                                    {{ $log->actual_content }}
+                                                    {{ \Illuminate\Support\Str::of(strip_tags($log->actual_content))->squish()->limit(300) }}
                                                 </div>
                                             </div>
                                         @endif
@@ -226,7 +226,19 @@
                                 @endif
                             </div>
 
-                            <div class="flex items-center gap-2 pt-2">
+                            <div class="flex flex-wrap items-center gap-2 pt-2">
+                                <x-filament::button
+                                    size="sm"
+                                    color="gray"
+                                    outlined
+                                    icon="heroicon-m-arrow-top-right-on-square"
+                                    wire:click="openLog({{ $schedule->id }})"
+                                    wire:loading.attr="disabled"
+                                    wire:target="openLog({{ $schedule->id }})"
+                                >
+                                    {{ $log ? __('فتح السجل') : __('إنشاء سجل') }}
+                                </x-filament::button>
+
                                 <x-filament::button
                                     size="sm"
                                     color="success"

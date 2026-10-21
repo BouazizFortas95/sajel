@@ -177,6 +177,8 @@ class DailyLogResource extends Resource
                                         RichEditor::make('actual_content')
                                             ->label(__('المحتوى المنجز فعلياً'))
                                             ->columnSpanFull()
+                                            ->visible(fn (Get $get): bool => $get('status') === DailyLogStatus::Completed->value)
+                                            ->required(fn (Get $get): bool => $get('status') === DailyLogStatus::Completed->value)
                                             ->toolbarButtons([
                                                 'bold',
                                                 'italic',
@@ -190,6 +192,7 @@ class DailyLogResource extends Resource
                                         Textarea::make('homework')
                                             ->label(__('الواجب المنزلي'))
                                             ->rows(3)
+                                            ->visible(fn (Get $get): bool => $get('status') === DailyLogStatus::Completed->value)
                                             ->columnSpanFull(),
 
                                         Textarea::make('observations')
@@ -211,6 +214,41 @@ class DailyLogResource extends Resource
     public static function getContentDataBlocks(): array
     {
         return [
+            Builder\Block::make('lesson_structure')
+                ->label(__('بنية الدرس'))
+                ->icon('heroicon-o-academic-cap')
+                ->schema([
+                    TextInput::make('competence')
+                        ->label(__('الكفاءة المستهدفة'))
+                        ->columnSpanFull(),
+
+                    Repeater::make('lesson_phases')
+                        ->label(__('مراحل الدرس'))
+                        ->schema([
+                            TextInput::make('phase_name')
+                                ->label(__('اسم المرحلة'))
+                                ->required(),
+
+                            RichEditor::make('content')
+                                ->label(__('محتوى المرحلة'))
+                                ->toolbarButtons([
+                                    'bold',
+                                    'italic',
+                                    'underline',
+                                    'bulletedList',
+                                    'orderedList',
+                                    'link',
+                                ])
+                                ->columnSpanFull(),
+                        ])
+                        ->columns(2)
+                        ->defaultItems(1)
+                        ->reorderable()
+                        ->collapsible()
+                        ->itemLabel(fn (array $state): ?string => $state['phase_name'] ?? null),
+                ])
+                ->columnSpanFull(),
+
             Builder\Block::make('middle_school_lesson')
                 ->label(__('درس المرحلة المتوسطة'))
                 ->icon('heroicon-o-academic-cap')
@@ -326,7 +364,7 @@ class DailyLogResource extends Resource
             ->modalSubmitActionLabel(__('تأكيد'))
             ->visible(fn (DailyLog $record): bool => $record->isPlanned())
             ->action(function (DailyLog $record): void {
-                $record->markAsCompleted();
+                $record->markAsCompleted(static::generateActualContent($record));
 
                 Notification::make()
                     ->title(__('تم تأكيد الإنجاز'))
@@ -334,6 +372,67 @@ class DailyLogResource extends Resource
                     ->success()
                     ->send();
             });
+    }
+
+    protected static function generateActualContent(DailyLog $record): string
+    {
+        $html = ['<h2>'.e($record->title).'</h2>'];
+
+        foreach ($record->content_data ?? [] as $block) {
+            if (! is_array($block)) {
+                continue;
+            }
+
+            $type = $block['type'] ?? null;
+            $data = is_array($block['data'] ?? null) ? $block['data'] : [];
+
+            if ($type === 'lesson_structure' || $type === 'middle_school_lesson') {
+                if (filled($data['competence'] ?? null)) {
+                    $html[] = '<h3>'.e(__('الكفاءة المستهدفة')).'</h3><p>'.e($data['competence']).'</p>';
+                }
+
+                $phases = $data['lesson_phases'] ?? $data['phases'] ?? [];
+
+                foreach (is_array($phases) ? $phases : [] as $index => $phase) {
+                    if (! is_array($phase)) {
+                        continue;
+                    }
+
+                    $phaseType = is_string($phase['type'] ?? null)
+                        ? LessonPhaseType::tryFrom($phase['type'])
+                        : null;
+                    $name = (is_string($phase['phase_name'] ?? null) && filled($phase['phase_name']))
+                        ? $phase['phase_name']
+                        : $phaseType?->label()
+                        ?? __('المرحلة').' '.($index + 1);
+                    $content = $phase['content'] ?? $phase['description'] ?? null;
+
+                    $html[] = '<h4>'.e($name).'</h4>';
+
+                    if (is_scalar($content) && filled($content)) {
+                        $html[] = '<p>'.nl2br(e(strip_tags((string) $content))).'</p>';
+                    }
+                }
+
+                continue;
+            }
+
+            if ($type === 'general_lesson') {
+                foreach (['title' => __('عنوان المحتوى'), 'objectives' => __('الأهداف'), 'content' => __('محتوى الدرس')] as $key => $label) {
+                    if (filled($data[$key] ?? null)) {
+                        $html[] = '<h3>'.e($label).'</h3><p>'.nl2br(e(strip_tags((string) $data[$key]))).'</p>';
+                    }
+                }
+
+                continue;
+            }
+
+            if ($type === 'warmup' && filled($data['description'] ?? null)) {
+                $html[] = '<h3>'.e(__('تمهيد')).'</h3><p>'.nl2br(e(strip_tags((string) $data['description']))).'</p>';
+            }
+        }
+
+        return implode("\n", $html);
     }
 
     /**

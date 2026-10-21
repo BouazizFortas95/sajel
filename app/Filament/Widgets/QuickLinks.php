@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\MySchedule;
 use App\Filament\Resources\ClassroomResource;
 use App\Filament\Resources\DailyLogResource;
 use App\Filament\Resources\EducationPhaseResource;
@@ -38,6 +39,12 @@ class QuickLinks extends Widget
     protected function getLinks(): array
     {
         return [
+            [
+                'label' => __('جدولي الأسبوعي'),
+                'description' => __('حصصك اليومية والوصول المباشر لسجلاتها'),
+                'icon' => 'calendar',
+                'url' => MySchedule::getUrl(),
+            ],
             [
                 'label' => __('دفتر النصوص'),
                 'description' => __('سجلاتك اليومية والتحضير'),

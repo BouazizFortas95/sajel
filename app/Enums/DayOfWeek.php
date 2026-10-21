@@ -2,6 +2,9 @@
 
 namespace App\Enums;
 
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
+
 enum DayOfWeek: string
 {
     case Sunday = 'sunday';
@@ -32,6 +35,20 @@ enum DayOfWeek: string
             self::Monday, self::Wednesday => 'primary',
             self::Friday, self::Saturday => 'gray',
         };
+    }
+
+    /**
+     * The date of this weekday in the reference week (Sunday-first).
+     */
+    public function dateInCurrentWeek(?CarbonInterface $reference = null): Carbon
+    {
+        $reference = $reference ?? today();
+
+        $index = array_search($this, self::cases(), true);
+
+        return Carbon::instance($reference)
+            ->startOfWeek(Carbon::SUNDAY)
+            ->addDays($index === false ? 0 : $index);
     }
 
     /**

@@ -225,5 +225,18 @@
     "إلغاء": "Annuler",
     "عرض التفاصيل": "Voir les détails",
     "تم تمييز الحصة كمنجزة": "Cours marqué comme terminé",
-    "تم إلغاء الحصة": "Cours annulé"
+    "تم إلغاء الحصة": "Cours annulé",
+    "فتح السجل": "Ouvrir le journal",
+    "إنشاء سجل": "Créer un journal",
+    "جدولي الأسبوعي": "Mon emploi du temps",
+    "حصصك اليومية والوصول المباشر لسجلاتها": "Vos cours et accès direct à leurs journaux",
+    "طرق العرض": "Modes d’affichage",
+    "عرض اليوم": "Vue du jour",
+    "عرض الأسبوع": "Vue de la semaine",
+    "جدول الحصص الأسبوعي": "Emploi du temps hebdomadaire",
+    "عرض أسبوعي لحصصك. اختر أي حصة للانتقال إلى سجلها اليومي.": "Une vue hebdomadaire de vos cours. Choisissez un cours pour ouvrir son journal quotidien.",
+    "لا توجد حصص مجدولة": "Aucun cours programmé",
+    "ستظهر حصصك الأسبوعية هنا بعد إضافتها إلى جدولك.": "Vos cours hebdomadaires apparaîtront ici dès que vous les aurez ajoutés à votre emploi du temps.",
+    "فتح سجل الحصة: :subject، :time": "Ouvrir le journal du cours : :subject, :time",
+    "اليوم الحالي": "Aujourd’hui"
 }
