@@ -228,3 +228,16 @@ Then open the app URL and visit `/auth` (login/register). Demo accounts:
 
 - Teacher: `teacher@sajel.test` / `password`
 - Admin: `admin@sajel.test` / `password`
+
+### Filament component cache
+
+If you add Filament pages/resources after running `php artisan filament:optimize` (or if
+`bootstrap/cache/filament/panels/*.php` exists from an earlier run), web requests keep using the
+stale component list and may throw `RouteNotFoundException` for new pages — even though
+`php artisan route:list` shows them (console commands bypass this cache). Refresh or clear it:
+
+```bash
+php artisan filament:cache-components   # re-cache the current components
+# or, in development:
+php artisan filament:optimize-clear     # remove the cache entirely
+```
