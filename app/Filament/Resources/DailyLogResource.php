@@ -7,6 +7,7 @@ use App\Enums\LessonPhaseType;
 use App\Filament\Resources\DailyLogResource\Pages;
 use App\Models\DailyLog;
 use App\Models\Schedule;
+use Carbon\Carbon;
 use Filament\Actions;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\DatePicker;
@@ -98,6 +99,21 @@ class DailyLogResource extends Resource
                                     ->schema([
                                         Select::make('schedule_id')
                                             ->label(__('الحصة'))
+                                            ->default(function (): ?int {
+                                                $scheduleId = request()->query('schedule_id');
+
+                                                if (! is_scalar($scheduleId) || (int) $scheduleId <= 0) {
+                                                    return null;
+                                                }
+
+                                                return Schedule::query()
+                                                    ->when(
+                                                        ! auth()->user()?->isAdmin(),
+                                                        fn (EloquentBuilder $query) => $query->forTeacher((int) Auth::id()),
+                                                    )
+                                                    ->whereKey((int) $scheduleId)
+                                                    ->value('id');
+                                            })
                                             ->options(function (): array {
                                                 $query = Schedule::query()
                                                     ->with(['subject', 'classroom.level', 'group', 'user']);
@@ -140,7 +156,13 @@ class DailyLogResource extends Resource
                                             ->label(__('التاريخ'))
                                             ->required()
                                             ->live()
-                                            ->default(today())
+                                            ->default(function (): string {
+                                                $date = request()->query('date');
+
+                                                return is_string($date) && Carbon::hasFormat($date, 'Y-m-d')
+                                                    ? $date
+                                                    : today()->toDateString();
+                                            })
                                             ->maxDate(today()),
 
                                         TextInput::make('title')

@@ -60,6 +60,7 @@
                                 @php
                                     $isToday = $day === $today;
                                     $schedule = $grid[$day->value][$row['start']] ?? null;
+                                    $date = $weekDates[$day->value];
                                 @endphp
 
                                 <div
@@ -69,9 +70,9 @@
                                     @if ($schedule)
                                         <button
                                             type="button"
-                                            wire:click="openLogForSchedule({{ $schedule->id }})"
+                                            wire:click="openLog({{ $schedule->id }}, '{{ $date }}')"
                                             @class([
-                                                'group flex h-full min-h-[5.25rem] w-full flex-col justify-between gap-2 rounded-xl border border-gray-200 border-s-4 border-s-amber-500 bg-white p-3 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-50 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:border-white/10 dark:border-s-amber-400 dark:bg-gray-800 dark:hover:border-amber-300 dark:hover:bg-amber-400/10 dark:focus-visible:ring-offset-gray-900',
+                                                'group flex h-full min-h-[5.25rem] w-full cursor-pointer flex-col justify-between gap-2 rounded-xl border border-gray-200 border-s-4 border-s-amber-500 bg-white p-3 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-50 hover:shadow-md hover:ring-2 hover:ring-amber-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:border-white/10 dark:border-s-amber-400 dark:bg-gray-800 dark:hover:border-amber-300 dark:hover:bg-amber-400/10 dark:hover:ring-amber-400/40 dark:focus-visible:ring-offset-gray-900',
                                                 'ring-1 ring-amber-300/70 dark:ring-amber-400/30' => $isToday,
                                             ])
                                             aria-label="{{ __('فتح سجل الحصة: :subject، :time', ['subject' => $schedule->subject?->name ?? __('بدون مادة'), 'time' => $row['start'].' - '.$row['end']]) }}"

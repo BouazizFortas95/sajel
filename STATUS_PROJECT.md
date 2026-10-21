@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-10-21
-> Verified by: running `php artisan test` (**61 passed, 217 assertions**) and
+> Verified by: running `php artisan test` (**63 passed, 221 assertions**) and
 > `php artisan migrate:status` (**11 migrations, all ran**).
 
 ## 1. Overview
@@ -22,7 +22,8 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | Database   | SQLite                                   | `database/database.sqlite` present      |
 | Frontend   | Vite `^7`, Tailwind CSS `^4`, Axios      | Filament theme in `resources/css/filament.css` |
 | i18n       | `mcamara/laravel-localization` `^2.4`    | `ar`, `en`, `fr` locales                |
-| Testing    | PHPUnit `^11.5`                          | **61 tests / 217 assertions, all green** |
+| Timezone   | `Africa/Algiers`                         | `APP_TIMEZONE`, used for weekly dates   |
+| Testing    | PHPUnit `^11.5`                          | **63 tests / 221 assertions, all green** |
 | Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
 
 ## 3. Domain Model
@@ -143,9 +144,10 @@ creating its test user.
     expandable cards, complete/cancel actions, and "فتح السجل"/"إنشاء سجل".
   - **Week view**: `TeacherTimetable` — a fixed Sunday–Thursday grid with seven one-hour slots
     (08:00–12:00 and 14:00–17:00), a lunch-break row, and explicit dashed placeholders for empty
-    slots. Every populated slot is one click away from its daily log.
-  Both views resolve the weekday's actual date in the current week and open the existing log
-  (edit) or a prefilled create page (`schedule_id` + `date` query parameters).
+    slots. Each populated card passes its column's current-week date to `openLog()`, which opens
+    the existing log (edit) or a prefilled create page (`schedule_id` + `date` query parameters).
+  Both views resolve weekday dates in the `Africa/Algiers` timezone and open the existing log
+  or a prefilled create page.
 - `QuickLinks` widget (`app/Filament/Widgets/QuickLinks.php`): dashboard navigation cards,
   including the new weekly schedule page (custom Blade view), using Sajel brand colours and
   responsive grid classes.
@@ -163,7 +165,7 @@ creating its test user.
 
 ## 7. Testing
 
-`php artisan test` — **61 passing, 217 assertions**:
+`php artisan test` — **63 passing, 221 assertions**:
 
 | Suite                                  | Tests | Covers                                                        |
 |----------------------------------------|-------|---------------------------------------------------------------|
@@ -174,7 +176,7 @@ creating its test user.
 | `Tests\Feature\DashboardThemeTest`     | 7     | No missing utility classes, dark mode + theme asset, RTL Arabic panel + topbar switcher, brand colours, widget layout, stat tabs |
 | `Tests\Feature\MySchedulePageTest`     | 4     | Teacher-only access, day/week views, guest redirect           |
 | `Tests\Feature\TeacherInteractiveScheduleTest` | 22 | Rendering, colours, dark mode, day/search/view/expand interactions, complete/cancel, stats, date-aware log navigation, teacher scoping |
-| `Tests\Feature\TeacherTimetableTest`   | 6     | Fixed five-day/seven-slot grid, matrix mapping, empty placeholders, teacher scoping, date-aware log navigation |
+| `Tests\Feature\TeacherTimetableTest`   | 8     | Fixed five-day/seven-slot grid, matrix mapping, empty placeholders, teacher scoping, current-week click dates, stale-date fallback, date-aware log navigation |
 | `Tests\Feature\WelcomeAndDashboardTest`| 7     | Welcome page links, login/register access, guest redirect, dashboard stats/quick links, French and Arabic/RTL localization |
 
 ## 8. Project Health Snapshot
@@ -182,7 +184,7 @@ creating its test user.
 | Aspect            | Status                                             |
 |-------------------|----------------------------------------------------|
 | Migrations        | ✅ All 11 ran                                      |
-| Test suite        | ✅ 61/61 passing (217 assertions)                  |
+| Test suite        | ✅ 63/63 passing (221 assertions)                  |
 | Admin panel       | ✅ Functional with 8 resources + Livewire dashboard + ar/en/fr locales |
 | Seed data         | ✅ Demo seeder available (teacher + admin)         |
 | Version control   | ✅ Git repo initialized on `main` branch           |
@@ -209,7 +211,7 @@ creating its test user.
 - [x] 3. Update `app/Filament/Pages/Dashboard.php` — import the Livewire component instead of `SajelStats` widget
 - [x] 4. Remove/replace `SajelStats` widget (dark-mode text visibility issue)
 - [x] 5. Verify dark mode: stat card titles, values, descriptions, and chart colors all readable
-- [x] 6. Run `php artisan test` — all 61 tests pass
+- [x] 6. Run `php artisan test` — all 63 tests pass
 - [x] 7. Run `vendor/bin/pint` — code formatted
 - [x] 8. Update `STATUS_PROJECT.md` with completion notes
 

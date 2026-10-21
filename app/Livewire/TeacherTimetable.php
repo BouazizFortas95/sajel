@@ -6,6 +6,7 @@ use App\Enums\DayOfWeek;
 use App\Filament\Resources\DailyLogResource;
 use App\Models\Schedule;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -49,10 +50,14 @@ class TeacherTimetable extends Component
     ];
 
     /**
-     * Open the daily log for a schedule slot: edit the log of that
-     * weekday, or create it with the schedule prefilled.
+     * Open the daily log for a schedule slot on the clicked date.
+     *
+     * The date is validated against the schedule's weekday in the current
+     * week, so a stale page or a tampered request cannot target another
+     * week. An existing log opens in edit mode; otherwise the create form
+     * receives the schedule and date as query parameters.
      */
-    public function openLogForSchedule(int $scheduleId): void
+    public function openLog(int $scheduleId, string $date): void
     {
         $user = auth()->user();
 
@@ -62,7 +67,18 @@ class TeacherTimetable extends Component
             ->forTeacher($user)
             ->findOrFail($scheduleId);
 
-        $date = $schedule->day_of_week->dateInCurrentWeek();
+        $timezone = config('app.timezone');
+        $expectedDate = $schedule->day_of_week
+            ->dateInCurrentWeek(now($timezone))
+            ->startOfDay();
+
+        $date = Carbon::hasFormat($date, 'Y-m-d')
+            ? Carbon::createFromFormat('Y-m-d', $date, $timezone)->startOfDay()
+            : $expectedDate;
+
+        if (! $date->isSameDay($expectedDate)) {
+            $date = $expectedDate;
+        }
 
         $log = $schedule->dailyLogs()->forDate($date)->first();
 
@@ -76,6 +92,23 @@ class TeacherTimetable extends Component
                 'date' => $date->toDateString(),
                 'locale' => app()->getLocale(),
             ]));
+    }
+
+    /**
+     * The actual calendar date of each school day in the current week.
+     *
+     * @return array<string, string>
+     */
+    #[Computed]
+    public function currentWeekDates(): array
+    {
+        $today = now(config('app.timezone'));
+
+        return collect(self::SCHOOL_DAYS)
+            ->mapWithKeys(fn (string $day): array => [
+                $day => DayOfWeek::from($day)->dateInCurrentWeek($today)->toDateString(),
+            ])
+            ->all();
     }
 
     /**
@@ -161,7 +194,8 @@ class TeacherTimetable extends Component
             'days' => collect(self::SCHOOL_DAYS)->map(
                 fn (string $day): DayOfWeek => DayOfWeek::from($day),
             ),
-            'today' => DayOfWeek::cases()[now()->dayOfWeek],
+            'today' => DayOfWeek::cases()[now(config('app.timezone'))->dayOfWeek],
+            'weekDates' => $this->currentWeekDates,
             'rows' => $this->slotRows(),
         ]);
     }

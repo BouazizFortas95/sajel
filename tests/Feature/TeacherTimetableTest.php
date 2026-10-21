@@ -120,20 +120,35 @@ class TeacherTimetableTest extends TestCase
             ->assertDontSee('الفيزياء');
     }
 
+    public function test_it_passes_the_current_week_date_to_each_schedule_action(): void
+    {
+        $teacher = $this->makeTeacher();
+        $schedule = $this->makeSchedule($teacher, DayOfWeek::Sunday);
+
+        $this->actingAs($teacher);
+
+        $date = DayOfWeek::Sunday->dateInCurrentWeek()->toDateString();
+
+        Livewire::test(TeacherTimetable::class)
+            ->assertOk()
+            ->assertSeeHtml("openLog({$schedule->id}, '{$date}')");
+    }
+
     public function test_it_opens_the_existing_log_for_a_schedule(): void
     {
         $teacher = $this->makeTeacher();
         $schedule = $this->makeSchedule($teacher, DayOfWeek::Monday);
+        $date = DayOfWeek::Monday->dateInCurrentWeek();
 
         $log = DailyLog::factory()->create([
             'schedule_id' => $schedule->id,
-            'date' => DayOfWeek::Monday->dateInCurrentWeek(),
+            'date' => $date,
         ]);
 
         $this->actingAs($teacher);
 
         Livewire::test(TeacherTimetable::class)
-            ->call('openLogForSchedule', $schedule->id)
+            ->call('openLog', $schedule->id, $date->toDateString())
             ->assertRedirect(DailyLogResource::getUrl('edit', [
                 'record' => $log,
                 'locale' => 'en',
@@ -147,11 +162,31 @@ class TeacherTimetableTest extends TestCase
 
         $this->actingAs($teacher);
 
+        $date = DayOfWeek::Monday->dateInCurrentWeek();
+
         Livewire::test(TeacherTimetable::class)
-            ->call('openLogForSchedule', $schedule->id)
+            ->call('openLog', $schedule->id, $date->toDateString())
             ->assertRedirect(DailyLogResource::getUrl('create', [
                 'schedule_id' => $schedule->id,
-                'date' => DayOfWeek::Monday->dateInCurrentWeek()->toDateString(),
+                'date' => $date->toDateString(),
+                'locale' => 'en',
+            ]));
+    }
+
+    public function test_it_falls_back_to_the_current_week_when_a_stale_date_is_sent(): void
+    {
+        $teacher = $this->makeTeacher();
+        $schedule = $this->makeSchedule($teacher, DayOfWeek::Monday);
+
+        $this->actingAs($teacher);
+
+        $date = DayOfWeek::Monday->dateInCurrentWeek();
+
+        Livewire::test(TeacherTimetable::class)
+            ->call('openLog', $schedule->id, '1999-01-01')
+            ->assertRedirect(DailyLogResource::getUrl('create', [
+                'schedule_id' => $schedule->id,
+                'date' => $date->toDateString(),
                 'locale' => 'en',
             ]));
     }
