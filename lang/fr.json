@@ -238,5 +238,10 @@
     "لا توجد حصص مجدولة": "Aucun cours programmé",
     "ستظهر حصصك الأسبوعية هنا بعد إضافتها إلى جدولك.": "Vos cours hebdomadaires apparaîtront ici dès que vous les aurez ajoutés à votre emploi du temps.",
     "فتح سجل الحصة: :subject، :time": "Ouvrir le journal du cours : :subject, :time",
-    "اليوم الحالي": "Aujourd’hui"
+    "اليوم الحالي": "Aujourd’hui",
+    "الفترة الصباحية": "Matin",
+    "الفترة المسائية": "Après-midi",
+    "استراحة الغداء": "Pause déjeuner",
+    "فراغ": "Libre",
+    "من الأحد إلى الخميس — فترات صباحية ومسائية ثابتة.": "Du dimanche au jeudi — périodes fixes du matin et de l’après-midi."
 }

@@ -242,5 +242,10 @@
     "لا توجد حصص مجدولة": "No scheduled lessons",
     "ستظهر حصصك الأسبوعية هنا بعد إضافتها إلى جدولك.": "Your weekly lessons will appear here once you add them to your schedule.",
     "فتح سجل الحصة: :subject، :time": "Open the lesson log: :subject, :time",
-    "اليوم الحالي": "Today"
+    "اليوم الحالي": "Today",
+    "الفترة الصباحية": "Morning",
+    "الفترة المسائية": "Afternoon",
+    "استراحة الغداء": "Lunch break",
+    "فراغ": "Free",
+    "من الأحد إلى الخميس — فترات صباحية ومسائية ثابتة.": "Sunday to Thursday — fixed morning and afternoon periods."
 }
