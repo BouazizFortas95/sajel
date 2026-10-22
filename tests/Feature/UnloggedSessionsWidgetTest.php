@@ -129,6 +129,18 @@ class UnloggedSessionsWidgetTest extends TestCase
             ->assertOk()
             ->assertSee('لديك 14 حصة');
 
+        // The Livewire root must be the outer card. If the root marker lands on
+        // a child element, pagination clicks target the parent dashboard page
+        // and fail with "Public method [nextPage] not found".
+        $this->assertMatchesRegularExpression(
+            '/<div[^>]*wire:id="[^"]+"[^>]*class="w-full"[^>]*>.*?wire:click="nextPage\(\'pendingPage\'\)"/s',
+            $component->html(),
+        );
+
+        // Livewire's default pagination view scrolls the whole <body> to the
+        // top. Keep the viewport on the pagination controls instead.
+        $this->assertStringNotContainsString('scrollIntoView', $component->html());
+
         $firstPage = $component->instance()->getPendingSessions();
 
         $this->assertInstanceOf(LengthAwarePaginator::class, $firstPage);
@@ -138,14 +150,14 @@ class UnloggedSessionsWidgetTest extends TestCase
         $this->assertSame(1, $firstPage->currentPage());
         $this->assertCount(5, $firstPage->items());
 
-        $component->call('gotoPage', 2, 'pendingPage');
+        $component->call('nextPage', 'pendingPage');
 
         $secondPage = $component->instance()->getPendingSessions();
 
         $this->assertSame(2, $secondPage->currentPage());
         $this->assertCount(5, $secondPage->items());
 
-        $component->call('gotoPage', 3, 'pendingPage');
+        $component->call('nextPage', 'pendingPage');
 
         $thirdPage = $component->instance()->getPendingSessions();
 

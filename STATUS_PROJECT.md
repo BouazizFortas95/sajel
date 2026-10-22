@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-10-22
-> Verified by: running `php artisan test` (**162 passed, 13,808 assertions**) and
+> Verified by: running `php artisan test` (**162 passed, ~13,800 assertions**) and
 > `php artisan migrate:status` (**22 migrations, all ran**).
 
 ## 1. Overview
@@ -24,7 +24,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | Frontend   | Vite `^7`, Tailwind CSS `^4`, Axios      | Filament theme in `resources/css/filament.css` |
 | i18n       | `mcamara/laravel-localization` `^2.4`    | `ar`, `en`, `fr` locales                |
 | Timezone   | `Africa/Algiers`                         | `APP_TIMEZONE`, used for weekly dates   |
-| Testing    | PHPUnit `^11.5`                          | **162 tests / 13,808 assertions, all green** |
+| Testing    | PHPUnit `^11.5`                          | **162 tests / ~13,800 assertions, all green** |
 | Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
 
 ## 3. Domain Model
@@ -347,7 +347,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 7. Testing
 
-`php artisan test` — **162 passing, 13,808 assertions**:
+`php artisan test` — **162 passing, ~13,800 assertions**:
 
 | Suite                                  | Tests | Covers                                                        |
 |----------------------------------------|-------|---------------------------------------------------------------|
@@ -377,7 +377,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | Aspect            | Status                                             |
 |-------------------|----------------------------------------------------|
 | Migrations        | ✅ All 22 ran                                      |
-| Test suite        | ✅ 162/162 passing (13,808 assertions)            |
+| Test suite        | ✅ 162/162 passing (~13,800 assertions)            |
 | Admin panel       | ✅ Functional with 10 resources + Livewire dashboard + ar/en/fr locales |
 | Seed data         | ✅ Destructive middle-school dataset (600 students, 30 teachers, 18–22 lessons each, ~600 schedules, ~1,200 daily logs, ~150 assessments, ~3,900 grades) + optional small `SajelSeeder` demo |
 | Version control   | ✅ Git repo initialized on `main` branch           |
