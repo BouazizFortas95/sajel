@@ -3,10 +3,13 @@
 namespace App\Filament\Resources;
 
 use App\Enums\DayOfWeek;
+use App\Enums\Role;
 use App\Filament\Resources\ScheduleResource\Pages;
 use App\Models\Classroom;
 use App\Models\Group;
 use App\Models\Schedule;
+use App\Models\Subject;
+use App\Models\User;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TimePicker;
@@ -69,18 +72,52 @@ class ScheduleResource extends Resource
                     ->schema([
                         Select::make('user_id')
                             ->label(__('المعلم'))
-                            ->relationship('user', 'name')
+                            ->relationship(
+                                'user',
+                                'name',
+                                modifyQueryUsing: fn (Builder $query): Builder => $query
+                                    ->where('role', Role::Teacher->value),
+                            )
                             ->searchable()
                             ->preload()
-                            ->default(fn () => Auth::id())
+                            ->default(fn (): ?int => auth()->user()?->isTeacher() ? Auth::id() : null)
+                            ->visible(fn (): bool => auth()->user()?->isAdmin() ?? false)
+                            ->dehydratedWhenHidden()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set, mixed $state): void {
+                                $teacher = filled($state)
+                                    ? User::query()->find($state)
+                                    : null;
+
+                                $set('subject_id', $teacher?->primary_subject_id
+                                    ?? $teacher?->secondary_subject_id);
+                            })
                             ->required(),
 
                         Select::make('subject_id')
                             ->label(__('المادة'))
-                            ->relationship('subject', 'name')
+                            ->options(fn (Get $get): array => self::subjectOptions($get))
+                            ->default(fn (): ?int => auth()->user()?->isTeacher()
+                                ? (auth()->user()->primary_subject_id
+                                    ?? auth()->user()->secondary_subject_id)
+                                : null)
                             ->searchable()
                             ->preload()
-                            ->required(),
+                            ->required()
+                            ->helperText(fn (Get $get): string => self::subjectHelperText($get))
+                            ->rule(function (Get $get) {
+                                return function (string $attribute, mixed $value, callable $fail) use ($get): void {
+                                    $teacher = self::selectedTeacher($get);
+                                    $allowedSubjectIds = array_map('intval', array_filter([
+                                        $teacher?->primary_subject_id,
+                                        $teacher?->secondary_subject_id,
+                                    ]));
+
+                                    if (! in_array((int) $value, $allowedSubjectIds, true)) {
+                                        $fail(__('المادة المحددة غير مسندة لهذا المعلم.'));
+                                    }
+                                };
+                            }),
 
                         Select::make('classroom_id')
                             ->label(__('القسم'))
@@ -127,7 +164,7 @@ class ScheduleResource extends Resource
                             ->seconds(false)
                             ->required()
                             ->rule(function (Get $get) {
-                                return function (string $attribute, callable $fail, mixed $value) use ($get): void {
+                                return function (string $attribute, mixed $value, callable $fail) use ($get): void {
                                     if (filled($value) && filled($get('start_time')) && $value <= $get('start_time')) {
                                         $fail(__('وقت النهاية يجب أن يكون بعد وقت البداية.'));
                                     }
@@ -135,6 +172,54 @@ class ScheduleResource extends Resource
                             }),
                     ]),
             ]);
+    }
+
+    private static function selectedTeacher(Get $get): ?User
+    {
+        $teacherId = auth()->user()?->isAdmin()
+            ? $get('user_id')
+            : Auth::id();
+
+        if (blank($teacherId)) {
+            return null;
+        }
+
+        return User::query()
+            ->with(['primarySubject', 'secondarySubject'])
+            ->find($teacherId);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function subjectOptions(Get $get): array
+    {
+        $teacher = self::selectedTeacher($get);
+
+        if (! $teacher) {
+            return [];
+        }
+
+        return collect([$teacher->primarySubject, $teacher->secondarySubject])
+            ->filter()
+            ->unique('id')
+            ->mapWithKeys(fn (Subject $subject): array => [$subject->id => $subject->name])
+            ->all();
+    }
+
+    private static function subjectHelperText(Get $get): string
+    {
+        $teacher = self::selectedTeacher($get);
+
+        if (! $teacher) {
+            return __('اختر المعلم أولاً.');
+        }
+
+        if (blank($teacher->primary_subject_id) && blank($teacher->secondary_subject_id)) {
+            return __('لم يتم إسناد أي مادة لهذا المعلم.');
+        }
+
+        return __('يمكن اختيار المادة الأساسية أو المادة الثانوية فقط.');
     }
 
     public static function table(Table $table): Table

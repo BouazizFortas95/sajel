@@ -41,6 +41,14 @@ class GroupResource extends Resource
 
     protected static ?int $navigationSort = 40;
 
+    /**
+     * The group catalog is admin-only; teachers have no navigation entry.
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form

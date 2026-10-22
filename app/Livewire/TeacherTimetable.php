@@ -8,6 +8,7 @@ use App\Models\Schedule;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -112,6 +113,48 @@ class TeacherTimetable extends Component
     }
 
     /**
+     * The teacher's schedules for the current school week.
+     *
+     * @return Collection<int, Schedule>
+     */
+    #[Computed]
+    public function weeklySchedules(): Collection
+    {
+        $user = auth()->user();
+
+        if (! $user instanceof User) {
+            return new Collection;
+        }
+
+        return Schedule::query()
+            ->with(['subject', 'classroom', 'group.classroom'])
+            ->forTeacher($user)
+            ->whereIn('day_of_week', self::SCHOOL_DAYS)
+            ->get();
+    }
+
+    /**
+     * Total duration of the teacher's scheduled lessons in hours.
+     */
+    #[Computed]
+    public function totalHours(): float
+    {
+        return (float) $this->weeklySchedules->sum(function (Schedule $schedule): float {
+            $start = $schedule->start_time;
+            $end = $schedule->end_time;
+
+            if ($start === null || $end === null) {
+                return 0.0;
+            }
+
+            $startMinutes = ($start->hour * 60) + $start->minute;
+            $endMinutes = ($end->hour * 60) + $end->minute;
+
+            return max(0, $endMinutes - $startMinutes) / 60;
+        });
+    }
+
+    /**
      * Build the fixed timetable matrix:
      * [day => [slot start => Schedule|null]].
      *
@@ -120,16 +163,7 @@ class TeacherTimetable extends Component
     #[Computed]
     public function grid(): array
     {
-        $user = auth()->user();
-
-        if (! $user instanceof User) {
-            return [];
-        }
-
-        $schedules = Schedule::query()
-            ->with(['subject', 'classroom', 'group.classroom'])
-            ->forTeacher($user)
-            ->get();
+        $schedules = $this->weeklySchedules;
 
         // Index once, keyed by day and start time. If a teacher somehow has
         // two schedules at the same time, the first one wins the cell.
@@ -197,6 +231,8 @@ class TeacherTimetable extends Component
             'today' => DayOfWeek::cases()[now(config('app.timezone'))->dayOfWeek],
             'weekDates' => $this->currentWeekDates,
             'rows' => $this->slotRows(),
+            'totalHours' => $this->totalHours,
+            'weeklyHoursLimit' => (int) ($user->weekly_hours_limit ?? 22),
         ]);
     }
 }

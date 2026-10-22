@@ -19,7 +19,18 @@ class Level extends Model
     protected $fillable = [
         'education_phase_id',
         'name',
+        'grade_number',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'grade_number' => 'integer',
+        ];
+    }
 
     public function educationPhase(): BelongsTo
     {

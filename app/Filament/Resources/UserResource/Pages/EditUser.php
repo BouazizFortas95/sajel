@@ -14,7 +14,6 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\SaveAction::make(),
             Actions\DeleteAction::make()
                 ->visible(fn (User $record): bool => $record->id !== auth()->id()),
         ];

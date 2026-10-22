@@ -40,6 +40,14 @@ class LevelResource extends Resource
 
     protected static ?int $navigationSort = 20;
 
+    /**
+     * The level catalog is admin-only; teachers have no navigation entry.
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -59,6 +67,16 @@ class LevelResource extends Resource
                             ->placeholder(__('السنة الأولى متوسطة'))
                             ->required()
                             ->maxLength(255),
+
+                        TextInput::make('grade_number')
+                            ->label(__('رقم السنة'))
+                            ->placeholder(__('1'))
+                            ->numeric()
+                            ->integer()
+                            ->minValue(1)
+                            ->maxValue(20)
+                            ->required()
+                            ->helperText(__('الرقم المستخدم في اسم القسم (مثال: 1 للسنة الأولى).')),
                     ]),
             ]);
     }

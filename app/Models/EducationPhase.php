@@ -20,6 +20,7 @@ class EducationPhase extends Model
     protected $fillable = [
         'name',
         'code',
+        'phase_abbreviation',
         'settings',
     ];
 

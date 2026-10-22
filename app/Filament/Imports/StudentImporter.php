@@ -68,7 +68,7 @@ class StudentImporter extends Importer
                     name: 'group',
                     resolveUsing: fn (mixed $state): ?Group => static::resolveGroup($state),
                 )
-                ->example('السنة الأولى متوسطة — 1م - أ (2025-2026) — المجموعة أ'),
+                ->example('السنة الأولى متوسطة — 1 م 1 (2025-2026) — المجموعة أ'),
         ];
     }
 

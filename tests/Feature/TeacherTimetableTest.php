@@ -104,6 +104,42 @@ class TeacherTimetableTest extends TestCase
         $this->assertNull($grid[DayOfWeek::Monday->value]['08:00']);
     }
 
+    public function test_it_calculates_the_weekly_workload_and_flags_an_overload(): void
+    {
+        $teacher = User::factory()->create(['weekly_hours_limit' => 2]);
+        $subject = Subject::factory()->create(['name' => 'الرياضيات']);
+
+        $this->makeSchedule($teacher, DayOfWeek::Sunday, $subject, '08:00', '10:00');
+        $this->makeSchedule($teacher, DayOfWeek::Monday, $subject, '09:00', '10:30');
+
+        $this->app->setLocale('ar');
+        $this->actingAs($teacher);
+
+        Livewire::test(TeacherTimetable::class)
+            ->assertOk()
+            ->assertViewHas('weeklyHoursLimit', 2)
+            ->assertViewHas('totalHours', fn (float $hours): bool => abs($hours - 3.5) < 0.001)
+            ->assertSee('النصاب الزمني: 3.5 / 2 ساعة')
+            ->assertSeeHtml('text-danger-700')
+            ->assertDontSeeHtml('text-success-700');
+    }
+
+    public function test_it_does_not_flag_the_workload_when_it_matches_the_limit(): void
+    {
+        $teacher = User::factory()->create(['weekly_hours_limit' => 2]);
+        $subject = Subject::factory()->create(['name' => 'الرياضيات']);
+
+        $this->makeSchedule($teacher, DayOfWeek::Sunday, $subject, '08:00', '10:00');
+
+        $this->actingAs($teacher);
+
+        Livewire::test(TeacherTimetable::class)
+            ->assertOk()
+            ->assertViewHas('totalHours', 2.0)
+            ->assertSeeHtml('text-success-700')
+            ->assertDontSeeHtml('text-danger-700');
+    }
+
     public function test_it_only_shows_the_current_teachers_schedules(): void
     {
         $teacher = $this->makeTeacher();
@@ -201,5 +237,70 @@ class TeacherTimetableTest extends TestCase
 
         // 5 school days × 7 one-hour slots.
         $this->assertSame(35, substr_count($html, __('فراغ')));
+    }
+
+    public function test_it_colours_each_schedule_card_using_its_subject_colour(): void
+    {
+        $teacher = $this->makeTeacher();
+
+        // One subject per Filament colour, each occupying its own Sunday cell.
+        $colors = ['primary', 'danger', 'success', 'warning', 'info', 'gray'];
+
+        $slots = [
+            ['08:00', '09:00'],
+            ['09:00', '10:00'],
+            ['10:00', '11:00'],
+            ['11:00', '12:00'],
+            ['14:00', '15:00'],
+            ['15:00', '16:00'],
+        ];
+
+        foreach ($colors as $index => $color) {
+            $this->makeSchedule(
+                $teacher,
+                DayOfWeek::Sunday,
+                Subject::factory()->create(['name' => "مادة {$color}", 'color' => $color]),
+                $slots[$index][0],
+                $slots[$index][1],
+            );
+        }
+
+        $this->actingAs($teacher);
+
+        $html = Livewire::test(TeacherTimetable::class)
+            ->assertOk()
+            ->html();
+
+        foreach ($colors as $color) {
+            $this->assertSame(1, substr_count($html, "border-s-{$color}-500"), "card border for {$color}");
+            $this->assertSame(1, substr_count($html, "hover:border-{$color}-400"), "hover border for {$color}");
+            $this->assertSame(1, substr_count($html, "hover:bg-{$color}-50"), "hover background for {$color}");
+            $this->assertSame(1, substr_count($html, "hover:ring-{$color}-400/60"), "hover ring for {$color}");
+            $this->assertSame(1, substr_count($html, "focus-visible:ring-{$color}-500"), "focus ring for {$color}");
+            $this->assertSame(1, substr_count($html, "dark:border-s-{$color}-400"), "dark card border for {$color}");
+            $this->assertSame(1, substr_count($html, "group-hover:text-{$color}-800"), "title hover colour for {$color}");
+            $this->assertSame(1, substr_count($html, "group-hover:text-{$color}-600"), "link hover colour for {$color}");
+            $this->assertSame(1, substr_count($html, "text-{$color}-600 dark:text-{$color}-400"), "pin colour for {$color}");
+        }
+    }
+
+    public function test_it_falls_back_to_the_primary_colour_for_missing_or_unknown_subject_colours(): void
+    {
+        $teacher = $this->makeTeacher();
+
+        $this->makeSchedule($teacher, DayOfWeek::Sunday, Subject::factory()->create(['color' => null]), '08:00', '09:00');
+        $this->makeSchedule($teacher, DayOfWeek::Sunday, Subject::factory()->create(['color' => '#4f46e5']), '09:00', '10:00');
+        $this->makeSchedule($teacher, DayOfWeek::Sunday, Subject::factory()->create(['color' => 'magenta']), '10:00', '11:00');
+
+        $this->actingAs($teacher);
+
+        $html = Livewire::test(TeacherTimetable::class)
+            ->assertOk()
+            ->html();
+
+        $this->assertSame(3, substr_count($html, 'border-s-primary-500'));
+        $this->assertSame(3, substr_count($html, 'group-hover:text-primary-800'));
+        $this->assertStringNotContainsString('border-s-magenta-500', $html);
+        $this->assertStringNotContainsString('#4f46e5', $html);
     }
 }

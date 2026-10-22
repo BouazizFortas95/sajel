@@ -2,8 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Widgets\QuickLinks;
 use App\Filament\Pages\Dashboard;
+use App\Filament\Widgets\QuickLinks;
+use App\Filament\Widgets\UnloggedSessionsWidget;
 use App\Livewire\DashboardStats;
 use App\Models\DailyLog;
 use App\Models\Schedule;
@@ -116,7 +117,10 @@ class DashboardThemeTest extends TestCase
 
     public function test_dashboard_shows_only_navigation_cards_without_the_account_widget(): void
     {
-        $this->assertSame([QuickLinks::class], (new Dashboard)->getWidgets());
+        $this->assertSame(
+            [UnloggedSessionsWidget::class, QuickLinks::class],
+            (new Dashboard)->getWidgets(),
+        );
     }
 
     public function test_the_dashboard_stats_component_renders_the_smart_log_tabs(): void

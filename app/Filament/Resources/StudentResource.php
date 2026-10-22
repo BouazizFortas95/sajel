@@ -44,6 +44,14 @@ class StudentResource extends Resource
     protected static ?int $navigationSort = 45;
 
     /**
+     * Student management is admin-only; teachers have no navigation entry.
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
+    /**
      * Eager-load the hierarchy used by the group labels and table rows.
      */
     public static function getEloquentQuery(): Builder

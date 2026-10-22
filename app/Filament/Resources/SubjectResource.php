@@ -41,6 +41,14 @@ class SubjectResource extends Resource
 
     protected static ?int $navigationSort = 50;
 
+    /**
+     * The subject catalog is admin-only; teachers have no navigation entry.
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -56,15 +64,6 @@ class SubjectResource extends Resource
                         ColorPicker::make('color')
                             ->label(__('اللون'))
                             ->default('#4f46e5')
-                            ->enableSwatches()
-                            ->swatches([
-                                '#4f46e5',
-                                '#059669',
-                                '#d97706',
-                                '#dc2626',
-                                '#0891b2',
-                                '#7c3aed',
-                            ])
                             ->helperText(__('يُستخدم لتمييز المادة في الجداول والسجلات.')),
                     ]),
             ]);

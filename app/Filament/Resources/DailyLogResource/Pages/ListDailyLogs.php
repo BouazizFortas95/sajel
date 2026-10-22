@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DailyLogResource\Pages;
 
+use App\Filament\Exports\DailyLogExporter;
 use App\Filament\Resources\DailyLogResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -20,6 +21,10 @@ class ListDailyLogs extends ListRecords
 
                     return $data;
                 }),
+            Actions\ExportAction::make()
+                ->exporter(DailyLogExporter::class)
+                ->label(__('تصدير دفتر النصوص'))
+                ->icon('heroicon-o-arrow-down-tray'),
         ];
     }
 }

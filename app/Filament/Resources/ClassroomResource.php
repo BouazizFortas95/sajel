@@ -41,6 +41,14 @@ class ClassroomResource extends Resource
 
     protected static ?int $navigationSort = 30;
 
+    /**
+     * The classroom catalog is admin-only; teachers have no navigation entry.
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -59,11 +67,15 @@ class ClassroomResource extends Resource
                             ->preload()
                             ->required(),
 
-                        TextInput::make('name')
-                            ->label(__('اسم القسم'))
-                            ->placeholder(__('1م - أ'))
+                        TextInput::make('class_number')
+                            ->label(__('رقم القسم'))
+                            ->placeholder(__('1'))
+                            ->numeric()
+                            ->integer()
+                            ->minValue(1)
+                            ->maxValue(99)
                             ->required()
-                            ->maxLength(255),
+                            ->helperText(__('يتم توليد اسم القسم تلقائياً بالشكل: رقم السنة + اختصار المرحلة + رقم القسم.')),
 
                         TextInput::make('academic_year')
                             ->label(__('السنة الدراسية'))

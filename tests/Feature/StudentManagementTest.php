@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Role;
 use App\Filament\Imports\StudentImporter;
+use App\Filament\Resources\StudentResource;
 use App\Filament\Resources\StudentResource\Pages\CreateStudent;
 use App\Filament\Resources\StudentResource\Pages\ListStudents;
 use App\Models\Group;
@@ -41,12 +43,26 @@ class StudentManagementTest extends TestCase
         $this->assertDatabaseMissing('students', ['id' => $student->id]);
     }
 
-    public function test_teachers_can_open_the_students_resource(): void
+    public function test_teachers_cannot_open_the_students_resource(): void
     {
         $teacher = User::factory()->create();
 
-        $this->actingAs($teacher)
-            ->get('/en/auth/students')
+        $this->actingAs($teacher);
+
+        $this->assertFalse(StudentResource::shouldRegisterNavigation());
+
+        $this->get('/en/auth/students')->assertForbidden();
+    }
+
+    public function test_admins_can_open_the_students_resource(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+
+        $this->actingAs($admin);
+
+        $this->assertTrue(StudentResource::shouldRegisterNavigation());
+
+        $this->get('/en/auth/students')
             ->assertOk()
             ->assertSee('Students')
             ->assertSee('Import students');
@@ -56,7 +72,7 @@ class StudentManagementTest extends TestCase
     {
         $group = Group::factory()->create();
 
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->create(['role' => Role::Admin->value]));
 
         Livewire::test(CreateStudent::class)
             ->fillForm([
@@ -85,7 +101,7 @@ class StudentManagementTest extends TestCase
 
         Student::factory()->create(['registration_number' => '2026-0001']);
 
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->create(['role' => Role::Admin->value]));
 
         Livewire::test(CreateStudent::class)
             ->fillForm([
@@ -108,7 +124,7 @@ class StudentManagementTest extends TestCase
         $firstStudent = Student::factory()->create(['group_id' => $firstGroup->id]);
         $secondStudent = Student::factory()->create(['group_id' => $secondGroup->id]);
 
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->create(['role' => Role::Admin->value]));
 
         Livewire::test(ListStudents::class)
             ->assertCanSeeTableRecords([$firstStudent, $secondStudent])

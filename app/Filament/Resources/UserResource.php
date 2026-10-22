@@ -5,11 +5,12 @@ namespace App\Filament\Resources;
 use App\Enums\Role;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
-use Filament\Forms\Components\Password;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -73,17 +74,60 @@ class UserResource extends Resource
                             ->default(Role::Teacher->value)
                             ->native(false)
                             ->required()
+                            ->live()
                             ->disabled(fn (?User $record): bool => $record?->is(auth()->user()) ?? false)
                             ->helperText(__('لا يمكنك تغيير دور حسابك الحالي.')),
 
-                        Password::make('password')
+                        TextInput::make('password')
                             ->label(__('كلمة المرور'))
+                            ->password()
                             ->required(fn (string $operation): bool => $operation === 'create')
                             ->rule(PasswordRule::min(8))
                             ->revealable()
                             ->dehydrateStateUsing(fn (string $state): string => Hash::make($state))
                             ->dehydrated(fn (?string $state): bool => filled($state))
                             ->helperText(__('اتركها فارغة عند التعديل للإبقاء على كلمة المرور الحالية.')),
+                    ]),
+
+                Section::make(__('التخصص والنصاب'))
+                    ->description(__('يُستخدم لتقييد مواد جدول الحصص وحساب النصاب الأسبوعي.'))
+                    ->columns(2)
+                    ->visible(fn (Get $get): bool => in_array(
+                        $get('role'),
+                        [Role::Teacher, Role::Teacher->value],
+                        true,
+                    ))
+                    ->schema([
+                        Select::make('primary_subject_id')
+                            ->label(__('المادة الأساسية'))
+                            ->relationship('primarySubject', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set, Get $get, mixed $state): void {
+                                if ((string) $get('secondary_subject_id') === (string) $state) {
+                                    $set('secondary_subject_id', null);
+                                }
+                            }),
+
+                        Select::make('secondary_subject_id')
+                            ->label(__('المادة الثانوية (اختياري)'))
+                            ->relationship('secondarySubject', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->different('primary_subject_id')
+                            ->helperText(__('اختر مادة قريبة من التخصص الأساسي.')),
+
+                        TextInput::make('weekly_hours_limit')
+                            ->label(__('النصاب الأسبوعي (ساعات)'))
+                            ->numeric()
+                            ->integer()
+                            ->minValue(1)
+                            ->maxValue(60)
+                            ->default(22)
+                            ->required()
+                            ->helperText(__('الحد الأقصى لعدد ساعات التدريس في الأسبوع.')),
                     ]),
             ]);
     }
@@ -105,6 +149,26 @@ class UserResource extends Resource
                     ->badge()
                     ->formatStateUsing(fn (Role $state): string => $state->label())
                     ->color(fn (Role $state): string => $state->color())
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('primarySubject.name')
+                    ->label(__('المادة الأساسية'))
+                    ->badge()
+                    ->color('success')
+                    ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('secondarySubject.name')
+                    ->label(__('المادة الثانوية'))
+                    ->badge()
+                    ->color('gray')
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('weekly_hours_limit')
+                    ->label(__('النصاب الأسبوعي'))
+                    ->suffix(' '.__('ساعة'))
+                    ->badge()
+                    ->color('warning')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('schedules_count')

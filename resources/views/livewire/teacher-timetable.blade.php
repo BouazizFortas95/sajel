@@ -4,6 +4,37 @@
         :description="__('من الأحد إلى الخميس — فترات صباحية ومسائية ثابتة.')"
         icon="heroicon-o-calendar-days"
     >
+        <x-slot name="headerEnd">
+            @php
+                $isOverloaded = $totalHours > $weeklyHoursLimit;
+                $formatHours = static fn (float | int $hours): string => rtrim(
+                    rtrim(number_format((float) $hours, 2, '.', ''), '0'),
+                    '.',
+                );
+            @endphp
+
+            <span
+                @class([
+                    'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset',
+                    'bg-danger-50 text-danger-700 ring-danger-600/20 dark:bg-danger-400/10 dark:text-danger-400 dark:ring-danger-400/30' => $isOverloaded,
+                    'bg-success-50 text-success-700 ring-success-600/20 dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30' => ! $isOverloaded,
+                ])
+                :title="$isOverloaded ? __('تم تجاوز النصاب الأسبوعي المحدد.') : null"
+            >
+                <x-filament::icon
+                    :icon="$isOverloaded ? 'heroicon-o-exclamation-triangle' : 'heroicon-o-check-circle'"
+                    class="h-4 w-4 shrink-0"
+                />
+
+                <span>
+                    {{ __('النصاب الزمني: :total / :limit ساعة', [
+                        'total' => $formatHours($totalHours),
+                        'limit' => $formatHours($weeklyHoursLimit),
+                    ]) }}
+                </span>
+            </span>
+        </x-slot>
+
         <div class="overflow-x-auto pb-2">
             <div class="min-w-[60rem] space-y-2">
                 {{-- Day headers ------------------------------------------------- --}}
@@ -61,6 +92,48 @@
                                     $isToday = $day === $today;
                                     $schedule = $grid[$day->value][$row['start']] ?? null;
                                     $date = $weekDates[$day->value];
+
+                                    // Tailwind only compiles class names it can read literally, so each
+                                    // Filament subject colour maps to complete utility strings here.
+                                    $subjectColorClasses = match ($schedule?->subject?->color) {
+                                        'danger' => [
+                                            'card' => 'border-s-danger-500 hover:border-danger-400 hover:bg-danger-50 hover:ring-danger-400/60 focus-visible:ring-danger-500 dark:border-s-danger-400 dark:hover:border-danger-300 dark:hover:bg-danger-400/10 dark:hover:ring-danger-400/40',
+                                            'title' => 'group-hover:text-danger-800 dark:group-hover:text-danger-200',
+                                            'link' => 'group-hover:text-danger-600 dark:group-hover:text-danger-300',
+                                            'pin' => 'text-danger-600 dark:text-danger-400',
+                                        ],
+                                        'success' => [
+                                            'card' => 'border-s-success-500 hover:border-success-400 hover:bg-success-50 hover:ring-success-400/60 focus-visible:ring-success-500 dark:border-s-success-400 dark:hover:border-success-300 dark:hover:bg-success-400/10 dark:hover:ring-success-400/40',
+                                            'title' => 'group-hover:text-success-800 dark:group-hover:text-success-200',
+                                            'link' => 'group-hover:text-success-600 dark:group-hover:text-success-300',
+                                            'pin' => 'text-success-600 dark:text-success-400',
+                                        ],
+                                        'warning' => [
+                                            'card' => 'border-s-warning-500 hover:border-warning-400 hover:bg-warning-50 hover:ring-warning-400/60 focus-visible:ring-warning-500 dark:border-s-warning-400 dark:hover:border-warning-300 dark:hover:bg-warning-400/10 dark:hover:ring-warning-400/40',
+                                            'title' => 'group-hover:text-warning-800 dark:group-hover:text-warning-200',
+                                            'link' => 'group-hover:text-warning-600 dark:group-hover:text-warning-300',
+                                            'pin' => 'text-warning-600 dark:text-warning-400',
+                                        ],
+                                        'info' => [
+                                            'card' => 'border-s-info-500 hover:border-info-400 hover:bg-info-50 hover:ring-info-400/60 focus-visible:ring-info-500 dark:border-s-info-400 dark:hover:border-info-300 dark:hover:bg-info-400/10 dark:hover:ring-info-400/40',
+                                            'title' => 'group-hover:text-info-800 dark:group-hover:text-info-200',
+                                            'link' => 'group-hover:text-info-600 dark:group-hover:text-info-300',
+                                            'pin' => 'text-info-600 dark:text-info-400',
+                                        ],
+                                        'gray' => [
+                                            'card' => 'border-s-gray-500 hover:border-gray-400 hover:bg-gray-50 hover:ring-gray-400/60 focus-visible:ring-gray-500 dark:border-s-gray-400 dark:hover:border-gray-300 dark:hover:bg-gray-400/10 dark:hover:ring-gray-400/40',
+                                            'title' => 'group-hover:text-gray-800 dark:group-hover:text-gray-200',
+                                            'link' => 'group-hover:text-gray-600 dark:group-hover:text-gray-300',
+                                            'pin' => 'text-gray-600 dark:text-gray-400',
+                                        ],
+                                        // "primary", a missing colour, or anything unrecognised.
+                                        default => [
+                                            'card' => 'border-s-primary-500 hover:border-primary-400 hover:bg-primary-50 hover:ring-primary-400/60 focus-visible:ring-primary-500 dark:border-s-primary-400 dark:hover:border-primary-300 dark:hover:bg-primary-400/10 dark:hover:ring-primary-400/40',
+                                            'title' => 'group-hover:text-primary-800 dark:group-hover:text-primary-200',
+                                            'link' => 'group-hover:text-primary-600 dark:group-hover:text-primary-300',
+                                            'pin' => 'text-primary-600 dark:text-primary-400',
+                                        ],
+                                    };
                                 @endphp
 
                                 <div
@@ -72,19 +145,20 @@
                                             type="button"
                                             wire:click="openLog({{ $schedule->id }}, '{{ $date }}')"
                                             @class([
-                                                'group flex h-full min-h-[5.25rem] w-full cursor-pointer flex-col justify-between gap-2 rounded-xl border border-gray-200 border-s-4 border-s-amber-500 bg-white p-3 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-50 hover:shadow-md hover:ring-2 hover:ring-amber-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:border-white/10 dark:border-s-amber-400 dark:bg-gray-800 dark:hover:border-amber-300 dark:hover:bg-amber-400/10 dark:hover:ring-amber-400/40 dark:focus-visible:ring-offset-gray-900',
+                                                'group flex h-full min-h-[5.25rem] w-full cursor-pointer flex-col justify-between gap-2 rounded-xl border border-gray-200 border-s-4 bg-white p-3 text-start shadow-sm transition hover:-translate-y-0.5 hover:shadow-md hover:ring-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:border-white/10 dark:bg-gray-800 dark:focus-visible:ring-offset-gray-900',
+                                                $subjectColorClasses['card'],
                                                 'ring-1 ring-amber-300/70 dark:ring-amber-400/30' => $isToday,
                                             ])
                                             aria-label="{{ __('فتح سجل الحصة: :subject، :time', ['subject' => $schedule->subject?->name ?? __('بدون مادة'), 'time' => $row['start'].' - '.$row['end']]) }}"
                                         >
                                             <div class="flex items-start justify-between gap-2">
-                                                <span class="min-w-0 text-sm font-semibold text-gray-950 group-hover:text-amber-800 dark:text-white dark:group-hover:text-amber-200">
+                                                <span class="min-w-0 text-sm font-semibold text-gray-950 dark:text-white {{ $subjectColorClasses['title'] }}">
                                                     {{ $schedule->subject?->name ?? __('بدون مادة') }}
                                                 </span>
 
                                                 <x-filament::icon
                                                     icon="heroicon-o-arrow-top-right-on-square"
-                                                    class="mt-0.5 h-4 w-4 shrink-0 text-gray-400 group-hover:text-amber-600 dark:text-gray-500 dark:group-hover:text-amber-300"
+                                                    class="mt-0.5 h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500 {{ $subjectColorClasses['link'] }}"
                                                 />
                                             </div>
 
@@ -92,7 +166,7 @@
                                                 <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                                                     <x-filament::icon
                                                         icon="heroicon-o-map-pin"
-                                                        class="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400"
+                                                        class="h-3.5 w-3.5 shrink-0 {{ $subjectColorClasses['pin'] }}"
                                                     />
 
                                                     <span class="truncate">

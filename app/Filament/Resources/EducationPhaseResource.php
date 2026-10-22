@@ -41,6 +41,14 @@ class EducationPhaseResource extends Resource
 
     protected static ?int $navigationSort = 10;
 
+    /**
+     * The education phase catalog is admin-only; teachers have no navigation entry.
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -60,6 +68,13 @@ class EducationPhaseResource extends Resource
                             ->maxLength(255)
                             ->unique(ignoreRecord: true)
                             ->helperText(__('رمز فريد يمثل المرحلة (مثال: middle).')),
+
+                        TextInput::make('phase_abbreviation')
+                            ->label(__('الاختصار'))
+                            ->placeholder(__('م'))
+                            ->required()
+                            ->maxLength(32)
+                            ->helperText(__('يُستخدم في توليد اسم القسم (مثال: م للمرحلة المتوسطة).')),
 
                         KeyValue::make('settings')
                             ->label(__('إعدادات ديناميكية'))

@@ -65,6 +65,11 @@ class Schedule extends Model
         return $this->hasMany(DailyLog::class);
     }
 
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(Assessment::class);
+    }
+
     public function scopeForTeacher(Builder $query, User|int $user): Builder
     {
         return $query->where('user_id', $user instanceof User ? $user->id : $user);
@@ -77,7 +82,7 @@ class Schedule extends Model
 
     /**
      * Human-readable label used across Filament selects and tables.
-     * Example: "الاثنين 08:00-09:00 | الرياضيات | 1م - أ"
+     * Example: "الاثنين 08:00-09:00 | الرياضيات | 1 م 1"
      */
     public function label(): string
     {

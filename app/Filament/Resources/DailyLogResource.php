@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\DailyLogStatus;
 use App\Enums\LessonPhaseType;
 use App\Filament\Resources\DailyLogResource\Pages;
+use App\Filament\Resources\DailyLogResource\RelationManagers\AttendancesRelationManager;
 use App\Models\DailyLog;
 use App\Models\Schedule;
 use Carbon\Carbon;
@@ -26,6 +27,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
@@ -525,6 +527,18 @@ class DailyLogResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('printRegister')
+                        ->label(__('طباعة دفتر النصوص'))
+                        ->icon('heroicon-o-printer')
+                        ->color('primary')
+                        ->visible(fn (?EloquentCollection $records): bool => filled($records)
+                            && $records->isNotEmpty()
+                            && $records->every(fn (DailyLog $record): bool => $record->isCompleted()))
+                        ->url(fn (?EloquentCollection $records): string => route('print.register', [
+                            'ids' => $records?->pluck('id')->all() ?? [],
+                        ]))
+                        ->openUrlInNewTab(),
+
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
@@ -532,7 +546,9 @@ class DailyLogResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            AttendancesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

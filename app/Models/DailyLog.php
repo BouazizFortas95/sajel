@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AttendanceStatus;
 use App\Enums\DailyLogStatus;
 use App\Enums\LessonPhaseType;
 use Carbon\CarbonInterface;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class DailyLog extends Model
 {
@@ -45,6 +48,53 @@ class DailyLog extends Model
     public function schedule(): BelongsTo
     {
         return $this->belongsTo(Schedule::class);
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    /**
+     * Materialize the roster as present attendance rows.
+     *
+     * This is idempotent: existing rows keep their status and remarks, while
+     * students added to the group later are inserted as present.
+     */
+    public function ensureAttendanceRecords(): int
+    {
+        if (! $this->exists) {
+            return 0;
+        }
+
+        $schedule = $this->schedule()->first(['id', 'classroom_id', 'group_id']);
+
+        if (! $schedule) {
+            return 0;
+        }
+
+        $studentIds = Student::query()
+            ->forSchedule($schedule)
+            ->pluck('id');
+
+        if ($studentIds->isEmpty()) {
+            return 0;
+        }
+
+        $now = now();
+
+        $rows = $studentIds
+            ->map(fn (int|string $studentId): array => [
+                'daily_log_id' => $this->getKey(),
+                'student_id' => (int) $studentId,
+                'status' => AttendanceStatus::Present->value,
+                'remarks' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])
+            ->all();
+
+        return DB::table('attendances')->insertOrIgnore($rows);
     }
 
     public function scopeForDate(Builder $query, CarbonInterface|string $date): Builder
