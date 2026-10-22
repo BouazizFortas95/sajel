@@ -26,6 +26,8 @@ class AiLessonPlannerTest extends TestCase
 
         config()->set('ai.provider', 'gemini');
         config()->set('ai.gemini.key', 'test-gemini-key');
+        config()->set('ai.retry_times', 2);
+        config()->set('ai.retry_delay', 0);
     }
 
     /**
@@ -79,7 +81,7 @@ class AiLessonPlannerTest extends TestCase
         $this->assertSame('وضعية الانطلاق', $phases[0]['phase_name']);
         $this->assertSame('يحلّ كل تلميذ تمريناً فردياً مع التصحيح الجماعي.', $phases[2]['content']);
 
-        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'models/gemini-2.5-flash:generateContent')
+        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'models/gemini-3.8-flash:generateContent')
             && $request->hasHeader('x-goog-api-key', 'test-gemini-key')
             && $request['generationConfig']['responseMimeType'] === 'application/json'
             && str_contains($request['contents'][0]['parts'][0]['text'], 'الكسور')
@@ -122,14 +124,94 @@ class AiLessonPlannerTest extends TestCase
     {
         Http::fake([
             'generativelanguage.googleapis.com/*' => Http::response([
-                'error' => ['message' => 'Quota exceeded for this project.'],
-            ], 429),
+                'error' => ['message' => 'API key not valid.'],
+            ], 400),
         ]);
 
         $this->expectException(AiLessonPlannerException::class);
-        $this->expectExceptionMessage('Quota exceeded');
+        $this->expectExceptionMessage('API key not valid.');
 
         app(AiLessonPlannerService::class)->generateLessonPlan('الكسور', 'الرياضيات', 'الأولى متوسط');
+    }
+
+    public function test_it_retries_a_transient_provider_error_before_succeeding(): void
+    {
+        config()->set('ai.retry_times', 2);
+
+        Http::fakeSequence('generativelanguage.googleapis.com/*')
+            ->push(['error' => ['message' => 'Service temporarily unavailable.']], 503)
+            ->push([
+                'candidates' => [
+                    ['content' => ['parts' => [['text' => json_encode($this->plan(), JSON_UNESCAPED_UNICODE)]]]],
+                ],
+            ]);
+
+        $block = app(AiLessonPlannerService::class)->generateLessonPlan(
+            topic: 'الكسور',
+            subject: 'الرياضيات',
+            level: 'الأولى متوسط',
+        );
+
+        $this->assertCount(3, $block['data']['lesson_phases']);
+        Http::assertSentCount(2);
+    }
+
+    public function test_it_falls_back_to_another_gemini_model_when_the_primary_is_overloaded(): void
+    {
+        config()->set('ai.retry_times', 2);
+        config()->set('ai.gemini.fallback_model', 'gemini-3.5-flash');
+
+        $success = [
+            'candidates' => [
+                ['content' => ['parts' => [['text' => json_encode($this->plan(), JSON_UNESCAPED_UNICODE)]]]],
+            ],
+        ];
+
+        Http::fake(function (Request $request) use ($success) {
+            if (str_contains($request->url(), 'models/gemini-3.8-flash:generateContent')) {
+                return Http::response([
+                    'error' => ['message' => 'This model is currently experiencing high demand.'],
+                ], 503);
+            }
+
+            if (str_contains($request->url(), 'models/gemini-3.5-flash:generateContent')) {
+                return Http::response($success);
+            }
+
+            return Http::response(['error' => ['message' => 'Unexpected model.']], 404);
+        });
+
+        $block = app(AiLessonPlannerService::class)->generateLessonPlan(
+            topic: 'الكسور',
+            subject: 'الرياضيات',
+            level: 'الأولى متوسط',
+        );
+
+        $this->assertCount(3, $block['data']['lesson_phases']);
+        Http::assertSentCount(3);
+        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'models/gemini-3.5-flash:generateContent'));
+    }
+
+    public function test_it_reports_a_clear_arabic_error_when_retries_are_exhausted(): void
+    {
+        config()->set('ai.retry_times', 2);
+        config()->set('ai.gemini.fallback_model', null);
+
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'error' => ['message' => 'This model is currently experiencing high demand.'],
+            ], 503),
+        ]);
+
+        try {
+            app(AiLessonPlannerService::class)->generateLessonPlan('الكسور', 'الرياضيات', 'الأولى متوسط');
+
+            $this->fail('The service should have thrown an AiLessonPlannerException.');
+        } catch (AiLessonPlannerException $exception) {
+            $this->assertStringContainsString('مشغولة', $exception->getMessage());
+        }
+
+        Http::assertSentCount(2);
     }
 
     public function test_it_fails_fast_when_the_api_key_is_missing(): void

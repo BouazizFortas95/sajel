@@ -32,17 +32,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Retries
+    |--------------------------------------------------------------------------
+    |
+    | Providers occasionally return transient capacity or gateway errors
+    | (HTTP 429, 500, 502, 503, 504). `retry_times` is the total number of
+    | attempts, and `retry_delay` is the pause between them in milliseconds.
+    |
+    */
+
+    'retry_times' => (int) env('AI_RETRY_TIMES', 2),
+
+    'retry_delay' => (int) env('AI_RETRY_DELAY', 500),
+
+    /*
+    |--------------------------------------------------------------------------
     | Gemini
     |--------------------------------------------------------------------------
     |
     | Uses the Google AI Studio REST API. The key is sent through the
     | x-goog-api-key header. Get one at https://aistudio.google.com/.
     |
+    | When the primary model is overloaded (HTTP 503), the service tries
+    | `fallback_model` once. Leave it empty to disable the fallback.
+    |
     */
 
     'gemini' => [
         'key' => env('GEMINI_API_KEY'),
-        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.8-flash'),
+        'fallback_model' => env('GEMINI_FALLBACK_MODEL', 'gemini-3.5-flash'),
         'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
     ],
 

@@ -9,7 +9,9 @@ use App\Filament\Resources\DailyLogResource\Pages;
 use App\Filament\Resources\DailyLogResource\RelationManagers\AttendancesRelationManager;
 use App\Models\DailyLog;
 use App\Models\Schedule;
+use App\Models\User;
 use App\Services\AiLessonPlannerService;
+use App\Services\DailyLogRegisterService;
 use Carbon\Carbon;
 use Filament\Actions;
 use Filament\Forms\Components\Actions\Action as FormAction;
@@ -36,6 +38,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 class DailyLogResource extends Resource
@@ -628,17 +631,45 @@ class DailyLogResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('printRegister')
-                        ->label(__('طباعة دفتر النصوص'))
-                        ->icon('heroicon-o-printer')
+                    Tables\Actions\BulkAction::make('downloadRegisterPdf')
+                        ->label(__('تحميل دفتر النصوص (PDF)'))
+                        ->icon('heroicon-o-arrow-down-tray')
                         ->color('primary')
-                        ->visible(fn (?EloquentCollection $records): bool => filled($records)
-                            && $records->isNotEmpty()
-                            && $records->every(fn (DailyLog $record): bool => $record->isCompleted()))
-                        ->url(fn (?EloquentCollection $records): string => route('print.register', [
-                            'ids' => $records?->pluck('id')->all() ?? [],
-                        ]))
-                        ->openUrlInNewTab(),
+                        ->action(function (EloquentCollection $records, Tables\Actions\BulkAction $action): ?StreamedResponse {
+                            $user = Auth::user();
+
+                            abort_unless($user instanceof User, 403);
+
+                            $register = app(DailyLogRegisterService::class);
+
+                            $logs = $register->completedLogs($records->modelKeys(), $user);
+
+                            if ($logs->isEmpty()) {
+                                Notification::make()
+                                    ->danger()
+                                    ->title(__('لا توجد سجلات منجزة مطابقة للاختيار.'))
+                                    ->send();
+
+                                $action->cancel();
+
+                                return null;
+                            }
+
+                            try {
+                                return $register->pdfResponse($logs, $user);
+                            } catch (Throwable $exception) {
+                                report($exception);
+
+                                Notification::make()
+                                    ->danger()
+                                    ->title(__('تعذر إنشاء ملف PDF.'))
+                                    ->body(__('تأكد من تثبيت Node.js و Puppeteer و Chrome على الخادم.'))
+                                    ->send();
+
+                                return null;
+                            }
+                        })
+                        ->deselectRecordsAfterCompletion(),
 
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),

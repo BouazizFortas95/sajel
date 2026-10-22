@@ -35,6 +35,8 @@ class AuthPanelProvider extends PanelProvider
             ->login()
             ->registration()
             ->passwordReset()
+            ->databaseNotifications(isLazy: false)
+            ->databaseNotificationsPolling('10s')
             ->colors([
                 'primary' => Color::Amber,
             ])

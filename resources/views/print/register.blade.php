@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ __('دفتر النصوص الرسمي') }} — {{ $teacherName }}</title>
 
-    @vite('resources/css/app.css')
+    @unless ($inlineCss ?? false)
+        @vite('resources/css/app.css')
+    @endunless
 
     <style>
         @page {
@@ -51,9 +53,13 @@
                 display: table-header-group;
             }
 
-            tr {
-                break-inside: avoid;
-                page-break-inside: avoid;
+            table,
+            tbody,
+            tr,
+            td,
+            th {
+                break-inside: auto;
+                page-break-inside: auto;
             }
 
             .no-print {
@@ -174,10 +180,12 @@
         </footer>
     </main>
 
-    <script>
-        window.addEventListener('load', () => {
-            window.setTimeout(() => window.print(), 300);
-        });
-    </script>
+    @if ($autoPrint ?? true)
+        <script>
+            window.addEventListener('load', () => {
+                window.setTimeout(() => window.print(), 300);
+            });
+        </script>
+    @endif
 </body>
 </html>

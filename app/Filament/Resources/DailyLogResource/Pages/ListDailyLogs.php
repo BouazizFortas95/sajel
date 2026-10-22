@@ -4,6 +4,7 @@ namespace App\Filament\Resources\DailyLogResource\Pages;
 
 use App\Filament\Exports\DailyLogExporter;
 use App\Filament\Resources\DailyLogResource;
+use App\Filament\Widgets\DailyLogExportProgressWidget;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -25,6 +26,13 @@ class ListDailyLogs extends ListRecords
                 ->exporter(DailyLogExporter::class)
                 ->label(__('تصدير دفتر النصوص'))
                 ->icon('heroicon-o-arrow-down-tray'),
+        ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            DailyLogExportProgressWidget::class,
         ];
     }
 }

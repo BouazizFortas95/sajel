@@ -5,10 +5,12 @@ namespace App\Services;
 use App\Exceptions\AiLessonPlannerException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * Generates a full lesson preparation with a generative AI provider and
@@ -79,31 +81,89 @@ class AiLessonPlannerService
             throw new AiLessonPlannerException(__('لم يتم ضبط مفتاح Gemini. أضف GEMINI_API_KEY إلى ملف .env.'));
         }
 
-        $response = $this->post(
-            $this->http()
-                ->baseUrl((string) config('ai.gemini.base_url'))
-                ->withHeaders(['x-goog-api-key' => $key]),
-            'models/'.config('ai.gemini.model').':generateContent',
+        $models = $this->geminiModels();
+        $lastResponse = null;
+
+        $payload = [
+            'contents' => [
+                [
+                    'role' => 'user',
+                    'parts' => [['text' => $prompt]],
+                ],
+            ],
+            'generationConfig' => [
+                'temperature' => 0.4,
+                'responseMimeType' => 'application/json',
+                'responseSchema' => $this->planSchema(),
+            ],
+        ];
+
+        foreach ($models as $index => $model) {
+            $response = $this->post(
+                $this->http()
+                    ->baseUrl((string) config('ai.gemini.base_url'))
+                    ->withHeaders(['x-goog-api-key' => $key]),
+                'models/'.$model.':generateContent',
+                $payload,
+            );
+
+            $lastResponse = $response;
+
+            if (! $response->failed()) {
+                return $this->extractText(data_get($response->json(), 'candidates.0.content.parts.0.text'));
+            }
+
+            if (! $this->shouldUseFallback($response, $models, $index)) {
+                break;
+            }
+
+            Log::warning('AI lesson planner falling back to another Gemini model.', [
+                'status' => $response->status(),
+                'primary_model' => $model,
+                'fallback_model' => $models[$index + 1],
+            ]);
+        }
+
+        if (! $lastResponse instanceof Response) {
+            throw new AiLessonPlannerException(__('لم يتم ضبط نموذج Gemini. أضف GEMINI_MODEL إلى ملف .env.'));
+        }
+
+        throw new AiLessonPlannerException($this->providerError($lastResponse));
+    }
+
+    /**
+     * The primary Gemini model plus the optional overload fallback, without
+     * duplicates or empty configuration values.
+     *
+     * @return list<string>
+     */
+    protected function geminiModels(): array
+    {
+        $models = array_map(
+            static fn (mixed $model): string => trim((string) $model),
             [
-                'contents' => [
-                    [
-                        'role' => 'user',
-                        'parts' => [['text' => $prompt]],
-                    ],
-                ],
-                'generationConfig' => [
-                    'temperature' => 0.4,
-                    'responseMimeType' => 'application/json',
-                    'responseSchema' => $this->planSchema(),
-                ],
+                config('ai.gemini.model'),
+                config('ai.gemini.fallback_model'),
             ],
         );
 
-        if ($response->failed()) {
-            throw new AiLessonPlannerException($this->providerError($response));
-        }
+        return array_values(array_unique(array_filter(
+            $models,
+            static fn (string $model): bool => $model !== '',
+        )));
+    }
 
-        return $this->extractText(data_get($response->json(), 'candidates.0.content.parts.0.text'));
+    /**
+     * Only fail over for capacity or upstream-server errors. A bad request or
+     * an exhausted project quota will fail on every model, so don't switch
+     * models for those responses.
+     *
+     * @param  list<string>  $models
+     */
+    protected function shouldUseFallback(Response $response, array $models, int $index): bool
+    {
+        return isset($models[$index + 1])
+            && in_array($response->status(), [500, 502, 503, 504], true);
     }
 
     /**
@@ -156,11 +216,35 @@ class AiLessonPlannerService
         return Http::acceptJson()
             ->asJson()
             ->timeout((int) config('ai.timeout', 60))
-            ->connectTimeout((int) config('ai.connect_timeout', 10));
+            ->connectTimeout((int) config('ai.connect_timeout', 10))
+            ->retry(
+                times: max(1, (int) config('ai.retry_times', 2)),
+                sleepMilliseconds: max(0, (int) config('ai.retry_delay', 500)),
+                when: fn (Throwable $exception): bool => $this->isTransientException($exception),
+            );
+    }
+
+    /**
+     * Network blips and temporary provider capacity errors are worth retrying.
+     */
+    protected function isTransientException(Throwable $exception): bool
+    {
+        if ($exception instanceof ConnectionException) {
+            return true;
+        }
+
+        if (! $exception instanceof RequestException) {
+            return false;
+        }
+
+        return in_array($exception->response->status(), [429, 500, 502, 503, 504], true);
     }
 
     /**
      * Post a payload, converting transport failures into a readable error.
+     *
+     * Laravel's HTTP retry throws the final failed response as an exception.
+     * Return that response so the caller can inspect the provider's error.
      *
      * @param  array<string, mixed>  $payload
      *
@@ -170,6 +254,8 @@ class AiLessonPlannerService
     {
         try {
             return $request->post($url, $payload);
+        } catch (RequestException $exception) {
+            return $exception->response;
         } catch (ConnectionException $exception) {
             throw new AiLessonPlannerException(
                 __('تعذر الاتصال بمزود الذكاء الاصطناعي. تحقق من اتصال الشبكة ثم أعد المحاولة.'),
@@ -338,10 +424,24 @@ class AiLessonPlannerService
             'body' => Str::limit($response->body(), 1000),
         ]);
 
+        $status = $response->status();
+
+        if ($status === 503) {
+            return __('خدمة الذكاء الاصطناعي مشغولة مؤقتاً بسبب الضغط. أعد المحاولة بعد قليل.');
+        }
+
+        if ($status === 429) {
+            return __('تم بلوغ حد استخدام الذكاء الاصطناعي مؤقتاً. أعد المحاولة بعد قليل.');
+        }
+
+        if (in_array($status, [500, 502, 504], true)) {
+            return __('تعذر الوصول إلى مزود الذكاء الاصطناعي مؤقتاً. أعد المحاولة بعد قليل.');
+        }
+
         $message = data_get($response->json(), 'error.message');
 
         return is_string($message) && filled($message)
             ? __('فشل طلب الذكاء الاصطناعي: :message', ['message' => Str::limit($message, 200)])
-            : __('فشل طلب الذكاء الاصطناعي (رمز :status).', ['status' => $response->status()]);
+            : __('فشل طلب الذكاء الاصطناعي (رمز :status).', ['status' => $status]);
     }
 }

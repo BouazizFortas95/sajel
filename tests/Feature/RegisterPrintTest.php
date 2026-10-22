@@ -6,13 +6,20 @@ use App\Enums\DailyLogStatus;
 use App\Enums\Role;
 use App\Filament\Exports\DailyLogExporter;
 use App\Filament\Resources\DailyLogResource\Pages\ListDailyLogs;
+use App\Filament\Widgets\DailyLogExportProgressWidget;
 use App\Models\Classroom;
 use App\Models\DailyLog;
 use App\Models\Schedule;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\DailyLogRegisterService;
+use Filament\Actions\Exports\Models\Export;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class RegisterPrintTest extends TestCase
@@ -109,26 +116,205 @@ class RegisterPrintTest extends TestCase
             ]));
     }
 
-    public function test_print_bulk_action_is_available_only_for_completed_logs(): void
+    public function test_pdf_bulk_action_is_always_visible_and_configured(): void
     {
         $teacher = User::factory()->create();
-        $completed = $this->createLog($teacher, title: 'سجل منجز');
+
+        $this->actingAs($teacher);
+
+        Livewire::test(ListDailyLogs::class)
+            ->assertTableBulkActionExists('downloadRegisterPdf')
+            ->assertTableBulkActionVisible('downloadRegisterPdf')
+            ->assertTableBulkActionHasIcon('downloadRegisterPdf', 'heroicon-o-arrow-down-tray')
+            ->assertTableBulkActionHasLabel('downloadRegisterPdf', __('تحميل دفتر النصوص (PDF)'));
+    }
+
+    public function test_pdf_bulk_action_refuses_a_selection_without_completed_logs(): void
+    {
+        $teacher = User::factory()->create();
         $planned = $this->createLog($teacher, title: 'سجل مخطط', status: DailyLogStatus::Planned);
 
         $this->actingAs($teacher);
 
-        $component = Livewire::test(ListDailyLogs::class)
-            ->assertTableBulkActionExists('printRegister')
-            ->assertTableBulkActionHasIcon('printRegister', 'heroicon-o-printer')
-            ->assertTableBulkActionHasLabel('printRegister', __('طباعة دفتر النصوص'));
-
-        $component
-            ->set('selectedTableRecords', [$completed->id])
-            ->assertTableBulkActionVisible('printRegister');
-
-        $component
+        Livewire::test(ListDailyLogs::class)
             ->set('selectedTableRecords', [$planned->id])
-            ->assertTableBulkActionHidden('printRegister');
+            ->callTableBulkAction('downloadRegisterPdf', [$planned])
+            ->assertNotified(__('لا توجد سجلات منجزة مطابقة للاختيار.'));
+    }
+
+    public function test_pdf_bulk_action_returns_a_streamed_pdf_download(): void
+    {
+        $teacher = User::factory()->create();
+        $log = $this->createLog($teacher);
+
+        $this->actingAs($teacher);
+
+        $this->mock(DailyLogRegisterService::class, function (MockInterface $mock) use ($log): void {
+            $mock->shouldReceive('completedLogs')
+                ->once()
+                ->andReturn(new EloquentCollection([$log]));
+
+            $mock->shouldReceive('pdfResponse')
+                ->once()
+                ->andReturn(response()->streamDownload(
+                    fn () => print 'pdf-bytes',
+                    'register.pdf',
+                    ['Content-Type' => 'application/pdf'],
+                ));
+        });
+
+        Livewire::test(ListDailyLogs::class)
+            ->set('selectedTableRecords', [$log->id])
+            ->callTableBulkAction('downloadRegisterPdf', [$log])
+            ->assertFileDownloaded('register.pdf', 'pdf-bytes', 'application/pdf');
+    }
+
+    public function test_export_progress_widget_shows_progress_for_the_current_user(): void
+    {
+        $teacher = User::factory()->create();
+        $otherTeacher = User::factory()->create();
+
+        Export::query()->create([
+            'user_id' => $otherTeacher->id,
+            'exporter' => DailyLogExporter::class,
+            'file_disk' => 'local',
+            'total_rows' => 80,
+            'processed_rows' => 60,
+            'successful_rows' => 60,
+        ]);
+
+        Export::query()->create([
+            'user_id' => $teacher->id,
+            'exporter' => DailyLogExporter::class,
+            'file_disk' => 'local',
+            'total_rows' => 40,
+            'processed_rows' => 10,
+            'successful_rows' => 10,
+        ]);
+
+        $this->actingAs($teacher);
+
+        $this->assertTrue(DailyLogExportProgressWidget::canView());
+
+        Livewire::test(DailyLogExportProgressWidget::class)
+            ->assertOk()
+            ->assertSee('جارٍ تصدير دفتر النصوص')
+            ->assertSee('تمت معالجة 10 من 40 سجل.')
+            ->assertSee('25%')
+            ->assertDontSee('75%')
+            ->assertSee('wire:poll.2s', false);
+
+        Livewire::test(ListDailyLogs::class)
+            ->assertOk()
+            ->assertSee('جارٍ تصدير دفتر النصوص');
+    }
+
+    public function test_starting_an_export_shows_the_progress_widget_on_the_list_page(): void
+    {
+        Queue::fake();
+
+        $teacher = User::factory()->create();
+        $this->createLog($teacher);
+
+        $this->actingAs($teacher);
+
+        Livewire::test(ListDailyLogs::class)
+            ->callAction('export')
+            ->assertOk()
+            ->assertSee('جارٍ تصدير دفتر النصوص');
+
+        $this->assertDatabaseHas('exports', [
+            'user_id' => $teacher->id,
+            'exporter' => DailyLogExporter::class,
+        ]);
+    }
+
+    public function test_export_progress_widget_is_hidden_without_an_active_export(): void
+    {
+        $teacher = User::factory()->create();
+
+        $this->actingAs($teacher);
+
+        $this->assertFalse(DailyLogExportProgressWidget::canView());
+
+        Export::query()->create([
+            'user_id' => $teacher->id,
+            'exporter' => DailyLogExporter::class,
+            'file_disk' => 'local',
+            'total_rows' => 40,
+            'processed_rows' => 40,
+            'successful_rows' => 40,
+            'completed_at' => now(),
+        ]);
+
+        $this->assertFalse(DailyLogExportProgressWidget::canView());
+    }
+
+    public function test_export_progress_widget_polling_does_not_return_a_403_after_completion(): void
+    {
+        $teacher = User::factory()->create();
+
+        $export = Export::query()->create([
+            'user_id' => $teacher->id,
+            'exporter' => DailyLogExporter::class,
+            'file_disk' => 'local',
+            'total_rows' => 40,
+            'processed_rows' => 20,
+            'successful_rows' => 20,
+        ]);
+
+        $this->actingAs($teacher);
+
+        $widget = Livewire::test(DailyLogExportProgressWidget::class)
+            ->assertOk()
+            ->assertSee('جارٍ تصدير دفتر النصوص')
+            ->assertSee('50%');
+
+        $export->update([
+            'processed_rows' => 40,
+            'successful_rows' => 40,
+            'completed_at' => now(),
+        ]);
+
+        $widget
+            ->call('$refresh')
+            ->assertOk()
+            ->assertDontSee('جارٍ تصدير دفتر النصوص');
+    }
+
+    public function test_export_download_is_available_to_the_owner_and_admin_only(): void
+    {
+        Storage::fake('local');
+
+        $teacher = User::factory()->create();
+        $otherTeacher = User::factory()->create();
+        $admin = User::factory()->create(['role' => Role::Admin]);
+
+        $export = Export::query()->create([
+            'user_id' => $teacher->id,
+            'exporter' => DailyLogExporter::class,
+            'file_disk' => 'local',
+            'file_name' => 'daily-logs',
+            'total_rows' => 1,
+            'processed_rows' => 1,
+            'successful_rows' => 1,
+            'completed_at' => now(),
+        ]);
+
+        $directory = 'filament_exports/'.$export->getKey();
+
+        Storage::disk('local')->makeDirectory($directory);
+        Storage::disk('local')->put($directory.'/headers.csv', "date\n");
+        Storage::disk('local')->put($directory.'/data.csv', "2026-10-22\n");
+
+        $url = route('filament.exports.download', [
+            'export' => $export,
+            'format' => 'csv',
+        ]);
+
+        $this->actingAs($teacher)->get($url)->assertOk();
+        $this->actingAs($admin)->get($url)->assertOk();
+        $this->actingAs($otherTeacher)->get($url)->assertForbidden();
     }
 
     public function test_exporter_only_exports_completed_logs(): void

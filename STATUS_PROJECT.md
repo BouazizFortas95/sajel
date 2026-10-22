@@ -1,8 +1,8 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-10-22
-> Verified by: running `php artisan test` (**162 passed, ~13,800 assertions**) and
-> `php artisan migrate:status` (**22 migrations, all ran**).
+> Verified by: running `php artisan test` (**171 passed, 13,962 assertions**) and
+> `php artisan migrate:status` (**23 migrations, all ran**).
 
 ## 1. Overview
 
@@ -22,9 +22,10 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | Admin UI   | Filament `^3.2` (bundles Livewire)       | Single panel, Amber brand color, Cairo font |
 | Database   | SQLite                                   | `database/database.sqlite` present      |
 | Frontend   | Vite `^7`, Tailwind CSS `^4`, Axios      | Filament theme in `resources/css/filament.css` |
+| PDF        | `spatie/browsershot` `^5.4`, Puppeteer  | Headless Chrome; Arabic shaping + Tailwind-preserving PDF |
 | i18n       | `mcamara/laravel-localization` `^2.4`    | `ar`, `en`, `fr` locales                |
 | Timezone   | `Africa/Algiers`                         | `APP_TIMEZONE`, used for weekly dates   |
-| Testing    | PHPUnit `^11.5`                          | **162 tests / ~13,800 assertions, all green** |
+| Testing    | PHPUnit `^11.5`                          | **171 tests / 13,962 assertions, all green** |
 | Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
 
 ## 3. Domain Model
@@ -118,10 +119,21 @@ User (teacher: primary/secondary subject, weekly hours limit)
 - Native Filament CSV import (`StudentImporter`) links each row to a group by ID, exact display
   label, or a unique group name, and keeps blank registration numbers as `null`.
 - Native Filament CSV/XLSX export (`DailyLogExporter`) exports completed logs only, with date,
-  classroom, subject, lesson title, actual content (HTML flattened to text), and homework.
-- The official register can be printed from `/print/daily-logs?ids[]=...`; the route is authenticated,
-  teacher-scoped, completed-only, and renders an A4 RTL Blade document that opens the browser print
-  dialog automatically.
+  classroom, subject, lesson title, actual content (HTML flattened to text), and homework. While the
+  queued export is running, the daily-log list page shows a live progress bar that polls the current
+  user's `exports` row every two seconds and disappears when Filament completes the export. The
+  widget keeps the authenticated Livewire hydrate check stable while the export finishes, so its final
+  progress poll does not abort with a 403 when the active export disappears. Completion notifications
+  (with direct CSV/XLSX download links) are stored in the database and shown in the panel notification
+  bell. `ExportPolicy` lets the export owner or an admin download the generated files.
+- The official register is available as a direct server-side PDF from the daily-log bulk action
+  "تحميل دفتر النصوص (PDF)". `DailyLogRegisterService` re-queries the selected records completed-only
+  and scopes teachers to their own schedules, inlines the compiled Vite/Tailwind stylesheet, and
+  renders the existing RTL Blade view through `spatie/browsershot` (headless Chrome, A4, backgrounds,
+  12 mm margins). Long register rows are allowed to fragment across PDF pages, so lesson content
+  continues on the next page instead of being pushed to a blank first page or clipped. The previous
+  browser-print route remains available at
+  `/print/daily-logs?ids[]=...`; it uses the same query/display service and opens the print dialog.
 - Query scopes: `Schedule::forTeacher/onDay`, `DailyLog::forDate/forTeacher`, `EducationPhase::search`.
 - Teacher specialization: each teacher has one primary subject and an optional secondary subject. The
   schedule form exposes only those subjects (defaulting to the primary), validates the submitted subject
@@ -150,9 +162,9 @@ User (teacher: primary/secondary subject, weekly hours limit)
 
 ## 4. Database
 
-All 22 migrations have run (SQLite):
+All 23 migrations have run (SQLite):
 
-- Framework tables: `users` (with sessions), `cache`, `jobs`.
+- Framework tables: `users` (with sessions), `cache`, `jobs`, `notifications`.
 - Domain tables: `education_phases`, `levels`, `classrooms`, `groups`, `students`, `subjects`,
   `schedules`, `daily_logs`, `attendances`, `assessments`, `grades`.
 - Filament action tables: `imports`, `exports`, `failed_import_rows` (published from
@@ -256,6 +268,7 @@ Algerian family-name pool, with `2026-####` registration numbers and 11–15-yea
   - `GradePolicy` / `AttendancePolicy`: teachers can view or update rows only when they own the parent
     `Assessment` / `DailyLog`; manual create/delete is disabled (rows are materialized idempotently).
   - `UserPolicy`: admin-only user management.
+  - `ExportPolicy`: the owner of an export or an admin may download its generated CSV/XLSX files.
   - `SubjectPolicy`, `ClassroomPolicy`, `LevelPolicy`, `GroupPolicy`, `EducationPhasePolicy`: the
     core academic structure catalogs are strictly admin-only; teachers are denied every ability.
 
@@ -271,7 +284,7 @@ Algerian family-name pool, with `2026-####` registration numbers and 11–15-yea
 
 | Resource                | Manages                                |
 |-------------------------|----------------------------------------|
-| `DailyLogResource`      | Daily logs / lesson preparations (the richest resource: `Builder` content data, `Tabs` form, "تأكيد الإنجاز" action, completion-gated `actual_content`/`homework`, generated register content, CSV/XLSX export, completed-only bulk register printing, the AI lesson-plan generator on the title field, and the auto-populated `AttendancesRelationManager`) |
+| `DailyLogResource`      | Daily logs / lesson preparations (the richest resource: `Builder` content data, `Tabs` form, "تأكيد الإنجاز" action, completion-gated `actual_content`/`homework`, generated register content, CSV/XLSX export, completed-only bulk register PDF download, the AI lesson-plan generator on the title field, and the auto-populated `AttendancesRelationManager`) |
 | `AssessmentResource`    | Assessments and the lazy, auto-populated `GradesRelationManager` (inline decimal scores and remarks, dynamic max-score validation, teacher-scoped schedule choices) |
 | `ScheduleResource`      | Weekly schedules (cascading classroom → group selects; teacher/admin subject choices restricted to the teacher's primary/secondary assignments) |
 | `SubjectResource`       | Subjects and colors                    |
@@ -340,14 +353,15 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
     `SetFilamentLocale`, so localized home pages share the switcher state.
   - `/print/daily-logs` (`print.register`, `auth`) accepts `ids[]` query parameters and renders the
     official A4 register. Completed logs only; teachers are scoped to their own schedules, admins may
-    print any teacher's completed logs. Guests are redirected to the Filament login page.
+    print any teacher's completed logs. Guests are redirected to the Filament login page. The same
+    register is offered as a server-side PDF from the resource bulk action.
 - The Filament panel is available at `/ar/auth`, `/en/auth`, and `/fr/auth`.
 - Teacher schedule page: `/{locale}/auth/my-schedule` (day/week views; teachers only).
 - Language files: `lang/ar.json`, `lang/en.json`, `lang/fr.json`.
 
 ## 7. Testing
 
-`php artisan test` — **162 passing, ~13,800 assertions**:
+`php artisan test` — **171 passing, 13,962 assertions**:
 
 | Suite                                  | Tests | Covers                                                        |
 |----------------------------------------|-------|---------------------------------------------------------------|
@@ -364,10 +378,10 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | `Tests\Feature\TeacherTimetableTest`   | 16    | Fixed five-day/seven-slot grid, matrix mapping, multi-hour row spans with covered cells (2h, 3h, back-to-back, lunch-break clamp), workload totals and overload badge, equality boundary, empty placeholders, subject-colour mapping (all six palette colours), primary fallback for missing/unknown colours, teacher scoping, current-week click dates, stale-date fallback, date-aware log navigation |
 | `Tests\Feature\TeacherSubjectAssignmentTest` | 6 | Primary/secondary relationships, default weekly limit, teacher form default/restriction, admin teacher-scoped subject options, user-form specialization assignment/editing |
 | `Tests\Feature\StudentManagementTest`  | 8     | Student/group relationships, cascade delete, admin-only resource/navigation, form creation, unique nullable registration, group filter, CSV importer group linking |
-| `Tests\Feature\RegisterPrintTest`      | 7     | Authenticated print route, teacher/admin scoping, completed-only filtering, validation, guest redirect, completed-only bulk action, exporter columns/filter |
+| `Tests\Feature\RegisterPrintTest`      | 14    | Authenticated print route, teacher/admin scoping, completed-only filtering, validation, guest redirect, always-visible PDF bulk action with completed-only server filtering + streamed download, exporter columns/filter, live export progress widget (current-user scoping, percentage, polling, export-start integration, hiding when complete, completion poll does not 403), and owner/admin-only export downloads |
 | `Tests\Feature\WelcomeAndDashboardTest`| 7     | Welcome page links, login/register access, guest redirect, dashboard stats/quick links, French and Arabic/RTL localization |
 | `Tests\Feature\UnloggedSessionsWidgetTest` | 4 | Teacher-only visibility, Sunday-to-today missing/planned detection, today's end-time boundary, teacher scoping, completion URLs, five-per-page Livewire pagination with total count, success state |
-| `Tests\Feature\AiLessonPlannerTest`    | 9     | Service contract (UUID-keyed `lesson_structure` block, fenced-JSON tolerance, OpenAI driver, provider error messages, missing key fails fast, unreadable responses), form-action injection into `content_data`, missing title/schedule guard, teacher-scoped schedules |
+| `Tests\Feature\AiLessonPlannerTest`    | 12    | Service contract (UUID-keyed `lesson_structure` block, fenced-JSON tolerance, OpenAI driver, provider error messages, transient-error retry, Gemini model fallback, clear exhausted-retry error, missing key fails fast, unreadable responses), form-action injection into `content_data`, missing title/schedule guard, teacher-scoped schedules |
 | `Tests\Feature\MiddleSchoolSeederTest` | 13    | Dataset counts (13 subjects with distinct hex colours, 1 phase, 4 levels, 20 classrooms with hook-generated names, 40 groups, 600 students), 15 students per group, unique `2026-####` registrations, Arabic identities, per-grade age windows, 30 Arabic-named teachers with all 13 primary subjects covered and exactly 6 secondary subjects, default admin credentials, conflict-free teacher/classroom timetable (Sunday–Thursday, valid slots, every subject equal to the teacher's primary subject, 18–22 lessons per teacher), two weeks of structured daily logs, quiz/midterm assessments with full-roster grades and decimal scores, destructive wipe of prior school/user rows, idempotent re-runs, bulk query budget (<200 queries), factory identities |
 | `Tests\Feature\ScheduleOverlapTest`    | 6     | Overlapping/identical teacher-day slots rejected; back-to-back slots allowed; scoping to teacher and day; edit-safe self-exclusion; admin double-booking guard |
 | `Tests\Feature\LocalePersistenceTest`  | 5     | Locale persisted when visiting localized panel routes, updated on language switch, restored on `/livewire/update` (post-save redirect URL generation), applied to non-localized URLs, unsupported locales ignored |
@@ -376,8 +390,8 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 | Aspect            | Status                                             |
 |-------------------|----------------------------------------------------|
-| Migrations        | ✅ All 22 ran                                      |
-| Test suite        | ✅ 162/162 passing (~13,800 assertions)            |
+| Migrations        | ✅ All 23 ran                                      |
+| Test suite        | ✅ 171/171 passing (13,962 assertions)            |
 | Admin panel       | ✅ Functional with 10 resources + Livewire dashboard + ar/en/fr locales |
 | Seed data         | ✅ Destructive middle-school dataset (600 students, 30 teachers, 18–22 lessons each, ~600 schedules, ~1,200 daily logs, ~150 assessments, ~3,900 grades) + optional small `SajelSeeder` demo |
 | Version control   | ✅ Git repo initialized on `main` branch           |
@@ -387,9 +401,9 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 9. Known Gaps / Next Steps
 
-1. **Reports beyond the register**: schedules and aggregate reports are not exported yet; the register
-   export supports CSV/XLSX, and PDF is produced through the browser's print dialog rather than a
-   server-side PDF library.
+1. **Reports beyond the register**: schedules and aggregate reports are not exported yet. The register
+   export supports CSV/XLSX plus direct server-side PDF (Browsershot/headless Chrome), and the
+   browser print route remains available as a fallback.
 2. **README**: replace the skeleton README with a project-specific one (or point it to this doc).
 3. **Default locale**: `.env` uses `APP_LOCALE=en`, so a fresh visitor gets English and `/en/...`
    links. Once a language is chosen (any `/{locale}/...` URL, including the panel), the locale is
@@ -426,7 +440,8 @@ composer dev            # serve + queue + logs + vite concurrently
 ```
 
 If you run only `php artisan serve` instead of `composer dev`, also start a queue worker so CSV
-imports are processed (`php artisan queue:work`).
+imports and daily-log exports are processed (`php artisan queue:work`). Without it, the export
+progress bar stays at 0%.
 
 ### AI lesson planner
 
@@ -434,15 +449,43 @@ The "توليد التحضير بالذكاء الاصطناعي" button on the 
 (no extra composer package — see `config/ai.php`):
 
 ```dotenv
-AI_PROVIDER=gemini          # or "openai"
-GEMINI_API_KEY=...          # https://aistudio.google.com/
-GEMINI_MODEL=gemini-2.5-flash
-AI_TIMEOUT=60               # keep below PHP max_execution_time for web SAPIs
+AI_PROVIDER=gemini                     # or "openai"
+GEMINI_API_KEY=...                     # https://aistudio.google.com/
+GEMINI_MODEL=gemini-3.8-flash
+GEMINI_FALLBACK_MODEL=gemini-3.5-flash # used only when the primary is overloaded
+AI_RETRY_TIMES=2                       # total attempts for transient provider errors
+AI_RETRY_DELAY=500                     # milliseconds between attempts
+AI_TIMEOUT=60                          # keep below PHP max_execution_time for web SAPIs
 # OPENAI_API_KEY=... / OPENAI_MODEL=gpt-4o-mini when AI_PROVIDER=openai
 ```
 
-Missing keys, timeouts, and provider errors are surfaced as danger notifications instead of
-breaking the form.
+Transient errors (HTTP 429/500/502/503/504 and network failures) are retried automatically.
+If Gemini's primary model stays overloaded, the configured fallback model is tried once. Missing
+keys, exhausted retries, and other provider errors are surfaced as danger notifications instead
+of breaking the form.
+
+### PDF register (Browsershot)
+
+The bulk action "تحميل دفتر النصوص (PDF)" renders `print.register` through headless Chrome.
+Select one or more daily logs, open **الإجراءات** in the table toolbar, then choose the PDF action.
+The action stays visible so Filament can render it before any row is selected; the service still
+re-queries completed records only and shows a danger notification when the selection has none.
+
+```bash
+composer require spatie/browsershot
+npm install                         # installs Puppeteer (runtime dependency for Browsershot)
+npm run build                       # refresh the inlined Tailwind stylesheet
+npx puppeteer browsers install chrome   # optional when Chrome is already installed
+```
+
+Set these only when Node/npm/Chrome are not discoverable from the PHP process (for example under
+Apache on Windows). Use forward slashes or escaped backslashes:
+
+```dotenv
+BROWSERSHOT_NODE_BINARY="C:/Program Files/nodejs/node.exe"
+BROWSERSHOT_NPM_BINARY="C:/Program Files/nodejs/npm.cmd"
+BROWSERSHOT_CHROME_PATH="C:/Program Files/Google/Chrome/Application/chrome.exe"
+```
 
 Then open the app URL and visit `/auth` (login/register). Demo accounts:
 
