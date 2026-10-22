@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-10-22
-> Verified by: running `php artisan test` (**123 passed, 687 assertions**) and
+> Verified by: running `php artisan test` (**132 passed, 751 assertions**) and
 > `php artisan migrate:status` (**22 migrations, all ran**).
 
 ## 1. Overview
@@ -24,7 +24,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | Frontend   | Vite `^7`, Tailwind CSS `^4`, Axios      | Filament theme in `resources/css/filament.css` |
 | i18n       | `mcamara/laravel-localization` `^2.4`    | `ar`, `en`, `fr` locales                |
 | Timezone   | `Africa/Algiers`                         | `APP_TIMEZONE`, used for weekly dates   |
-| Testing    | PHPUnit `^11.5`                          | **123 tests / 687 assertions, all green** |
+| Testing    | PHPUnit `^11.5`                          | **132 tests / 751 assertions, all green** |
 | Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
 
 ## 3. Domain Model
@@ -86,6 +86,13 @@ User (teacher: primary/secondary subject, weekly hours limit)
   `lesson_structure` (competence + repeatable named phases with rich content),
   `general_lesson` (title, objectives, content), and `warmup` (description, duration).
 - `DailyLog::generateRegisterSummary()` renders those blocks into a readable Arabic register entry.
+- The AI lesson planner turns a lesson title plus its schedule into a complete `lesson_structure`
+  block: the "توليد التحضير بالذكاء الاصطناعي" suffix action on the title field resolves the
+  subject and level from the selected schedule, calls `AiLessonPlannerService` (Gemini by default,
+  OpenAI opt-in via `AI_PROVIDER`), and injects the UUID-keyed block into the `content_data`
+  Builder through `$set()` — instantly, without a page reload. It confirms before overwriting
+  existing content, warns when the title/schedule are missing, scopes schedules to the current
+  teacher, and reports provider errors as danger notifications.
 - `DailyLog::markAsCompleted(?string $actualContent = null)` flips status to `Completed` and promotes
   the supplied (or generated) content to `actual_content` (official register entry).
 - `DailyLog::isPlanned()` gates the "confirm completion" action.
@@ -214,7 +221,7 @@ test user.
 
 | Resource                | Manages                                |
 |-------------------------|----------------------------------------|
-| `DailyLogResource`      | Daily logs / lesson preparations (the richest resource: `Builder` content data, `Tabs` form, "تأكيد الإنجاز" action, completion-gated `actual_content`/`homework`, generated register content, CSV/XLSX export, completed-only bulk register printing, and the auto-populated `AttendancesRelationManager`) |
+| `DailyLogResource`      | Daily logs / lesson preparations (the richest resource: `Builder` content data, `Tabs` form, "تأكيد الإنجاز" action, completion-gated `actual_content`/`homework`, generated register content, CSV/XLSX export, completed-only bulk register printing, the AI lesson-plan generator on the title field, and the auto-populated `AttendancesRelationManager`) |
 | `AssessmentResource`    | Assessments and the lazy, auto-populated `GradesRelationManager` (inline decimal scores and remarks, dynamic max-score validation, teacher-scoped schedule choices) |
 | `ScheduleResource`      | Weekly schedules (cascading classroom → group selects; teacher/admin subject choices restricted to the teacher's primary/secondary assignments) |
 | `SubjectResource`       | Subjects and colors                    |
@@ -284,7 +291,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 7. Testing
 
-`php artisan test` — **123 passing, 687 assertions**:
+`php artisan test` — **132 passing, 751 assertions**:
 
 | Suite                                  | Tests | Covers                                                        |
 |----------------------------------------|-------|---------------------------------------------------------------|
@@ -304,13 +311,14 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | `Tests\Feature\RegisterPrintTest`      | 7     | Authenticated print route, teacher/admin scoping, completed-only filtering, validation, guest redirect, completed-only bulk action, exporter columns/filter |
 | `Tests\Feature\WelcomeAndDashboardTest`| 7     | Welcome page links, login/register access, guest redirect, dashboard stats/quick links, French and Arabic/RTL localization |
 | `Tests\Feature\UnloggedSessionsWidgetTest` | 3 | Teacher-only visibility, Sunday-to-today missing/planned detection, today's end-time boundary, teacher scoping, completion URLs, success state |
+| `Tests\Feature\AiLessonPlannerTest`    | 9     | Service contract (UUID-keyed `lesson_structure` block, fenced-JSON tolerance, OpenAI driver, provider error messages, missing key fails fast, unreadable responses), form-action injection into `content_data`, missing title/schedule guard, teacher-scoped schedules |
 
 ## 8. Project Health Snapshot
 
 | Aspect            | Status                                             |
 |-------------------|----------------------------------------------------|
 | Migrations        | ✅ All 22 ran                                      |
-| Test suite        | ✅ 123/123 passing (687 assertions)                |
+| Test suite        | ✅ 132/132 passing (751 assertions)                |
 | Admin panel       | ✅ Functional with 10 resources + Livewire dashboard + ar/en/fr locales |
 | Seed data         | ✅ Demo seeder available (teacher + admin)         |
 | Version control   | ✅ Git repo initialized on `main` branch           |
@@ -354,6 +362,22 @@ composer dev            # serve + queue + logs + vite concurrently
 
 If you run only `php artisan serve` instead of `composer dev`, also start a queue worker so CSV
 imports are processed (`php artisan queue:work`).
+
+### AI lesson planner
+
+The "توليد التحضير بالذكاء الاصطناعي" button on the daily-log title field needs one API key
+(no extra composer package — see `config/ai.php`):
+
+```dotenv
+AI_PROVIDER=gemini          # or "openai"
+GEMINI_API_KEY=...          # https://aistudio.google.com/
+GEMINI_MODEL=gemini-2.5-flash
+AI_TIMEOUT=60               # keep below PHP max_execution_time for web SAPIs
+# OPENAI_API_KEY=... / OPENAI_MODEL=gpt-4o-mini when AI_PROVIDER=openai
+```
+
+Missing keys, timeouts, and provider errors are surfaced as danger notifications instead of
+breaking the form.
 
 Then open the app URL and visit `/auth` (login/register). Demo accounts:
 

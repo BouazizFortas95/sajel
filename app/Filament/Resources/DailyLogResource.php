@@ -4,12 +4,15 @@ namespace App\Filament\Resources;
 
 use App\Enums\DailyLogStatus;
 use App\Enums\LessonPhaseType;
+use App\Exceptions\AiLessonPlannerException;
 use App\Filament\Resources\DailyLogResource\Pages;
 use App\Filament\Resources\DailyLogResource\RelationManagers\AttendancesRelationManager;
 use App\Models\DailyLog;
 use App\Models\Schedule;
+use App\Services\AiLessonPlannerService;
 use Carbon\Carbon;
 use Filament\Actions;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
@@ -29,7 +32,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class DailyLogResource extends Resource
 {
@@ -171,6 +176,7 @@ class DailyLogResource extends Resource
                                             ->label(__('عنوان الحصة'))
                                             ->required()
                                             ->maxLength(255)
+                                            ->suffixAction(static::generateLessonPlanAction())
                                             ->columnSpanFull(),
 
                                         Select::make('status')
@@ -228,6 +234,99 @@ class DailyLogResource extends Resource
                     ])
                     ->columnSpanFull(),
             ]);
+    }
+
+    /**
+     * "Generate preparation with AI" suffix action for the lesson title.
+     *
+     * Requires a lesson title and a selected schedule, then replaces (after
+     * confirmation when content already exists) the dynamic preparation
+     * builder with a full lesson-structure block produced by
+     * {@see AiLessonPlannerService}. Filament's UUID conventions are honored
+     * so the block renders instantly without a page reload.
+     */
+    public static function generateLessonPlanAction(): FormAction
+    {
+        return FormAction::make('generateLessonPlan')
+            ->label(__('توليد التحضير بالذكاء الاصطناعي'))
+            ->icon('heroicon-o-sparkles')
+            ->color('primary')
+            ->tooltip(__('توليد بنية درس كاملة انطلاقاً من عنوان الحصة والمادة والقسم.'))
+            ->requiresConfirmation(fn (Get $get): bool => filled($get('content_data')))
+            ->modalHeading(__('توليد التحضير بالذكاء الاصطناعي'))
+            ->modalDescription(__('سيُستبدل المحتوى المخطط الحالي ببنية درس جديدة مقترحة من الذكاء الاصطناعي. يمكنك مراجعتها وتعديلها قبل الحفظ.'))
+            ->modalSubmitActionLabel(__('توليد'))
+            ->action(function (Get $get, Set $set, AiLessonPlannerService $planner): void {
+                $title = trim((string) $get('title'));
+                $scheduleId = $get('schedule_id');
+
+                if ($title === '' || blank($scheduleId)) {
+                    Notification::make()
+                        ->warning()
+                        ->title(__('معلومات ناقصة'))
+                        ->body(__('حدّد الحصة وأدخل عنوان الدرس أولاً.'))
+                        ->send();
+
+                    return;
+                }
+
+                $schedule = Schedule::query()
+                    ->with(['subject', 'classroom.level', 'group.classroom.level'])
+                    ->when(
+                        ! Auth::user()?->isAdmin(),
+                        fn (EloquentBuilder $query) => $query->forTeacher((int) Auth::id()),
+                    )
+                    ->find($scheduleId);
+
+                if (! $schedule) {
+                    Notification::make()
+                        ->warning()
+                        ->title(__('الحصة غير متاحة'))
+                        ->body(__('تعذر العثور على الحصة المحددة ضمن صلاحياتك.'))
+                        ->send();
+
+                    return;
+                }
+
+                try {
+                    $block = $planner->generateLessonPlan(
+                        topic: $title,
+                        subject: $schedule->subject?->name ?? '',
+                        level: $schedule->classroom?->level?->name
+                            ?? $schedule->group?->classroom?->level?->name
+                            ?? '',
+                    );
+                } catch (AiLessonPlannerException $exception) {
+                    Notification::make()
+                        ->danger()
+                        ->title(__('تعذر توليد التحضير'))
+                        ->body($exception->getMessage())
+                        ->persistent()
+                        ->send();
+
+                    return;
+                } catch (Throwable $exception) {
+                    report($exception);
+
+                    Notification::make()
+                        ->danger()
+                        ->title(__('تعذر توليد التحضير'))
+                        ->body(__('حدث خطأ غير متوقع. حاول مرة أخرى لاحقاً.'))
+                        ->persistent()
+                        ->send();
+
+                    return;
+                }
+
+                // Filament keys Builder blocks and Repeater items by UUID.
+                $set('content_data', [(string) Str::uuid() => $block]);
+
+                Notification::make()
+                    ->success()
+                    ->title(__('تم توليد التحضير'))
+                    ->body(__('راجع المراحل المقترحة وعدّلها ثم احفظ السجل.'))
+                    ->send();
+            });
     }
 
     /**
