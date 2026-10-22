@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-10-22
-> Verified by: running `php artisan test` (**132 passed, 751 assertions**) and
+> Verified by: running `php artisan test` (**162 passed, 13,808 assertions**) and
 > `php artisan migrate:status` (**22 migrations, all ran**).
 
 ## 1. Overview
@@ -24,7 +24,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | Frontend   | Vite `^7`, Tailwind CSS `^4`, Axios      | Filament theme in `resources/css/filament.css` |
 | i18n       | `mcamara/laravel-localization` `^2.4`    | `ar`, `en`, `fr` locales                |
 | Timezone   | `Africa/Algiers`                         | `APP_TIMEZONE`, used for weekly dates   |
-| Testing    | PHPUnit `^11.5`                          | **132 tests / 751 assertions, all green** |
+| Testing    | PHPUnit `^11.5`                          | **162 tests / 13,808 assertions, all green** |
 | Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
 
 ## 3. Domain Model
@@ -126,6 +126,13 @@ User (teacher: primary/secondary subject, weekly hours limit)
 - Teacher specialization: each teacher has one primary subject and an optional secondary subject. The
   schedule form exposes only those subjects (defaulting to the primary), validates the submitted subject
   server-side, and lets admins choose only teacher accounts before selecting a subject.
+- Schedule overlap guard: the `start_time` and `end_time` fields share a closure rule that queries the
+  selected teacher's slots for the selected day (excluding the record being edited). Slots are compared
+  as half-open intervals (`existingStart < newEnd && existingEnd > newStart`), so identical and
+  partially overlapping slots are rejected while back-to-back slots (09:00–10:00 after 08:00–09:00)
+  remain valid. The comparison runs in PHP against the teacher's few daily rows, which keeps it correct
+  whether a stored time is `H:i` or `H:i:s`. Inverted ranges are still reported by the separate
+  ordering rule on `end_time`.
 - Weekly workload: `TeacherTimetable` sums the durations of the teacher's Sunday–Thursday lessons and
   passes `$totalHours` and `$weeklyHoursLimit` to the view. The header badge is green while the workload
   is within the limit and turns red with a warning icon only when the total exceeds the limit (equality
@@ -168,21 +175,64 @@ All 22 migrations have run (SQLite):
   of its foreign keys cascade on delete.
 
 Factories exist for all 11 domain models plus `User`.
-`Database\Seeders\SajelSeeder` seeds a full demo: a teacher (`teacher@sajel.test` / `password`),
-an admin (`admin@sajel.test` / `password`), a middle-school phase, 2 levels, 2 classrooms, 2 groups,
-4 subjects, a weekly schedule, and a planned daily log. The demo teacher is assigned Mathematics as
-primary and Physics as secondary, with the standard 22-hour weekly limit. The seeded phase carries
-the `م` abbreviation, levels carry grade numbers `1`/`2`, and classrooms carry class numbers so the
-demo names resolve to `1 م 1` and `2 م 2`. `DatabaseSeeder` runs it automatically after creating its
-test user.
+`Database\Seeders\SajelSeeder` remains a small, non-destructive demo: a teacher
+(`teacher@sajel.test` / `password`), an admin (`admin@sajel.test` / `password`), a middle-school
+phase, 2 levels, 2 classrooms, 2 groups, 4 subjects, a weekly schedule, and a planned daily log.
+The demo teacher is assigned Mathematics as primary and Physics as secondary, with the standard
+22-hour weekly limit. It is no longer the default root seeder; run it explicitly when only the
+small demo is wanted.
+
+`Database\Seeders\MiddleSchoolDatabaseSeeder` is now the root dataset behind
+`php artisan migrate:fresh --seed` (via `DatabaseSeeder`). It is deliberately destructive: every
+run wipes grades, attendance, daily logs, assessments, schedules, students, groups, classrooms,
+levels, phases, subjects, import/export rows, sessions, and users before rebuilding. The dataset
+contains 13 official subjects (each with a distinct hex colour), the `CEM` phase (abbreviation
+`م`), 4 levels with grade numbers, 20 classrooms (`1 م 1` … `4 م 5`, academic year `2025-2026`),
+40 groups (`الفوج أ` / `الفوج ب`), 600 students (15 per group, ages 11–15 by grade), one default
+admin (`admin@sajel.test` / `password`), and 30 teachers. Every teacher gets a primary subject
+(all 13 subjects are covered) and exactly 6 teachers (20%) also get a different secondary subject.
+Students are built through `StudentFactory` and inserted in six 100-row chunks; teachers use
+`UserFactory` `teacher()`/`admin()` states.
+
+A typical run also seeds two weeks of class-register and gradebook history. Every timetable slot
+gets two `DailyLog` rows (one per week) whose `content_data` is a `lesson_structure` block with a
+subject-specific competence and four named phases (التمهيد، الاكتشاف، الترسيخ، التقويم); statuses
+are randomly `completed` or `planned`, and completed logs receive an HTML `actual_content` summary.
+Roughly 25% of schedules receive a `quiz` or `midterm` assessment with `max_score = 20`, and every
+student in that schedule's group/classroom roster gets a grade between 0 and 20 with one decimal
+(e.g. `15.5`). Grades are bulk-inserted with `insertOrIgnore` against the unique
+`(assessment_id, student_id)` key, mirroring the idempotent gradebook sync. A typical seed with
+~595 schedules produces ~1,190 daily logs, ~150 assessments, and ~3,900 grades; the seeder stays
+below its 200-query budget by preloading students/groups and inserting in chunks.
+
+The timetable generator produces 18–22 one-hour lessons per teacher on Sunday–Thursday, using the
+`08:00–12:00` / `14:00–17:00` grid. It drains a shuffled teacher queue with a per-slot quota of
+`ceil(remaining lessons / remaining slots)`, capped by the number of classrooms, then returns each
+selected teacher to the back of the queue. Each lesson is linked to a classroom (preferring the
+teacher's grade, with a least-loaded-room strategy), always uses the teacher's **primary** subject,
+and attaches ~20% of lessons to a specific group. Nested teacher and classroom busy maps keyed by
+`[$id][$day][$start_time]` guarantee no double-booking; a typical run yields ~600 lessons with
+roughly 30 lessons per classroom. A safety pass fills any teacher left short, and the seeder throws
+rather than silently emitting an under-target timetable. `ScheduleFactory` now only emits valid
+paired time slots on school days.
+
+`StudentFactory` generates given names through Faker's `ar_SA` provider and surnames from a curated
+Algerian family-name pool, with `2026-####` registration numbers and 11–15-year-old birth dates.
 
 ## 5. Admin Panel (Filament)
 
 - Panel ID/path: `auth` at `/{locale}/auth` (Arabic, English, and French; registered in
   `bootstrap/providers.php` via `App\Providers\Filament\AuthPanelProvider`).
 - The panel locale middleware (`App\Http\Middleware\SetFilamentLocale`) validates the `{locale}`
-  segment and sets Laravel's locale before rendering, so Filament's native layout direction flips
-  to RTL for Arabic.
+  segment, sets Laravel's locale before rendering, and persists the choice in the session, so
+  Filament's native layout direction flips to RTL for Arabic and survives later requests.
+- Locale persistence: `App\Http\Middleware\SetLocale` is appended to the `web` group and resolves the
+  locale as **URL → session → `config('app.locale')`**, then applies it and calls
+  `URL::defaults(['locale' => ...])`. Livewire's `/livewire/update` endpoint (which is in the `web`
+  group, not the panel stack) is where Filament computes post-save redirect URLs; without this default
+  those routes silently generated `/en/...` from the app default, which is why Arabic reverted to
+  English after saving. Fresh visitors still get `APP_LOCALE=en` and `/en/auth/...` links; the chosen
+  locale is sticky for that session until the user switches again.
 - A locale dropdown (`resources/views/filament/partials/language-switcher.blade.php`) is injected via
   `PanelsRenderHook::TOPBAR_END`, rendering inside Filament's existing top bar. The sidebar is
   collapsible on desktop.
@@ -257,10 +307,14 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
     expandable cards, complete/cancel actions, and "فتح السجل"/"إنشاء سجل".
   - **Week view**: `TeacherTimetable` — a fixed Sunday–Thursday grid with seven one-hour slots
     (08:00–12:00 and 14:00–17:00), a lunch-break row, and explicit dashed placeholders for empty
-    slots. The header includes a workload badge ("النصاب الزمني: total / limit ساعة") that turns
-    red with a warning icon when the scheduled total exceeds the teacher's weekly limit. Each
-    populated card passes its column's current-week date to `openLog()`, which opens the existing
-    log (edit) or a prefilled create page (`schedule_id` + `date` query parameters).
+    slots. All slot rows live in a single CSS grid; a lesson lasting several hours is one card with
+    an explicit `grid-row / span` (computed from the schedule's start/end time), and the rows it
+    covers render no cell at all so the remaining days stay aligned. Spans stop at the lunch break
+    and never paint over the period headings. The header includes a workload badge
+    ("النصاب الزمني: total / limit ساعة") that turns red with a warning icon when the scheduled total
+    exceeds the teacher's weekly limit. Each populated card passes its column's current-week date to
+    `openLog()`, which opens the existing log (edit) or a prefilled create page (`schedule_id` +
+    `date` query parameters).
   Both views resolve weekday dates in the `Africa/Algiers` timezone and open the existing log
   or a prefilled create page.
 - `QuickLinks` widget (`app/Filament/Widgets/QuickLinks.php`): dashboard navigation cards,
@@ -272,8 +326,10 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
   sessions whose log is missing or still `planned`; `completed` and `cancelled` logs are resolved.
   Each item shows the day/date, subject, classroom/group, time, and a missing/planned status badge.
   The "إكمال السجل" button opens the prefilled create page with `schedule_id` and `date`, or the
-  existing log's edit page. A subtle "all caught up" success state is rendered when nothing is
-  pending. The widget is hidden for admins and guests via `canView()`.
+  existing log's edit page. The list uses Livewire `WithPagination` at five items per page (page
+  name `pendingPage`); the card header always shows the total pending count and the pagination
+  links sit at the bottom of the card. A subtle "all caught up" success state is rendered when
+  nothing is pending. The widget is hidden for admins and guests via `canView()`.
 
 ## 6. Routes & Views
 
@@ -291,7 +347,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 7. Testing
 
-`php artisan test` — **132 passing, 751 assertions**:
+`php artisan test` — **162 passing, 13,808 assertions**:
 
 | Suite                                  | Tests | Covers                                                        |
 |----------------------------------------|-------|---------------------------------------------------------------|
@@ -299,28 +355,31 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | `Tests\Feature\ExampleTest`            | 1     | `/` returns a successful response                             |
 | `Tests\Feature\AuthorizationTest`      | 18    | Role-based panel access; student/assessment/grade/attendance policies; admin-only core academic structure policies, screens, and navigation hiding; relation-manager parent ownership; admin bypass |
 | `Tests\Feature\ClassroomNamingTest`    | 3     | Auto-generated classroom name from level grade, phase abbreviation, and class number; regeneration on update; graceful fallback when the convention is incomplete |
-| `Tests\Feature\DailyLogPagesTest`      | 5     | List/edit pages, schedule+date prefilling, cross-teacher protection |
+| `Tests\Feature\DailyLogPagesTest`      | 6     | List/edit pages, schedule+date prefilling, cross-teacher protection, create-form save, unique `(schedule_id, date)` validation |
 | `Tests\Feature\AttendanceTest`         | 7     | Attendance defaults/relationships, unique pair, group and classroom roster resolution, idempotent sync, new-student insertion, inline status update, relation-manager registration |
 | `Tests\Feature\GradebookTest`          | 12    | Assessment/grade relationships and casts, unique pair, group/classroom roster sync, new-student insertion, inline decimal scores and max validation, teacher-only schedule creation/scoping, schedule immutability on edit, cascade deletes, relation-manager registration |
 | `Tests\Feature\DashboardThemeTest`     | 7     | No missing utility classes, dark mode + theme asset, RTL Arabic panel + topbar switcher, brand colours, widget layout/registration, stat tabs |
 | `Tests\Feature\MySchedulePageTest`     | 4     | Teacher-only access, day/week views, guest redirect           |
 | `Tests\Feature\TeacherInteractiveScheduleTest` | 22 | Rendering, colours, dark mode, day/search/view/expand interactions, complete/cancel, stats, date-aware log navigation, teacher scoping |
-| `Tests\Feature\TeacherTimetableTest`   | 12    | Fixed five-day/seven-slot grid, matrix mapping, workload totals and overload badge, equality boundary, empty placeholders, subject-colour mapping (all six palette colours), primary fallback for missing/unknown colours, teacher scoping, current-week click dates, stale-date fallback, date-aware log navigation |
+| `Tests\Feature\TeacherTimetableTest`   | 16    | Fixed five-day/seven-slot grid, matrix mapping, multi-hour row spans with covered cells (2h, 3h, back-to-back, lunch-break clamp), workload totals and overload badge, equality boundary, empty placeholders, subject-colour mapping (all six palette colours), primary fallback for missing/unknown colours, teacher scoping, current-week click dates, stale-date fallback, date-aware log navigation |
 | `Tests\Feature\TeacherSubjectAssignmentTest` | 6 | Primary/secondary relationships, default weekly limit, teacher form default/restriction, admin teacher-scoped subject options, user-form specialization assignment/editing |
 | `Tests\Feature\StudentManagementTest`  | 8     | Student/group relationships, cascade delete, admin-only resource/navigation, form creation, unique nullable registration, group filter, CSV importer group linking |
 | `Tests\Feature\RegisterPrintTest`      | 7     | Authenticated print route, teacher/admin scoping, completed-only filtering, validation, guest redirect, completed-only bulk action, exporter columns/filter |
 | `Tests\Feature\WelcomeAndDashboardTest`| 7     | Welcome page links, login/register access, guest redirect, dashboard stats/quick links, French and Arabic/RTL localization |
-| `Tests\Feature\UnloggedSessionsWidgetTest` | 3 | Teacher-only visibility, Sunday-to-today missing/planned detection, today's end-time boundary, teacher scoping, completion URLs, success state |
+| `Tests\Feature\UnloggedSessionsWidgetTest` | 4 | Teacher-only visibility, Sunday-to-today missing/planned detection, today's end-time boundary, teacher scoping, completion URLs, five-per-page Livewire pagination with total count, success state |
 | `Tests\Feature\AiLessonPlannerTest`    | 9     | Service contract (UUID-keyed `lesson_structure` block, fenced-JSON tolerance, OpenAI driver, provider error messages, missing key fails fast, unreadable responses), form-action injection into `content_data`, missing title/schedule guard, teacher-scoped schedules |
+| `Tests\Feature\MiddleSchoolSeederTest` | 13    | Dataset counts (13 subjects with distinct hex colours, 1 phase, 4 levels, 20 classrooms with hook-generated names, 40 groups, 600 students), 15 students per group, unique `2026-####` registrations, Arabic identities, per-grade age windows, 30 Arabic-named teachers with all 13 primary subjects covered and exactly 6 secondary subjects, default admin credentials, conflict-free teacher/classroom timetable (Sunday–Thursday, valid slots, every subject equal to the teacher's primary subject, 18–22 lessons per teacher), two weeks of structured daily logs, quiz/midterm assessments with full-roster grades and decimal scores, destructive wipe of prior school/user rows, idempotent re-runs, bulk query budget (<200 queries), factory identities |
+| `Tests\Feature\ScheduleOverlapTest`    | 6     | Overlapping/identical teacher-day slots rejected; back-to-back slots allowed; scoping to teacher and day; edit-safe self-exclusion; admin double-booking guard |
+| `Tests\Feature\LocalePersistenceTest`  | 5     | Locale persisted when visiting localized panel routes, updated on language switch, restored on `/livewire/update` (post-save redirect URL generation), applied to non-localized URLs, unsupported locales ignored |
 
 ## 8. Project Health Snapshot
 
 | Aspect            | Status                                             |
 |-------------------|----------------------------------------------------|
 | Migrations        | ✅ All 22 ran                                      |
-| Test suite        | ✅ 132/132 passing (751 assertions)                |
+| Test suite        | ✅ 162/162 passing (13,808 assertions)            |
 | Admin panel       | ✅ Functional with 10 resources + Livewire dashboard + ar/en/fr locales |
-| Seed data         | ✅ Demo seeder available (teacher + admin)         |
+| Seed data         | ✅ Destructive middle-school dataset (600 students, 30 teachers, 18–22 lessons each, ~600 schedules, ~1,200 daily logs, ~150 assessments, ~3,900 grades) + optional small `SajelSeeder` demo |
 | Version control   | ✅ Git repo initialized on `main` branch           |
 | README            | ⚠️ Still the default Laravel skeleton README       |
 | `APP_NAME`        | ✅ Set to `Sajel` in `.env`                        |
@@ -332,8 +391,12 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
    export supports CSV/XLSX, and PDF is produced through the browser's print dialog rather than a
    server-side PDF library.
 2. **README**: replace the skeleton README with a project-specific one (or point it to this doc).
-3. **Default locale**: `.env` uses `APP_LOCALE=en`; the landing page falls back to English unless a
-   `/{locale}` path is used.
+3. **Default locale**: `.env` uses `APP_LOCALE=en`, so a fresh visitor gets English and `/en/...`
+   links. Once a language is chosen (any `/{locale}/...` URL, including the panel), the locale is
+   stored in the session and reused for non-localized requests (Livewire updates, `/`, redirects) until
+   the visitor switches again. Set `APP_LOCALE=ar` / `APP_FALLBACK_LOCALE=ar` if Arabic should also be
+   the first-visit default (the `WelcomeAndDashboardTest` expectations for `/en/auth/...` assume the
+   current English default and would need updating).
 
 ## 10. Dashboard Livewire Remake (dark-mode safe)
 
@@ -355,8 +418,10 @@ composer setup          # install deps, create .env, key, migrate, npm install +
 # or manually:
 composer install
 php artisan key:generate
-php artisan migrate
-php artisan db:seed --class=SajelSeeder   # optional demo data
+php artisan migrate:fresh --seed   # wipe + rebuild the full middle-school dataset
+# or, on an already-migrated database (also destructive):
+php artisan db:seed --class=MiddleSchoolDatabaseSeeder
+php artisan db:seed --class=SajelSeeder   # optional small demo, run instead of the large dataset
 composer dev            # serve + queue + logs + vite concurrently
 ```
 

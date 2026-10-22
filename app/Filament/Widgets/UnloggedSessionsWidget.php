@@ -11,10 +11,19 @@ use App\Models\User;
 use Carbon\Carbon;
 use Filament\Widgets\Widget;
 use Illuminate\Contracts\View\View;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
+use Livewire\WithPagination;
 
 class UnloggedSessionsWidget extends Widget
 {
+    use WithPagination;
+
+    private const PER_PAGE = 5;
+
+    private const PAGE_NAME = 'pendingPage';
+
     protected static string $view = 'filament.widgets.unlogged-sessions-widget';
 
     /**
@@ -36,7 +45,7 @@ class UnloggedSessionsWidget extends Widget
      * Sessions from Sunday through today whose end time has passed and whose
      * DailyLog is either missing or still in the "planned" state.
      *
-     * @return Collection<int, array{
+     * @return LengthAwarePaginator<int, array{
      *     date: Carbon,
      *     schedule: Schedule,
      *     state: 'missing'|'planned',
@@ -44,12 +53,12 @@ class UnloggedSessionsWidget extends Widget
      *     url: string
      * }>
      */
-    public function getPendingSessions(): Collection
+    public function getPendingSessions(): LengthAwarePaginator
     {
         $user = auth()->user();
 
         if (! $user instanceof User || ! $user->isTeacher()) {
-            return collect();
+            return $this->paginatePendingSessions(collect());
         }
 
         $timezone = config('app.timezone', 'Africa/Algiers');
@@ -68,7 +77,7 @@ class UnloggedSessionsWidget extends Widget
         }
 
         if ($datesByDay->isEmpty()) {
-            return collect();
+            return $this->paginatePendingSessions(collect());
         }
 
         $schedules = Schedule::query()
@@ -134,9 +143,44 @@ class UnloggedSessionsWidget extends Widget
             ]);
         }
 
-        return $pending
-            ->sortBy(fn (array $task): string => $task['date']->toDateString().' '.$task['schedule']->start_time->format('H:i'))
-            ->values();
+        return $this->paginatePendingSessions(
+            $pending
+                ->sortBy(fn (array $task): string => $task['date']->toDateString().' '.$task['schedule']->start_time->format('H:i'))
+                ->values(),
+        );
+    }
+
+    /**
+     * @param  Collection<int, array{
+     *     date: Carbon,
+     *     schedule: Schedule,
+     *     state: 'missing'|'planned',
+     *     log: DailyLog|null,
+     *     url: string
+     * }>  $pending
+     * @return LengthAwarePaginator<int, array{
+     *     date: Carbon,
+     *     schedule: Schedule,
+     *     state: 'missing'|'planned',
+     *     log: DailyLog|null,
+     *     url: string
+     * }>
+     */
+    private function paginatePendingSessions(Collection $pending): LengthAwarePaginator
+    {
+        $lastPage = max(1, (int) ceil($pending->count() / self::PER_PAGE));
+        $page = min(max(1, Paginator::resolveCurrentPage(self::PAGE_NAME)), $lastPage);
+
+        return new LengthAwarePaginator(
+            $pending->forPage($page, self::PER_PAGE)->values(),
+            $pending->count(),
+            self::PER_PAGE,
+            $page,
+            [
+                'path' => Paginator::resolveCurrentPath(),
+                'pageName' => self::PAGE_NAME,
+            ],
+        );
     }
 
     public function render(): View

@@ -36,6 +36,27 @@ class UserFactory extends Factory
     }
 
     /**
+     * An administrator account (the platform manager).
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'role' => Role::Admin->value,
+        ]);
+    }
+
+    /**
+     * A teacher account. Subject specialization is assigned by the seeder,
+     * because it depends on the subjects that already exist in the database.
+     */
+    public function teacher(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'role' => Role::Teacher->value,
+        ]);
+    }
+
+    /**
      * Indicate that the model's email address should be unverified.
      */
     public function unverified(): static

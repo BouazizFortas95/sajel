@@ -98,10 +98,103 @@ class TeacherTimetableTest extends TestCase
             array_keys($grid[DayOfWeek::Sunday->value]),
         );
 
-        $this->assertSame($sunday->id, $grid[DayOfWeek::Sunday->value]['08:00']?->id);
+        $this->assertSame($sunday->id, $grid[DayOfWeek::Sunday->value]['08:00']['schedule']->id);
+        $this->assertSame(1, $grid[DayOfWeek::Sunday->value]['08:00']['span']);
         $this->assertNull($grid[DayOfWeek::Sunday->value]['09:00']);
-        $this->assertSame($monday->id, $grid[DayOfWeek::Monday->value]['14:00']?->id);
+        $this->assertSame($monday->id, $grid[DayOfWeek::Monday->value]['14:00']['schedule']->id);
         $this->assertNull($grid[DayOfWeek::Monday->value]['08:00']);
+    }
+
+    public function test_a_multi_hour_schedule_spans_rows_and_marks_the_next_slots_covered(): void
+    {
+        $teacher = $this->makeTeacher();
+        $subject = Subject::factory()->create(['name' => 'الرياضيات']);
+        $schedule = $this->makeSchedule($teacher, DayOfWeek::Sunday, $subject, '08:00', '10:00');
+
+        $this->actingAs($teacher);
+
+        $component = Livewire::test(TeacherTimetable::class);
+
+        $grid = $component->instance()->grid;
+
+        $this->assertSame(2, $grid[DayOfWeek::Sunday->value]['08:00']['span']);
+        $this->assertSame(['covered' => true], $grid[DayOfWeek::Sunday->value]['09:00']);
+        $this->assertNull($grid[DayOfWeek::Sunday->value]['10:00']);
+
+        $html = $component->html();
+
+        // One card with an explicit two-row span and a taller minimum height.
+        $this->assertSame(1, substr_count($html, "openLog({$schedule->id}"));
+        $this->assertStringContainsString('row-span-2', $html);
+        $this->assertStringContainsString('min-h-[11rem]', $html);
+        $this->assertStringContainsString('/ span 2', $html);
+
+        // 5 days × 7 slots = 35 cells: one card + one covered cell + 33 placeholders.
+        $this->assertSame(33, substr_count($html, __('فراغ')));
+    }
+
+    public function test_back_to_back_multi_hour_schedules_each_span_their_own_rows(): void
+    {
+        $teacher = $this->makeTeacher();
+        $subject = Subject::factory()->create();
+
+        $first = $this->makeSchedule($teacher, DayOfWeek::Monday, $subject, '08:00', '10:00');
+        $second = $this->makeSchedule($teacher, DayOfWeek::Monday, $subject, '10:00', '12:00');
+
+        $this->actingAs($teacher);
+
+        $component = Livewire::test(TeacherTimetable::class);
+        $grid = $component->instance()->grid;
+
+        $this->assertSame($first->id, $grid[DayOfWeek::Monday->value]['08:00']['schedule']->id);
+        $this->assertSame(2, $grid[DayOfWeek::Monday->value]['08:00']['span']);
+        $this->assertSame(['covered' => true], $grid[DayOfWeek::Monday->value]['09:00']);
+        $this->assertSame($second->id, $grid[DayOfWeek::Monday->value]['10:00']['schedule']->id);
+        $this->assertSame(2, $grid[DayOfWeek::Monday->value]['10:00']['span']);
+        $this->assertSame(['covered' => true], $grid[DayOfWeek::Monday->value]['11:00']);
+
+        $html = $component->html();
+
+        $this->assertSame(2, substr_count($html, 'row-span-2'));
+        $this->assertSame(31, substr_count($html, __('فراغ')));
+    }
+
+    public function test_a_three_hour_schedule_spans_three_rows(): void
+    {
+        $teacher = $this->makeTeacher();
+        $this->makeSchedule($teacher, DayOfWeek::Sunday, Subject::factory()->create(), '08:00', '11:00');
+
+        $this->actingAs($teacher);
+
+        $component = Livewire::test(TeacherTimetable::class);
+        $grid = $component->instance()->grid;
+
+        $this->assertSame(3, $grid[DayOfWeek::Sunday->value]['08:00']['span']);
+        $this->assertSame(['covered' => true], $grid[DayOfWeek::Sunday->value]['09:00']);
+        $this->assertSame(['covered' => true], $grid[DayOfWeek::Sunday->value]['10:00']);
+        $this->assertNull($grid[DayOfWeek::Sunday->value]['11:00']);
+
+        $html = $component->html();
+
+        $this->assertStringContainsString('row-span-3', $html);
+        $this->assertStringContainsString('min-h-[16.75rem]', $html);
+        $this->assertSame(32, substr_count($html, __('فراغ')));
+    }
+
+    public function test_a_schedule_never_spans_across_the_lunch_break(): void
+    {
+        $teacher = $this->makeTeacher();
+        $this->makeSchedule($teacher, DayOfWeek::Sunday, Subject::factory()->create(), '11:00', '14:00');
+
+        $this->actingAs($teacher);
+
+        $grid = Livewire::test(TeacherTimetable::class)->instance()->grid;
+
+        // 11:00 is the last morning row; 14:00 is not contiguous with it, so
+        // the card stays on one row instead of painting over the break row.
+        $this->assertSame(1, $grid[DayOfWeek::Sunday->value]['11:00']['span']);
+        $this->assertNull($grid[DayOfWeek::Sunday->value]['14:00']);
+        $this->assertArrayNotHasKey('covered', $grid[DayOfWeek::Sunday->value]['14:00'] ?? []);
     }
 
     public function test_it_calculates_the_weekly_workload_and_flags_an_overload(): void

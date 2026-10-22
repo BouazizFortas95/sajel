@@ -1,5 +1,5 @@
 @php
-    $pendingCount = $pendingSessions->count();
+    $pendingCount = $pendingSessions->total();
 @endphp
 
 @if ($pendingCount === 0)
@@ -130,5 +130,11 @@
                 </li>
             @endforeach
         </ul>
+
+        @if ($pendingSessions->hasPages())
+            <div class="border-t border-danger-200/80 px-5 py-3 dark:border-danger-400/20">
+                {{ $pendingSessions->links() }}
+            </div>
+        @endif
     </div>
 @endif

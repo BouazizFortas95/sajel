@@ -31,9 +31,11 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
 use Throwable;
 
 class DailyLogResource extends Resource
@@ -155,8 +157,8 @@ class DailyLogResource extends Resource
                                                     }
                                                 }
                                             })
-                                            ->rule(fn (Get $get, ?DailyLog $record): Rule => Rule::unique(DailyLog::class, 'schedule_id')
-                                                ->where(fn (EloquentBuilder $query) => $query->whereDate('date', $get('date')))
+                                            ->rule(fn (Get $get, ?DailyLog $record): Unique => Rule::unique(DailyLog::class, 'schedule_id')
+                                                ->where(fn (QueryBuilder $query): QueryBuilder => $query->whereDate('date', $get('date')))
                                                 ->ignore($record?->id)),
 
                                         DatePicker::make('date')

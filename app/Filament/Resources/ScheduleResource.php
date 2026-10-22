@@ -10,6 +10,7 @@ use App\Models\Group;
 use App\Models\Schedule;
 use App\Models\Subject;
 use App\Models\User;
+use Closure;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TimePicker;
@@ -20,6 +21,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class ScheduleResource extends Resource
@@ -151,13 +153,14 @@ class ScheduleResource extends Resource
                     ]),
 
                 Section::make(__('توقيت الحصة'))
-                    ->description(__('يمنع تجاوز وقت النهاية لوقت البداية.'))
+                    ->description(__('يمنع تجاوز وقت النهاية لوقت البداية، وتداخل الحصص لنفس المعلم في نفس اليوم.'))
                     ->columns(2)
                     ->schema([
                         TimePicker::make('start_time')
                             ->label(__('بداية الحصة'))
                             ->seconds(false)
-                            ->required(),
+                            ->required()
+                            ->rule(fn (Get $get, ?Schedule $record): Closure => self::noOverlapRule($get, $record)),
 
                         TimePicker::make('end_time')
                             ->label(__('نهاية الحصة'))
@@ -169,9 +172,63 @@ class ScheduleResource extends Resource
                                         $fail(__('وقت النهاية يجب أن يكون بعد وقت البداية.'));
                                     }
                                 };
-                            }),
+                            })
+                            ->rule(fn (Get $get, ?Schedule $record): Closure => self::noOverlapRule($get, $record)),
                     ]),
             ]);
+    }
+
+    /**
+     * Reject a slot that overlaps (or is identical to) a slot already
+     * scheduled for the same teacher on the same day.
+     *
+     * The rule is attached to both time fields so the pair is highlighted
+     * together. The comparison happens in PHP over the teacher's few slots
+     * for that day, which stays correct regardless of whether a stored time
+     * is "H:i" or "H:i:s".
+     */
+    private static function noOverlapRule(Get $get, ?Schedule $record): Closure
+    {
+        return function (string $attribute, mixed $value, callable $fail) use ($get, $record): void {
+            $teacherId = self::selectedTeacher($get)?->id;
+            $start = $get('start_time');
+            $end = $get('end_time');
+            $day = $get('day_of_week');
+
+            if (blank($teacherId) || blank($start) || blank($end) || blank($day)) {
+                return;
+            }
+
+            $start = Carbon::parse($start)->format('H:i');
+            $end = Carbon::parse($end)->format('H:i');
+
+            // An inverted range is already reported by the end_time rule.
+            if ($end <= $start) {
+                return;
+            }
+
+            $overlaps = Schedule::query()
+                ->where('user_id', $teacherId)
+                ->where('day_of_week', $day instanceof DayOfWeek ? $day->value : $day)
+                ->when($record?->exists, fn (Builder $query): Builder => $query->whereKeyNot($record->getKey()))
+                ->get(['id', 'start_time', 'end_time'])
+                ->contains(function (Schedule $existing) use ($start, $end): bool {
+                    $existingStart = $existing->start_time?->format('H:i');
+                    $existingEnd = $existing->end_time?->format('H:i');
+
+                    if ($existingStart === null || $existingEnd === null) {
+                        return false;
+                    }
+
+                    // Half-open interval comparison: back-to-back slots
+                    // (09:00-10:00 after 08:00-09:00) do not overlap.
+                    return $existingStart < $end && $existingEnd > $start;
+                });
+
+            if ($overlaps) {
+                $fail(__('هذا التوقيت يتقاطع مع حصة أخرى لنفس المعلم في نفس اليوم.'));
+            }
+        };
     }
 
     private static function selectedTeacher(Get $get): ?User

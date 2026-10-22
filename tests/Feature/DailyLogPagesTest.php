@@ -93,4 +93,40 @@ class DailyLogPagesTest extends TestCase
             ->assertOk()
             ->assertSet('data.schedule_id', null);
     }
+
+    public function test_create_form_saves_a_log_and_rejects_a_duplicate_schedule_and_date(): void
+    {
+        $teacher = User::factory()->create();
+        $schedule = Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'subject_id' => Subject::factory()->create(['name' => 'الرياضيات'])->id,
+        ]);
+
+        $this->actingAs($teacher);
+
+        // Evaluating the unique rule must return a validation object, not the
+        // Rule facade class (which previously caused a TypeError on save).
+        Livewire::withQueryParams(['schedule_id' => $schedule->id, 'date' => '2026-10-19'])
+            ->test(CreateDailyLog::class)
+            ->fillForm(['title' => 'درس تجريبي'])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame(1, DailyLog::query()->count());
+
+        $log = DailyLog::query()->first();
+
+        $this->assertSame($schedule->id, $log?->schedule_id);
+        $this->assertSame('2026-10-19', $log?->date?->toDateString());
+        $this->assertSame('درس تجريبي', $log?->title);
+
+        // Same schedule + date: rejected by validation, not by a 500.
+        Livewire::withQueryParams(['schedule_id' => $schedule->id, 'date' => '2026-10-19'])
+            ->test(CreateDailyLog::class)
+            ->fillForm(['title' => 'درس مكرر'])
+            ->call('create')
+            ->assertHasFormErrors(['schedule_id']);
+
+        $this->assertSame(1, DailyLog::query()->count());
+    }
 }

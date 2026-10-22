@@ -11,6 +11,7 @@ use App\Models\Schedule;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -94,6 +95,63 @@ class UnloggedSessionsWidgetTest extends TestCase
         $this->assertFalse($pending->contains(
             fn (array $task): bool => $task['schedule']->is($futureToday),
         ));
+    }
+
+    public function test_it_paginates_pending_sessions_five_at_a_time(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 10, 22, 12, 0, 0, 'Africa/Algiers'));
+
+        $teacher = User::factory()->create();
+
+        $slots = [
+            [DayOfWeek::Sunday, '08:00', '09:00'],
+            [DayOfWeek::Sunday, '09:00', '10:00'],
+            [DayOfWeek::Sunday, '10:00', '11:00'],
+            [DayOfWeek::Sunday, '11:00', '12:00'],
+            [DayOfWeek::Monday, '08:00', '09:00'],
+            [DayOfWeek::Monday, '09:00', '10:00'],
+            [DayOfWeek::Monday, '10:00', '11:00'],
+            [DayOfWeek::Monday, '11:00', '12:00'],
+            [DayOfWeek::Tuesday, '08:00', '09:00'],
+            [DayOfWeek::Tuesday, '09:00', '10:00'],
+            [DayOfWeek::Tuesday, '10:00', '11:00'],
+            [DayOfWeek::Wednesday, '08:00', '09:00'],
+            [DayOfWeek::Wednesday, '09:00', '10:00'],
+            [DayOfWeek::Thursday, '08:00', '09:00'],
+        ];
+
+        foreach ($slots as [$day, $start, $end]) {
+            $this->scheduleFor($teacher, $day, $start, $end);
+        }
+
+        $component = Livewire::actingAs($teacher)
+            ->test(UnloggedSessionsWidget::class)
+            ->assertOk()
+            ->assertSee('لديك 14 حصة');
+
+        $firstPage = $component->instance()->getPendingSessions();
+
+        $this->assertInstanceOf(LengthAwarePaginator::class, $firstPage);
+        $this->assertSame(14, $firstPage->total());
+        $this->assertSame(5, $firstPage->perPage());
+        $this->assertSame(3, $firstPage->lastPage());
+        $this->assertSame(1, $firstPage->currentPage());
+        $this->assertCount(5, $firstPage->items());
+
+        $component->call('gotoPage', 2, 'pendingPage');
+
+        $secondPage = $component->instance()->getPendingSessions();
+
+        $this->assertSame(2, $secondPage->currentPage());
+        $this->assertCount(5, $secondPage->items());
+
+        $component->call('gotoPage', 3, 'pendingPage');
+
+        $thirdPage = $component->instance()->getPendingSessions();
+
+        $this->assertSame(3, $thirdPage->currentPage());
+        $this->assertCount(4, $thirdPage->items());
+        $component->assertSee('لديك 14 حصة');
     }
 
     public function test_it_renders_a_success_state_when_nothing_is_pending(): void

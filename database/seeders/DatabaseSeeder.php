@@ -2,26 +2,19 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
+     *
+     * The middle-school seeder is destructive (it wipes school and user data),
+     * which is exactly what `migrate:fresh --seed` and local demos need. Do not
+     * keep `WithoutModelEvents` here: the Classroom naming hook must run.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-
-        $this->call(SajelSeeder::class);
+        $this->call(MiddleSchoolDatabaseSeeder::class);
     }
 }

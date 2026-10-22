@@ -156,24 +156,33 @@ class TeacherTimetable extends Component
 
     /**
      * Build the fixed timetable matrix:
-     * [day => [slot start => Schedule|null]].
+     * [day => [slot start => ['schedule' => Schedule, 'span' => n]
+     *                         | ['covered' => true]
+     *                         | null]].
      *
-     * @return array<string, array<string, Schedule|null>>
+     * A schedule starting in a slot owns that row plus the next `span - 1`
+     * rows. Those following rows are marked as covered so the view renders no
+     * cell for them at all — omitting the cell (rather than rendering an empty
+     * placeholder) is what keeps the other days aligned when a card spans
+     * multiple grid rows.
+     *
+     * @return array<string, array<string, array{schedule: Schedule, span: int}|array{covered: true}|null>>
      */
     #[Computed]
     public function grid(): array
     {
-        $schedules = $this->weeklySchedules;
+        $slots = $this->timeSlots();
+        $slotIndexes = array_flip(array_column($slots, 'start'));
 
         // Index once, keyed by day and start time. If a teacher somehow has
         // two schedules at the same time, the first one wins the cell.
         $mapped = [];
 
-        foreach ($schedules as $schedule) {
+        foreach ($this->weeklySchedules as $schedule) {
             $day = $schedule->day_of_week?->value;
             $start = $schedule->start_time?->format('H:i');
 
-            if ($day === null || $start === null) {
+            if ($day === null || $start === null || ! isset($slotIndexes[$start])) {
                 continue;
             }
 
@@ -183,12 +192,88 @@ class TeacherTimetable extends Component
         $grid = [];
 
         foreach (self::SCHOOL_DAYS as $day) {
-            foreach ($this->timeSlots() as $slot) {
-                $grid[$day][$slot['start']] = $mapped[$day][$slot['start']] ?? null;
+            /** @var array<string, true> $covered */
+            $covered = [];
+
+            foreach ($slots as $slot) {
+                $start = $slot['start'];
+
+                // A multi-hour lesson started in an earlier row already owns
+                // this cell; the view must not render an empty placeholder.
+                if (isset($covered[$start])) {
+                    $grid[$day][$start] = ['covered' => true];
+
+                    continue;
+                }
+
+                $schedule = $mapped[$day][$start] ?? null;
+
+                if ($schedule === null) {
+                    $grid[$day][$start] = null;
+
+                    continue;
+                }
+
+                $span = $this->slotSpan($schedule, $slotIndexes[$start], $slots);
+
+                $grid[$day][$start] = [
+                    'schedule' => $schedule,
+                    'span' => $span,
+                ];
+
+                for ($offset = 1; $offset < $span; $offset++) {
+                    $covered[$slots[$slotIndexes[$start] + $offset]['start']] = true;
+                }
             }
         }
 
         return $grid;
+    }
+
+    /**
+     * The number of consecutive one-hour rows a schedule occupies.
+     *
+     * Rows are 08:00–09:00 … 11:00–12:00 and 14:00–15:00 … 16:00–17:00, so a
+     * 08:00–10:00 lesson spans two rows. The walk stops when the end time is
+     * reached and when the next row is not contiguous (the lunch break), which
+     * guarantees a span can never cover the break row or a period heading.
+     *
+     * @param  list<array{start: string, end: string}>  $slots
+     */
+    private function slotSpan(Schedule $schedule, int $startIndex, array $slots): int
+    {
+        $end = $schedule->end_time;
+
+        if ($end === null) {
+            return 1;
+        }
+
+        $endMinutes = ($end->hour * 60) + $end->minute;
+        $span = 1;
+
+        for ($index = $startIndex + 1; $index < count($slots); $index++) {
+            if ($slots[$index - 1]['end'] !== $slots[$index]['start']) {
+                break;
+            }
+
+            if ($this->minutes($slots[$index]['start']) >= $endMinutes) {
+                break;
+            }
+
+            $span++;
+        }
+
+        return $span;
+    }
+
+    /**
+     * Convert an "H:i" slot boundary to minutes since midnight.
+     */
+    private function minutes(string $time): int
+    {
+        [$hours, $minutes] = explode(':', $time);
+
+        return ((int) $hours * 60) + (int) $minutes;
     }
 
     /**

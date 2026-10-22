@@ -19,6 +19,14 @@ class SetFilamentLocale
             404,
         );
 
+        // Persist the explicit choice: Livewire's update requests are not
+        // wrapped in the localized panel URL, so this session value is the
+        // only way they (and the redirects generated during them) can keep
+        // rendering the user's language.
+        if ($request->hasSession()) {
+            $request->session()->put('locale', $locale);
+        }
+
         LaravelLocalization::setLocale($locale);
         URL::defaults(['locale' => $locale]);
 
