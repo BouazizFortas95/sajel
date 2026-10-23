@@ -7,6 +7,9 @@ use App\Enums\DailyLogStatus;
 use App\Enums\Role;
 use App\Models\Assessment;
 use App\Models\Classroom;
+use App\Models\CurriculumDomain;
+use App\Models\CurriculumResource;
+use App\Models\CurriculumSequence;
 use App\Models\DailyLog;
 use App\Models\EducationPhase;
 use App\Models\Grade;
@@ -294,6 +297,35 @@ class MiddleSchoolSeederTest extends TestCase
         }
     }
 
+    public function test_it_seeds_a_curriculum_for_every_subject_and_level_and_maps_each_daily_log(): void
+    {
+        $this->seedDataset();
+
+        $subjectCount = Subject::query()->count();
+        $levelCount = Level::query()->count();
+
+        $this->assertSame($subjectCount * $levelCount * 2, CurriculumDomain::query()->count());
+        $this->assertSame($subjectCount * $levelCount * 4, CurriculumSequence::query()->count());
+        $this->assertSame($subjectCount * $levelCount * 8, CurriculumResource::query()->count());
+        $this->assertSame(0, DailyLog::query()->whereNull('curriculum_resource_id')->count());
+
+        $mismatched = DailyLog::query()
+            ->with(['schedule.classroom', 'curriculumResource.sequence.domain'])
+            ->get()
+            ->filter(function (DailyLog $log): bool {
+                $schedule = $log->schedule;
+                $domain = $log->curriculumResource?->sequence?->domain;
+
+                return ! $schedule
+                    || ! $domain
+                    || $domain->subject_id !== $schedule->subject_id
+                    || $domain->level_id !== $schedule->classroom?->level_id;
+            })
+            ->count();
+
+        $this->assertSame(0, $mismatched);
+    }
+
     public function test_it_seeds_assessments_and_grades_for_the_whole_schedule_roster(): void
     {
         $this->seedDataset();
@@ -419,8 +451,9 @@ class MiddleSchoolSeederTest extends TestCase
 
         DB::disableQueryLog();
 
-        // The ~6,000-record dataset should never come close to one query per row.
-        $this->assertLessThan(200, $queries, "The seeder ran {$queries} queries.");
+        // The ~6,000-record dataset, including the curriculum plan, should
+        // still use a bounded set of bulk writes instead of one query per row.
+        $this->assertLessThan(215, $queries, "The seeder ran {$queries} queries.");
     }
 
     public function test_the_student_factory_generates_arabic_test_identities(): void

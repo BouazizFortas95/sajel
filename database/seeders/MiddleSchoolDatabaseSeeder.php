@@ -7,6 +7,9 @@ use App\Enums\DailyLogStatus;
 use App\Enums\DayOfWeek;
 use App\Models\Assessment;
 use App\Models\Classroom;
+use App\Models\CurriculumDomain;
+use App\Models\CurriculumResource;
+use App\Models\CurriculumSequence;
 use App\Models\EducationPhase;
 use App\Models\Group;
 use App\Models\Level;
@@ -171,6 +174,9 @@ class MiddleSchoolDatabaseSeeder extends Seeder
         'grades',
         'attendances',
         'daily_logs',
+        'curriculum_resources',
+        'curriculum_sequences',
+        'curriculum_domains',
         'assessments',
         'schedules',
         'students',
@@ -211,13 +217,23 @@ class MiddleSchoolDatabaseSeeder extends Seeder
                     $structure['classrooms'],
                 );
 
+                $curriculum = $this->seedCurriculum($subjects, $structure['levels']);
+                $classroomLevels = $structure['classrooms']
+                    ->mapWithKeys(fn (Classroom $classroom): array => [$classroom->id => $classroom->level_id])
+                    ->all();
+
                 // Re-read the inserted slots once so the log and gradebook
                 // generators can work entirely in memory, without one query per
                 // schedule or student.
                 $schedules = Schedule::query()->orderBy('id')->get();
                 $subjectsById = $subjects->keyBy('id');
 
-                $dailyLogCount = $this->seedDailyLogs($schedules, $subjectsById);
+                $dailyLogCount = $this->seedDailyLogs(
+                    $schedules,
+                    $subjectsById,
+                    $curriculum['resources_by_pair'],
+                    $classroomLevels,
+                );
                 $gradebook = $this->seedAssessmentsAndGrades($schedules, $subjectsById);
 
                 return [
@@ -231,6 +247,9 @@ class MiddleSchoolDatabaseSeeder extends Seeder
                     'teachers' => $teachers->count(),
                     'schedules' => $scheduleCount,
                     'daily_logs' => $dailyLogCount,
+                    'curriculum_domains' => $curriculum['domains'],
+                    'curriculum_sequences' => $curriculum['sequences'],
+                    'curriculum_resources' => $curriculum['resources'],
                     'assessments' => $gradebook['assessments'],
                     'grades' => $gradebook['grades'],
                 ];
@@ -240,7 +259,7 @@ class MiddleSchoolDatabaseSeeder extends Seeder
         }
 
         $this->command?->info(sprintf(
-            'Middle-school dataset ready: %d subjects, %d levels, %d classrooms, %d groups, %d students, %d teachers, %d schedules, %d daily logs, %d assessments, %d grades.',
+            'Middle-school dataset ready: %d subjects, %d levels, %d classrooms, %d groups, %d students, %d teachers, %d schedules, %d daily logs, %d curriculum domains, %d sequences, %d resources, %d assessments, %d grades.',
             $stats['subjects'],
             $stats['levels'],
             $stats['classrooms'],
@@ -249,6 +268,9 @@ class MiddleSchoolDatabaseSeeder extends Seeder
             $stats['teachers'],
             $stats['schedules'],
             $stats['daily_logs'],
+            $stats['curriculum_domains'],
+            $stats['curriculum_sequences'],
+            $stats['curriculum_resources'],
             $stats['assessments'],
             $stats['grades'],
         ));
@@ -687,15 +709,179 @@ class MiddleSchoolDatabaseSeeder extends Seeder
     }
 
     /**
+     * Seed a compact annual plan for every subject/level pair.
+     *
+     * Each pair receives two domains, four learning sequences, and eight
+     * knowledge resources. The returned map lets the daily-log generator attach
+     * every lesson to a resource without extra queries.
+     *
+     * @param  EloquentCollection<int, Subject>  $subjects
+     * @param  EloquentCollection<int, Level>  $levels
+     * @return array{
+     *     domains: int,
+     *     sequences: int,
+     *     resources: int,
+     *     resources_by_pair: array<string, list<CurriculumResource>>
+     * }
+     */
+    private function seedCurriculum(EloquentCollection $subjects, EloquentCollection $levels): array
+    {
+        $timestamp = now();
+        $domainNames = ['الميدان الأول', 'الميدان الثاني'];
+        $sequenceNames = ['المقطع الأول', 'المقطع الثاني', 'المقطع الثالث', 'المقطع الرابع'];
+        $domainRows = [];
+
+        foreach ($subjects as $subject) {
+            foreach ($levels as $level) {
+                foreach ($domainNames as $domainIndex => $domainName) {
+                    $domainRows[] = [
+                        'subject_id' => $subject->id,
+                        'level_id' => $level->id,
+                        'name' => $domainName,
+                        'code' => 'D'.($domainIndex + 1),
+                        'description' => null,
+                        'sort_order' => $domainIndex + 1,
+                        'created_at' => $timestamp,
+                        'updated_at' => $timestamp,
+                    ];
+                }
+            }
+        }
+
+        foreach (array_chunk($domainRows, 120) as $chunk) {
+            DB::table('curriculum_domains')->insert($chunk);
+        }
+
+        $domains = CurriculumDomain::query()
+            ->whereIn('subject_id', $subjects->pluck('id'))
+            ->whereIn('level_id', $levels->pluck('id'))
+            ->get()
+            ->keyBy(fn (CurriculumDomain $domain): string => $domain->subject_id.':'.$domain->level_id.':'.$domain->name);
+
+        $sequenceRows = [];
+
+        foreach ($subjects as $subject) {
+            foreach ($levels as $level) {
+                foreach ($domainNames as $domainIndex => $domainName) {
+                    $domain = $domains->get($subject->id.':'.$level->id.':'.$domainName);
+
+                    if (! $domain) {
+                        continue;
+                    }
+
+                    foreach ([1, 2] as $sequenceOffset) {
+                        $sequenceIndex = ($domainIndex * 2) + $sequenceOffset;
+
+                        $sequenceRows[] = [
+                            'curriculum_domain_id' => $domain->id,
+                            'name' => $sequenceNames[$sequenceIndex - 1],
+                            'code' => 'S'.$sequenceIndex,
+                            'description' => null,
+                            'sort_order' => $sequenceIndex,
+                            'created_at' => $timestamp,
+                            'updated_at' => $timestamp,
+                        ];
+                    }
+                }
+            }
+        }
+
+        foreach (array_chunk($sequenceRows, 130) as $chunk) {
+            DB::table('curriculum_sequences')->insert($chunk);
+        }
+
+        $sequences = CurriculumSequence::query()
+            ->whereIn('curriculum_domain_id', $domains->pluck('id'))
+            ->get()
+            ->keyBy(fn (CurriculumSequence $sequence): string => $sequence->curriculum_domain_id.':'.$sequence->name);
+
+        $resourceRows = [];
+
+        foreach ($subjects as $subject) {
+            $topics = self::LESSON_TOPICS[$subject->name] ?? ['مراجعة المكتسبات', 'وضعية إدماجية'];
+
+            foreach ($levels as $level) {
+                foreach ($domainNames as $domainIndex => $domainName) {
+                    $domain = $domains->get($subject->id.':'.$level->id.':'.$domainName);
+
+                    if (! $domain) {
+                        continue;
+                    }
+
+                    foreach ([1, 2] as $sequenceOffset) {
+                        $sequenceIndex = ($domainIndex * 2) + $sequenceOffset;
+                        $sequence = $sequences->get($domain->id.':'.$sequenceNames[$sequenceIndex - 1]);
+
+                        if (! $sequence) {
+                            continue;
+                        }
+
+                        foreach ([1, 2] as $resourceIndex) {
+                            $topic = $topics[($sequenceIndex + $resourceIndex - 2) % count($topics)];
+
+                            $resourceRows[] = [
+                                'curriculum_sequence_id' => $sequence->id,
+                                'name' => $topic.' — مورد '.$resourceIndex,
+                                'code' => 'R'.$resourceIndex,
+                                'description' => null,
+                                'sort_order' => $resourceIndex,
+                                'created_at' => $timestamp,
+                                'updated_at' => $timestamp,
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach (array_chunk($resourceRows, 140) as $chunk) {
+            DB::table('curriculum_resources')->insert($chunk);
+        }
+
+        $domainsById = $domains->keyBy('id');
+        $sequencesById = $sequences->keyBy('id');
+        $resources = CurriculumResource::query()
+            ->whereIn('curriculum_sequence_id', $sequences->pluck('id'))
+            ->orderBy('id')
+            ->get();
+
+        $resourcesByPair = [];
+
+        foreach ($resources as $resource) {
+            $sequence = $sequencesById->get($resource->curriculum_sequence_id);
+            $domain = $sequence ? $domainsById->get($sequence->curriculum_domain_id) : null;
+
+            if (! $domain) {
+                continue;
+            }
+
+            $resourcesByPair[$domain->subject_id.':'.$domain->level_id][] = $resource;
+        }
+
+        return [
+            'domains' => count($domainRows),
+            'sequences' => count($sequenceRows),
+            'resources' => count($resourceRows),
+            'resources_by_pair' => $resourcesByPair,
+        ];
+    }
+
+    /**
      * Generate two occurrences (one per week) of every timetable slot across
      * the last fourteen calendar days. Content is built entirely in memory and
      * inserted in chunks, so no schedule or subject relation is queried per row.
      *
      * @param  EloquentCollection<int, Schedule>  $schedules
      * @param  EloquentCollection<int, Subject>  $subjectsById
+     * @param  array<string, list<CurriculumResource>>  $resourcesByPair
+     * @param  array<int, int>  $classroomLevels
      */
-    private function seedDailyLogs(EloquentCollection $schedules, EloquentCollection $subjectsById): int
-    {
+    private function seedDailyLogs(
+        EloquentCollection $schedules,
+        EloquentCollection $subjectsById,
+        array $resourcesByPair,
+        array $classroomLevels,
+    ): int {
         $today = now();
         $start = $today->copy()->subDays(self::DAILY_LOG_HISTORY_DAYS - 1)->startOfDay();
         $end = $today->copy()->endOfDay();
@@ -704,6 +890,7 @@ class MiddleSchoolDatabaseSeeder extends Seeder
         );
         $timestamp = now();
         $rows = [];
+        $curriculumCursor = [];
 
         for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
             $day = DayOfWeek::cases()[$date->dayOfWeek]->value;
@@ -753,8 +940,22 @@ class MiddleSchoolDatabaseSeeder extends Seeder
                     ],
                 ]];
 
+                $levelId = $classroomLevels[$schedule->classroom_id] ?? null;
+                $pairKey = filled($levelId)
+                    ? $schedule->subject_id.':'.$levelId
+                    : null;
+                $pairResources = $pairKey ? ($resourcesByPair[$pairKey] ?? []) : [];
+                $curriculumResourceId = null;
+
+                if ($pairKey && $pairResources !== []) {
+                    $cursor = $curriculumCursor[$pairKey] ?? 0;
+                    $curriculumResourceId = $pairResources[$cursor % count($pairResources)]->id;
+                    $curriculumCursor[$pairKey] = $cursor + 1;
+                }
+
                 $rows[] = [
                     'schedule_id' => $schedule->id,
+                    'curriculum_resource_id' => $curriculumResourceId,
                     'date' => $date->toDateString(),
                     'title' => $title,
                     'content_data' => json_encode($contentData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),

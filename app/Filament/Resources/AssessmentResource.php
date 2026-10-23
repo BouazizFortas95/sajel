@@ -26,9 +26,21 @@ class AssessmentResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
+    /**
+     * Keep the sidebar entry, page title, and breadcrumb in sync.
+     *
+     * The resource URL slug intentionally stays "assessments" so the
+     * localized panel routes remain stable (/ar/auth/assessments,
+     * /en/auth/assessments, ...). Only the human-readable label changes.
+     */
     public static function getNavigationLabel(): string
     {
-        return __('دفتر العلامات');
+        return static::getPluralModelLabel();
+    }
+
+    public static function getBreadcrumb(): string
+    {
+        return static::getNavigationLabel();
     }
 
     public static function getModelLabel(): string
@@ -58,6 +70,54 @@ class AssessmentResource extends Resource
         return auth()->user()?->isAdmin()
             ? $query
             : $query->whereHas('schedule', fn (Builder $query) => $query->where('user_id', Auth::id()));
+    }
+
+    /**
+     * Build a locale-aware URL for the printable gradebook.
+     *
+     * Passing the locale explicitly keeps the link correct even when it is
+     * evaluated during a Livewire request where no {locale} route parameter
+     * exists (for example, when the row action is rendered).
+     */
+    public static function getPrintUrl(Assessment $assessment): string
+    {
+        return route('print.assessment', [
+            'locale' => app()->getLocale(),
+            'assessment' => $assessment,
+        ]);
+    }
+
+    /**
+     * Options for the list-page print action, already scoped by the resource
+     * query so teachers can never select another teacher's assessment.
+     *
+     * @return array<int, string>
+     */
+    public static function getAssessmentOptions(): array
+    {
+        return static::getEloquentQuery()
+            ->with([
+                'schedule.subject',
+                'schedule.classroom',
+                'schedule.group',
+            ])
+            ->orderByDesc('date')
+            ->orderByDesc('id')
+            ->get()
+            ->mapWithKeys(function (Assessment $assessment): array {
+                $schedule = $assessment->schedule;
+                $place = $schedule?->group?->name ?? $schedule?->classroom?->name;
+
+                $label = implode(' — ', array_filter([
+                    $assessment->title,
+                    $schedule?->subject?->name,
+                    $place,
+                    $assessment->date?->format('d/m/Y'),
+                ]));
+
+                return [$assessment->id => $label];
+            })
+            ->all();
     }
 
     public static function form(Form $form): Form
@@ -187,6 +247,13 @@ class AssessmentResource extends Resource
                     ->options(AssessmentType::options()),
             ])
             ->actions([
+                Tables\Actions\Action::make('printGradebook')
+                    ->label(__('طباعة كشف النقاط'))
+                    ->icon('heroicon-o-printer')
+                    ->color('gray')
+                    ->url(fn (Assessment $record): string => static::getPrintUrl($record))
+                    ->openUrlInNewTab()
+                    ->visible(fn (Assessment $record): bool => auth()->user()?->can('view', $record) ?? false),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

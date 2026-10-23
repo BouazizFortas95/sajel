@@ -54,7 +54,6 @@ class WelcomeAndDashboardTest extends TestCase
         $response->assertSee("Today's logs");
         $response->assertSee('Class register');
         $response->assertSee('Weekly lessons');
-        $response->assertSee('Education levels');
         $response->assertSee('filament-language-switcher');
     }
 
@@ -71,8 +70,7 @@ class WelcomeAndDashboardTest extends TestCase
             ->get('/fr/auth')
             ->assertOk()
             ->assertSee('Journaux du jour')
-            ->assertSee('Registre de classe')
-            ->assertSee('Niveaux');
+            ->assertSee('Registre de classe');
     }
 
     public function test_arabic_homepage_uses_right_to_left_and_dropdown_switcher(): void

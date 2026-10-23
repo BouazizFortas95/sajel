@@ -13,6 +13,12 @@ class EditAssessment extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('printGradebook')
+                ->label(__('طباعة كشف النقاط'))
+                ->icon('heroicon-o-printer')
+                ->color('gray')
+                ->url(fn (): string => AssessmentResource::getPrintUrl($this->getRecord()))
+                ->openUrlInNewTab(),
             Actions\DeleteAction::make(),
         ];
     }

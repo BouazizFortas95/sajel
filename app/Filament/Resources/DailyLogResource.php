@@ -7,12 +7,14 @@ use App\Enums\LessonPhaseType;
 use App\Exceptions\AiLessonPlannerException;
 use App\Filament\Resources\DailyLogResource\Pages;
 use App\Filament\Resources\DailyLogResource\RelationManagers\AttendancesRelationManager;
+use App\Models\CurriculumResource;
 use App\Models\DailyLog;
 use App\Models\Schedule;
 use App\Models\User;
 use App\Services\AiLessonPlannerService;
 use App\Services\DailyLogRegisterService;
 use Carbon\Carbon;
+use Closure;
 use Filament\Actions;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Builder;
@@ -97,6 +99,90 @@ class DailyLogResource extends Resource
         return 'warning';
     }
 
+    /**
+     * Knowledge-resource options for the selected lesson.
+     *
+     * Only resources belonging to the schedule's subject and the classroom or
+     * group level are offered, so a lesson cannot be attached to another
+     * class's annual plan by mistake.
+     *
+     * @return array<int, string>
+     */
+    public static function curriculumResourceOptions(mixed $scheduleId): array
+    {
+        if (! is_numeric($scheduleId) || (int) $scheduleId <= 0) {
+            return [];
+        }
+
+        $schedule = Schedule::query()
+            ->with(['classroom', 'group.classroom'])
+            ->find($scheduleId);
+
+        if (! $schedule) {
+            return [];
+        }
+
+        $levelId = $schedule->classroom?->level_id
+            ?? $schedule->group?->classroom?->level_id;
+
+        if (blank($levelId)) {
+            return [];
+        }
+
+        return CurriculumResource::query()
+            ->whereHas('sequence.domain', fn (EloquentBuilder $query) => $query
+                ->where('subject_id', $schedule->subject_id)
+                ->where('level_id', $levelId))
+            ->with(['sequence.domain'])
+            ->ordered()
+            ->get()
+            ->mapWithKeys(fn (CurriculumResource $resource): array => [
+                $resource->id => $resource->label(),
+            ])
+            ->all();
+    }
+
+    /**
+     * Reject a resource that does not belong to the selected schedule's
+     * subject and level. The selector already limits options; this protects
+     * against stale or forged form state.
+     */
+    protected static function curriculumResourceRule(): Closure
+    {
+        return function (Get $get): Closure {
+            return function (string $attribute, mixed $value, Closure $fail) use ($get): void {
+                if (blank($value)) {
+                    return;
+                }
+
+                $schedule = Schedule::query()
+                    ->with(['classroom', 'group.classroom'])
+                    ->find($get('schedule_id'));
+
+                if (! $schedule) {
+                    $fail(__('اختر الحصة أولاً.'));
+
+                    return;
+                }
+
+                $levelId = $schedule->classroom?->level_id
+                    ?? $schedule->group?->classroom?->level_id;
+
+                $belongsToSchedule = filled($levelId)
+                    && CurriculumResource::query()
+                        ->whereKey($value)
+                        ->whereHas('sequence.domain', fn (EloquentBuilder $query) => $query
+                            ->where('subject_id', $schedule->subject_id)
+                            ->where('level_id', $levelId))
+                        ->exists();
+
+                if (! $belongsToSchedule) {
+                    $fail(__('المورد المعرفي المحدد لا ينتمي إلى مادة الحصة ومستواها.'));
+                }
+            };
+        };
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -152,6 +238,8 @@ class DailyLogResource extends Resource
                                             ->live()
                                             ->required()
                                             ->afterStateUpdated(function (Set $set, Get $get, ?string $state): void {
+                                                $set('curriculum_resource_id', null);
+
                                                 if (blank($get('title')) && filled($state)) {
                                                     $schedule = Schedule::query()->with('subject')->find($state);
 
@@ -190,6 +278,16 @@ class DailyLogResource extends Resource
                                             ->default(DailyLogStatus::Planned->value)
                                             ->disabledOn('edit')
                                             ->required(),
+
+                                        Select::make('curriculum_resource_id')
+                                            ->label(__('المورد المعرفي'))
+                                            ->options(fn (Get $get): array => static::curriculumResourceOptions($get('schedule_id')))
+                                            ->searchable()
+                                            ->preload()
+                                            ->nullable()
+                                            ->columnSpanFull()
+                                            ->helperText(__('اختياري: اربط الحصة بمورد معرفي من المنهاج الرسمي لحساب تقدم القسم.'))
+                                            ->rule(static::curriculumResourceRule()),
                                     ]),
 
                                 Section::make(__('المحتوى المخطط (ديناميكي)'))
@@ -607,6 +705,13 @@ class DailyLogResource extends Resource
                 Tables\Columns\TextColumn::make('schedule.classroom.name')
                     ->label(__('القسم'))
                     ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('curriculum_resource')
+                    ->label(__('المورد المعرفي'))
+                    ->getStateUsing(fn (DailyLog $record): ?string => $record->curriculumResource?->label())
+                    ->placeholder('—')
+                    ->wrap()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('الحالة'))

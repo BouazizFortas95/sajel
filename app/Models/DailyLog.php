@@ -24,6 +24,7 @@ class DailyLog extends Model
      */
     protected $fillable = [
         'schedule_id',
+        'curriculum_resource_id',
         'date',
         'title',
         'content_data',
@@ -48,6 +49,11 @@ class DailyLog extends Model
     public function schedule(): BelongsTo
     {
         return $this->belongsTo(Schedule::class);
+    }
+
+    public function curriculumResource(): BelongsTo
+    {
+        return $this->belongsTo(CurriculumResource::class);
     }
 
     public function attendances(): HasMany
@@ -143,6 +149,10 @@ class DailyLog extends Model
 
         if ($this->schedule) {
             $lines[] = 'الحصة: '.$this->schedule->label();
+        }
+
+        if ($this->curriculumResource) {
+            $lines[] = 'المورد المعرفي: '.$this->curriculumResource->label();
         }
 
         foreach ($this->content_data ?? [] as $block) {
