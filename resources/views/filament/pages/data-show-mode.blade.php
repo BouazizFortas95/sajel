@@ -1,0 +1,1 @@
+<livewire:data-show-mode />

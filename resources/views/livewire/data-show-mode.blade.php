@@ -15,6 +15,13 @@
 <body class="bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 min-h-screen text-white overflow-hidden select-none">
     <main class="h-screen flex flex-col justify-center items-center text-center px-8 slide-enter relative">
         @if ($currentSlide)
+            <div class="absolute top-4 left-4 z-50">
+                <a href="/ar/auth" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 text-sm border border-white/10 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    {{ __('العودة للوحة التحكم') }}
+                </a>
+            </div>
+
             <div class="absolute top-8 left-8 text-xs text-white/30 font-mono">{{ $currentSlide['type'] ?? 'slide' }} · {{ $loop?->iteration ?? 1 }}/{{ count($slides) }}</div>
 
             @if ($currentSlide['type'] === 'cover')

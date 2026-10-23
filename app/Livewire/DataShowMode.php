@@ -16,7 +16,14 @@ class DataShowMode extends Component
 
     public function mount(?int $logId = null): void
     {
-        $this->logId = $logId ?? request()->input('log');
+        if ($logId) {
+            $this->logId = $logId;
+        } else {
+            $this->logId = DailyLog::query()
+                ->whereHas('schedule', fn ($q) => $q->forTeacher(auth()->id()))
+                ->whereDate('date', today())
+                ->first()?->id;
+        }
         $this->loadContent();
     }
 

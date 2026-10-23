@@ -1,0 +1,28 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('pedagogical_remediations', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('student_id')->constrained()->cascadeOnDelete();
+            $table->string('reason', 200);
+            $table->text('activities');
+            $table->date('session_date');
+            $table->boolean('attended')->default(true);
+            $table->text('follow_up')->nullable();
+            $table->string('status', 50)->default('planned'); // planned, completed, ongoing
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('pedagogical_remediations');
+    }
+};

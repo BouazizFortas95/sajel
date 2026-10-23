@@ -10,7 +10,7 @@ class DataShowMode extends Page
 
     protected static ?int $navigationSort = 77;
 
-    protected static string $view = 'livewire.data-show-mode';
+    protected static string $view = 'filament.pages.data-show-mode';
 
     protected ?string $maxWidth = 'full';
 
@@ -27,10 +27,5 @@ class DataShowMode extends Page
     public function getTitle(): string
     {
         return __('عرض المسلاط');
-    }
-
-    public function mount(): void
-    {
-        parent::mount();
     }
 }

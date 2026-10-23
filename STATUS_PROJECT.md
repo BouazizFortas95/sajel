@@ -529,10 +529,10 @@ official curriculum tracking are now complete; the main remaining gaps are:
 | Axis | Done | Remaining | Progress |
 |------|------|-----------|----------|
 | 1. Planning, Curriculum & Reports | 5 | 0 | 100% |
-| 2. Lab & Student Management | 4 | 1 | 80% |
+| 2. Lab & Student Management | 5 | 0 | 100% |
 | 3. Classroom Activities & Presentation | 3 | 0 | 100% |
-| 4. Assessment & Pedagogical Remediation | 1 | 1 | 50% |
-| **Total** | **13** | **1** | **93%** |
+| 4. Assessment & Pedagogical Remediation | 1 | 0 | 100% |
+| **Total** | **14** | **0** | **100%** |
 
 ### 10.1 المحور الأول: التخطيط والمنهاج والتقارير (Planning, Curriculum & Reports)
 
@@ -587,7 +587,7 @@ official curriculum tracking are now complete; the main remaining gaps are:
 - [x] **الأقسام والمخابر (Classrooms & Labs):** توسيع البنية لإدارة قاعات المخابر، عدد المناصب/الحواسيب، وحالة كل جهاز (يعمل، معطل، قيد الصيانة).
 - [x] **مخطط جلوس المخبر (U-Shape Lab Seating Plan):** بناء واجهة Livewire تفاعلية على شكل حرف (U) لتوزيع تلاميذ الفوج أو القسم على مناصب الحواسيب وحفظ مخطط الجلوس.
 - [x] **تسجيل الحضور السريع (Quick Attendance):** إنشاء صفحة/واجهة سريعة (`QuickAttendance` Page + Livewire component + Blade view + 19 translations) في القائمة الجانبية تفتح مباشرة قائمة تلاميذ الحصة الجارية لتسجيل الغيابات والتأخرات بنقرة واحدة دون المرور بعدة صفحات. 8 feature tests pass.
-- [ ] **الملاحظات والسلوك (Behavior & Observations):** بناء سجل خاص بتتبع سلوك التلاميذ، المشاركة الإيجابية، نسيان الأدوات، والملاحظات الانضباطية مع ربطها بملف التلميذ.
+- [x] **الملاحظات والسلوك (Behavior & Observations):** `BehaviorObservation` (model/migration/resource) + مرتبط بالتلميذ عبر `student_id` + تصنيف (إيجابي/انضباطي/ملاحظة) + حالة متابعة.
 
 **Definition of done (Axis 2):**
 
@@ -611,7 +611,7 @@ official curriculum tracking are now complete; the main remaining gaps are:
 ### 10.4 المحور الرابع: التقويم والمعالجة البيداغوجية (Assessment & Pedagogical Remediation)
 
 - [x] التقييمات والمراقبة المستمرة ودفتر العلامات (`AssessmentResource` & `GradesRelationManager`).
-- [ ] **المعالجة البيداغوجية (Pedagogical Remediation):** إضافة ميزة تحديد التلاميذ المتعثرين (بناءً على نتائج التقييمات أو ملاحظات الأستاذ) وتوثيق حصص المعالجة البيداغوجية والأنشطة التصحيحية الموجهة لهم.
+- [x] **المعالجة البيداغوجية (Pedagogical Remediation):** `PedagogicalRemediation` (model/migration/resource) + ربط بالتلميذ + سبب/أنشطة/تاريخ/متابعة/حالة.
 
 **Definition of done (Axis 4):**
 
