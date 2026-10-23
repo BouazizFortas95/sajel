@@ -1,1 +1,3 @@
-<livewire:data-show-mode />
+<div class="contents">
+    <livewire:data-show-mode />
+</div>
