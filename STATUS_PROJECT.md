@@ -529,10 +529,10 @@ official curriculum tracking are now complete; the main remaining gaps are:
 | Axis | Done | Remaining | Progress |
 |------|------|-----------|----------|
 | 1. Planning, Curriculum & Reports | 5 | 0 | 100% |
-| 2. Lab & Student Management | 3 | 1 | 75% |
+| 2. Lab & Student Management | 4 | 1 | 80% |
 | 3. Classroom Activities & Presentation | 0 | 3 | 0% |
 | 4. Assessment & Pedagogical Remediation | 1 | 1 | 50% |
-| **Total** | **9** | **5** | **64%** |
+| **Total** | **10** | **4** | **71%** |
 
 ### 10.1 المحور الأول: التخطيط والمنهاج والتقارير (Planning, Curriculum & Reports)
 
@@ -586,7 +586,7 @@ official curriculum tracking are now complete; the main remaining gaps are:
 - [x] سجل التلاميذ واستيراد القوائم (`StudentResource`).
 - [x] **الأقسام والمخابر (Classrooms & Labs):** توسيع البنية لإدارة قاعات المخابر، عدد المناصب/الحواسيب، وحالة كل جهاز (يعمل، معطل، قيد الصيانة).
 - [x] **مخطط جلوس المخبر (U-Shape Lab Seating Plan):** بناء واجهة Livewire تفاعلية على شكل حرف (U) لتوزيع تلاميذ الفوج أو القسم على مناصب الحواسيب وحفظ مخطط الجلوس.
-- [ ] **تسجيل الحضور السريع (Quick Attendance):** إنشاء صفحة/واجهة سريعة في القائمة الجانبية تفتح مباشرة قائمة تلاميذ الحصة الجارية لتسجيل الغيابات والتأخرات بنقرة واحدة دون المرور بعدة صفحات.
+- [x] **تسجيل الحضور السريع (Quick Attendance):** إنشاء صفحة/واجهة سريعة (`QuickAttendance` Page + Livewire component + Blade view + 19 translations) في القائمة الجانبية تفتح مباشرة قائمة تلاميذ الحصة الجارية لتسجيل الغيابات والتأخرات بنقرة واحدة دون المرور بعدة صفحات. 8 feature tests pass.
 - [ ] **الملاحظات والسلوك (Behavior & Observations):** بناء سجل خاص بتتبع سلوك التلاميذ، المشاركة الإيجابية، نسيان الأدوات، والملاحظات الانضباطية مع ربطها بملف التلميذ.
 
 **Definition of done (Axis 2):**
