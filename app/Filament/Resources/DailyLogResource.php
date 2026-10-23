@@ -519,9 +519,15 @@ class DailyLogResource extends Resource
                                 ->rows(2)
                                 ->columnSpanFull(),
 
-                            TextInput::make('strategy')
-                                ->label(__('استراتيجية التدريس'))
-                                ->placeholder(__('حوار، عمل في أفواج، عرض توضيحي...'))
+                            Select::make('strategy')
+                                ->label(__('استراتيجية التعلم النشط'))
+                                ->options(\App\Models\ActiveLearningStrategy::query()
+                                    ->where('is_active', true)
+                                    ->orderBy('sort_order')
+                                    ->pluck('name', 'id')
+                                    ->toArray())
+                                ->searchable()
+                                ->placeholder(__('اختر استراتيجية...'))
                                 ->columnSpanFull(),
                         ])
                         ->columns(2)

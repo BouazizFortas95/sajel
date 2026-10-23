@@ -6,7 +6,7 @@ use Filament\Pages\Page;
 
 class QuickAttendance extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-check';
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
     protected static ?int $navigationSort = 75;
 
