@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Enums\DailyLogStatus;
+use App\Models\Classroom;
 use App\Models\DailyLog;
+use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -33,10 +35,12 @@ class DailyLogRegisterService
     {
         return DailyLog::query()
             ->with([
-                'schedule.classroom',
-                'schedule.subject',
-                'schedule.group',
                 'schedule.user',
+                'schedule.subject',
+                'schedule.classroom.level.educationPhase',
+                'schedule.classroom.groups',
+                'schedule.group.classroom.level.educationPhase',
+                'schedule.group.classroom.groups',
             ])
             ->whereKey($ids)
             ->where('status', DailyLogStatus::Completed->value)
@@ -50,8 +54,17 @@ class DailyLogRegisterService
     }
 
     /**
+     * Build one standalone class-register sheet per resolved classroom.
+     *
      * @param  Collection<int, DailyLog>  $logs
-     * @return array{logs: Collection<int, DailyLog>, teacherName: string, academicYear: string, autoPrint: bool, inlineCss: bool}
+     * @return array{
+     *     logs: Collection<int, DailyLog>,
+     *     registers: \Illuminate\Support\Collection<int, array<string, mixed>>,
+     *     teacherName: string,
+     *     academicYear: string,
+     *     autoPrint: bool,
+     *     inlineCss: bool
+     * }
      */
     public function viewData(
         Collection $logs,
@@ -59,20 +72,23 @@ class DailyLogRegisterService
         bool $autoPrint = true,
         bool $inlineCss = false,
     ): array {
+        $registers = $this->registerSections($logs);
+
         $teacherNames = $logs
             ->pluck('schedule.user.name')
             ->filter()
             ->unique()
             ->implode(' / ');
 
-        $academicYears = $logs
-            ->pluck('schedule.classroom.academic_year')
+        $academicYears = $registers
+            ->pluck('academicYear')
             ->filter()
             ->unique()
             ->implode(' / ');
 
         return [
             'logs' => $logs,
+            'registers' => $registers,
             'teacherName' => $teacherNames !== '' ? $teacherNames : $user->name,
             'academicYear' => $academicYears !== '' ? $academicYears : $this->currentAcademicYear(),
             'autoPrint' => $autoPrint,
@@ -125,12 +141,117 @@ class DailyLogRegisterService
         );
     }
 
+    /**
+     * Classroom is the official owner of a register. A schedule may target a
+     * whole classroom or one of its groups, so resolve both shapes to the same
+     * classroom before grouping.
+     *
+     * @param  Collection<int, DailyLog>  $logs
+     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     */
+    private function registerSections(Collection $logs): \Illuminate\Support\Collection
+    {
+        $registers = $logs
+            ->groupBy(fn (DailyLog $log): string => (string) ($this->resolveClassroom($log)?->getKey() ?? 'unassigned'))
+            ->map(fn (Collection $registerLogs): array => $this->makeRegisterSection($registerLogs))
+            ->sortBy(fn (array $register): string => (string) ($register['classroom']?->name ?? 'zzz'))
+            ->values();
+
+        return $registers->isEmpty()
+            ? collect([$this->emptyRegisterSection()])
+            : $registers;
+    }
+
+    /**
+     * @param  Collection<int, DailyLog>  $logs
+     * @return array<string, mixed>
+     */
+    private function makeRegisterSection(Collection $logs): array
+    {
+        $firstLog = $logs->first();
+        $classroom = $firstLog instanceof DailyLog ? $this->resolveClassroom($firstLog) : null;
+        $dates = $logs->pluck('date')->filter()->sort()->values();
+
+        $academicYear = $classroom?->academic_year;
+
+        if (blank($academicYear)) {
+            $academicYear = $logs
+                ->map(fn (DailyLog $log): ?string => $this->resolveClassroom($log)?->academic_year)
+                ->filter()
+                ->first();
+        }
+
+        return [
+            'classroom' => $classroom,
+            'logs' => $logs,
+            'phase' => $classroom?->level?->educationPhase,
+            'levelName' => $classroom?->level?->name,
+            'academicYear' => $academicYear ?: $this->currentAcademicYear(),
+            'from' => $dates->first(),
+            'to' => $dates->last(),
+            'count' => $logs->count(),
+            'groups' => $classroom?->groups?->sortBy('name')->values() ?? collect(),
+            'teachers' => $this->teacherAssignments($logs),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function emptyRegisterSection(): array
+    {
+        return [
+            'classroom' => null,
+            'logs' => new Collection,
+            'phase' => null,
+            'levelName' => null,
+            'academicYear' => $this->currentAcademicYear(),
+            'from' => null,
+            'to' => null,
+            'count' => 0,
+            'groups' => collect(),
+            'teachers' => collect(),
+        ];
+    }
+
+    /**
+     * Unique teacher/subject pairs assigned to this class register.
+     *
+     * @param  Collection<int, DailyLog>  $logs
+     * @return \Illuminate\Support\Collection<int, array{teacher: ?User, subject: ?Subject, count: int}>
+     */
+    private function teacherAssignments(Collection $logs): \Illuminate\Support\Collection
+    {
+        return $logs
+            ->groupBy(function (DailyLog $log): string {
+                $schedule = $log->schedule;
+
+                return ($schedule?->user?->getKey() ?? 'none').'|'.($schedule?->subject?->getKey() ?? 'none');
+            })
+            ->map(function (Collection $assignmentLogs): array {
+                $schedule = $assignmentLogs->first()?->schedule;
+
+                return [
+                    'teacher' => $schedule?->user,
+                    'subject' => $schedule?->subject,
+                    'count' => $assignmentLogs->count(),
+                ];
+            })
+            ->sortBy(fn (array $assignment): string => ($assignment['teacher']?->name ?? '').'|'.($assignment['subject']?->name ?? ''))
+            ->values();
+    }
+
+    private function resolveClassroom(DailyLog $log): ?Classroom
+    {
+        return $log->schedule?->classroom ?? $log->schedule?->group?->classroom;
+    }
+
     private function browsershot(string $html): Browsershot
     {
         $browsershot = Browsershot::html($html)
             ->format('A4')
             ->showBackground()
-            ->margins(12, 12, 12, 12)
+            ->margins(10, 10, 10, 10)
             ->setOption('preferCSSPageSize', true)
             ->waitUntilNetworkIdle()
             ->timeout(120);
