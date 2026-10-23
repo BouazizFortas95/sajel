@@ -169,7 +169,7 @@ class DataShowMode extends Component
         $this->fontScale = max(0.75, $this->fontScale - 0.25);
     }
 
-    public function toggleTimer(int $minutes): void
+    public function toggleTimer($minutes): void
     {
         $this->timerSeconds = $minutes * 60;
         $this->timerRunning = true;

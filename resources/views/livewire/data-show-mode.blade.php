@@ -160,10 +160,10 @@
             <div x-show="open" x-transition.origin.bottom.right class="absolute bottom-14 right-0 w-72 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl text-right">
                 <div class="text-xs font-bold text-amber-300 mb-3">{{ __('أدوات الحصة السريعة') }}</div>
                 <div class="space-y-2">
-                    <button @click="$wire.toggleTimer(5)" class="w-full text-right px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-sm">⏱️ 5 دقائق</button>
-                    <button @click="$wire.toggleTimer(10)" class="w-full text-right px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-sm">⏱️ 10 دقائق</button>
-                    <button @click="$wire.pickRandomStudent()" class="w-full text-right px-3 py-2 rounded bg-emerald-600 text-white text-sm">🎲 {{ __('قرعة عشوائية') }}</button>
-                    <button @click="$wire.toggleSpotlight()" class="w-full text-right px-3 py-2 rounded bg-blue-600 text-white text-sm">🔦 {{ __('مؤشر التركيز') }}</button>
+                    <button wire:click="toggleTimer(5)" class="w-full text-right px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-sm">⏱️ 5 دقائق</button>
+                    <button wire:click="toggleTimer(10)" class="w-full text-right px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-sm">⏱️ 10 دقائق</button>
+                    <button wire:click="pickRandomStudent" class="w-full text-right px-3 py-2 rounded bg-emerald-600 text-white text-sm">🎲 {{ __('قرعة عشوائية') }}</button>
+                    <button wire:click="toggleSpotlight" class="w-full text-right px-3 py-2 rounded bg-blue-600 text-white text-sm">🔦 {{ __('مؤشر التركيز') }}</button>
                 </div>
             </div>
         </div>
