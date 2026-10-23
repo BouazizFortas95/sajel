@@ -2,7 +2,6 @@
 
 namespace App\Filament\Pages;
 
-use App\Livewire\ClassroomToolbar;
 use Filament\Pages\Page;
 
 class ClassroomToolbar extends Page
@@ -11,7 +10,7 @@ class ClassroomToolbar extends Page
 
     protected static ?int $navigationSort = 76;
 
-    protected static string $view = 'livewire.classroom-toolbar';
+    protected static string $view = 'filament.pages.classroom-toolbar';
 
     public static function getNavigationGroup(): ?string
     {
@@ -23,7 +22,7 @@ class ClassroomToolbar extends Page
         return __('أدوات الحصة التفاعلية');
     }
 
-    public static function getTitle(): string
+    public function getTitle(): string
     {
         return __('أدوات الحصة التفاعلية');
     }

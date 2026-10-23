@@ -71,6 +71,10 @@ class ClassroomToolbar extends Component
 
     public function pickRandom(): void
     {
+        if (empty($this->students)) {
+            return;
+        }
+
         $pool = array_diff_key(
             array_column($this->students, 'name', 'id'),
             array_flip($this->picked)
@@ -90,6 +94,10 @@ class ClassroomToolbar extends Component
 
     public function generateGroups(): void
     {
+        if (empty($this->students)) {
+            return;
+        }
+
         $ids = array_column($this->students, 'id');
         shuffle($ids);
         $this->groups = array_chunk($ids, max(1, (int) ceil(count($ids) / max(1, $this->groupCount))));

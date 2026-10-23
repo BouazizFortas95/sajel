@@ -10,7 +10,7 @@
         <button wire:click="startTimer(5)" class="text-xs px-2 py-1 rounded bg-amber-500 text-white">5m</button>
         <button wire:click="startTimer(10)" class="text-xs px-2 py-1 rounded bg-amber-600 text-white">10m</button>
         <button wire:click="startTimer(1)" class="text-xs px-2 py-1 rounded bg-amber-700 text-white">1m</button>
-        <button wire:click="tick" class="text-xs px-2 py-1 rounded bg-amber-200 dark:bg-amber-900">{{ $timerRunning ? 'توقف' : 'تشغيل' }}</button>
+        <button wire:click="tick" class="text-xs px-2 py-1 rounded bg-amber-200 dark:bg-amber-900">{{ (isset($timerRunning) && $timerRunning) ? 'توقف' : 'تشغيل' }}</button>
     </div>
 
     {{-- Random Picker --}}

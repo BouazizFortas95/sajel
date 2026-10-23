@@ -530,9 +530,9 @@ official curriculum tracking are now complete; the main remaining gaps are:
 |------|------|-----------|----------|
 | 1. Planning, Curriculum & Reports | 5 | 0 | 100% |
 | 2. Lab & Student Management | 4 | 1 | 80% |
-| 3. Classroom Activities & Presentation | 2 | 1 | 67% |
+| 3. Classroom Activities & Presentation | 3 | 0 | 100% |
 | 4. Assessment & Pedagogical Remediation | 1 | 1 | 50% |
-| **Total** | **12** | **2** | **86%** |
+| **Total** | **13** | **1** | **93%** |
 
 ### 10.1 المحور الأول: التخطيط والمنهاج والتقارير (Planning, Curriculum & Reports)
 
@@ -600,7 +600,7 @@ official curriculum tracking are now complete; the main remaining gaps are:
 
 - [x] **استراتيجيات التعلم النشط (Active Learning Strategies):** نموذج + Migration + Seeder (8 cards) + Resource + مدمج في `DailyLogResource` phase builder + 19 translations.
 - [x] **أدوات الحصة التفاعلية (Interactive Classroom Tools):** `ClassroomToolbar` Livewire + Blade + Page (timer countdown, random student picker, auto group generator) + navigation entry.
-- [ ] **عرض المسلاط (Data Show Mode):** إنشاء واجهة عرض بملء الشاشة (Presentation View) خالية من قوائم الإدارة، تعرض عنوان الدرس، الكفاءة المستهدفة، الوضعية الانطلاقية، والأنشطة بخط كبير وواضح مخصص للعرض عبر جهاز Data Show.
+- [x] **عرض المسلاط (Data Show Mode):** `DataShowMode` Livewire + Blade + Page — عرض ملء الشاشة (RTL، تنقل لوحة مفاتيح، شرائح) يعرض عنوان الدرس، الكفاءة، المراحل، والأنشطة بخط كبير.
 
 **Definition of done (Axis 3):**
 
