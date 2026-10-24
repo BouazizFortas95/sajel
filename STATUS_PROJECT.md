@@ -781,3 +781,28 @@ administrators see all student data. `OfficialReports` provides classroom/group/
   normalized per-subject grade averages and assessment details, behavior/follow-up history,
   remediation outcomes, teacher schedule/record scoping, admin-wide access, and Official Reports /
   StudentResource integration.
+
+## 13. Phase 5 Roadmap — Institutional Operations & Professional Portfolio
+
+Phase 5 Milestone 1 is complete (100% for this milestone). Institutional operations now include
+class-level deliberation reporting (`ClassCouncilHub` + `ClassCouncilService`) that aggregates
+per-subject `/20` averages, attendance tallies, discipline observations, pedagogical recommendations,
+and classroom KPIs into an official A4 Landscape RTL PDF (`print.class-council` / `.pdf`).
+Authorization mirrors `StudentPolicy`: Admins see all classrooms; Teachers only access classrooms
+where they have at least one `Schedule`. Translation keys added for `ar`/`en`/`fr`.
+
+- [x] **Class Council Deliberation Hub (`ClassCouncilHub`):** Filament page with classroom/group
+  selector, KPI cards, honor-roll badges, full student deliberation matrix, and direct print/PDF links.
+- [x] **Class Council Service (`ClassCouncilService`):** Computes per-subject averages (`/20`),
+  general average, attendance counts, behavior tallies (positive/negative), remediation counts,
+  automatic recommendation (`امتياز` → `تحذير`), and classroom KPIs (pass rate, honor roll, absences).
+- [x] **Official A4 RTL Report (`class-council.blade.php`):** Landscape layout with header,
+  KPI strip, honor distribution badges, full deliberation table, and signature boxes.
+- [x] **Print Routes (`ClassCouncilController`):** `/{locale}/print/classrooms/{classroom}/class-council`
+  + `.pdf`; `ClassroomPolicy` enforces admin/teacher scoping.
+- [x] **Localization:** `ar.json`, `en.json`, `fr.json` updated with `class_council` keys.
+- [x] **Tests:** `tests/Feature/ClassCouncilTest.php` (3 pass: service computation, admin access,
+  teacher scope + 403 guard).
+- [x] **Build & Quality:** `npm run build` passes; `vendor/bin/pint` passes;
+  total suite: `290 passed` (14,717 assertions); `2 unrelated pre-existing` failures in `AuthorizationTest`.
+

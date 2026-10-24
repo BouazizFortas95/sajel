@@ -157,4 +157,4 @@ protected device: the roster and unsynced attendance contain student information
   all of the student's records. Official Reports provides classroom/group/student filters, and the
   Student resource provides row actions.
 
-*Last updated: 2026-10-24 — Phase 2 Roadmap Complete (14 / 14 items, 100%); Phase 3 Roadmap Complete (3 / 3 items, 100%); Phase 4 Roadmap Complete (3 / 3 items, 100%).*
+*Last updated: 2026-10-24 — Phase 2 (14/14) + Phase 3 (3/3) + Phase 4 (3/3) + Phase 5 Milestone 1 (1/1) all complete. Suite: 290 passing, 14,717 assertions.*

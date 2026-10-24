@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ClassCouncilController;
 use App\Http\Controllers\DownloadPedagogicalMemoPdfController;
 use App\Http\Controllers\OfficialReportController;
 use App\Http\Controllers\PrintAssessmentController;
@@ -75,6 +76,16 @@ Route::get('/{locale}/print/students/{student}/report-card/pdf', [StudentReportC
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.student-report-card.pdf');
+
+Route::get('/{locale}/print/classrooms/{classroom}/class-council', [ClassCouncilController::class, 'print'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.class-council');
+
+Route::get('/{locale}/print/classrooms/{classroom}/class-council/pdf', [ClassCouncilController::class, 'pdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.class-council.pdf');
 
 Route::get('/{locale}/print/timetables', [OfficialReportController::class, 'timetable'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))

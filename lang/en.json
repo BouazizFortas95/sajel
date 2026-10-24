@@ -662,5 +662,22 @@
     "مستمر": "Ongoing",
     "وثيقة سرية للاستخدام في المتابعة التربوية": "Confidential document for educational follow-up",
     "اختر التلميذ": "Select a student",
-    "اختر تلميذاً من قائمتك المصرح بها لطباعة بطاقة المتابعة للاجتماع مع الولي.": "Select an authorized student to print a follow-up card for a parent-teacher meeting."
+    "اختر تلميذاً من قائمتك المصرح بها لطباعة بطاقة المتابعة للاجتماع مع الولي.": "Select an authorized student to print a follow-up card for a parent-teacher meeting.",
+    "class_council": {
+        "excellence": "Excellence / Congratulations",
+        "encouragement": "Encouragement",
+        "honor_roll": "Honor Roll",
+        "acceptable": "Acceptable — needs more effort",
+        "warning": "Pedagogical Warning / Remediation",
+        "recommendation": {
+            "excellence": "Excellence / Congratulations",
+            "encouragement": "Encouragement",
+            "honor_roll": "Honor Roll",
+            "acceptable": "Acceptable — needs more effort",
+            "warning": "Pedagogical Warning / Remediation"
+        }
+    },
+    "مجلس_القسم": "Class Council",
+    "طباعة_محضر_مجلس_القسم": "Print Class Council Minutes",
+    "تحميل_محضر_مجلس_القسم_(PDF)": "Download Class Council Minutes (PDF)"
 }

@@ -662,5 +662,19 @@
     "مستمر": "En cours",
     "وثيقة سرية للاستخدام في المتابعة التربوية": "Document confidentiel réservé au suivi éducatif",
     "اختر التلميذ": "Choisir un élève",
-    "اختر تلميذاً من قائمتك المصرح بها لطباعة بطاقة المتابعة للاجتماع مع الولي.": "Choisissez un élève autorisé pour imprimer sa carte de suivi destinée à une réunion parents-enseignants."
+    "اختر تلميذاً من قائمتك المصرح بها لطباعة بطاقة المتابعة للاجتماع مع الولي.": "Choisissez un élève autorisé pour imprimer sa carte de suivi destinée à une réunion parents-enseignants.",
+    "class_council": {
+        "excellence": "Excellence / Félicitations",
+        "encouragement": "Encouragements",
+        "honor_roll": "Tableau d'honneur",
+        "acceptable": "Acceptable — besoin d'efforts",
+        "warning": "Avertissement / Remédiation",
+        "recommendation": {
+            "excellence": "Excellence / Félicitations",
+            "encouragement": "Encouragements",
+            "honor_roll": "Tableau d'honneur",
+            "acceptable": "Acceptable — besoin d'efforts",
+            "warning": "Avertissement / Remédiation"
+        }
+    }
 }
