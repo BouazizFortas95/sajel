@@ -5,7 +5,6 @@ namespace App\Livewire;
 use App\Enums\LessonPhaseType;
 use App\Models\DailyLog;
 use App\Models\Student;
-use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
 
 class DataShowMode extends Component
@@ -48,7 +47,7 @@ class DataShowMode extends Component
             ->get()
             ->map(fn ($l) => [
                 'id' => $l->id,
-                'label' => $l->date?->format('d/m/Y') . ' — ' . ($l->schedule?->classroom?->name ?? '') . ' — ' . $l->title,
+                'label' => $l->date?->format('d/m/Y').' — '.($l->schedule?->classroom?->name ?? '').' — '.$l->title,
             ])
             ->toArray();
     }
@@ -88,42 +87,140 @@ class DataShowMode extends Component
         }
 
         $slides = [];
+        $lessonData = $this->lessonData($log->content_data ?? []);
+        $competence = $lessonData['competence'] ?? $log->content_data['competence'] ?? null;
+        $startingSituation = $lessonData['starting_situation']
+            ?? $lessonData['pedagogical_situation']
+            ?? $log->content_data['starting_situation']
+            ?? $log->content_data['pedagogical_situation']
+            ?? null;
+        $startingSituation = match ($startingSituation) {
+            'daily_life' => __('سياق حياتي'),
+            'problem' => __('وضعية إشكالية'),
+            'project' => __('مشروع'),
+            'review' => __('مراجعة'),
+            default => $startingSituation,
+        };
+        $lessonTitle = $lessonData['lesson_title'] ?? $log->title;
 
         // Slide 1 — Cover
-        $slides[] = [
+        $cover = [
             'type' => 'cover',
             'title' => $log->title,
-            'subtitle' => ($log->schedule?->subject?->name ?? '') . ' — ' . ($log->schedule?->classroom?->name ?? '') . ' — ' . ($log->date?->format('l, d/m/Y') ?? today()->format('l, d/m/Y')),
-            'competence' => $log->content_data['competence'] ?? $log->actual_content ? $this->extractFirstHeading($log->actual_content) : null,
+            'subtitle' => ($log->schedule?->subject?->name ?? '').' — '.($log->schedule?->classroom?->name ?? '').' — '.($log->date?->format('l, d/m/Y') ?? today()->format('l, d/m/Y')),
+            'competence' => $competence ?? ($log->actual_content ? $this->extractFirstHeading($log->actual_content) : null),
+            'starting_situation' => $startingSituation,
             'subject_color' => $log->schedule?->subject?->color ?? 'amber',
         ];
+        $cover['narration_text'] = $this->buildNarrationText([
+            [__('عنوان الشريحة'), $lessonTitle],
+            [__('الكفاءة المستهدفة'), $cover['competence']],
+            [__('وضعية الانطلاق'), $cover['starting_situation']],
+        ]);
+        $slides[] = $cover;
 
-        $phases = $log->content_data['phases'] ?? $log->content_data['lesson_phases'] ?? [];
+        $phases = $lessonData['phases']
+            ?? $log->content_data['phases']
+            ?? $log->content_data['lesson_phases']
+            ?? [];
 
         foreach ($phases as $i => $phase) {
             if (! is_array($phase)) {
                 continue;
             }
             $phaseType = LessonPhaseType::tryFrom($phase['type'] ?? '');
-            $slides[] = [
+            $phaseTitle = $phase['phase_name']
+                ?? $phaseType?->label()
+                ?? ($phase['type'] ?? __('مرحلة'));
+            $phaseContent = $phase['description'] ?? $phase['content'] ?? null;
+            $phaseSlide = [
                 'type' => 'phase',
                 'phase_number' => $i + 1,
-                'title' => $phaseType?->label() ?? ($phase['type'] ?? __('مرحلة')),
-                'description' => $phase['description'] ?? $phase['content'] ?? null,
+                'title' => $phaseTitle,
+                'description' => $phaseContent,
                 'duration' => $phase['duration'] ?? null,
             ];
+            $phaseSlide['narration_text'] = $this->buildNarrationText([
+                [__('عنوان الشريحة'), $lessonTitle],
+                [__('عنوان المرحلة'), $phaseTitle],
+                [__('محتوى المرحلة'), $phaseContent],
+            ]);
+            $slides[] = $phaseSlide;
         }
 
         // Final slide — register summary + homework
-        $slides[] = [
+        $summary = [
             'type' => 'summary',
             'title' => __('الملخص والواجب المنزلي'),
             'register' => $log->actual_content ?? $log->content_data['actual_content'] ?? null,
             'homework' => $log->homework ?? null,
             'observations' => $log->observations ?? null,
         ];
+        $summary['narration_text'] = $this->buildNarrationText([
+            [__('عنوان الشريحة'), $summary['title']],
+            [__('محتوى الحصة'), $summary['register']],
+            [__('الواجب المنزلي'), $summary['homework']],
+            [__('ملاحظات'), $summary['observations']],
+        ]);
+        $slides[] = $summary;
 
         $this->content = $slides;
+    }
+
+    /**
+     * @param  array<string, mixed>|list<mixed>  $contentData
+     * @return array<string, mixed>
+     */
+    private function lessonData(array $contentData): array
+    {
+        foreach ($contentData as $block) {
+            if (
+                is_array($block)
+                && in_array($block['type'] ?? null, ['lesson_structure', 'middle_school_lesson'], true)
+                && is_array($block['data'] ?? null)
+            ) {
+                return [
+                    ...$block['data'],
+                    'phases' => $block['data']['lesson_phases'] ?? $block['data']['phases'] ?? [],
+                ];
+            }
+        }
+
+        return $contentData;
+    }
+
+    /**
+     * @param  list<array{0: string, 1: mixed}>  $sections
+     */
+    private function buildNarrationText(array $sections): string
+    {
+        return collect($sections)
+            ->map(function (array $section): ?string {
+                $text = $this->plainText($section[1]);
+
+                return $text === null ? null : $section[0].': '.$text;
+            })
+            ->filter()
+            ->implode(' — ');
+    }
+
+    private function plainText(mixed $value): ?string
+    {
+        if (! is_scalar($value)) {
+            return null;
+        }
+
+        $text = preg_replace(
+            '/<(?:br|\/p|\/div|\/h[1-6]|\/li)\b[^>]*>/i',
+            ' ',
+            (string) $value,
+        ) ?? (string) $value;
+        $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = strip_tags($text);
+        $text = preg_replace('/[\s\p{Z}]+/u', ' ', $text) ?? $text;
+        $text = trim($text);
+
+        return $text === '' ? null : $text;
     }
 
     private function extractFirstHeading(string $html): ?string
@@ -235,6 +332,12 @@ class DataShowMode extends Component
             'spotlight' => $this->spotlight,
             'logs' => $this->logs,
             'searchQuery' => $this->searchQuery,
+            'speechLocale' => match (app()->getLocale()) {
+                'ar' => 'ar-SA',
+                'fr' => 'fr-FR',
+                'en' => 'en-US',
+                default => 'ar-SA',
+            },
         ]);
     }
 }

@@ -11,7 +11,29 @@
         slides: @entangle('content'),
         logs: @entangle('logs'),
         logId: @entangle('logId'),
+        speechLocale: @js($speechLocale),
+        ttsSupported: 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window,
+        isSpeaking: false,
+        isPaused: false,
+        speechRate: 1.0,
+        availableVoices: [],
+        selectedVoiceURI: '',
+        activeUtterance: null,
+        speechLabels: {
+            play: @js(__('قراءة الشريحة صوتياً')),
+            pause: @js(__('إيقاف مؤقت')),
+            resume: @js(__('استئناف')),
+            stop: @js(__('إيقاف القراءة')),
+            unsupported: @js(__('المتصفح الحالي لا يدعم القراءة الصوتية')),
+            voice: @js(__('الصوت')),
+            defaultVoice: @js(__('صوت المتصفح الافتراضي')),
+            rate: @js(__('سرعة القراءة')),
+            speaking: @js(__('جاري القراءة الصوتية...')),
+        },
         timerInterval: null,
+        voicesChangedHandler: null,
+        beforeUnloadHandler: null,
+        livewireNavigatingHandler: null,
         formatTimer() {
             const m = Math.floor(this.timerSeconds / 60).toString().padStart(2, '0');
             const s = (this.timerSeconds % 60).toString().padStart(2, '0');
@@ -19,10 +41,158 @@
         },
         startTimer() { this.timerRunning = true; this.timerInterval = setInterval(() => { if (this.timerSeconds > 0) this.timerSeconds--; else { this.timerRunning = false; clearInterval(this.timerInterval); } }, 1000); },
         stopTimer() { this.timerRunning = false; clearInterval(this.timerInterval); },
-        askLog(id) { $wire.selectLog(id); },
-        goSlide(i) { $wire.goToSlide(i); },
-        nextSlide() { $wire.next(); },
-        prevSlide() { $wire.prev(); },
+        init() {
+            try {
+                const storedRate = Number(localStorage.getItem('sajel.datashow.speech_rate'));
+                if ([0.8, 1.0, 1.2].includes(storedRate)) this.speechRate = storedRate;
+            } catch (error) {
+                console.error('Unable to load the saved narration speed.', error);
+            }
+
+            if (this.ttsSupported) {
+                this.loadVoices();
+                this.voicesChangedHandler = () => this.loadVoices();
+                window.speechSynthesis.addEventListener('voiceschanged', this.voicesChangedHandler);
+            }
+
+            this.beforeUnloadHandler = () => this.stopSpeech();
+            this.livewireNavigatingHandler = () => this.stopSpeech();
+            window.addEventListener('beforeunload', this.beforeUnloadHandler);
+            document.addEventListener('livewire:navigating', this.livewireNavigatingHandler);
+            this.$watch('slideIndex', (value, previous) => {
+                if (value !== previous) this.stopSpeech();
+            });
+            this.$watch('logId', (value, previous) => {
+                if (value !== previous) this.stopSpeech();
+            });
+            this.$watch('speechRate', (value) => {
+                if (![0.8, 1.0, 1.2].includes(Number(value))) {
+                    this.speechRate = 1.0;
+
+                    return;
+                }
+
+                try {
+                    localStorage.setItem('sajel.datashow.speech_rate', String(value));
+                } catch (error) {
+                    console.error('Unable to save the narration speed.', error);
+                }
+
+                if (this.isSpeaking) this.speakSlide();
+            });
+            this.$watch('selectedVoiceURI', () => {
+                if (this.isSpeaking) this.speakSlide();
+            });
+        },
+        destroy() {
+            this.stopSpeech();
+            clearInterval(this.timerInterval);
+            window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+            document.removeEventListener('livewire:navigating', this.livewireNavigatingHandler);
+            if (this.ttsSupported && this.voicesChangedHandler) {
+                window.speechSynthesis.removeEventListener('voiceschanged', this.voicesChangedHandler);
+            }
+        },
+        loadVoices() {
+            this.availableVoices = window.speechSynthesis.getVoices();
+            if (!this.availableVoices.some((voice) => voice.voiceURI === this.selectedVoiceURI)) {
+                const language = this.speechLocale.split('-')[0].toLowerCase();
+                const matchingVoices = this.availableVoices.filter((voice) =>
+                    voice.lang.toLowerCase().startsWith(language),
+                );
+                const preferred = matchingVoices.find((voice) => voice.localService)
+                    ?? matchingVoices[0];
+                this.selectedVoiceURI = preferred?.voiceURI ?? '';
+            }
+        },
+        speakSlide() {
+            if (!this.ttsSupported) return;
+            const text = this.slides[Number(this.slideIndex)]?.narration_text?.trim();
+            if (!text) return;
+
+            this.stopSpeech();
+            const utterance = new SpeechSynthesisUtterance(text);
+            const voice = this.availableVoices.find((item) => item.voiceURI === this.selectedVoiceURI);
+            if (voice) utterance.voice = voice;
+            utterance.lang = voice?.lang ?? this.speechLocale;
+            utterance.rate = this.speechRate;
+            utterance.onstart = () => {
+                if (this.activeUtterance === utterance) this.isSpeaking = true;
+            };
+            utterance.onpause = () => {
+                if (this.activeUtterance === utterance) this.isPaused = true;
+            };
+            utterance.onresume = () => {
+                if (this.activeUtterance === utterance) this.isPaused = false;
+            };
+            utterance.onend = () => {
+                if (this.activeUtterance === utterance) {
+                    this.activeUtterance = null;
+                    this.isSpeaking = false;
+                    this.isPaused = false;
+                }
+            };
+            utterance.onerror = (event) => {
+                if (this.activeUtterance === utterance) {
+                    if (event.error !== 'canceled' && event.error !== 'interrupted') {
+                        console.error('Voice narration failed.', event.error);
+                    }
+                    this.activeUtterance = null;
+                    this.isSpeaking = false;
+                    this.isPaused = false;
+                }
+            };
+
+            this.activeUtterance = utterance;
+            this.isSpeaking = true;
+            this.isPaused = false;
+            window.speechSynthesis.speak(utterance);
+        },
+        toggleSpeech() {
+            if (this.isSpeaking) this.stopSpeech();
+            else this.speakSlide();
+        },
+        pauseResumeSpeech() {
+            if (!this.ttsSupported || !this.isSpeaking) return;
+            if (this.isPaused) window.speechSynthesis.resume();
+            else window.speechSynthesis.pause();
+        },
+        stopSpeech() {
+            if (this.ttsSupported) window.speechSynthesis.cancel();
+            this.activeUtterance = null;
+            this.isSpeaking = false;
+            this.isPaused = false;
+        },
+        selectLog(id) {
+            this.stopSpeech();
+            $wire.selectLog(id);
+        },
+        goSlide(i) {
+            this.stopSpeech();
+            $wire.goToSlide(i);
+        },
+        nextSlide() {
+            this.stopSpeech();
+            $wire.next();
+        },
+        prevSlide() {
+            this.stopSpeech();
+            $wire.prev();
+        },
+        handleVoiceShortcut(event) {
+            const target = event.target;
+            if (
+                event.key.toLowerCase() !== 'v'
+                || event.altKey
+                || event.ctrlKey
+                || event.metaKey
+                || target?.isContentEditable
+                || target?.closest?.('input, textarea, select, [contenteditable=true]')
+            ) return;
+
+            event.preventDefault();
+            this.toggleSpeech();
+        },
         zoomIn() { $wire.zoomIn(); },
         zoomOut() { $wire.zoomOut(); },
         toggleTheme(t) { $wire.switchTheme(t); },
@@ -35,6 +205,7 @@
     @keydown.arrow-left.window="prevSlide(); $event.preventDefault();"
     @keydown.space.window="nextSlide(); $event.preventDefault();"
     @keydown.f.window="fullscreen(); $event.preventDefault();"
+    @keydown.window="handleVoiceShortcut($event)"
     @keydown.escape.window="$wire.emit('prev');"
     class="min-h-screen transition-colors duration-700"
     :class="{
@@ -48,7 +219,7 @@
     <div class="sticky top-0 z-40 backdrop-blur-md border-b border-white/10 bg-white/5 dark:bg-black/20 px-4 py-2 flex items-center gap-3 text-sm">
         <div class="flex items-center gap-2">
             <label for="logSelect" class="text-xs opacity-70">{{ __('الحصة') }}:</label>
-            <select id="logSelect" wire:change="selectLog($event.target.value)" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-xs min-w-[240px]">
+            <select id="logSelect" @change="selectLog($event.target.value)" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-xs min-w-[240px]">
                 <option value="">{{ __('اختر السجل...') }}</option>
                 @foreach ($logs as $l)
                     <option value="{{ $l['id'] }}" {{ $logId == $l['id'] ? 'selected' : '' }}>{{ $l['label'] }}</option>
@@ -60,6 +231,51 @@
         </div>
 
         <div class="ml-auto flex items-center gap-2">
+            <div class="flex items-center gap-1 border-r border-white/20 pr-2">
+                <button
+                    type="button"
+                    @click="toggleSpeech()"
+                    :disabled="!ttsSupported || !slides[Number(slideIndex)]?.narration_text"
+                    title="{{ __('المتصفح الحالي لا يدعم القراءة الصوتية') }}"
+                    x-effect="$el.title = ttsSupported ? speechLabels.play : speechLabels.unsupported"
+                    :aria-label="speechLabels.play"
+                    class="px-2 py-1 rounded bg-amber-500 text-slate-950 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40"
+                >▶ <span x-text="speechLabels.play">{{ __('قراءة الشريحة صوتياً') }}</span></button>
+                <button
+                    type="button"
+                    x-show="isSpeaking"
+                    @click="pauseResumeSpeech()"
+                    :aria-label="isPaused ? speechLabels.resume : speechLabels.pause"
+                    class="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-xs"
+                ><span x-text="isPaused ? speechLabels.resume : speechLabels.pause">{{ __('إيقاف مؤقت') }}</span></button>
+                <button
+                    type="button"
+                    x-show="isSpeaking"
+                    @click="stopSpeech()"
+                    :aria-label="speechLabels.stop"
+                    class="px-2 py-1 rounded bg-rose-500/20 text-rose-200 text-xs"
+                    x-text="speechLabels.stop"
+                >{{ __('إيقاف القراءة') }}</button>
+                <label class="sr-only" for="speechRate" x-text="speechLabels.rate"></label>
+                <select id="speechRate" x-model.number="speechRate" class="bg-white/10 border border-white/20 rounded px-1 py-1 text-xs" :aria-label="speechLabels.rate">
+                    <option value="0.8">0.8x</option>
+                    <option value="1.0">1.0x</option>
+                    <option value="1.2">1.2x</option>
+                </select>
+                <label class="sr-only" for="speechVoice" x-text="speechLabels.voice"></label>
+                <select id="speechVoice" x-model="selectedVoiceURI" class="max-w-36 bg-white/10 border border-white/20 rounded px-1 py-1 text-xs" :aria-label="speechLabels.voice" :disabled="!ttsSupported || availableVoices.length === 0">
+                    <option value="" x-text="speechLabels.defaultVoice">{{ __('صوت المتصفح الافتراضي') }}</option>
+                    <template x-for="voice in availableVoices" :key="voice.voiceURI">
+                        <option :value="voice.voiceURI" x-text="`${voice.name} (${voice.lang})`"></option>
+                    </template>
+                </select>
+                <span
+                    x-cloak
+                    x-show="isSpeaking"
+                    role="status"
+                    class="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-1 text-xs font-semibold text-emerald-200"
+                ><span class="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span><span x-text="speechLabels.speaking">{{ __('جاري القراءة الصوتية...') }}</span></span>
+            </div>
             <button @click="toggleTheme('cinema')" :class="theme==='cinema'?'bg-amber-400 text-slate-950':'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium transition">Cinema</button>
             <button @click="toggleTheme('whiteboard')" :class="theme==='whiteboard'?'bg-amber-400 text-slate-950':'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium transition">Whiteboard</button>
             <button @click="toggleTheme('chalkboard')" :class="theme==='chalkboard'?'bg-amber-400 text-slate-950':'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium transition">Chalkboard</button>
@@ -131,7 +347,7 @@
             {{-- Navigation dots --}}
             <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-30">
                 @foreach ($slides as $i => $s)
-                    <button onclick="$wire.goToSlide({{ $i }})" class="w-2.5 h-2.5 rounded-full transition {{ $i === $slideIndex ? 'bg-amber-400 scale-125' : 'bg-white/30 hover:bg-white/60' }}"></button>
+                    <button @click="goSlide({{ $i }})" class="w-2.5 h-2.5 rounded-full transition {{ $i === $slideIndex ? 'bg-amber-400 scale-125' : 'bg-white/30 hover:bg-white/60' }}"></button>
                 @endforeach
             </div>
         @else
@@ -146,7 +362,7 @@
                             <div class="text-xs text-white/30">{{ __('لا توجد حصص مسجلة.') }}</div>
                         @endif
                         @foreach ($logs as $l)
-                            <button onclick="$wire.selectLog({{ $l['id'] ?? 0 }})" class="w-full text-right px-3 py-2 rounded text-sm border border-white/10 mb-1 hover:bg-white/10 {{ $logId == ($l['id'] ?? 0) ? 'bg-amber-500 text-white' : 'bg-white/5 text-white/80' }} transition">{{ $l['label'] ?? '' }}</button>
+                            <button @click="selectLog({{ $l['id'] ?? 0 }})" class="w-full text-right px-3 py-2 rounded text-sm border border-white/10 mb-1 hover:bg-white/10 {{ $logId == ($l['id'] ?? 0) ? 'bg-amber-500 text-white' : 'bg-white/5 text-white/80' }} transition">{{ $l['label'] ?? '' }}</button>
                         @endforeach
                     </div>
                 </div>

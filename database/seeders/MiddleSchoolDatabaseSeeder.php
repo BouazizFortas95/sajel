@@ -203,6 +203,8 @@ class MiddleSchoolDatabaseSeeder extends Seeder
             $stats = DB::transaction(function (): array {
                 $this->wipe();
 
+                $this->call(ActiveLearningStrategySeeder::class);
+
                 $subjects = $this->seedSubjects();
                 $structure = $this->seedStructure($this->seedPhase());
 

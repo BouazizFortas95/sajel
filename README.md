@@ -37,7 +37,7 @@ Key goals:
 | Student Roster & CSV Import | `StudentResource` | Group-scoped filter, unique nullable registration |
 | Classrooms & Labs | `ClassroomResource` + `LabResource` | Auto-generated names, device status (working / broken / maintenance) |
 | U-Shape Lab Seating Plan | `LabSeatingPlan` / `LabSeatingPlanStation` + `LabSeatingPlanPage` | Livewire interactive layout, save logic |
-| Quick Attendance | `QuickAttendance` (Page + Livewire) + 19 translations | One-click attendance for current session roster |
+| Quick Attendance | `QuickAttendance` (Page + Livewire) | One-click attendance, offline roster snapshots, local change queue, validated batch sync |
 | Behavior & Observations | `BehaviorObservationResource` | Linked to student (`student_id`), category, notes, follow-up status |
 
 ### Axis 3 — Classroom Activities & Presentation (`3/3` ✅)
@@ -46,7 +46,7 @@ Key goals:
 |---|---|---|
 | Active Learning Strategies | `ActiveLearningStrategyResource` + `DailyLogResource` phase `Select` | 8 seeded cards (Think-Pair-Share, Jigsaw, Exit Ticket, etc.) |
 | Interactive Classroom Toolbar | `ClassroomToolbar` (Livewire + Page) | Timer, random student picker, auto group generator |
-| Fullscreen Data Show Mode | `DataShowMode` (Livewire + Page + Blade) | Auto-select today's log; 3 themes; font zoom; slide deck from `content_data` phases; keyboard nav; quick tools drawer |
+| Fullscreen Data Show Mode | `DataShowMode` (Livewire + Page + Blade) | Auto-select today's log; 3 themes; font zoom; HTML-free slide narration; locale-aware Web Speech controls and voice selection; keyboard nav; quick tools drawer |
 
 ### Axis 4 — Assessment & Pedagogical Remediation (`1/1` ✅)
 
@@ -69,7 +69,7 @@ Key goals:
 | Localization | `mcamara/laravel-localization` | `ar`, `en`, `fr` |
 | Timezone | Africa/Algiers | `APP_TIMEZONE` |
 | Font | Cairo (Google Fonts) | RTL body + headings |
-| Testing | PHPUnit | 262 passed, 2 failed in `ActiveLearningStrategyTest` (14,566 assertions) |
+| Testing | PHPUnit | 274 passed (14,422 assertions in the latest run; count can vary slightly with randomized seed data) |
 
 ---
 
@@ -98,7 +98,7 @@ php artisan migrate:fresh --seed
 # Demo data (600 students, 30 teachers, ~1,200 daily logs, full curriculum)
 php artisan db:seed --class=MiddleSchoolDatabaseSeeder
 
-# Run tests (257 feature + unit, all green)
+# Run tests (274 feature + unit, all green)
 php artisan test
 vendor/bin/pint
 
@@ -112,24 +112,31 @@ php artisan optimize:clear
 
 ---
 
-## 6. Project Health (Updated — Phase 2 Complete)
+## 6. Project Health (Updated — Phase 3 Complete)
 
 - **Migrations:** 30 ran (28 base + behavior observations + pedagogical remediation)
-- **Tests:** 262 passed, 2 failed because `ActiveLearningStrategyTest` expects strategy seed data that is absent (14,566 assertions)
+- **Tests:** 274 passed (14,422 assertions in the latest run; assertion count can vary slightly with randomized seed data)
 - **Filament Resources:** 18 (includes new `BehaviorObservationResource`, `PedagogicalRemediationResource`, `ActiveLearningStrategyResource`)
 - **Custom Pages:** Dashboard, CurriculumProgress, OfficialReports, MySchedule, QuickAttendance, LabSeatingPlan, LabSeatingPlanPage, QuickAttendance (done), ActiveLearningStrategies (done), ClassroomToolbar (done), DataShowMode (done)
-- **Branch:** `main` — clean working tree, `git status` clean
+- **Branch:** `main` — Phase 3 changes are currently uncommitted
 - **Build:** `npm run build` passes; `vendor/bin/pint` passes
 
 ---
 
-## 7. Next Steps (Phase 3 — In Progress)
+## 7. Phase 3 — Complete (100%)
 
 - **Done:** AI lesson-plan prompts follow the active Arabic, English, or French locale; unsupported locales fall back to Arabic.
-- **Next:** Define offline data and synchronization behavior for a PWA attendance workflow before implementation.
-- Implement the mobile-responsive PWA attendance workflow with offline support.
-- Full Arabic voice/narration for Data Show Mode projector display.
+- **Done:** Quick Attendance is installable as an RTL PWA with offline page/static asset caching, local roster snapshots, a last-write-wins attendance queue, and authenticated, validated, idempotent batch synchronization.
+- **Done:** Data Show Mode provides clean per-slide narration with locale-aware, local-voice-preferred Web Speech selection, playback controls, a persisted speech-rate preference, and keyboard shortcut.
 
 ---
 
-*Last updated: 2026-10-24 — Phase 2 Roadmap Complete (14 / 14 items, 100%); Phase 3 started.*
+The offline roster snapshot is stored at `sajel.attendance.roster.{schedule_id}.{date}`; pending
+changes use `sajel.attendance.queue` with one last-write-wins entry per
+`{schedule_id}:{date}:{student_id}`. The browser retries when connectivity returns or when the
+teacher selects **Sync now**. The server authorizes the teacher's schedule and each student’s roster
+membership, creates a planned daily log when necessary, materializes missing attendance rows, and
+upserts status and remarks in batches of at most 200. Use this feature on a teacher-controlled,
+protected device: the roster and unsynced attendance contain student information in browser storage.
+
+*Last updated: 2026-10-24 — Phase 2 Roadmap Complete (14 / 14 items, 100%); Phase 3 Roadmap Complete (3 / 3 items, 100%).*

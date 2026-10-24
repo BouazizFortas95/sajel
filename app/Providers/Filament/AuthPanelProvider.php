@@ -41,6 +41,10 @@ class AuthPanelProvider extends PanelProvider
                 'primary' => Color::Amber,
             ])
             ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => view('filament.partials.pwa-head'),
+            )
+            ->renderHook(
                 PanelsRenderHook::STYLES_AFTER,
                 fn () => view('filament.theme'),
             )

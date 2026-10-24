@@ -12,6 +12,50 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/manifest.webmanifest', fn () => response(
+    file_get_contents(public_path('manifest.webmanifest')),
+    200,
+    [
+        'Content-Type' => 'application/manifest+json; charset=utf-8',
+        'Cache-Control' => 'no-cache',
+    ],
+))->name('pwa.manifest');
+
+Route::get('/sw.js', fn () => response(
+    file_get_contents(public_path('sw.js')),
+    200,
+    [
+        'Content-Type' => 'application/javascript; charset=utf-8',
+        'Service-Worker-Allowed' => '/',
+        'Cache-Control' => 'no-cache',
+    ],
+))->name('pwa.service-worker');
+
+foreach ([192, 512] as $size) {
+    Route::get("/pwa-icon-{$size}.png", fn () => response(
+        file_get_contents(public_path("pwa-icon-{$size}.png")),
+        200,
+        [
+            'Content-Type' => 'image/png',
+            'Cache-Control' => 'public, max-age=86400',
+        ],
+    ))->name("pwa.icon-{$size}");
+}
+
+Route::get('/pwa-icon.svg', fn () => response(
+    file_get_contents(public_path('pwa-icon.svg')),
+    200, [
+        'Content-Type' => 'image/svg+xml',
+        'Cache-Control' => 'public, max-age=86400',
+    ],
+))->name('pwa.icon');
+
+Route::get('/favicon.ico', fn () => response(
+    file_get_contents(public_path('favicon.ico')),
+    200,
+    ['Content-Type' => 'image/x-icon'],
+))->name('pwa.favicon');
+
 Route::get('/print/daily-logs', PrintDailyLogsController::class)
     ->middleware('auth')
     ->name('print.register');

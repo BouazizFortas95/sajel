@@ -3,7 +3,14 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#f59e0b">
+    <link rel="icon" href="/pwa-icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/pwa-icon-192.png">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ __('سجِّل — دفتر تحضيرك وسجل قسمك في مكان واحد') }}</title>
+    @vite('resources/js/app.js')
+    @include('partials.pwa-registration')
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">

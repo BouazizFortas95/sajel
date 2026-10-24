@@ -92,11 +92,21 @@ class ActiveLearningStrategySeeder extends Seeder
             ],
         ];
 
-        foreach ($strategies as $data) {
-            ActiveLearningStrategy::firstOrCreate(
-                ['slug' => $data['slug']],
-                $data
-            );
-        }
+        $timestamp = now();
+        $strategies = array_map(
+            static fn (array $strategy): array => [
+                ...$strategy,
+                'tags' => json_encode($strategy['tags'], JSON_THROW_ON_ERROR),
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ],
+            $strategies,
+        );
+
+        ActiveLearningStrategy::query()->upsert(
+            $strategies,
+            ['slug'],
+            ['name', 'description', 'icon', 'color', 'tags', 'is_active', 'sort_order', 'updated_at'],
+        );
     }
 }

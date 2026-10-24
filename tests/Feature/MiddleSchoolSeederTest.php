@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\AssessmentType;
 use App\Enums\DailyLogStatus;
 use App\Enums\Role;
+use App\Models\ActiveLearningStrategy;
 use App\Models\Assessment;
 use App\Models\Classroom;
 use App\Models\CurriculumDomain;
@@ -73,6 +74,17 @@ class MiddleSchoolSeederTest extends TestCase
         $this->assertTrue(
             $colours->every(fn (?string $colour): bool => (bool) preg_match('/^#[0-9a-f]{6}$/i', (string) $colour)),
         );
+    }
+
+    public function test_it_seeds_the_default_active_learning_strategies(): void
+    {
+        $this->seedDataset();
+
+        $this->assertSame(8, ActiveLearningStrategy::query()->count());
+        $this->assertDatabaseHas('active_learning_strategies', [
+            'slug' => 'think-pair-share',
+            'is_active' => true,
+        ]);
     }
 
     public function test_it_seeds_one_phase_four_levels_twenty_classrooms_and_forty_groups(): void

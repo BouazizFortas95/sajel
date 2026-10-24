@@ -1,9 +1,8 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-10-24
-> Verification: `AiLessonPlannerTest` (**14 passed**), Pint passes on changed PHP files; the full
-> `php artisan test` suite currently has **262 passed and 2 failed** in
-> `ActiveLearningStrategyTest` because its expected strategy seed data is absent.
+> Verified by `php artisan test` (**274 passed, 14,422 assertions** in the latest run; assertion counts
+> can vary slightly with randomized seed data), `npm run build`, and `vendor/bin/pint`.
 
 ## 1. Overview
 
@@ -29,7 +28,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | PDF        | `spatie/browsershot` `^5.4`, Puppeteer  | Headless Chrome; Arabic shaping + Tailwind-preserving PDF |
 | i18n       | `mcamara/laravel-localization` `^2.4`    | `ar`, `en`, `fr` locales                |
 | Timezone   | `Africa/Algiers`                         | `APP_TIMEZONE`, used for weekly dates   |
-| Testing    | PHPUnit `^11.5`                          | **218 tests, all green** |
+| Testing    | PHPUnit `^11.5`                          | **274 tests, all green (14,422 assertions in the latest run)** |
 | Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
 
 ## 3. Domain Model
@@ -463,12 +462,14 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 7. Testing
 
-`php artisan test` — **218 passing** (assertion counts vary slightly with randomized seed data):
+`php artisan test` — **274 passing, 14,422 assertions in the latest full run** (assertion counts can
+vary slightly with randomized seed data):
 
 | Suite                                  | Tests | Covers                                                        |
 |----------------------------------------|-------|---------------------------------------------------------------|
 | `Tests\Unit\ExampleTest`               | 1     | Sanity check                                                  |
 | `Tests\Feature\ExampleTest`            | 1     | `/` returns a successful response                             |
+| `Tests\Feature\ActiveLearningStrategyTest` | 3  | Teacher access, seeded default strategies, strategy availability |
 | `Tests\Feature\AuthorizationTest`      | 18    | Role-based panel access; student/assessment/grade/attendance policies; admin-only core academic structure policies, screens, and navigation hiding; relation-manager parent ownership; admin bypass |
 | `Tests\Feature\ClassroomNamingTest`    | 3     | Auto-generated classroom name from level grade, phase abbreviation, and class number; regeneration on update; graceful fallback when the convention is incomplete |
 | `Tests\Feature\CurriculumTrackingTest` | 14    | Curriculum hierarchy/relationships/ordering, daily-log resource mapping and register summary, admin CRUD page forms, admin-only catalog policies, subject/level-scoped selector options, forged mapping rejection, automatic progress after completion (duplicate logs counted once), classroom/subject/group scoping, teacher class-wide overview vs admin all-pairs, teacher defaults/authorization on the progress page, localized page rendering, resource nulling/domain cascade |
@@ -477,6 +478,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | `Tests\Feature\GradebookTest`          | 12    | Assessment/grade relationships and casts, unique pair, group/classroom roster sync, new-student insertion, inline decimal scores and max validation, teacher-only schedule creation/scoping, schedule immutability on edit, cascade deletes, relation-manager registration |
 | `Tests\Feature\AssessmentPrintTest`    | 10    | Localized assessment labels (navigation/breadcrumb/title), localized page rendering, session-locale fallback for unlocalized URLs, A4 RTL gradebook print, owner/admin scoping, guest redirect, unsupported locale, list print action, header print-action scoping |
 | `Tests\Feature\DashboardThemeTest`     | 7     | No missing utility classes, dark mode + theme asset, RTL Arabic panel + topbar switcher, brand colours, widget layout/registration, stat tabs |
+| `Tests\Feature\DataShowModeTest`       | 5     | Slide generation and clean narration text, localized voice toolbar and speech locales, Data Show Mode rendering and interactions |
 | `Tests\Feature\MySchedulePageTest`     | 4     | Teacher-only access, day/week views, guest redirect           |
 | `Tests\Feature\TeacherInteractiveScheduleTest` | 22 | Rendering, colours, dark mode, day/search/view/expand interactions, complete/cancel, stats, date-aware log navigation, teacher scoping |
 | `Tests\Feature\TeacherTimetableTest`   | 16    | Fixed five-day/seven-slot grid, matrix mapping, multi-hour row spans with covered cells (2h, 3h, back-to-back, lunch-break clamp), workload totals and overload badge, equality boundary, empty placeholders, subject-colour mapping (all six palette colours), primary fallback for missing/unknown colours, teacher scoping, current-week click dates, stale-date fallback, date-aware log navigation |
@@ -486,20 +488,24 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | `Tests\Feature\PedagogicalMemoTest`    | 21    | Memo relationships/casts, teacher/admin resource scoping, create/edit ownership, admin assignment/required teacher, duplicate into current bank, archive/restore, template/archive filters, policy/print/PDF authorization, localized A4 RTL/LTR print views, guest redirect, unsupported locale, localized labels, print/PDF actions, PDF download |
 | `Tests\Feature\WelcomeAndDashboardTest`| 7     | Welcome page links, login/register access, guest redirect, dashboard stats/quick links, French and Arabic/RTL localization |
 | `Tests\Feature\UnloggedSessionsWidgetTest` | 4 | Teacher-only visibility, Sunday-to-today missing/planned detection, today's end-time boundary, teacher scoping, completion URLs, five-per-page Livewire pagination with total count, success state |
-| `Tests\Feature\AiLessonPlannerTest`    | 12    | Service contract (UUID-keyed `lesson_structure` block, fenced-JSON tolerance, OpenAI driver, provider error messages, transient-error retry, Gemini model fallback, clear exhausted-retry error, missing key fails fast, unreadable responses), form-action injection into `content_data`, missing title/schedule guard, teacher-scoped schedules |
-| `Tests\Feature\MiddleSchoolSeederTest` | 14    | Dataset counts (13 subjects with distinct hex colours, 1 phase, 4 levels, 20 classrooms with hook-generated names, 40 groups, 600 students), 15 students per group, unique `2026-####` registrations, Arabic identities, per-grade age windows, 30 Arabic-named teachers with all 13 primary subjects covered and exactly 6 secondary subjects, default admin credentials, conflict-free teacher/classroom timetable (Sunday–Thursday, valid slots, every subject equal to the teacher's primary subject, 18–22 lessons per teacher), two weeks of structured daily logs, curriculum for every subject/level (2 domains, 4 sequences, 8 resources) with every daily log mapped to a matching resource, quiz/midterm assessments with full-roster grades and decimal scores, destructive wipe of prior school/user rows, idempotent re-runs, bulk query budget (<215 queries), factory identities |
+| `Tests\Feature\AiLessonPlannerTest`    | 14    | Service contract (locale-aware prompts, Arabic fallback, UUID-keyed `lesson_structure` block, fenced-JSON tolerance, OpenAI driver, provider errors/retries/fallbacks), form-action injection, missing title/schedule guard, teacher-scoped schedules |
+| `Tests\Feature\MiddleSchoolSeederTest` | 15    | Dataset and active-learning strategy seed coverage, official subjects, school structure, students, teachers, schedules, daily logs, curriculum mappings, assessments and grades, destructive wipe, idempotent re-runs, bulk query budget (<215 queries), factory identities |
 | `Tests\Feature\ScheduleOverlapTest`    | 6     | Overlapping/identical teacher-day slots rejected; back-to-back slots allowed; scoping to teacher and day; edit-safe self-exclusion; admin double-booking guard |
 | `Tests\Feature\LocalePersistenceTest`  | 5     | Locale persisted when visiting localized panel routes, updated on language switch, restored on `/livewire/update` (post-save redirect URL generation), applied to non-localized URLs, unsupported locales ignored |
+| `Tests\Feature\LabManagementTest`      | 11    | Lab management and seating-plan behavior |
+| `Tests\Feature\OfficialReportsTest`    | 19    | Official report page access, timetable/attendance/transcript output, scoping, localization, and PDF routes |
+| `Tests\Feature\QuickAttendanceTest`    | 8     | Quick-attendance access, roster display, attendance saving, and authorization |
+| `Tests\Feature\OfflineAttendancePwaTest` | 7   | PWA assets and panel registration, idempotent multi-student sync, schedule/roster authorization, admin bypass, invalid batch validation, offline controls |
 
 ## 8. Project Health Snapshot
 
 | Aspect            | Status                                             |
 |-------------------|----------------------------------------------------|
 | Migrations        | ✅ All 30 ran (28 base + behavior observations + pedagogical remediation) |
-| Test suite        | ✅ 257/257 passing (14,603 assertions) |
+| Test suite        | ✅ 274/274 passing (14,422 assertions in the latest run; assertion counts can vary slightly with randomized seed data) |
 | Admin panel       | ✅ 18 Filament resources + custom dashboard, schedule, curriculum-progress, data-show pages + ar/en/fr |
 | Seed data         | ✅ Destructive middle-school dataset + optional SajelSeeder |
-| Version control   | ✅ Git repo on `main`; clean working tree; Phase 2 complete (`ff16b22`) |
+| Version control   | Git repo on `main`; Phase 3 changes are currently uncommitted |
 | README            | ✅ Project-specific bilingual README (English structure + Arabic domain) |
 | `APP_NAME`        | ✅ `Sajel`; `APP_URL` = `https://sajel.dev/` |
 
@@ -507,7 +513,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 All 14 Phase 2 items are completed (`100%`). Previous remaining gaps (official reports, lab management, classroom toolbar, quick attendance, behavior observations, active learning strategies, data show, pedagogical remediation) were implemented, tested, and committed (`main`).
 
-No further Phase 2 work is required. Phase 3 has started with locale-aware AI lesson planning; see the Phase 3 roadmap below. The project README (`README.md`) documents the complete feature matrix.
+No further Phase 2 work is required. Phase 3 is now complete; see the Phase 3 roadmap below. The project README (`README.md`) documents the complete feature matrix.
 
 ## 10. Phase 2 Roadmap (Step-by-Step Tracking Checklist)
 
@@ -716,11 +722,25 @@ php artisan filament:optimize-clear     # remove the cache entirely
 
 ## 11. Phase 3 Roadmap
 
-Phase 3 is now in progress. AI-generated lesson plans follow the active Arabic, English, or French
-locale; unsupported locales fall back to Arabic. The locale is passed from the daily-log form to the
-planner, and both providers receive language-matched instructions.
+Phase 3 is complete (100%). AI-generated lesson plans follow the active Arabic, English, or French
+locale; unsupported locales fall back to Arabic. The offline attendance PWA caches the authenticated
+Quick Attendance page and compiled Vite assets, stores per-session roster snapshots and a last-write-
+wins local change queue, and flushes validated batches through the authenticated Livewire component.
+Data Show Mode prepares HTML-free narration for every slide and provides locale-aware browser speech
+controls, local/native matching voice preference, persisted playback speed, keyboard toggling, and
+cancellation on navigation.
 
 - [x] **Locale-aware AI lesson plans:** Localize generation instructions for Arabic, English, and
   French, and align Gemini structured-output descriptions with the selected language.
-- [ ] **Offline attendance PWA:** Define offline data and synchronization behavior before implementation.
-- [ ] **Arabic voice narration:** Add narration for Data Show Mode.
+- [x] **Offline attendance PWA:** Provide the RTL manifest and service worker; cache snapshots as
+  `sajel.attendance.roster.{schedule_id}.{date}`; queue edits at
+  `sajel.attendance.queue` keyed by `{schedule_id}:{date}:{student_id}`; synchronize online in
+  batches of up to 200. The server validates dates/status/remarks, enforces schedule ownership and
+  roster membership (admin bypass), creates planned daily logs, materializes missing attendance rows,
+  and upserts status/remarks idempotently. Sync notifications report the number of entries applied.
+  Roster names and queued attendance are stored in browser storage; use only on a teacher-controlled,
+  protected device and clear site data when the device is shared or retired.
+- [x] **Arabic voice narration:** Prepare clean plain-text narration for each slide, select a speech
+  locale and preferred matching local voice, and provide play, pause/resume, stop, and keyboard
+  controls. Playback speed persists in `sajel.datashow.speech_rate`. Speech is cancelled when slides
+  or lessons change and when leaving the page.

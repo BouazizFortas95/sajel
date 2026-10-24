@@ -5,12 +5,20 @@ namespace Tests\Feature;
 use App\Enums\Role;
 use App\Models\ActiveLearningStrategy;
 use App\Models\User;
+use Database\Seeders\ActiveLearningStrategySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ActiveLearningStrategyTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(ActiveLearningStrategySeeder::class);
+    }
 
     public function test_teacher_can_access_active_learning_strategies(): void
     {

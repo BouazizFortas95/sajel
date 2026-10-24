@@ -386,8 +386,14 @@ class CurriculumTrackingTest extends TestCase
         $teacher = User::factory()->create();
         $subject = Subject::factory()->create();
         $level = Level::factory()->create();
-        $classroom = Classroom::factory()->create(['level_id' => $level->id]);
-        $otherClassroom = Classroom::factory()->create(['level_id' => $level->id]);
+        $classroom = Classroom::factory()->create([
+            'level_id' => $level->id,
+            'name' => 'أ 1',
+        ]);
+        $otherClassroom = Classroom::factory()->create([
+            'level_id' => $level->id,
+            'name' => 'ب 1',
+        ]);
         [, $sequence, $firstResource] = $this->createPlan($subject, $level, 'المورد الأول');
         CurriculumResource::factory()->create([
             'curriculum_sequence_id' => $sequence->id,
