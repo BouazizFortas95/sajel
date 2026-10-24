@@ -157,7 +157,7 @@ class QuickAttendanceTest extends TestCase
 
         $this->assertDatabaseHas('daily_logs', [
             'schedule_id' => $schedule->id,
-            'date' => $today . ' 00:00:00',
+            'date' => $today.' 00:00:00',
             'status' => DailyLogStatus::Completed->value,
         ]);
     }

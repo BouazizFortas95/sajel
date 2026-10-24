@@ -1,1 +1,11 @@
-<?php namespace App\Filament\Resources\BehaviorObservationResource\Pages; use App\Filament\Resources\BehaviorObservationResource; use Filament\Resources\Pages\ListRecords; class ListBehaviorObservations extends ListRecords { protected static string $resource = BehaviorObservationResource::class; }
+<?php
+
+namespace App\Filament\Resources\BehaviorObservationResource\Pages;
+
+use App\Filament\Resources\BehaviorObservationResource;
+use Filament\Resources\Pages\ListRecords;
+
+class ListBehaviorObservations extends ListRecords
+{
+    protected static string $resource = BehaviorObservationResource::class;
+}

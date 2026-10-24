@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\ActiveLearningStrategy;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 class ActiveLearningStrategyFactory extends Factory
 {
@@ -25,7 +26,7 @@ class ActiveLearningStrategyFactory extends Factory
 
         return [
             'name' => $name,
-            'slug' => \Illuminate\Support\Str::slug($name),
+            'slug' => Str::slug($name),
             'description' => $this->faker->sentence(),
             'icon' => 'heroicon-o-light-bulb',
             'color' => $this->faker->randomElement(['info', 'primary', 'warning', 'success']),
