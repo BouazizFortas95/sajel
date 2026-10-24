@@ -676,5 +676,12 @@
             "acceptable": "Acceptable — besoin d'efforts",
             "warning": "Avertissement / Remédiation"
         }
-    }
+    },
+    "أستاذ المستخلاف": "Professeur remplaçant",
+    "بطاقة الاستخلاف والتواصل البيداغوجي": "Carte de passation pédagogique",
+    "آخر درس منجز": "Dernière leçon accomplie",
+    "المورد المعرفي التالي المقترح": "Prochaine ressource curriculaire",
+    "لا يوجد درس منجز بعد": "Pas de leçon accomplie",
+    "لا يوجد مورد معرفي مقترح بعد": "Pas de ressource proposée",
+    "يمكن للمدير تعيين أستاذ مستخلف": "L'administrateur peut assigner un remplaçant"
 }

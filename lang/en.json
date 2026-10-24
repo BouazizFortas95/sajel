@@ -679,5 +679,12 @@
     },
     "مجلس_القسم": "Class Council",
     "طباعة_محضر_مجلس_القسم": "Print Class Council Minutes",
-    "تحميل_محضر_مجلس_القسم_(PDF)": "Download Class Council Minutes (PDF)"
+    "تحميل_محضر_مجلس_القسم_(PDF)": "Download Class Council Minutes (PDF)",
+    "أستاذ المستخلاف": "Substitute Teacher",
+    "بطاقة الاستخلاف والتواصل البيداغوجي": "Pedagogical Handover Card",
+    "آخر درس منجز": "Last Completed Lesson",
+    "المورد المعرفي التالي المقترح": "Next Curriculum Resource",
+    "لا يوجد درس منجز بعد": "No completed lesson yet",
+    "لا يوجد مورد معرفي مقترح بعد": "No next resource proposed",
+    "يمكن للمدير تعيين أستاذ مستخلف": "Admin may assign a substitute teacher"
 }

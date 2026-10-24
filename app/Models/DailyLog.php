@@ -24,6 +24,7 @@ class DailyLog extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'substitute_teacher_id',
         'schedule_id',
         'curriculum_resource_id',
         'date',
@@ -64,6 +65,11 @@ class DailyLog extends Model
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by_id');
+    }
+
+    public function substituteTeacher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'substitute_teacher_id');
     }
 
     public function attendances(): HasMany
@@ -120,7 +126,13 @@ class DailyLog extends Model
 
     public function scopeForTeacher(Builder $query, User|int $user): Builder
     {
-        return $query->whereHas('schedule', fn (Builder $query) => $query->forTeacher($user));
+        $userId = $user instanceof User ? $user->id : $user;
+
+        return $query->where(
+            fn (Builder $q) => $q
+                ->whereHas('schedule', fn (Builder $query) => $query->forTeacher($userId))
+                ->orWhere('substitute_teacher_id', $userId)
+        );
     }
 
     public function isPlanned(): bool

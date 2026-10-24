@@ -22,6 +22,10 @@ class DailyLogPolicy
 
     public function view(User $user, DailyLog $dailyLog): bool
     {
+        if ($dailyLog->substitute_teacher_id === $user->id) {
+            return true;
+        }
+
         return $dailyLog->schedule?->user_id === $user->id;
     }
 
@@ -32,6 +36,10 @@ class DailyLogPolicy
 
     public function update(User $user, DailyLog $dailyLog): bool
     {
+        if ($dailyLog->substitute_teacher_id === $user->id) {
+            return true;
+        }
+
         return $dailyLog->schedule?->user_id === $user->id;
     }
 

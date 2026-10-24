@@ -276,6 +276,22 @@ class DailyLogResource extends Resource
                                             ->suffixAction(static::generateLessonPlanAction())
                                             ->columnSpanFull(),
 
+                                        Select::make('substitute_teacher_id')
+                                            ->label(__('أستاذ المستخلاف'))
+                                            ->visible(fn (?DailyLog $record): bool => auth()->user()?->isAdmin())
+                                            ->options(function (): array {
+                                                return User::query()
+                                                    ->where('role', 'teacher')
+                                                    ->get()
+                                                    ->mapWithKeys(fn (User $u): array => [$u->id => $u->name])
+                                                    ->all();
+                                            })
+                                            ->searchable()
+                                            ->preload()
+                                            ->nullable()
+                                            ->helperText(__('يمكن للمدير تعيين أستاذ مستخلف لتاريخ الحصة هذا.'))
+                                            ->columnSpanFull(),
+
                                         Select::make('status')
                                             ->label(__('الحالة'))
                                             ->options(DailyLogStatus::options())
@@ -292,6 +308,49 @@ class DailyLogResource extends Resource
                                             ->columnSpanFull()
                                             ->helperText(__('اختياري: اربط الحصة بمورد معرفي من المنهاج الرسمي لحساب تقدم القسم.'))
                                             ->rule(static::curriculumResourceRule()),
+                                    ]),
+
+                                Section::make(__('بطاقة الاستخلاف والتواصل البيداغوجي'))
+                                    ->description(__('نContext for substitute / returning teacher'))
+                                    ->icon('heroicon-o-user-group')
+                                    ->visible(fn (Get $get): bool => filled($get('schedule_id')))
+                                    ->columns(2)
+                                    ->schema([
+                                        Placeholder::make('last_completed_lesson')
+                                            ->label(__('آخر درس منجز'))
+                                            ->content(fn (Get $get): string => (function () use ($get) {
+                                                $schedule = Schedule::query()->find($get('schedule_id'));
+                                                if (! $schedule) return '—';
+                                                $last = \App\Models\DailyLog::query()
+                                                    ->where('schedule_id', $schedule->id)
+                                                    ->where('status', \App\Enums\DailyLogStatus::Completed->value)
+                                                    ->orderByDesc('date')
+                                                    ->first();
+                                                return $last
+                                                    ? __(':title بتاريخ :date', ['title' => $last->title, 'date' => $last->date?->format('Y-m-d') ?? '—'])
+                                                    : __('لا يوجد درس منجز بعد');
+                                            })()),
+                                        Placeholder::make('next_curriculum_resource')
+                                            ->label(__('المورد المعرفي التالي المقترح'))
+                                            ->content(fn (Get $get): string => (function () use ($get) {
+                                                $schedule = Schedule::query()->find($get('schedule_id'));
+                                                if (! $schedule) return '—';
+                                                $last = \App\Models\DailyLog::query()
+                                                    ->where('schedule_id', $schedule->id)
+                                                    ->where('status', \App\Enums\DailyLogStatus::Completed->value)
+                                                    ->orderByDesc('date')
+                                                    ->first();
+                                                $lastResourceId = $last?->curriculum_resource_id;
+                                                $resources = static::curriculumResourceOptions($get('schedule_id'));
+                                                if (! $lastResourceId) {
+                                                    $first = array_key_first($resources);
+                                                    return $first ? ($resources[$first] ?? '—') : '—';
+                                                }
+                                                $keys = array_keys($resources);
+                                                $pos = array_search((string) $lastResourceId, $keys, true);
+                                                $next = ($pos !== false && isset($keys[$pos + 1])) ? $keys[$pos + 1] : null;
+                                                return $next ? ($resources[$next] ?? '—') : __('لا يوجد مورد معرفي مقترح بعد');
+                                            })()),
                                     ]),
 
                                 Section::make(__('المحتوى المخطط (ديناميكي)'))
