@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Livewire\Attributes\Url;
 
@@ -28,6 +29,17 @@ class MySchedule extends Page
     public static function getNavigationLabel(): string
     {
         return __('جدولي الأسبوعي');
+    }
+
+    public function getHeaderActions(): array
+    {
+        return [
+            Action::make('printPortfolio')
+                ->label(__('طباعة ملف الإنجاز (PDF)'))
+                ->icon('heroicon-o-document-arrow-down')
+                ->url(fn () => route('print.teacher-portfolio.pdf', ['locale' => app()->getLocale(), 'user' => auth()->id()]))
+                ->openUrlInNewTab(),
+        ];
     }
 
     public static function getNavigationGroup(): ?string

@@ -7,6 +7,7 @@ use App\Http\Controllers\PrintAssessmentController;
 use App\Http\Controllers\PrintDailyLogsController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
 use App\Http\Controllers\StudentReportCardController;
+use App\Http\Controllers\TeacherPortfolioController;
 use App\Http\Middleware\SetFilamentLocale;
 use Illuminate\Support\Facades\Route;
 
@@ -86,6 +87,16 @@ Route::get('/{locale}/print/classrooms/{classroom}/class-council/pdf', [ClassCou
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.class-council.pdf');
+
+Route::get('/{locale}/print/teachers/{user}/portfolio', [TeacherPortfolioController::class, 'print'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-portfolio');
+
+Route::get('/{locale}/print/teachers/{user}/portfolio/pdf', [TeacherPortfolioController::class, 'pdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-portfolio.pdf');
 
 Route::get('/{locale}/print/timetables', [OfficialReportController::class, 'timetable'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))

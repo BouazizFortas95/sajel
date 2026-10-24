@@ -653,7 +653,7 @@
     "السجل السلوكي والانضباطي": "Behavior and discipline log",
     "قيد المتابعة": "Follow-up pending",
     "ملاحظات المتابعة": "Follow-up notes",
-    "إمضاء الأستاذ(ة)": "Teacher signature",
+    "إمضاء الأستاذ(ة)": "Teacher Signature",
     "إطلاع وتوقيع ولي الأمر": "Parent/guardian acknowledgment and signature",
     "كل الأفواج": "All groups",
     "المادة / الحصة": "Subject / session",
@@ -686,5 +686,12 @@
     "المورد المعرفي التالي المقترح": "Next Curriculum Resource",
     "لا يوجد درس منجز بعد": "No completed lesson yet",
     "لا يوجد مورد معرفي مقترح بعد": "No next resource proposed",
-    "يمكن للمدير تعيين أستاذ مستخلف": "Admin may assign a substitute teacher"
+    "يمكن للمدير تعيين أستاذ مستخلف": "Admin may assign a substitute teacher",
+    "ملف إنجاز الأستاذ": "Teacher Professional Portfolio",
+    "بطاقة الهوية المهنية": "Professional Identity Card",
+    "التدريس والامتثال لسجل النصوص": "Teaching & Register Compliance",
+    "الندوات التربوية والاجتماعات التنسيقية": "Pedagogical Meetings & Inspector Seminars",
+    "إمضاء المفتش / المشرف": "Supervisor Signature",
+    "المؤطر": "Supervisor",
+    "التوصيات": "Recommendations"
 }

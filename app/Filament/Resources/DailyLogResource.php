@@ -320,12 +320,15 @@ class DailyLogResource extends Resource
                                             ->label(__('آخر درس منجز'))
                                             ->content(fn (Get $get): string => (function () use ($get) {
                                                 $schedule = Schedule::query()->find($get('schedule_id'));
-                                                if (! $schedule) return '—';
-                                                $last = \App\Models\DailyLog::query()
+                                                if (! $schedule) {
+                                                    return '—';
+                                                }
+                                                $last = DailyLog::query()
                                                     ->where('schedule_id', $schedule->id)
-                                                    ->where('status', \App\Enums\DailyLogStatus::Completed->value)
+                                                    ->where('status', DailyLogStatus::Completed->value)
                                                     ->orderByDesc('date')
                                                     ->first();
+
                                                 return $last
                                                     ? __(':title بتاريخ :date', ['title' => $last->title, 'date' => $last->date?->format('Y-m-d') ?? '—'])
                                                     : __('لا يوجد درس منجز بعد');
@@ -334,21 +337,25 @@ class DailyLogResource extends Resource
                                             ->label(__('المورد المعرفي التالي المقترح'))
                                             ->content(fn (Get $get): string => (function () use ($get) {
                                                 $schedule = Schedule::query()->find($get('schedule_id'));
-                                                if (! $schedule) return '—';
-                                                $last = \App\Models\DailyLog::query()
+                                                if (! $schedule) {
+                                                    return '—';
+                                                }
+                                                $last = DailyLog::query()
                                                     ->where('schedule_id', $schedule->id)
-                                                    ->where('status', \App\Enums\DailyLogStatus::Completed->value)
+                                                    ->where('status', DailyLogStatus::Completed->value)
                                                     ->orderByDesc('date')
                                                     ->first();
                                                 $lastResourceId = $last?->curriculum_resource_id;
                                                 $resources = static::curriculumResourceOptions($get('schedule_id'));
                                                 if (! $lastResourceId) {
                                                     $first = array_key_first($resources);
+
                                                     return $first ? ($resources[$first] ?? '—') : '—';
                                                 }
                                                 $keys = array_keys($resources);
                                                 $pos = array_search((string) $lastResourceId, $keys, true);
                                                 $next = ($pos !== false && isset($keys[$pos + 1])) ? $keys[$pos + 1] : null;
+
                                                 return $next ? ($resources[$next] ?? '—') : __('لا يوجد مورد معرفي مقترح بعد');
                                             })()),
                                     ]),

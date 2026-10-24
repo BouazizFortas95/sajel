@@ -653,7 +653,7 @@
     "السجل السلوكي والانضباطي": "Suivi comportemental et disciplinaire",
     "قيد المتابعة": "Suivi en attente",
     "ملاحظات المتابعة": "Notes de suivi",
-    "إمضاء الأستاذ(ة)": "Signature de l’enseignant",
+    "إمضاء الأستاذ(ة)": "Signature de l'enseignant",
     "إطلاع وتوقيع ولي الأمر": "Vu et signature du parent/tuteur",
     "كل الأفواج": "Tous les groupes",
     "المادة / الحصة": "Matière / séance",
@@ -683,5 +683,12 @@
     "المورد المعرفي التالي المقترح": "Prochaine ressource curriculaire",
     "لا يوجد درس منجز بعد": "Pas de leçon accomplie",
     "لا يوجد مورد معرفي مقترح بعد": "Pas de ressource proposée",
-    "يمكن للمدير تعيين أستاذ مستخلف": "L'administrateur peut assigner un remplaçant"
+    "يمكن للمدير تعيين أستاذ مستخلف": "L'administrateur peut assigner un remplaçant",
+    "ملف إنجاز الأستاذ": "Dossier de réussite du professeur",
+    "بطاقة الهوية المهنية": "Carte d'identité professionnelle",
+    "التدريس والامتثال لسجل النصوص": "Enseignement et conformité au registre",
+    "الندوات التربوية والاجتماعات التنسيقية": "Réunions pédagogiques et séminaires d'inspection",
+    "إمضاء المفتش / المشرف": "Signature du superviseur",
+    "المؤطر": "Encadrant",
+    "التوصيات": "Recommandations"
 }
