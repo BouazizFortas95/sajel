@@ -73,9 +73,10 @@ class SchoolSupervisionService
         $selectedDay = DayOfWeek::cases()[$selectedDate->dayOfWeek]->value;
 
         if (SchoolHoliday::isHoliday($selectedDate)) {
-            $holiday = \App\Models\SchoolHoliday::whereDate('start_date', '<=', $selectedDate)
+            $holiday = SchoolHoliday::whereDate('start_date', '<=', $selectedDate)
                 ->whereDate('end_date', '>=', $selectedDate)
                 ->first();
+
             return [
                 'date' => $selectedDate,
                 'metrics' => [

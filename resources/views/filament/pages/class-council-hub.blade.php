@@ -7,7 +7,7 @@
 @endphp
 
 <div class="filament-page">
-  <x-filament::page.header :heading="__('مجلس القسم')" />
+
 
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
     <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4">

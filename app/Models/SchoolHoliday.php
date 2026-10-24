@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 class SchoolHoliday extends Model
@@ -34,6 +33,7 @@ class SchoolHoliday extends Model
     public static function isHoliday(Carbon|string $date): bool
     {
         $dateStr = $date instanceof Carbon ? $date->toDateString() : (string) $date;
+
         return self::whereDate('start_date', '<=', $dateStr)
             ->whereDate('end_date', '>=', $dateStr)
             ->exists();
@@ -53,9 +53,10 @@ class SchoolHoliday extends Model
             $cursor = $current;
             while ($cursor <= $last) {
                 $dates[] = $cursor;
-                $cursor = date('Y-m-d', strtotime($cursor . ' +1 day'));
+                $cursor = date('Y-m-d', strtotime($cursor.' +1 day'));
             }
         }
+
         return array_unique($dates);
     }
 }
