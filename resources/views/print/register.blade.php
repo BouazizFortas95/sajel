@@ -603,6 +603,20 @@
                                                 @else
                                                     <span class="inline-flex rounded-md bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-400">—</span>
                                                 @endif
+
+                                                @if ($log->isReviewed())
+                                                    <div class="mt-2 rounded-lg border border-emerald-300 bg-emerald-50 px-2 py-1.5 text-[9px] text-emerald-950">
+                                                        <p class="font-extrabold">
+                                                            {{ __('تأشيرة الإدارة') }}: {{ $log->reviewer?->name ?? '—' }}
+                                                            — {{ __('التاريخ') }}: {{ $log->reviewed_at?->format('Y-m-d') }}
+                                                        </p>
+                                                        @if (filled($log->admin_notes))
+                                                            <p class="mt-1 whitespace-pre-line font-semibold">
+                                                                {{ __('ملاحظات الإدارة / التوجيه التربوي') }}: {{ $log->admin_notes }}
+                                                            </p>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </td>
 
                                             <td class="border-b border-amber-100 px-2.5 py-3">

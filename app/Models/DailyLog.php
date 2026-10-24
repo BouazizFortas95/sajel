@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 
 class DailyLog extends Model
 {
@@ -32,6 +33,9 @@ class DailyLog extends Model
         'homework',
         'observations',
         'status',
+        'reviewed_by_id',
+        'reviewed_at',
+        'admin_notes',
     ];
 
     /**
@@ -43,6 +47,7 @@ class DailyLog extends Model
             'date' => 'date',
             'content_data' => 'array',
             'status' => DailyLogStatus::class,
+            'reviewed_at' => 'datetime',
         ];
     }
 
@@ -54,6 +59,11 @@ class DailyLog extends Model
     public function curriculumResource(): BelongsTo
     {
         return $this->belongsTo(CurriculumResource::class);
+    }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by_id');
     }
 
     public function attendances(): HasMany
@@ -121,6 +131,23 @@ class DailyLog extends Model
     public function isCompleted(): bool
     {
         return $this->status === DailyLogStatus::Completed;
+    }
+
+    public function isReviewed(): bool
+    {
+        return $this->reviewed_at !== null;
+    }
+
+    public function markAsReviewed(User $reviewer, ?string $notes = null): void
+    {
+        if (! $this->isCompleted()) {
+            throw new LogicException('Only completed daily logs can be administratively reviewed.');
+        }
+
+        $this->reviewed_by_id = $reviewer->getKey();
+        $this->reviewed_at = now();
+        $this->admin_notes = $notes;
+        $this->save();
     }
 
     /**

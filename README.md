@@ -69,7 +69,7 @@ Key goals:
 | Localization | `mcamara/laravel-localization` | `ar`, `en`, `fr` |
 | Timezone | Africa/Algiers | `APP_TIMEZONE` |
 | Font | Cairo (Google Fonts) | RTL body + headings |
-| Testing | PHPUnit | 274 passed (14,422 assertions in the latest run; count can vary slightly with randomized seed data) |
+| Testing | PHPUnit | 289 passed (14,543 assertions in the latest run; count can vary slightly with randomized seed data) |
 
 ---
 
@@ -92,13 +92,13 @@ Student → BehaviorObservation, PedagogicalRemediation
 composer install
 npm install && npm run build
 
-# Database setup (28 migrations + seeders)
+# Database setup (40 migrations + seeders)
 php artisan migrate:fresh --seed
 
 # Demo data (600 students, 30 teachers, ~1,200 daily logs, full curriculum)
 php artisan db:seed --class=MiddleSchoolDatabaseSeeder
 
-# Run tests (274 feature + unit, all green)
+# Run tests (289 feature + unit, all green)
 php artisan test
 vendor/bin/pint
 
@@ -112,13 +112,13 @@ php artisan optimize:clear
 
 ---
 
-## 6. Project Health (Updated — Phase 3 Complete)
+## 6. Project Health (Phase 4 Complete)
 
-- **Migrations:** 30 ran (28 base + behavior observations + pedagogical remediation)
-- **Tests:** 274 passed (14,422 assertions in the latest run; assertion count can vary slightly with randomized seed data)
+- **Migrations:** 40 ran
+- **Tests:** 289 passed (14,543 assertions in the latest run; assertion count can vary slightly with randomized seed data)
 - **Filament Resources:** 18 (includes new `BehaviorObservationResource`, `PedagogicalRemediationResource`, `ActiveLearningStrategyResource`)
-- **Custom Pages:** Dashboard, CurriculumProgress, OfficialReports, MySchedule, QuickAttendance, LabSeatingPlan, LabSeatingPlanPage, QuickAttendance (done), ActiveLearningStrategies (done), ClassroomToolbar (done), DataShowMode (done)
-- **Branch:** `main` — Phase 3 changes are currently uncommitted
+- **Custom Pages:** Dashboard, CurriculumProgress, OfficialReports, MySchedule, QuickAttendance, LabSeatingPlanPage, DataShowMode, SchoolSupervisionHub
+- **Branch:** `main` — Phase 2/3/4 all complete (100% across the board)
 - **Build:** `npm run build` passes; `vendor/bin/pint` passes
 
 ---
@@ -139,4 +139,22 @@ membership, creates a planned daily log when necessary, materializes missing att
 upserts status and remarks in batches of at most 200. Use this feature on a teacher-controlled,
 protected device: the roster and unsynced attendance contain student information in browser storage.
 
-*Last updated: 2026-10-24 — Phase 2 Roadmap Complete (14 / 14 items, 100%); Phase 3 Roadmap Complete (3 / 3 items, 100%).*
+## 8. Phase 4 — School Supervision & Administrative Auditing
+
+- **Digital administrative visa:** Admins can stamp completed daily logs individually or in bulk;
+  teachers see review details read-only, and printed/PDF registers include the official stamp and
+  notes.
+- **Educational Counselor supervision hub:** An admin-only, auto-refreshing cockpit filters by date,
+  level, and classroom; computes daily compliance over scheduled sessions, flags only elapsed
+  unlogged slots using the selected date and Algiers time, and summarizes attendance alerts and
+  repeat absences across distinct days in the prior 30 days. Pending behavior cases include reporter
+  and optional schedule context, with audited follow-up notes and one-click resolution.
+- **Student parent report card:** Localized browser print and A4 RTL Browsershot PDF combine student
+  identity, attendance totals and recent alerts, subject grade details and averages normalized to
+  /20, behavior/follow-up history, and remediation outcomes. Teacher access is checked through
+  `StudentPolicy`; attendance and grades are restricted to their schedules, and teacher-entered
+  behavior/remediation records are restricted to their authorship and linked schedules. Admins see
+  all of the student's records. Official Reports provides classroom/group/student filters, and the
+  Student resource provides row actions.
+
+*Last updated: 2026-10-24 — Phase 2 Roadmap Complete (14 / 14 items, 100%); Phase 3 Roadmap Complete (3 / 3 items, 100%); Phase 4 Roadmap Complete (3 / 3 items, 100%).*

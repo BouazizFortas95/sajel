@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Models\Classroom;
 use App\Models\Group;
 use App\Models\Schedule;
+use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
 use Filament\Pages\Page;
@@ -52,9 +53,17 @@ class OfficialReports extends Page
 
     public ?string $transcriptTo = null;
 
+    public ?int $reportCardStudentId = null;
+
+    public ?int $reportCardClassroomId = null;
+
+    public ?int $reportCardGroupId = null;
+
     public static function canAccess(): bool
     {
-        return Auth::check();
+        $user = Auth::user();
+
+        return $user?->isAdmin() || $user?->isTeacher();
     }
 
     public static function getNavigationLabel(): string
@@ -74,7 +83,7 @@ class OfficialReports extends Page
 
     public function mount(): void
     {
-        $this->report = in_array($this->report, ['timetable', 'attendance', 'transcript'], true)
+        $this->report = in_array($this->report, ['timetable', 'attendance', 'transcript', 'report-card'], true)
             ? $this->report
             : 'timetable';
 
@@ -87,6 +96,9 @@ class OfficialReports extends Page
         $this->transcriptTo = $to;
 
         $user = Auth::user();
+        $this->reportCardClassroomId = array_key_first($this->reportCardClassroomOptions);
+        $this->reportCardGroupId = array_key_first($this->reportCardGroupOptions);
+        $this->reportCardStudentId = array_key_first($this->reportCardStudentOptions);
 
         if (! $user?->isTeacher()) {
             return;
@@ -117,7 +129,7 @@ class OfficialReports extends Page
 
     public function setReport(string $report): void
     {
-        $this->report = in_array($report, ['timetable', 'attendance', 'transcript'], true)
+        $this->report = in_array($report, ['timetable', 'attendance', 'transcript', 'report-card'], true)
             ? $report
             : 'timetable';
     }
@@ -132,6 +144,17 @@ class OfficialReports extends Page
     {
         $this->transcriptGroupId = null;
         $this->transcriptSubjectId = null;
+    }
+
+    public function updatedReportCardClassroomId(): void
+    {
+        $this->reportCardGroupId = null;
+        $this->reportCardStudentId = null;
+    }
+
+    public function updatedReportCardGroupId(): void
+    {
+        $this->reportCardStudentId = null;
     }
 
     /**
@@ -295,6 +318,93 @@ class OfficialReports extends Page
     /**
      * @return array<int, string>
      */
+    public function getReportCardStudentOptionsProperty(): array
+    {
+        $query = Student::query()->with(['group.classroom.level']);
+        $user = Auth::user();
+
+        if ($user?->isTeacher()) {
+            $studentIds = Schedule::query()
+                ->forTeacher($user->id)
+                ->get()
+                ->flatMap(fn (Schedule $schedule) => Student::query()->forSchedule($schedule)->pluck('students.id'))
+                ->unique()
+                ->values();
+
+            $query->whereKey($studentIds);
+        }
+
+        return $query
+            ->when($this->reportCardClassroomId, fn (Builder $query): Builder => $query->whereHas(
+                'group',
+                fn (Builder $query): Builder => $query->where('classroom_id', $this->reportCardClassroomId),
+            ))
+            ->when($this->reportCardGroupId, fn (Builder $query): Builder => $query->where('group_id', $this->reportCardGroupId))
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get()
+            ->mapWithKeys(fn (Student $student): array => [
+                $student->id => implode(' — ', array_filter([
+                    $student->full_name,
+                    $student->group?->classroom?->name,
+                    $student->group?->name,
+                ])),
+            ])
+            ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getReportCardClassroomOptionsProperty(): array
+    {
+        return $this->classroomOptions;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getReportCardGroupOptionsProperty(): array
+    {
+        if (blank($this->reportCardClassroomId)) {
+            return [];
+        }
+
+        $groups = Group::query()
+            ->where('classroom_id', $this->reportCardClassroomId)
+            ->when(Auth::user()?->isTeacher(), function (Builder $query): Builder {
+                return $query->whereExists(function ($query): void {
+                    $query->selectRaw('1')
+                        ->from('schedules')
+                        ->where('schedules.user_id', Auth::id())
+                        ->where(function ($query): void {
+                            $query->whereColumn('schedules.group_id', 'groups.id')
+                                ->orWhere(function ($query): void {
+                                    $query->whereNull('schedules.group_id')
+                                        ->whereColumn('schedules.classroom_id', 'groups.classroom_id');
+                                });
+                        });
+                });
+            })
+            ->orderBy('name')
+            ->pluck('name', 'id');
+
+        return $groups->all();
+    }
+
+    public function reportCardPrintUrl(): ?string
+    {
+        return $this->reportCardUrl('print.student-report-card');
+    }
+
+    public function reportCardPdfUrl(): ?string
+    {
+        return $this->reportCardUrl('print.student-report-card.pdf');
+    }
+
+    /**
+     * @return array<int, string>
+     */
     private function groupOptions(?int $classroomId): array
     {
         if (blank($classroomId)) {
@@ -345,5 +455,14 @@ class OfficialReports extends Page
             'locale' => app()->getLocale(),
             ...$parameters,
         ], fn (mixed $value): bool => filled($value)));
+    }
+
+    private function reportCardUrl(string $name): ?string
+    {
+        if (blank($this->reportCardStudentId)) {
+            return null;
+        }
+
+        return $this->reportUrl($name, ['student' => $this->reportCardStudentId]);
     }
 }

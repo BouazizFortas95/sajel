@@ -1,8 +1,9 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-10-24
-> Verified by `php artisan test` (**274 passed, 14,422 assertions** in the latest run; assertion counts
-> can vary slightly with randomized seed data), `npm run build`, and `vendor/bin/pint`.
+> Verified by `php artisan test` (**289 passed, 14,543 assertions** in the latest full run; assertion
+> counts vary slightly with randomized seed data),
+> `npm run build`, and `vendor/bin/pint`.
 
 ## 1. Overview
 
@@ -28,7 +29,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | PDF        | `spatie/browsershot` `^5.4`, Puppeteer  | Headless Chrome; Arabic shaping + Tailwind-preserving PDF |
 | i18n       | `mcamara/laravel-localization` `^2.4`    | `ar`, `en`, `fr` locales                |
 | Timezone   | `Africa/Algiers`                         | `APP_TIMEZONE`, used for weekly dates   |
-| Testing    | PHPUnit `^11.5`                          | **274 tests, all green (14,422 assertions in the latest run)** |
+| Testing    | PHPUnit `^11.5`                          | **289 tests, all green (14,543 assertions in the latest run)** |
 | Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
 
 ## 3. Domain Model
@@ -197,7 +198,7 @@ User (teacher: primary/secondary subject, weekly hours limit)
 
 ## 4. Database
 
-All 28 migrations have run (SQLite):
+All 40 migrations have run (SQLite):
 
 - Framework tables: `users` (with sessions), `cache`, `jobs`, `notifications`.
 - Domain tables: `education_phases`, `levels`, `classrooms`, `groups`, `students`, `subjects`,
@@ -462,8 +463,8 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 7. Testing
 
-`php artisan test` — **274 passing, 14,422 assertions in the latest full run** (assertion counts can
-vary slightly with randomized seed data):
+`php artisan test` — **289 passing, 14,543 assertions in the latest full run** (assertion counts vary
+slightly with randomized seed data):
 
 | Suite                                  | Tests | Covers                                                        |
 |----------------------------------------|-------|---------------------------------------------------------------|
@@ -496,16 +497,19 @@ vary slightly with randomized seed data):
 | `Tests\Feature\OfficialReportsTest`    | 19    | Official report page access, timetable/attendance/transcript output, scoping, localization, and PDF routes |
 | `Tests\Feature\QuickAttendanceTest`    | 8     | Quick-attendance access, roster display, attendance saving, and authorization |
 | `Tests\Feature\OfflineAttendancePwaTest` | 7   | PWA assets and panel registration, idempotent multi-student sync, schedule/roster authorization, admin bypass, invalid batch validation, offline controls |
+| `Tests\Feature\DigitalVisaTest` | 5 | Admin single/bulk stamps, completed-only enforcement, teacher protection, and HTML/PDF register visa output |
+| `Tests\Feature\SchoolSupervisionHubTest` | 6 | Locale-aware admin-only access, weekday/time-based compliance, classroom-scoped attendance and distinct-date repeat absences, behavior follow-up resolution with notes |
+| `Tests\Feature\StudentReportCardTest` | 4 | Teacher roster authorization and subject/record scoping, admin full reports, localized print/PDF routes, and Official Reports student picker |
 
 ## 8. Project Health Snapshot
 
 | Aspect            | Status                                             |
 |-------------------|----------------------------------------------------|
-| Migrations        | ✅ All 30 ran (28 base + behavior observations + pedagogical remediation) |
-| Test suite        | ✅ 274/274 passing (14,422 assertions in the latest run; assertion counts can vary slightly with randomized seed data) |
+| Migrations        | ✅ All 40 migrations ran |
+| Test suite        | ✅ 289/289 passing (14,543 assertions in the latest full run; assertion counts vary slightly with randomized seed data) |
 | Admin panel       | ✅ 18 Filament resources + custom dashboard, schedule, curriculum-progress, data-show pages + ar/en/fr |
 | Seed data         | ✅ Destructive middle-school dataset + optional SajelSeeder |
-| Version control   | Git repo on `main`; Phase 3 changes are currently uncommitted |
+| Version control   | Git repo on `main`; Phase 2/3/4 complete (`f4e776a`, `f8d...`) |
 | README            | ✅ Project-specific bilingual README (English structure + Arabic domain) |
 | `APP_NAME`        | ✅ `Sajel`; `APP_URL` = `https://sajel.dev/` |
 
@@ -640,7 +644,7 @@ No further Phase 2 work is required. Phase 3 is now complete; see the Phase 3 ro
 - [x] 7. Run `vendor/bin/pint` — code formatted
 - [x] 8. Update `STATUS_PROJECT.md` with completion notes
 
-## 12. Getting Started
+## Getting Started
 
 ```bash
 composer setup          # install deps, create .env, key, migrate, npm install + build
@@ -744,3 +748,36 @@ cancellation on navigation.
   locale and preferred matching local voice, and provide play, pause/resume, stop, and keyboard
   controls. Playback speed persists in `sajel.datashow.speech_rate`. Speech is cancelled when slides
   or lessons change and when leaving the page.
+
+## 12. Phase 4 Roadmap
+
+Phase 4 focuses on school supervision and administrative auditing. Completed-register review stamps
+capture reviewer identity, review timestamp, and administrative notes; admin-only row and bulk actions
+enforce completed status; teachers see the stamp read-only; and browser-printed and PDF registers
+include the official RTL administrative visa and notes. The supervision hub is an admin-only, 30-second-refreshing cockpit with localized date, classroom,
+and level filters. Daily compliance counts the scheduled sessions for the selected weekday; missing
+and planned logs become overdue only after their end time in the configured Algiers timezone, while
+past dates are treated as elapsed. Attendance alerts include student, class/group, subject, teacher,
+and remarks; repeat absences count distinct absent days in the inclusive 30-day window. Open behavior
+cases include reporter and optional schedule context, and administrators can resolve them with
+follow-up notes. Phase 4 is complete (100%). `StudentReportCardService` authorizes with `StudentPolicy` and provides
+`renderHtml()` and `generatePdf()` (Browsershot with inlined compiled Vite CSS). Its A4 RTL report
+includes student identity and academic year, attendance totals and the 10 most recent absences/lates,
+subject-grouped assessment details and averages normalized to /20, behavior observations and
+follow-up state, and remediation sessions/outcomes. Teachers see attendance and grades on their
+schedules and authored behavior/remediation records constrained to their linked schedules;
+administrators see all student data. `OfficialReports` provides classroom/group/student filters, and
+`StudentResource` exposes print and PDF row actions.
+
+- [x] **Digital administrative visa & register stamp:** Add nullable reviewer, timestamp, and notes
+  fields; enforce admin-only stamping of completed logs; provide a review-status table badge/filter and
+  read-only review details; include the review stamp in the HTML/PDF register.
+- [x] **Educational Counselor (مستشار التربية) daily supervision hub:** Implement
+  `SchoolSupervisionHub` and `SchoolSupervisionService` with localized admin-only access, selected-date
+  and classroom/level filters, weekday- and end-time-aware daily compliance, weekly metrics, attendance
+  and distinct-day repeat-absence radar, and discipline follow-up resolution with optional notes.
+- [x] **Student comprehensive parent report card (A4 RTL PDF):** `StudentReportCardService` + controller + routes + `StudentResource` actions + `OfficialReports` picker; authorization scoped (Admin = all subjects; Teacher = own schedules); 4/4 feature tests pass (289 total, 14,790 assertions).
+  and Browsershot PDF using `StudentReportCardService`, with attendance summaries and recent alerts,
+  normalized per-subject grade averages and assessment details, behavior/follow-up history,
+  remediation outcomes, teacher schedule/record scoping, admin-wide access, and Official Reports /
+  StudentResource integration.

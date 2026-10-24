@@ -149,6 +149,23 @@ class StudentResource extends Resource
                     ->preload(),
             ])
             ->actions([
+                Tables\Actions\Action::make('printStudentReportCard')
+                    ->label(__('طباعة بطاقة متابعة التلميذ'))
+                    ->icon('heroicon-o-printer')
+                    ->color('gray')
+                    ->url(fn (Student $record): string => route('print.student-report-card', [
+                        'locale' => app()->getLocale(),
+                        'student' => $record,
+                    ]))
+                    ->openUrlInNewTab(),
+                Tables\Actions\Action::make('downloadStudentReportCard')
+                    ->label(__('تحميل بطاقة المتابعة (PDF)'))
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('primary')
+                    ->url(fn (Student $record): string => route('print.student-report-card.pdf', [
+                        'locale' => app()->getLocale(),
+                        'student' => $record,
+                    ])),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

@@ -5,13 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Auth;
 
 class PedagogicalRemediation extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::creating(function (PedagogicalRemediation $remediation): void {
+            $remediation->recorded_by_id ??= Auth::id();
+        });
+    }
+
     protected $fillable = [
-        'student_id', 'reason', 'activities', 'session_date', 'attended', 'follow_up', 'status',
+        'student_id', 'schedule_id', 'reason', 'activities', 'session_date', 'attended', 'follow_up', 'status',
     ];
 
     protected function casts(): array
@@ -25,5 +33,15 @@ class PedagogicalRemediation extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
+    }
+
+    public function recorder(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'recorded_by_id');
+    }
+
+    public function schedule(): BelongsTo
+    {
+        return $this->belongsTo(Schedule::class);
     }
 }

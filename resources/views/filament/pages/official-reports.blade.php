@@ -35,6 +35,14 @@
             >
                 {{ __('كشف النقاط الرسمي') }}
             </x-filament::tabs.item>
+
+            <x-filament::tabs.item
+                :active="$report === 'report-card'"
+                wire:click="setReport('report-card')"
+                icon="heroicon-o-document-text"
+            >
+                {{ __('طباعة بطاقة متابعة التلميذ') }}
+            </x-filament::tabs.item>
         </x-filament::tabs>
     </div>
 
@@ -313,6 +321,79 @@
                     @else
                         <x-filament::button disabled icon="heroicon-o-printer">
                             {{ __('اختر المادة أولاً.') }}
+                        </x-filament::button>
+                    @endif
+                </div>
+            </div>
+        </x-filament::section>
+    @endif
+
+    @if ($report === 'report-card')
+        <x-filament::section
+            :heading="__('بطاقة المتابعة البيداغوجية والسلوكية للتلميذ')"
+            :description="__('اختر تلميذاً من قائمتك المصرح بها لطباعة بطاقة المتابعة للاجتماع مع الولي.')"
+            icon="heroicon-o-document-text"
+        >
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4 xl:items-end">
+                <label class="grid gap-2">
+                    <span class="text-sm font-medium text-gray-950 dark:text-white">{{ __('القسم') }}</span>
+                    <x-filament::input.wrapper class="bg-transparent border-0">
+                        <select wire:model.live="reportCardClassroomId" class="{{ $selectClasses }}">
+                            <option value="" class="{{ $optionClasses }}">{{ __('كل الأقسام') }}</option>
+                            @foreach ($this->reportCardClassroomOptions as $id => $label)
+                                <option value="{{ $id }}" class="{{ $optionClasses }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </x-filament::input.wrapper>
+                </label>
+
+                <label class="grid gap-2">
+                    <span class="text-sm font-medium text-gray-950 dark:text-white">{{ __('الفوج') }}</span>
+                    <x-filament::input.wrapper class="bg-transparent border-0">
+                        <select wire:model.live="reportCardGroupId" class="{{ $selectClasses }}">
+                            <option value="" class="{{ $optionClasses }}">{{ __('كل الأفواج') }}</option>
+                            @foreach ($this->reportCardGroupOptions as $id => $label)
+                                <option value="{{ $id }}" class="{{ $optionClasses }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </x-filament::input.wrapper>
+                </label>
+
+                <label class="grid gap-2">
+                    <span class="text-sm font-medium text-gray-950 dark:text-white">{{ __('التلميذ') }}</span>
+                    <x-filament::input.wrapper class="bg-transparent border-0">
+                        <select wire:model.live="reportCardStudentId" class="{{ $selectClasses }}">
+                            <option value="" class="{{ $optionClasses }}">{{ __('اختر التلميذ') }}</option>
+                            @foreach ($this->reportCardStudentOptions as $id => $label)
+                                <option value="{{ $id }}" class="{{ $optionClasses }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </x-filament::input.wrapper>
+                </label>
+
+                <div class="flex flex-wrap gap-2 md:col-span-2 xl:justify-end">
+                    @if ($this->reportCardPrintUrl())
+                        <x-filament::button
+                            tag="a"
+                            href="{{ $this->reportCardPrintUrl() }}"
+                            target="_blank"
+                            rel="noopener"
+                            icon="heroicon-o-printer"
+                        >
+                            {{ __('بطاقة متابعة التلميذ (طباعة)') }}
+                        </x-filament::button>
+
+                        <x-filament::button
+                            tag="a"
+                            href="{{ $this->reportCardPdfUrl() }}"
+                            color="gray"
+                            icon="heroicon-o-arrow-down-tray"
+                        >
+                            {{ __('تحميل بطاقة المتابعة (PDF)') }}
+                        </x-filament::button>
+                    @else
+                        <x-filament::button disabled icon="heroicon-o-printer">
+                            {{ __('اختر التلميذ') }}
                         </x-filament::button>
                     @endif
                 </div>

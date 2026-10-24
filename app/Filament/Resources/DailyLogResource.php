@@ -20,6 +20,7 @@ use Filament\Actions;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
@@ -38,9 +39,11 @@ use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
@@ -78,7 +81,7 @@ class DailyLogResource extends Resource
      */
     public static function getEloquentQuery(): EloquentBuilder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()->with('reviewer');
 
         return auth()->user()?->isAdmin()
             ? $query
@@ -336,6 +339,25 @@ class DailyLogResource extends Resource
                                     ]),
                             ]),
                     ])
+                    ->columnSpanFull(),
+
+                Section::make(__('التأشيرة الإدارية'))
+                    ->schema([
+                        Placeholder::make('administrative_review_stamp')
+                            ->label(__('حالة التأشير'))
+                            ->content(fn (?DailyLog $record): string => $record?->reviewed_at
+                                ? __('تم التأشير من طرف: :name بتاريخ :date', [
+                                    'name' => $record->reviewer?->name ?? '—',
+                                    'date' => $record->reviewed_at->format('Y-m-d H:i'),
+                                ])
+                                : '—'),
+
+                        Placeholder::make('administrative_review_notes')
+                            ->label(__('ملاحظات الإدارة / التوجيه التربوي'))
+                            ->content(fn (?DailyLog $record): string => $record?->admin_notes ?: '—')
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn (?DailyLog $record): bool => $record?->isReviewed() ?? false)
                     ->columnSpanFull(),
             ]);
     }
@@ -689,6 +711,55 @@ class DailyLogResource extends Resource
         );
     }
 
+    /**
+     * @return array<int, Textarea>
+     */
+    private static function administrativeVisaForm(): array
+    {
+        return [
+            Textarea::make('admin_notes')
+                ->label(__('ملاحظات الإدارة / التوجيه التربوي'))
+                ->rows(4)
+                ->maxLength(10000)
+                ->nullable(),
+        ];
+    }
+
+    private static function authorizeAdministrativeVisa(User $user, DailyLog $record): void
+    {
+        abort_unless($user->isAdmin(), 403);
+
+        if (! $record->isCompleted()) {
+            throw ValidationException::withMessages([
+                'record' => __('لا يمكن تأشير سجل غير منجز.'),
+            ]);
+        }
+    }
+
+    public static function administrativeVisaTableAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('digitalVisa')
+            ->label(__('تأشير الدفتر رقمياً'))
+            ->icon('heroicon-o-check-badge')
+            ->color('success')
+            ->form(static::administrativeVisaForm())
+            ->modalHeading(__('تأشير الدفتر رقمياً'))
+            ->modalSubmitActionLabel(__('تأشير'))
+            ->visible(fn (DailyLog $record): bool => Auth::user()?->isAdmin() && $record->isCompleted())
+            ->action(function (DailyLog $record, array $data): void {
+                $reviewer = Auth::user();
+                abort_unless($reviewer instanceof User, 403);
+                static::authorizeAdministrativeVisa($reviewer, $record);
+
+                $record->markAsReviewed($reviewer, $data['admin_notes'] ?? null);
+
+                Notification::make()
+                    ->success()
+                    ->title(__('تم التأشير الإداري'))
+                    ->send();
+            });
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -727,11 +798,42 @@ class DailyLogResource extends Resource
                     ->formatStateUsing(fn (DailyLogStatus $state): string => $state->label())
                     ->color(fn (DailyLogStatus $state): string => $state->color())
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('administrative_review')
+                    ->label(__('التأشير الإداري'))
+                    ->getStateUsing(fn (DailyLog $record): ?string => $record->isCompleted()
+                        ? ($record->isReviewed() ? __('مؤشَّر إدارياً') : __('بانتظار التأشير'))
+                        : null)
+                    ->badge()
+                    ->color(fn (DailyLog $record): string => $record->isReviewed() ? 'success' : 'gray')
+                    ->tooltip(fn (DailyLog $record): ?string => $record->isReviewed()
+                        ? __('تم التأشير من طرف: :name بتاريخ :date', [
+                            'name' => $record->reviewer?->name ?? '—',
+                            'date' => $record->reviewed_at?->format('Y-m-d'),
+                        ])
+                        : null)
+                    ->sortable(query: fn (EloquentBuilder $query, string $direction): EloquentBuilder => $query
+                        ->orderBy('reviewed_at', $direction)),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label(__('الحالة'))
                     ->options(DailyLogStatus::options()),
+
+                Tables\Filters\SelectFilter::make('administrative_review')
+                    ->label(__('التأشير الإداري'))
+                    ->placeholder(__('الكل'))
+                    ->options([
+                        'reviewed' => __('مؤشَّر'),
+                        'pending' => __('غير مؤشَّر'),
+                    ])
+                    ->query(fn (EloquentBuilder $query, array $data): EloquentBuilder => match ($data['value'] ?? null) {
+                        'reviewed' => $query->whereNotNull('reviewed_at'),
+                        'pending' => $query
+                            ->where('status', DailyLogStatus::Completed->value)
+                            ->whereNull('reviewed_at'),
+                        default => $query,
+                    }),
 
                 Tables\Filters\Filter::make('today')
                     ->label(__('سجلات اليوم'))
@@ -739,11 +841,41 @@ class DailyLogResource extends Resource
             ])
             ->actions([
                 static::confirmCompletionTableAction(),
+                static::administrativeVisaTableAction(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('digitalVisa')
+                        ->label(__('تأشير الدفتر رقمياً'))
+                        ->icon('heroicon-o-check-badge')
+                        ->color('success')
+                        ->form(static::administrativeVisaForm())
+                        ->modalHeading(__('تأشير الدفتر رقمياً'))
+                        ->modalSubmitActionLabel(__('تأشير'))
+                        ->visible(fn (): bool => Auth::user()?->isAdmin() ?? false)
+                        ->action(function (EloquentCollection $records, array $data): void {
+                            $reviewer = Auth::user();
+                            abort_unless($reviewer instanceof User && $reviewer->isAdmin(), 403);
+
+                            foreach ($records as $record) {
+                                static::authorizeAdministrativeVisa($reviewer, $record);
+                            }
+
+                            DB::transaction(function () use ($records, $reviewer, $data): void {
+                                foreach ($records as $record) {
+                                    $record->markAsReviewed($reviewer, $data['admin_notes'] ?? null);
+                                }
+                            });
+
+                            Notification::make()
+                                ->success()
+                                ->title(__('تم تأشير :count سجلات بنجاح.', ['count' => $records->count()]))
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+
                     Tables\Actions\BulkAction::make('downloadRegisterPdf')
                         ->label(__('تحميل دفتر النصوص (PDF)'))
                         ->icon('heroicon-o-arrow-down-tray')

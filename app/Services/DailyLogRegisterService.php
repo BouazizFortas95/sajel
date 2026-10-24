@@ -41,6 +41,7 @@ class DailyLogRegisterService
                 'schedule.classroom.groups',
                 'schedule.group.classroom.level.educationPhase',
                 'schedule.group.classroom.groups',
+                'reviewer',
             ])
             ->whereKey($ids)
             ->where('status', DailyLogStatus::Completed->value)

@@ -4,11 +4,15 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\BehaviorObservationResource\Pages;
 use App\Models\BehaviorObservation;
+use App\Models\Schedule;
+use App\Models\Student;
+use Closure;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -33,10 +37,46 @@ class BehaviorObservationResource extends Resource
                 ->label(__('التلميذ'))
                 ->relationship('student', 'full_name')
                 ->required(),
+            Select::make('schedule_id')
+                ->label(__('الحصة'))
+                ->options(fn (): array => Schedule::query()
+                    ->when(auth()->user()?->isTeacher(), fn ($query) => $query->forTeacher(auth()->id()))
+                    ->with(['user', 'subject', 'classroom', 'group'])
+                    ->get()
+                    ->mapWithKeys(fn (Schedule $schedule): array => [$schedule->id => $schedule->label()])
+                    ->all())
+                ->searchable()
+                ->preload()
+                ->rules(fn (Get $get): array => [
+                    function (string $attribute, mixed $value, Closure $fail) use ($get): void {
+                        if (blank($value) || blank($get('student_id'))) {
+                            return;
+                        }
+
+                        $student = Student::query()->with('group')->find($get('student_id'));
+                        $schedule = Schedule::query()->find($value);
+
+                        if (
+                            ! $student
+                            || ! $schedule
+                            || (auth()->user()?->isTeacher() && $schedule->user_id !== auth()->id())
+                            || (
+                                $schedule->group_id !== $student->group_id
+                                && ! (
+                                    $schedule->group_id === null
+                                    && $schedule->classroom_id === $student->group?->classroom_id
+                                )
+                            )
+                        ) {
+                            $fail(__('الحصة المحددة لا تخص قسم التلميذ.'));
+                        }
+                    },
+                ]),
             Select::make('category')
                 ->label(__('الفئة'))
                 ->options([
                     'positive' => __('إيجابي'),
+                    'negative' => __('سلبي'),
                     'disciplinary' => __('انضباطي'),
                     'observation' => __('ملاحظة'),
                 ])
@@ -63,6 +103,7 @@ class BehaviorObservationResource extends Resource
                 SelectFilter::make('category')->label(__('الفئة'))
                     ->options([
                         'positive' => __('إيجابي'),
+                        'negative' => __('سلبي'),
                         'disciplinary' => __('انضباطي'),
                         'observation' => __('ملاحظة'),
                     ]),
