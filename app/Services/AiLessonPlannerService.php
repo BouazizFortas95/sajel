@@ -32,11 +32,16 @@ class AiLessonPlannerService
      *
      * @throws AiLessonPlannerException
      */
-    public function generateLessonPlan(string $topic, string $subject, string $level): array
+    public function generateLessonPlan(string $topic, string $subject, string $level, ?string $locale = null): array
     {
+        $requestedLocale = $locale ?? app()->getLocale();
+        $locale = in_array($requestedLocale, ['ar', 'en', 'fr'], true)
+            ? $requestedLocale
+            : 'ar';
+
         $plan = $this->normalizePlan(
             $this->decodePlan(
-                $this->requestPlan($this->buildPrompt($topic, $subject, $level)),
+                $this->requestPlan($this->buildPrompt($topic, $subject, $level, $locale), $locale),
             ),
         );
 
@@ -60,11 +65,11 @@ class AiLessonPlannerService
      *
      * @throws AiLessonPlannerException
      */
-    protected function requestPlan(string $prompt): string
+    protected function requestPlan(string $prompt, string $locale): string
     {
         return match (config('ai.provider', 'gemini')) {
-            'openai' => $this->requestOpenAi($prompt),
-            default => $this->requestGemini($prompt),
+            'openai' => $this->requestOpenAi($prompt, $locale),
+            default => $this->requestGemini($prompt, $locale),
         };
     }
 
@@ -73,7 +78,7 @@ class AiLessonPlannerService
      *
      * @throws AiLessonPlannerException
      */
-    protected function requestGemini(string $prompt): string
+    protected function requestGemini(string $prompt, string $locale): string
     {
         $key = config('ai.gemini.key');
 
@@ -94,7 +99,7 @@ class AiLessonPlannerService
             'generationConfig' => [
                 'temperature' => 0.4,
                 'responseMimeType' => 'application/json',
-                'responseSchema' => $this->planSchema(),
+                'responseSchema' => $this->planSchema($locale),
             ],
         ];
 
@@ -171,13 +176,19 @@ class AiLessonPlannerService
      *
      * @throws AiLessonPlannerException
      */
-    protected function requestOpenAi(string $prompt): string
+    protected function requestOpenAi(string $prompt, string $locale): string
     {
         $key = config('ai.openai.key');
 
         if (blank($key)) {
             throw new AiLessonPlannerException(__('لم يتم ضبط مفتاح OpenAI. أضف OPENAI_API_KEY إلى ملف .env.'));
         }
+
+        $systemPrompt = match ($locale) {
+            'en' => 'You are an Algerian middle-school pedagogical expert. Always return a valid JSON object without any additional text.',
+            'fr' => 'Vous êtes un expert pédagogique algérien du cycle moyen. Retournez toujours un objet JSON valide sans texte supplémentaire.',
+            default => 'أنت مستشار بيداغوجي متخصص في المناهج الجزائرية. تعيد دائماً كائن JSON صالحاً دون أي نص إضافي.',
+        };
 
         $response = $this->post(
             $this->http()
@@ -191,7 +202,7 @@ class AiLessonPlannerService
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => 'أنت مستشار بيداغوجي متخصص في المناهج الجزائرية. تعيد دائماً كائن JSON صالحاً دون أي نص إضافي.',
+                        'content' => $systemPrompt,
                     ],
                     [
                         'role' => 'user',
@@ -265,30 +276,78 @@ class AiLessonPlannerService
     }
 
     /**
-     * The Arabic prompt that pins the answer to the exact JSON contract
-     * Filament's `lesson_structure` block expects.
+     * Build a localized prompt for the exact JSON contract Filament expects.
      */
-    protected function buildPrompt(string $topic, string $subject, string $level): string
+    protected function buildPrompt(string $topic, string $subject, string $level, string $locale): string
     {
-        $subject = filled($subject) ? $subject : 'غير محددة';
-        $level = filled($level) ? $level : 'غير محدد';
+        [$role, $lesson, $competence, $stages, $practicalContent, $plainText, $instructionHeading, $jsonInstruction, $competenceLabel, $phaseLabel, $contentLabel, $unknown] = match ($locale) {
+            'en' => [
+                'You are an Algerian middle-school pedagogical inspector and an expert in competency-based teaching and the official curriculum.',
+                'Write a complete lesson plan in clear, age-appropriate English for subject ":subject", level ":level", on the topic ":topic".',
+                'Write the target competence in one clear sentence that includes an action, knowledge, and context.',
+                'Divide the lesson into 3 to 6 stages in chronological order (for example: warm-up, guided learning, practice, and assessment).',
+                'Give practical teacher-facing content for each stage, including instructions, questions, activities, and a suggested duration in minutes.',
+                'Do not use HTML or Markdown; write plain English and use line breaks where helpful.',
+                'Instructions:',
+                'Return only a valid JSON object, without any additional explanation, using exactly this structure:',
+                'Target competence',
+                'Stage name',
+                'Stage content',
+                'unspecified',
+            ],
+            'fr' => [
+                'Vous êtes un inspecteur pédagogique algérien du cycle moyen, expert en approche par compétences et en programmes officiels.',
+                'Rédigez un plan de leçon complet en français clair et adapté à l’âge des élèves pour la matière « :subject », le niveau « :level » et le thème « :topic ».',
+                'Formulez la compétence visée en une phrase claire comprenant une action, un savoir et un contexte.',
+                'Divisez la leçon en 3 à 6 étapes dans l’ordre chronologique (par exemple : mise en situation, construction des apprentissages, réinvestissement et évaluation).',
+                'Pour chaque étape, proposez un contenu pratique destiné à l’enseignant : consignes, questions, activités et durée suggérée en minutes.',
+                'N’utilisez ni HTML ni Markdown ; rédigez en français courant et utilisez des sauts de ligne si nécessaire.',
+                'Consignes :',
+                'Retournez uniquement un objet JSON valide, sans explication supplémentaire, en respectant exactement cette structure :',
+                'Compétence visée',
+                'Nom de l’étape',
+                'Contenu de l’étape',
+                'non précisé',
+            ],
+            default => [
+                'أنت مفتش تربوي جزائري في التعليم المتوسط، خبير في المقاربة بالكفاءات والمناهج الرسمية.',
+                'حرّر مخطط تحضير كامل بالعربية الفصحى المبسّطة لمادة «:subject» ومستوى «:level» حول الموضوع «:topic».',
+                'اكتب الكفاءة المستهدفة في جملة واحدة واضحة تتضمن الفعل والمعرفة والسياق.',
+                'قسّم سير الدرس إلى 3 إلى 6 مراحل بيداغوجية مرتّبة زمنياً (مثل: وضعية الانطلاق، بناء التعلمات، استثمار المكتسبات، التقويم).',
+                'اكتب في كل مرحلة محتوى عملياً للمدرّس: تعليمات، أسئلة، نشاطات، مع الإشارة إلى المدة المقترحة بالدقائق.',
+                'لا تستعمل وسوم HTML ولا تنسيق Markdown؛ اكتب نصاً عربياً عادياً مع فواصل أسطر عند الحاجة.',
+                'التعليمات:',
+                'أعد النتيجة على شكل كائن JSON صالح فقط، دون أي شرح إضافي، بهذه البنية بالضبط:',
+                'نص الكفاءة المستهدفة',
+                'اسم المرحلة',
+                'محتوى المرحلة',
+                'غير محدد',
+            ],
+        };
+        $subject = filled($subject) ? $subject : $unknown;
+        $level = filled($level) ? $level : $unknown;
+        $lesson = strtr($lesson, [
+            ':subject' => $subject,
+            ':level' => $level,
+            ':topic' => $topic,
+        ]);
 
         return <<<PROMPT
-        أنت مفتش تربوي جزائري في التعليم المتوسط، خبير في المقاربة بالكفاءات والمناهج الرسمية.
+        {$role}
 
-        حرّر مخطط تحضير كامل بالعربية الفصحى المبسّطة لدرس في مادة «{$subject}» يستهدف «{$level}»، حول الموضوع: «{$topic}».
+        {$lesson}
 
-        التعليمات:
-        - اكتب الكفاءة المستهدفة في جملة واحدة واضحة تتضمن الفعل والمعرفة والسياق.
-        - قسّم سير الدرس إلى 3 إلى 6 مراحل بيداغوجية مرتّبة زمنياً (مثل: وضعية الانطلاق، بناء التعلمات، استثمار المكتسبات، التقويم...).
-        - اكتب في كل مرحلة محتوى عملياً للمدرّس: تعليمات، أسئلة، نشاطات، مع الإشارة إلى المدة المقترحة بالدقائق.
-        - لا تستعمل وسوم HTML ولا تنسيق Markdown؛ اكتب نصاً عربياً عادياً مع فواصل أسطر عند الحاجة.
-        - أعد النتيجة على شكل كائن JSON صالح فقط، دون أي شرح إضافي، بهذه البنية بالضبط:
+        {$instructionHeading}
+        - {$competence}
+        - {$stages}
+        - {$practicalContent}
+        - {$plainText}
+        - {$jsonInstruction}
 
         {
-          "competence": "نص الكفاءة المستهدفة",
+          "competence": "{$competenceLabel}",
           "lesson_phases": [
-            { "phase_name": "اسم المرحلة", "content": "محتوى المرحلة" }
+            { "phase_name": "{$phaseLabel}", "content": "{$contentLabel}" }
           ]
         }
         PROMPT;
@@ -299,18 +358,24 @@ class AiLessonPlannerService
      *
      * @return array<string, mixed>
      */
-    protected function planSchema(): array
+    protected function planSchema(string $locale): array
     {
+        [$competenceDescription, $phasesDescription] = match ($locale) {
+            'en' => ['Target competence in one sentence.', 'Lesson stages in chronological order.'],
+            'fr' => ['Compétence visée en une phrase.', 'Étapes de la leçon dans l’ordre chronologique.'],
+            default => ['الكفاءة المستهدفة في جملة واحدة.', 'مراحل سير الدرس بالترتيب الزمني.'],
+        };
+
         return [
             'type' => 'OBJECT',
             'properties' => [
                 'competence' => [
                     'type' => 'STRING',
-                    'description' => 'الكفاءة المستهدفة في جملة واحدة.',
+                    'description' => $competenceDescription,
                 ],
                 'lesson_phases' => [
                     'type' => 'ARRAY',
-                    'description' => 'مراحل سير الدرس بالترتيب الزمني.',
+                    'description' => $phasesDescription,
                     'items' => [
                         'type' => 'OBJECT',
                         'properties' => [

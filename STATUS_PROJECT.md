@@ -1,8 +1,9 @@
 # Sajel (سجِّل) — Project Status
 
-> Last updated: 2026-10-23
-> Verified by: running `php artisan test` (**218 passed**; assertion counts vary slightly with
-> randomized seed data), `vendor/bin/pint`, and `php artisan migrate:status` (**28 migrations, all ran**).
+> Last updated: 2026-10-24
+> Verification: `AiLessonPlannerTest` (**14 passed**), Pint passes on changed PHP files; the full
+> `php artisan test` suite currently has **262 passed and 2 failed** in
+> `ActiveLearningStrategyTest` because its expected strategy seed data is absent.
 
 ## 1. Overview
 
@@ -504,9 +505,9 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 9. Phase 2 Completion Note
 
-All 14 Phase 2 items are completed (`100%`). Previous remaining gaps (official reports, lab management, classroom toolbar, quick attendance, behavior observations, active learning strategies, data show, pedagogical remediation) have all been implemented, tested (`php artisan test` passes), and committed (`main`).
+All 14 Phase 2 items are completed (`100%`). Previous remaining gaps (official reports, lab management, classroom toolbar, quick attendance, behavior observations, active learning strategies, data show, pedagogical remediation) were implemented, tested, and committed (`main`).
 
-No further Phase 2 work is required unless extending into Phase 3 (advanced AI integration, PWA mobile, additional locale defaults). The project README (`README.md`) documents the complete feature matrix.
+No further Phase 2 work is required. Phase 3 has started with locale-aware AI lesson planning; see the Phase 3 roadmap below. The project README (`README.md`) documents the complete feature matrix.
 
 ## 10. Phase 2 Roadmap (Step-by-Step Tracking Checklist)
 
@@ -712,3 +713,14 @@ php artisan filament:cache-components   # re-cache the current components
 # or, in development:
 php artisan filament:optimize-clear     # remove the cache entirely
 ```
+
+## 11. Phase 3 Roadmap
+
+Phase 3 is now in progress. AI-generated lesson plans follow the active Arabic, English, or French
+locale; unsupported locales fall back to Arabic. The locale is passed from the daily-log form to the
+planner, and both providers receive language-matched instructions.
+
+- [x] **Locale-aware AI lesson plans:** Localize generation instructions for Arabic, English, and
+  French, and align Gemini structured-output descriptions with the selected language.
+- [ ] **Offline attendance PWA:** Define offline data and synchronization behavior before implementation.
+- [ ] **Arabic voice narration:** Add narration for Data Show Mode.

@@ -7,6 +7,7 @@ use App\Enums\LessonPhaseType;
 use App\Exceptions\AiLessonPlannerException;
 use App\Filament\Resources\DailyLogResource\Pages;
 use App\Filament\Resources\DailyLogResource\RelationManagers\AttendancesRelationManager;
+use App\Models\ActiveLearningStrategy;
 use App\Models\CurriculumResource;
 use App\Models\DailyLog;
 use App\Models\Schedule;
@@ -398,6 +399,7 @@ class DailyLogResource extends Resource
                         level: $schedule->classroom?->level?->name
                             ?? $schedule->group?->classroom?->level?->name
                             ?? '',
+                        locale: app()->getLocale(),
                     );
                 } catch (AiLessonPlannerException $exception) {
                     Notification::make()
@@ -521,7 +523,7 @@ class DailyLogResource extends Resource
 
                             Select::make('strategy')
                                 ->label(__('استراتيجية التعلم النشط'))
-                                ->options(\App\Models\ActiveLearningStrategy::query()
+                                ->options(ActiveLearningStrategy::query()
                                     ->where('is_active', true)
                                     ->orderBy('sort_order')
                                     ->pluck('name', 'id')

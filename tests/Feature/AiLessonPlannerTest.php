@@ -24,6 +24,7 @@ class AiLessonPlannerTest extends TestCase
     {
         parent::setUp();
 
+        app()->setLocale('ar');
         config()->set('ai.provider', 'gemini');
         config()->set('ai.gemini.key', 'test-gemini-key');
         config()->set('ai.retry_times', 2);
@@ -88,6 +89,26 @@ class AiLessonPlannerTest extends TestCase
             && str_contains($request['contents'][0]['parts'][0]['text'], 'الرياضيات'));
     }
 
+    public function test_it_builds_the_prompt_in_the_requested_locale_with_arabic_fallback(): void
+    {
+        $this->fakeGemini(json_encode($this->plan(), JSON_UNESCAPED_UNICODE));
+
+        $planner = app(AiLessonPlannerService::class);
+
+        $planner->generateLessonPlan('Fractions', 'Mathematics', 'First year', locale: 'en');
+        $planner->generateLessonPlan('Fractions', 'Mathématiques', 'Première année', locale: 'fr');
+        $planner->generateLessonPlan('الكسور', 'الرياضيات', 'الأولى متوسط', locale: 'de');
+
+        Http::assertSent(fn (Request $request): bool => str_contains($request['contents'][0]['parts'][0]['text'], 'Write a complete lesson plan in clear, age-appropriate English')
+            && $request['generationConfig']['responseSchema']['properties']['competence']['description'] === 'Target competence in one sentence.');
+
+        Http::assertSent(fn (Request $request): bool => str_contains($request['contents'][0]['parts'][0]['text'], 'Rédigez un plan de leçon complet en français clair')
+            && $request['generationConfig']['responseSchema']['properties']['competence']['description'] === 'Compétence visée en une phrase.');
+
+        Http::assertSent(fn (Request $request): bool => str_contains($request['contents'][0]['parts'][0]['text'], 'حرّر مخطط تحضير كامل بالعربية الفصحى المبسّطة')
+            && $request['generationConfig']['responseSchema']['properties']['competence']['description'] === 'الكفاءة المستهدفة في جملة واحدة.');
+    }
+
     public function test_it_parses_markdown_fenced_json_responses(): void
     {
         $this->fakeGemini('```json'."\n".json_encode($this->plan(), JSON_UNESCAPED_UNICODE)."\n".'```');
@@ -111,12 +132,18 @@ class AiLessonPlannerTest extends TestCase
             ]),
         ]);
 
-        $block = app(AiLessonPlannerService::class)->generateLessonPlan('الكسور', 'الرياضيات', 'الأولى متوسط');
+        $block = app(AiLessonPlannerService::class)->generateLessonPlan(
+            'الكسور',
+            'الرياضيات',
+            'الأولى متوسط',
+            locale: 'fr',
+        );
 
         $this->assertCount(3, $block['data']['lesson_phases']);
 
         Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'chat/completions')
             && $request->hasHeader('Authorization', 'Bearer test-openai-key')
+            && str_contains($request['messages'][0]['content'], 'expert pédagogique algérien du cycle moyen')
             && $request['response_format'] === ['type' => 'json_object']);
     }
 
@@ -276,6 +303,31 @@ class AiLessonPlannerTest extends TestCase
             && str_contains($request['contents'][0]['parts'][0]['text'], 'الرياضيات'));
 
         Notification::assertNotified(__('تم توليد التحضير'));
+    }
+
+    public function test_the_filament_action_passes_the_active_locale_to_the_planner(): void
+    {
+        $teacher = User::factory()->create();
+        $subject = Subject::factory()->create(['name' => 'الرياضيات']);
+        $schedule = Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'subject_id' => $subject->id,
+        ]);
+
+        $this->fakeGemini(json_encode($this->plan(), JSON_UNESCAPED_UNICODE));
+        app()->setLocale('fr');
+        $this->actingAs($teacher);
+
+        Livewire::test(CreateDailyLog::class)
+            ->fillForm([
+                'schedule_id' => $schedule->id,
+                'title' => 'درس الكسور',
+            ])
+            ->callFormComponentAction('title', 'generateLessonPlan')
+            ->assertOk()
+            ->assertHasNoFormErrors();
+
+        Http::assertSent(fn (Request $request): bool => str_contains($request['contents'][0]['parts'][0]['text'], 'Rédigez un plan de leçon complet en français clair'));
     }
 
     public function test_the_action_requires_a_title_and_a_schedule(): void

@@ -69,7 +69,7 @@ Key goals:
 | Localization | `mcamara/laravel-localization` | `ar`, `en`, `fr` |
 | Timezone | Africa/Algiers | `APP_TIMEZONE` |
 | Font | Cairo (Google Fonts) | RTL body + headings |
-| Testing | PHPUnit | 257 passing, 14,603 assertions |
+| Testing | PHPUnit | 262 passed, 2 failed in `ActiveLearningStrategyTest` (14,566 assertions) |
 
 ---
 
@@ -115,7 +115,7 @@ php artisan optimize:clear
 ## 6. Project Health (Updated — Phase 2 Complete)
 
 - **Migrations:** 30 ran (28 base + behavior observations + pedagogical remediation)
-- **Tests:** 257 passed (14,603 assertions)
+- **Tests:** 262 passed, 2 failed because `ActiveLearningStrategyTest` expects strategy seed data that is absent (14,566 assertions)
 - **Filament Resources:** 18 (includes new `BehaviorObservationResource`, `PedagogicalRemediationResource`, `ActiveLearningStrategyResource`)
 - **Custom Pages:** Dashboard, CurriculumProgress, OfficialReports, MySchedule, QuickAttendance, LabSeatingPlan, LabSeatingPlanPage, QuickAttendance (done), ActiveLearningStrategies (done), ClassroomToolbar (done), DataShowMode (done)
 - **Branch:** `main` — clean working tree, `git status` clean
@@ -123,12 +123,13 @@ php artisan optimize:clear
 
 ---
 
-## 7. Known Gaps / Next Steps (Phase 3 — Not Yet Planned)
+## 7. Next Steps (Phase 3 — In Progress)
 
-- Advanced AI lesson-plan integration (OpenAI / Gemini) is present via `AiLessonPlannerService` but can be extended with multi-language prompts.
-- Mobile-responsive native app (optional PWA enhancement) for offline attendance.
+- **Done:** AI lesson-plan prompts follow the active Arabic, English, or French locale; unsupported locales fall back to Arabic.
+- **Next:** Define offline data and synchronization behavior for a PWA attendance workflow before implementation.
+- Implement the mobile-responsive PWA attendance workflow with offline support.
 - Full Arabic voice/narration for Data Show Mode projector display.
 
 ---
 
-*Last updated: 2026-10-23 — Phase 2 Roadmap Complete (14 / 14 items, 100%).*
+*Last updated: 2026-10-24 — Phase 2 Roadmap Complete (14 / 14 items, 100%); Phase 3 started.*
