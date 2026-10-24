@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\ViteException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Spatie\Browsershot\Browsershot;
 
@@ -165,6 +166,7 @@ class StudentReportCardService
             'observations' => $observations,
             'remediations' => $remediations,
             'generatedAt' => now(config('app.timezone', 'Africa/Algiers')),
+            'portalUrl' => URL::temporarySignedRoute('parent.student-portal', now()->addDays(90), ['locale' => app()->getLocale(), 'student' => $student]),
             'autoPrint' => $autoPrint,
             'inlineCss' => false,
         ];

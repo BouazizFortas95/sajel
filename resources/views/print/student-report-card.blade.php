@@ -186,6 +186,25 @@
             @endif
         </section>
 
+        @if(isset($portalUrl))
+        <section class="report-section border-t-2 border-amber-500 pt-4 mt-4">
+            <h2 class="text-lg font-bold text-amber-700 mb-2">{{ __('بوابة متابعة ولي الأمر') }}</h2>
+            <div class="flex items-center gap-4 bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 100 100" fill="none" stroke="#b45309" stroke-width="2">
+                    <rect x="10" y="10" width="30" height="30" stroke-width="4"/><rect x="15" y="15" width="20" height="20" fill="#fff" stroke-width="2"/><rect x="20" y="20" width="10" height="10" fill="#b45309"/>
+                    <rect x="60" y="10" width="30" height="30" stroke-width="4"/><rect x="65" y="15" width="20" height="20" fill="#fff" stroke-width="2"/><rect x="70" y="20" width="10" height="10" fill="#b45309"/>
+                    <rect x="10" y="60" width="30" height="30" stroke-width="4"/><rect x="15" y="65" width="20" height="20" fill="#fff" stroke-width="2"/><rect x="20" y="70" width="10" height="10" fill="#b45309"/>
+                    <rect x="45" y="45" width="10" height="10" fill="#b45309"/>
+                </svg>
+                <div>
+                    <p class="text-sm font-bold text-amber-800">{{ __('رابط المتابعة الرقمية لولي الأمر') }}</p>
+                    <p class="text-xs text-slate-600 break-all">{{ $portalUrl }}</p>
+                    <p class="text-[10px] text-slate-500 mt-1">{{ __('صالح لمدة 90 يوماً من تاريخ الطباعة') }}</p>
+                </div>
+            </div>
+        </section>
+        @endif
+
         <footer class="report-section grid grid-cols-3 gap-6 pt-5 text-center text-sm">
             <div>
                 <p class="font-bold">{{ __('إمضاء الأستاذ(ة)') }}</p>

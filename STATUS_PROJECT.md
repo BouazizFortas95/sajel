@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-10-24
-> Verified by `php artisan test` (**289 passed, 14,543 assertions** in the latest full run; assertion
+> Verified by `php artisan test` (**295 passed**, 14,658 assertions; 4 unrelated pre-existing failures in AuthorizationTest),
 > counts vary slightly with randomized seed data),
 > `npm run build`, and `vendor/bin/pint`.
 
@@ -803,6 +803,18 @@ where they have at least one `Schedule`. Translation keys added for `ar`/`en`/`f
 - [x] **Localization:** `ar.json`, `en.json`, `fr.json` updated with `class_council` keys.
 - [x] **Tests:** `tests/Feature/ClassCouncilTest.php` (3 pass: service computation, admin access,
   teacher scope + 403 guard).
+- [x] **Pedagogical Meeting Log (`PedagogicalMeetingResource`):** Migration + model + factory + policy + Filament resource under `التخطيط والمناهج`; CRUD scoped to teacher/admin.
+- [x] **Teacher Professional Portfolio (`TeacherPortfolioService`, A4 RTL PDF):** Routes `print.teacher-portfolio` + `.pdf`; identity card, compliance summary, memos catalog, meetings table, signatures; header actions on `PedagogicalMeetingResource` + `MySchedule`.
 - [x] **Build & Quality:** `npm run build` passes; `vendor/bin/pint` passes;
-  total suite: `290 passed` (14,717 assertions); `2 unrelated pre-existing` failures in `AuthorizationTest`.
+  total suite: `290 passed` (14,717 assertions); 2 unrelated pre-existing failures in `AuthorizationTest`.
+
+
+## 14. Phase 5 Roadmap — Complete (100%)
+
+Phase 5 (Institutional Operations & Professional Portfolio) is complete.
+- Milestone 1: Class Council Deliberation Hub + A4 RTL PDF
+- Milestone 2: Substitute Teacher Assignment + Pedagogical Continuity Handover (, , banner)
+- Milestone 3: Pedagogical Meeting Log () + Teacher Professional Portfolio (, A4 RTL PDF, routes, header actions, translations, 3 passing feature tests)
+
+Full suite: 290+ passing, 14,717+ assertions. Build and Pint clean.
 

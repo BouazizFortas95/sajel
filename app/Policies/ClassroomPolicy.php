@@ -19,8 +19,8 @@ class ClassroomPolicy
         }
 
         if ($user->isTeacher()) {
-            return $classroom->group?->schedules()
-                ->where('user_id', $user->id)
+            return $classroom->groups()
+                ->whereHas('schedules', fn ($query) => $query->where('user_id', $user->id))
                 ->exists()
                 || $classroom->schedules()
                     ->where('user_id', $user->id)

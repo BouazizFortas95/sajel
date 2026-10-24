@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\Role;
+use App\Filament\Pages\ClassCouncilHub;
 use App\Models\Assessment;
 use App\Models\Classroom;
 use App\Models\Grade;
@@ -85,5 +86,24 @@ class ClassCouncilTest extends TestCase
         $this->actingAs($teacher)
             ->get(route('print.class-council', ['locale' => 'ar', 'classroom' => $unrelatedClassroom]))
             ->assertForbidden();
+    }
+
+    public function test_teacher_class_council_hub_uses_classroom_groups_for_schedule_scope(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $classroom = Classroom::factory()->create();
+        $group = Group::factory()->create(['classroom_id' => $classroom->id]);
+
+        Schedule::factory()->create([
+            'classroom_id' => $classroom->id,
+            'group_id' => $group->id,
+            'user_id' => $teacher->id,
+        ]);
+
+        $this->actingAs($teacher);
+        $page = app(ClassCouncilHub::class);
+        $page->mount();
+
+        $this->assertSame($classroom->id, $page->classroomId);
     }
 }

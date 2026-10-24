@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\URL;
 
 class StudentResource extends Resource
 {
@@ -157,6 +158,12 @@ class StudentResource extends Resource
                         'locale' => app()->getLocale(),
                         'student' => $record,
                     ]))
+                    ->openUrlInNewTab(),
+                Tables\Actions\Action::make('openParentPortal')
+                    ->label(__('نسخ رابط ولي الأمر'))
+                    ->icon('heroicon-o-link')
+                    ->color('amber')
+                    ->url(fn (Student $record): string => URL::temporarySignedRoute('parent.student-portal', now()->addDays(90), ['locale' => app()->getLocale(), 'student' => $record]))
                     ->openUrlInNewTab(),
                 Tables\Actions\Action::make('downloadStudentReportCard')
                     ->label(__('تحميل بطاقة المتابعة (PDF)'))

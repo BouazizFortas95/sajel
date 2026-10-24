@@ -3,6 +3,7 @@
 use App\Http\Controllers\ClassCouncilController;
 use App\Http\Controllers\DownloadPedagogicalMemoPdfController;
 use App\Http\Controllers\OfficialReportController;
+use App\Http\Controllers\ParentPortalController;
 use App\Http\Controllers\PrintAssessmentController;
 use App\Http\Controllers\PrintDailyLogsController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
@@ -92,6 +93,11 @@ Route::get('/{locale}/print/teachers/{user}/portfolio', [TeacherPortfolioControl
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.teacher-portfolio');
+
+Route::get('/{locale}/parent/students/{student}', [ParentPortalController::class, 'portal'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['signed', SetFilamentLocale::class])
+    ->name('parent.student-portal');
 
 Route::get('/{locale}/print/teachers/{user}/portfolio/pdf', [TeacherPortfolioController::class, 'pdf'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))

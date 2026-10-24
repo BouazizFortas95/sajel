@@ -25,7 +25,7 @@ class ClassCouncilHub extends Page
     public function mount(): void
     {
         if ($this->classroomId === null) {
-            $classroom = $this->getClassroomOptions()->first();
+            $classroom = $this->getClassroomOptionsProperty()->first();
             $this->classroomId = $classroom?->id;
         }
     }
@@ -43,7 +43,10 @@ class ClassCouncilHub extends Page
             ->orderBy('name');
 
         if ($user && $user->isTeacher()) {
-            $query->whereHas('group.schedules', fn (Builder $q) => $q->where('user_id', $user->id));
+            $query->where(function (Builder $query) use ($user): void {
+                $query->whereHas('groups.schedules', fn (Builder $q) => $q->where('user_id', $user->id))
+                    ->orWhereHas('schedules', fn (Builder $q) => $q->where('user_id', $user->id));
+            });
         }
 
         return $query->get();
@@ -62,9 +65,12 @@ class ClassCouncilHub extends Page
 
         $user = Auth::user();
         if ($user && $user->isTeacher()) {
-            $hasSchedule = $classroom->group->schedules()
-                ->where('user_id', $user->id)
-                ->exists();
+            $hasSchedule = $classroom->groups()
+                ->whereHas('schedules', fn (Builder $query) => $query->where('user_id', $user->id))
+                ->exists()
+                || $classroom->schedules()
+                    ->where('user_id', $user->id)
+                    ->exists();
 
             if (! $hasSchedule) {
                 $classroom = null;
