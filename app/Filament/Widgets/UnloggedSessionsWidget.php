@@ -6,6 +6,7 @@ use App\Enums\DailyLogStatus;
 use App\Enums\DayOfWeek;
 use App\Filament\Resources\DailyLogResource;
 use App\Models\DailyLog;
+use App\Models\SchoolHoliday;
 use App\Models\Schedule;
 use App\Models\User;
 use Carbon\Carbon;
@@ -70,6 +71,10 @@ class UnloggedSessionsWidget extends Widget
         $datesByDay = collect();
 
         for ($date = $weekStart->copy(); $date->lte($today); $date->addDay()) {
+            if (SchoolHoliday::isHoliday($date)) {
+                continue;
+            }
+
             $datesByDay->put(
                 DayOfWeek::cases()[$date->dayOfWeek]->value,
                 $date->copy(),

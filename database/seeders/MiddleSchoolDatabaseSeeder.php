@@ -205,6 +205,8 @@ class MiddleSchoolDatabaseSeeder extends Seeder
 
                 $this->call(ActiveLearningStrategySeeder::class);
 
+                $this->call(SchoolHolidaySeeder::class);
+
                 $subjects = $this->seedSubjects();
                 $structure = $this->seedStructure($this->seedPhase());
 

@@ -9,6 +9,7 @@ use App\Models\Attendance;
 use App\Models\BehaviorObservation;
 use App\Models\DailyLog;
 use App\Models\Schedule;
+use App\Models\SchoolHoliday;
 use App\Models\Student;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -70,6 +71,41 @@ class SchoolSupervisionService
             ->get();
 
         $selectedDay = DayOfWeek::cases()[$selectedDate->dayOfWeek]->value;
+
+        if (SchoolHoliday::isHoliday($selectedDate)) {
+            $holiday = \App\Models\SchoolHoliday::whereDate('start_date', '<=', $selectedDate)
+                ->whereDate('end_date', '>=', $selectedDate)
+                ->first();
+            return [
+                'date' => $selectedDate,
+                'metrics' => [
+                    'daily_compliance_percentage' => 0,
+                    'scheduled_sessions_count' => 0,
+                    'completed_sessions_count' => 0,
+                    'due_sessions_count' => 0,
+                    'overdue_sessions_count' => 0,
+                    'attendance_alerts_count' => 0,
+                    'open_behavior_count' => 0,
+                ],
+                'complianceSummary' => [
+                    'total_scheduled_sessions' => 0,
+                    'completed_sessions' => 0,
+                    'overdue_unlogged_sessions' => 0,
+                    'percentage' => 0,
+                ],
+                'holiday' => true,
+                'holidayName' => $holiday?->title ?? '—',
+                'sessions' => [],
+                'overdueSessions' => [],
+                'absences' => collect(),
+                'attendanceAlerts' => collect(),
+                'repeatAbsentees' => [],
+                'observations' => collect(),
+                'pendingBehaviorCases' => collect(),
+                'week' => ['due' => 0, 'completed' => 0, 'overdue' => 0, 'compliance' => 0],
+            ];
+        }
+
         $dailySessions = $schedules
             ->filter(fn (Schedule $schedule): bool => $schedule->day_of_week?->value === $selectedDay)
             ->map(fn (Schedule $schedule): array => $this->sessionRow($schedule, $selectedDate, $now, $today))
@@ -169,6 +205,9 @@ class SchoolSupervisionService
 
         foreach (range(0, 6) as $offset) {
             $date = $weekStart->copy()->addDays($offset);
+            if (SchoolHoliday::isHoliday($date)) {
+                continue;
+            }
             $day = DayOfWeek::cases()[$date->dayOfWeek]->value;
 
             foreach ($schedules->filter(fn (Schedule $schedule): bool => $schedule->day_of_week?->value === $day) as $schedule) {
