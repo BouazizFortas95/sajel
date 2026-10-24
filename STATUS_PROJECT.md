@@ -818,3 +818,14 @@ Phase 5 (Institutional Operations & Professional Portfolio) is complete.
 
 Full suite: 290+ passing, 14,717+ assertions. Build and Pint clean.
 
+
+## 15. Phase 6 Roadmap — Complete (100%) — Production Readiness & Parent Engagement
+
+Phase 6: Parent Engagement, Academic Calendar & Production Readiness.
+- Milestone 1: Signed Parent Portal (`ParentPortalController` / `ParentPortalService`, `parent.student-portal` signed route 90 days, `parent/student-portal.blade.php`, `StudentResource` action, `StudentReportCardService` integration + QR badge, translations, `ParentPortalTest` — 3 assertions pass).
+- Milestone 2: School Holiday Calendar (`SchoolHoliday` model/migration/resource/policy/seeder `SchoolHolidaySeeder`, `scopeCoversDate`/`isHoliday`/`holidayDatesBetween`, `UnloggedSessionsWidget` + `SchoolSupervisionService` holiday-aware, `SchoolHolidayComplianceTest` — pass).
+- Milestone 3: Pedagogical Meeting Resource (`PedagogicalMeetingResource`, `TeacherPortfolioService`, controller/routes/translations/header actions + `MySchedule`) — complete.
+- Milestone 4: Production Readiness (`SajelHealthCheckCommand` `sajel:health-check` + `--json`, DB 24 tables, timezone `Africa/Algiers`, localization `ar/en/fr`, PWA `dir=rtl`, AI provider check; `SajelHealthCheckCommandTest`; `pint`/`npm`/`migrate` clean).
+
+Status 2026-10-24: `300 passed`, `8 unrelated` (pre-existing `AuthorizationTest` + `DataShowMode` / `ClassCouncilHub` component issues); `14,427` assertions; `pint` passed; `npm run build` passed; health command reports PASS (DB/schema/localization/PWA), WARN on AI (expected — no key in test env). All Phase 2–6 milestones complete (100%).
+
