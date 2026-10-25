@@ -270,6 +270,11 @@
             box-shadow: 0 1px 2px rgba(120, 53, 15, .04);
         }
 
+        .report-section--flow {
+            break-inside: auto;
+            page-break-inside: auto;
+        }
+
         .section-heading {
             display: flex;
             flex-wrap: wrap;
@@ -743,6 +748,15 @@
             .signature-grid {
                 break-inside: avoid;
                 page-break-inside: avoid;
+            }
+
+            .report-section--flow {
+                break-inside: auto !important;
+                page-break-inside: auto !important;
+            }
+
+            .report-section--flow .table-wrap {
+                overflow: visible !important;
             }
 
             .doc-header-grid {

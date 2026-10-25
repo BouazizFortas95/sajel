@@ -174,7 +174,10 @@ class ClassCouncilTest extends TestCase
 
         $this->actingAs($admin)
             ->get(route('print.class-council', ['locale' => 'ar', 'classroom' => $classroom]))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('report-section report-section--flow', false)
+            ->assertSee('break-inside: auto !important', false)
+            ->assertSee('display: table-header-group', false);
     }
 
     public function test_teacher_can_only_access_scheduled_classrooms(): void

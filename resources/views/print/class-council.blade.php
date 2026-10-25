@@ -61,7 +61,7 @@
         </div>
     </section>
 
-    <section class="report-section">
+    <section class="report-section report-section--flow">
         <div class="section-heading">
             <h2 class="section-title">{{ __('مداولات القسم') }}</h2>
             <span class="badge badge-gray">{{ __('آخر تحديث') }}: {{ $generatedAt->format('Y-m-d H:i') }}</span>
