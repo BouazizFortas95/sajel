@@ -592,6 +592,7 @@
     "تحديد كل السجلات": "Select all records",
     "تحديد جميع السجلات المطابقة للبحث والفلاتر، بما في ذلك السجلات في الصفحات الأخرى.": "Select every record matching the current search and filters, including records on other pages.",
     "تم تجاهل :count سجل غير منجز.": ":count incomplete logs were skipped.",
+    "سيتم حذف :count سجل نهائياً.": ":count log(s) will be permanently deleted.",
     "ملاحظات الإدارة": "Administrative notes",
     "مركز الإشراف المدرسي": "School Supervision Hub",
     "المراقبة العامة والتفتيش": "General Supervision & Inspection",

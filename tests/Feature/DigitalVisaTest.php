@@ -113,6 +113,21 @@ class DigitalVisaTest extends TestCase
             ->assertSee($second->title);
     }
 
+    public function test_bulk_delete_confirmation_lists_the_selected_rows(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $first = $this->makeLog(attributes: ['title' => 'درس الكسور الاعتيادية']);
+        $second = $this->makeLog(attributes: ['title' => 'درس الأعداد النسبية']);
+
+        Livewire::actingAs($admin)
+            ->test(ListDailyLogs::class)
+            ->set('selectedTableRecords', [(string) $first->id, (string) $second->id])
+            ->call('mountTableBulkAction', 'delete')
+            ->assertSee(__('سيتم حذف :count سجل نهائياً.', ['count' => 2]))
+            ->assertSee($first->title)
+            ->assertSee($second->title);
+    }
+
     public function test_daily_log_table_keeps_selection_when_searching_or_filtering(): void
     {
         $admin = User::factory()->create(['role' => Role::Admin->value]);

@@ -115,7 +115,7 @@ php artisan optimize:clear
 ## 6. Project Health (Phases 2–6 Complete)
 
 - **Migrations:** 43 ran
-- **Tests:** 316 passed, 0 failures (14,671 assertions in the latest run)
+- **Tests:** 339 passed, 0 failures (14,868 assertions in the latest run)
 - **Filament Resources:** 20 (includes `SchoolHolidayResource` and `PedagogicalMeetingResource`)
 - **Custom Pages:** Dashboard, CurriculumProgress, OfficialReports, MySchedule, QuickAttendance, LabSeatingPlanPage, DataShowMode, SchoolSupervisionHub, ClassCouncilHub, ManageSchoolSettings
 - **Branch:** `main` — Phase 2/3/4 all complete (100% across the board)
@@ -171,4 +171,4 @@ protected device: the roster and unsynced attendance contain student information
   (teachers receive 403). `tests/Feature/SchoolSettingsTest.php` covers the settings update, cache
   refresh, and dynamic identity output on printed registers, class councils, and Official Reports.
 
-*Last updated: 2026-10-25 — Phases 2–6 all complete (100%) plus school identity settings. Suite: 316 passing, 0 failures, 14,671 assertions. Health check: all PASS (25 tables; AI provider gemini configured).*
+*Last updated: 2026-10-25 — Phases 2–6 all complete (100%) plus school identity settings. Suite: 339 passing, 0 failures, 14,868 assertions. Health check: all PASS (25 tables; AI provider gemini configured).*

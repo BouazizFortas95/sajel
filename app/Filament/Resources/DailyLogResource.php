@@ -1043,7 +1043,22 @@ class DailyLogResource extends Resource
                         })
                         ->deselectRecordsAfterCompletion(),
 
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        // Selections survive filter changes, so list the rows
+                        // that will actually be deleted instead of relying on
+                        // the current (possibly narrower) view.
+                        ->modalDescription(function (EloquentCollection $records): string {
+                            $preview = $records
+                                ->take(4)
+                                ->map(fn (DailyLog $record): string => trim(
+                                    ($record->date?->format('Y/m/d') ?? '').' — '.$record->title
+                                ))
+                                ->implode(' · ');
+
+                            $summary = __('سيتم حذف :count سجل نهائياً.', ['count' => $records->count()]);
+
+                            return trim($summary.' — '.$preview.($records->count() > 4 ? ' …' : ''));
+                        }),
                 ]),
             ]);
     }
