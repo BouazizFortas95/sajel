@@ -84,9 +84,34 @@ class SajelHealthCheckCommand extends Command
         }
         $results['pwa'] = ['status' => ($pwaErrors ? 'FAIL' : 'PASS'), 'message' => $pwaErrors ? implode('; ', $pwaErrors) : 'PWA assets OK (dir=rtl)'];
 
-        $provider = config('services.ai_planner.provider');
-        $apiKey = config('services.ai_planner.api_key');
-        $results['ai'] = ['status' => filled($provider) ? 'PASS' : 'WARN', 'message' => 'Provider: '.($provider ?: 'none').' | Key: '.(filled($apiKey) ? 'configured' : 'not configured')];
+        $provider = (string) config('ai.provider', 'gemini');
+        $supportedProviders = ['gemini', 'openai'];
+
+        if (! in_array($provider, $supportedProviders, true)) {
+            $results['ai'] = [
+                'status' => 'WARN',
+                'provider' => $provider,
+                'model' => null,
+                'message' => 'Provider: '.($provider ?: 'none').' | Key: not configured (set GEMINI_API_KEY or OPENAI_API_KEY in .env)',
+            ];
+        } else {
+            $apiKey = config("ai.{$provider}.key");
+            $model = config("ai.{$provider}.model");
+
+            $results['ai'] = filled($apiKey)
+                ? [
+                    'status' => 'PASS',
+                    'provider' => $provider,
+                    'model' => $model,
+                    'message' => "Provider: {$provider} ({$model}) | Key: configured",
+                ]
+                : [
+                    'status' => 'WARN',
+                    'provider' => $provider,
+                    'model' => $model,
+                    'message' => "Provider: {$provider} | Key: not configured (set GEMINI_API_KEY or OPENAI_API_KEY in .env)",
+                ];
+        }
 
         if ($this->option('json')) {
             $this->output->writeln(json_encode(['status' => 'ok', 'checks' => $results], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));

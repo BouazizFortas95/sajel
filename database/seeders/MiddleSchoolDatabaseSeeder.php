@@ -185,6 +185,7 @@ class MiddleSchoolDatabaseSeeder extends Seeder
         'levels',
         'education_phases',
         'subjects',
+        'school_holidays',
         'failed_import_rows',
         'imports',
         'exports',

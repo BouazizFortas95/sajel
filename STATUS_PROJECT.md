@@ -1,8 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
-> Last updated: 2026-10-24
-> Verified by `php artisan test` (**295 passed**, 14,658 assertions; 4 unrelated pre-existing failures in AuthorizationTest),
-> counts vary slightly with randomized seed data),
+> Last updated: 2026-10-25
+> Verified by `php artisan test` (**312 passed**, 14,800 assertions, **0 failures**),
 > `npm run build`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -29,7 +28,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | PDF        | `spatie/browsershot` `^5.4`, Puppeteer  | Headless Chrome; Arabic shaping + Tailwind-preserving PDF |
 | i18n       | `mcamara/laravel-localization` `^2.4`    | `ar`, `en`, `fr` locales                |
 | Timezone   | `Africa/Algiers`                         | `APP_TIMEZONE`, used for weekly dates   |
-| Testing    | PHPUnit `^11.5`                          | **289 tests, all green (14,543 assertions in the latest run)** |
+| Testing    | PHPUnit `^11.5`                          | **312 tests, all green (14,800 assertions in the latest run)** |
 | Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
 
 ## 3. Domain Model
@@ -463,8 +462,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 7. Testing
 
-`php artisan test` — **289 passing, 14,543 assertions in the latest full run** (assertion counts vary
-slightly with randomized seed data):
+`php artisan test` — **312 passing, 14,800 assertions in the latest full run, 0 failures**:
 
 | Suite                                  | Tests | Covers                                                        |
 |----------------------------------------|-------|---------------------------------------------------------------|
@@ -506,7 +504,7 @@ slightly with randomized seed data):
 | Aspect            | Status                                             |
 |-------------------|----------------------------------------------------|
 | Migrations        | ✅ All 40 migrations ran |
-| Test suite        | ✅ 289/289 passing (14,543 assertions in the latest full run; assertion counts vary slightly with randomized seed data) |
+| Test suite        | ✅ 312/312 passing, 0 failures (14,800 assertions in the latest full run) |
 | Admin panel       | ✅ 18 Filament resources + custom dashboard, schedule, curriculum-progress, data-show pages + ar/en/fr |
 | Seed data         | ✅ Destructive middle-school dataset + optional SajelSeeder |
 | Version control   | Git repo on `main`; Phase 2/3/4 complete (`f4e776a`, `f8d...`) |
@@ -776,7 +774,7 @@ administrators see all student data. `OfficialReports` provides classroom/group/
   `SchoolSupervisionHub` and `SchoolSupervisionService` with localized admin-only access, selected-date
   and classroom/level filters, weekday- and end-time-aware daily compliance, weekly metrics, attendance
   and distinct-day repeat-absence radar, and discipline follow-up resolution with optional notes.
-- [x] **Student comprehensive parent report card (A4 RTL PDF):** `StudentReportCardService` + controller + routes + `StudentResource` actions + `OfficialReports` picker; authorization scoped (Admin = all subjects; Teacher = own schedules); 4/4 feature tests pass (289 total, 14,790 assertions).
+- [x] **Student comprehensive parent report card (A4 RTL PDF):** `StudentReportCardService` + controller + routes + `StudentResource` actions + `OfficialReports` picker; authorization scoped (Admin = all subjects; Teacher = own schedules); 4/4 feature tests pass (312 total, 14,800 assertions).
   and Browsershot PDF using `StudentReportCardService`, with attendance summaries and recent alerts,
   normalized per-subject grade averages and assessment details, behavior/follow-up history,
   remediation outcomes, teacher schedule/record scoping, admin-wide access, and Official Reports /
@@ -806,7 +804,7 @@ where they have at least one `Schedule`. Translation keys added for `ar`/`en`/`f
 - [x] **Pedagogical Meeting Log (`PedagogicalMeetingResource`):** Migration + model + factory + policy + Filament resource under `التخطيط والمناهج`; CRUD scoped to teacher/admin.
 - [x] **Teacher Professional Portfolio (`TeacherPortfolioService`, A4 RTL PDF):** Routes `print.teacher-portfolio` + `.pdf`; identity card, compliance summary, memos catalog, meetings table, signatures; header actions on `PedagogicalMeetingResource` + `MySchedule`.
 - [x] **Build & Quality:** `npm run build` passes; `vendor/bin/pint` passes;
-  total suite: `290 passed` (14,717 assertions); 2 unrelated pre-existing failures in `AuthorizationTest`.
+  total suite: `312 passed` (14,800 assertions); 0 failures.
 
 
 ## 14. Phase 5 Roadmap — Complete (100%)
@@ -816,7 +814,7 @@ Phase 5 (Institutional Operations & Professional Portfolio) is complete.
 - Milestone 2: Substitute Teacher Assignment + Pedagogical Continuity Handover (, , banner)
 - Milestone 3: Pedagogical Meeting Log () + Teacher Professional Portfolio (, A4 RTL PDF, routes, header actions, translations, 3 passing feature tests)
 
-Full suite: 290+ passing, 14,717+ assertions. Build and Pint clean.
+Full suite: 312 passing, 14,800 assertions, 0 failures. Build and Pint clean.
 
 
 ## 15. Phase 6 Roadmap — Complete (100%) — Production Readiness & Parent Engagement
@@ -825,7 +823,7 @@ Phase 6: Parent Engagement, Academic Calendar & Production Readiness.
 - Milestone 1: Signed Parent Portal (`ParentPortalController` / `ParentPortalService`, `parent.student-portal` signed route 90 days, `parent/student-portal.blade.php`, `StudentResource` action, `StudentReportCardService` integration + QR badge, translations, `ParentPortalTest` — 3 assertions pass).
 - Milestone 2: School Holiday Calendar (`SchoolHoliday` model/migration/resource/policy/seeder `SchoolHolidaySeeder`, `scopeCoversDate`/`isHoliday`/`holidayDatesBetween`, `UnloggedSessionsWidget` + `SchoolSupervisionService` holiday-aware, `SchoolHolidayComplianceTest` — pass).
 - Milestone 3: Pedagogical Meeting Resource (`PedagogicalMeetingResource`, `TeacherPortfolioService`, controller/routes/translations/header actions + `MySchedule`) — complete.
-- Milestone 4: Production Readiness (`SajelHealthCheckCommand` `sajel:health-check` + `--json`, DB 24 tables, timezone `Africa/Algiers`, localization `ar/en/fr`, PWA `dir=rtl`, AI provider check; `SajelHealthCheckCommandTest`; `pint`/`npm`/`migrate` clean).
+- Milestone 4: Production Readiness (`SajelHealthCheckCommand` `sajel:health-check` + `--json`, DB 24 tables, timezone `Africa/Algiers`, localization `ar/en/fr`, PWA `dir=rtl`, AI provider read from `config/ai.php` with PASS/WARN key detection; `SajelHealthCheckCommandTest`; `pint`/`npm`/`migrate` clean).
 
-Status 2026-10-24: `300 passed`, `8 unrelated` (pre-existing `AuthorizationTest` + `DataShowMode` / `ClassCouncilHub` component issues); `14,427` assertions; `pint` passed; `npm run build` passed; health command reports PASS (DB/schema/localization/PWA), WARN on AI (expected — no key in test env). All Phase 2–6 milestones complete (100%).
+Status 2026-10-25: `312 passed`, **0 failures** (`14,800` assertions); `pint` passed; `npm run build` passed; health command reports PASS on database, schema (24 tables), timezone, localization, PWA, and AI (`Provider: gemini (gemini-3.8-flash) | Key: configured`). All Phase 2–6 milestones complete (100%).
 

@@ -463,9 +463,10 @@ class MiddleSchoolSeederTest extends TestCase
 
         DB::disableQueryLog();
 
-        // The ~6,000-record dataset, including the curriculum plan, should
-        // still use a bounded set of bulk writes instead of one query per row.
-        $this->assertLessThan(215, $queries, "The seeder ran {$queries} queries.");
+        // The ~6,000-record dataset, including the curriculum plan and the
+        // school-holiday calendar, should still use a bounded set of bulk
+        // writes instead of one query per row.
+        $this->assertLessThan(220, $queries, "The seeder ran {$queries} queries.");
     }
 
     public function test_the_student_factory_generates_arabic_test_identities(): void

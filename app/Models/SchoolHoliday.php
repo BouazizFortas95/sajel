@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -23,40 +24,59 @@ class SchoolHoliday extends Model
         'end_date' => 'date',
     ];
 
-    public function scopeCoversDate($query, Carbon|string $date): void
+    public function scopeCoversDate($query, CarbonInterface|string $date): void
     {
-        $date = $date instanceof Carbon ? $date->toDateString() : (string) $date;
+        $date = self::normalizeDate($date);
+
         $query->whereDate('start_date', '<=', $date)
             ->whereDate('end_date', '>=', $date);
     }
 
-    public static function isHoliday(Carbon|string $date): bool
+    public static function isHoliday(CarbonInterface|string $date): bool
     {
-        $dateStr = $date instanceof Carbon ? $date->toDateString() : (string) $date;
+        $dateStr = self::normalizeDate($date);
 
         return self::whereDate('start_date', '<=', $dateStr)
             ->whereDate('end_date', '>=', $dateStr)
             ->exists();
     }
 
-    public static function holidayDatesBetween(Carbon|string $start, Carbon|string $end): array
+    /**
+     * @return array<int, string>
+     */
+    public static function holidayDatesBetween(CarbonInterface|string $start, CarbonInterface|string $end): array
     {
-        $startStr = $start instanceof Carbon ? $start->toDateString() : (string) $start;
-        $endStr = $end instanceof Carbon ? $end->toDateString() : (string) $end;
+        $startStr = self::normalizeDate($start);
+        $endStr = self::normalizeDate($end);
+
         $rows = self::whereDate('start_date', '<=', $endStr)
             ->whereDate('end_date', '>=', $startStr)
             ->get();
+
         $dates = [];
+
         foreach ($rows as $row) {
             $current = max($startStr, $row->start_date->toDateString());
             $last = min($endStr, $row->end_date->toDateString());
             $cursor = $current;
+
             while ($cursor <= $last) {
                 $dates[] = $cursor;
                 $cursor = date('Y-m-d', strtotime($cursor.' +1 day'));
             }
         }
 
-        return array_unique($dates);
+        return array_values(array_unique($dates));
+    }
+
+    /**
+     * Normalise a date or datetime value to a plain Y-m-d string. Both
+     * Carbon\Carbon and Illuminate\Support\Carbon implement CarbonInterface.
+     */
+    private static function normalizeDate(CarbonInterface|string $date): string
+    {
+        return $date instanceof CarbonInterface
+            ? $date->toDateString()
+            : Carbon::parse($date)->toDateString();
     }
 }

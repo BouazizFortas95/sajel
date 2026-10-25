@@ -55,6 +55,18 @@
 
         @php($data = $this->dashboardData)
         @php($metrics = $data['metrics'])
+
+        @if ($data['holiday'] ?? false)
+            <section class="rounded-2xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-800 dark:bg-amber-950/40">
+                <p class="text-lg font-black text-amber-900 dark:text-amber-100">
+                    🏖️ {{ __('عطلة رسمية') }}: {{ $data['holidayName'] }}
+                </p>
+                <p class="mt-1 text-sm text-amber-800 dark:text-amber-200">
+                    {{ __('لا تُحتسب حصص هذا اليوم ضمن الحصص المتأخرة أو غير الموثقة.') }}
+                </p>
+            </section>
+        @endif
+
         <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <article class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900 dark:bg-emerald-950/50">
                 <p class="text-sm font-bold text-emerald-800 dark:text-emerald-200">{{ __('نسبة توثيق الدفاتر اليومية') }}</p>

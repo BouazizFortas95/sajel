@@ -69,7 +69,7 @@ Key goals:
 | Localization | `mcamara/laravel-localization` | `ar`, `en`, `fr` |
 | Timezone | Africa/Algiers | `APP_TIMEZONE` |
 | Font | Cairo (Google Fonts) | RTL body + headings |
-| Testing | PHPUnit | 289 passed (14,543 assertions in the latest run; count can vary slightly with randomized seed data) |
+| Testing | PHPUnit | 312 passed, 0 failures (14,800 assertions in the latest run) |
 
 ---
 
@@ -98,7 +98,7 @@ php artisan migrate:fresh --seed
 # Demo data (600 students, 30 teachers, ~1,200 daily logs, full curriculum)
 php artisan db:seed --class=MiddleSchoolDatabaseSeeder
 
-# Run tests (289 feature + unit, all green)
+# Run tests (312 feature + unit, all green)
 php artisan test
 vendor/bin/pint
 
@@ -112,12 +112,12 @@ php artisan optimize:clear
 
 ---
 
-## 6. Project Health (Phase 4 Complete)
+## 6. Project Health (Phases 2–6 Complete)
 
 - **Migrations:** 40 ran
-- **Tests:** 289 passed (14,543 assertions in the latest run; assertion count can vary slightly with randomized seed data)
-- **Filament Resources:** 18 (includes new `BehaviorObservationResource`, `PedagogicalRemediationResource`, `ActiveLearningStrategyResource`)
-- **Custom Pages:** Dashboard, CurriculumProgress, OfficialReports, MySchedule, QuickAttendance, LabSeatingPlanPage, DataShowMode, SchoolSupervisionHub
+- **Tests:** 312 passed, 0 failures (14,800 assertions in the latest run)
+- **Filament Resources:** 20 (includes `SchoolHolidayResource` and `PedagogicalMeetingResource`)
+- **Custom Pages:** Dashboard, CurriculumProgress, OfficialReports, MySchedule, QuickAttendance, LabSeatingPlanPage, DataShowMode, SchoolSupervisionHub, ClassCouncilHub
 - **Branch:** `main` — Phase 2/3/4 all complete (100% across the board)
 - **Build:** `npm run build` passes; `vendor/bin/pint` passes
 
@@ -157,4 +157,4 @@ protected device: the roster and unsynced attendance contain student information
   all of the student's records. Official Reports provides classroom/group/student filters, and the
   Student resource provides row actions.
 
-*Last updated: 2026-10-24 — Phase 2 (14/14) + Phase 3 (3/3) + Phase 4 (3/3) + Phase 5 Milestone 1 (1/1) all complete. Suite: 290 passing, 14,717 assertions.*
+*Last updated: 2026-10-25 — Phases 2–6 all complete (100%). Suite: 312 passing, 0 failures, 14,800 assertions. Health check: all PASS (AI provider gemini configured).*

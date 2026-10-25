@@ -695,5 +695,6 @@
     "المؤطر": "Supervisor",
     "التوصيات": "Recommendations",
     "عطلة رسمية": "Official Holiday",
-    "رزنامة العطل": "School Holiday Calendar"
+    "رزنامة العطل": "School Holiday Calendar",
+    "لا تُحتسب حصص هذا اليوم ضمن الحصص المتأخرة أو غير الموثقة.": "Sessions on this day are excluded from overdue or unlogged compliance checks."
 }

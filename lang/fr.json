@@ -692,5 +692,6 @@
     "المؤطر": "Encadrant",
     "التوصيات": "Recommandations",
     "عطلة رسمية": "Jour férié officiel",
-    "رزنامة العطل": "Calendrier des vacances scolaires"
+    "رزنامة العطل": "Calendrier des vacances scolaires",
+    "لا تُحتسب حصص هذا اليوم ضمن الحصص المتأخرة أو غير الموثقة.": "Les séances de ce jour sont exclues du contrôle des séances en retard ou non documentées."
 }
