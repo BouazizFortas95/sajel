@@ -627,18 +627,26 @@
     "وثيقة سرية للاستخدام في المتابعة التربوية": "وثيقة سرية للاستخدام في المتابعة التربوية",
     "اختر التلميذ": "اختر التلميذ",
     "اختر تلميذاً من قائمتك المصرح بها لطباعة بطاقة المتابعة للاجتماع مع الولي.": "اختر تلميذاً من قائمتك المصرح بها لطباعة بطاقة المتابعة للاجتماع مع الولي.",
+    "class_council.recommendation.excellence": "تهنئة (امتياز)",
+    "class_council.recommendation.encouragement": "تشجيع",
+    "class_council.recommendation.honor_roll": "لوحة شرف",
+    "class_council.recommendation.acceptable": "مقبول — مواصلة الجهد",
+    "class_council.recommendation.warning": "يحتاج معالجة بيداغوجية",
+    "class_council.recommendation.pending": "بانتظار رصد العلامات",
     "class_council": {
-        "excellence": "امتياز / تهنئة",
+        "excellence": "تهنئة (امتياز)",
         "encouragement": "تشجيع",
         "honor_roll": "لوحة شرف",
-        "acceptable": "مقبول — يحتاج لمزيد من الجهد",
-        "warning": "تحذير بيداغوجي / معالجة",
+        "acceptable": "مقبول — مواصلة الجهد",
+        "warning": "يحتاج معالجة بيداغوجية",
+        "pending": "بانتظار رصد العلامات",
         "recommendation": {
-            "excellence": "امتياز / تهنئة",
+            "excellence": "تهنئة (امتياز)",
             "encouragement": "تشجيع",
             "honor_roll": "لوحة شرف",
-            "acceptable": "مقبول — يحتاج لمزيد من الجهد",
-            "warning": "تحذير بيداغوجي / معالجة"
+            "acceptable": "مقبول — مواصلة الجهد",
+            "warning": "يحتاج معالجة بيداغوجية",
+            "pending": "بانتظار رصد العلامات"
         }
     },
     "أستاذ المستخلاف": "أستاذ المستخلاف",

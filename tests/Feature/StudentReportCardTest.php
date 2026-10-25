@@ -14,6 +14,7 @@ use App\Models\DailyLog;
 use App\Models\Grade;
 use App\Models\PedagogicalRemediation;
 use App\Models\Schedule;
+use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
@@ -125,6 +126,41 @@ class StudentReportCardTest extends TestCase
             'assessment_id' => $ownAssessment->id,
             'student_id' => $student->id,
         ]);
+    }
+
+    public function test_report_card_renders_self_contained_amber_print_layout(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $classroom = Classroom::factory()->create();
+        $group = $classroom->groups()->create(['name' => 'الفوج أ']);
+        $student = Student::factory()->create(['group_id' => $group->id]);
+        $schoolSetting = SchoolSetting::current();
+
+        $response = $this->actingAs($admin)
+            ->get(route('print.student-report-card', ['locale' => 'ar', 'student' => $student]));
+
+        $response->assertOk()
+            ->assertSee('@page', false)
+            ->assertSee('size: A4 portrait', false)
+            ->assertSee('Cairo', false)
+            ->assertSee('print-color-adjust: exact', false)
+            ->assertSee('kpi-strip', false)
+            ->assertSee('grid-cols-5', false)
+            ->assertSee('report-table', false)
+            ->assertSee('signature-grid', false)
+            ->assertSee('بطاقة هوية التلميذ')
+            ->assertSee('نسبة الحضور')
+            ->assertSee('حاضر')
+            ->assertSee('غائب')
+            ->assertSee('متأخر')
+            ->assertSee('معفى')
+            ->assertSee('إمضاء الأستاذ(ة)')
+            ->assertSee('تأشيرة الإدارة')
+            ->assertSee('إطلاع وتوقيع ولي الأمر')
+            ->assertSee($schoolSetting->school_name)
+            ->assertSee($schoolSetting->directorate_name);
+
+        $this->assertStringContainsString('/build/assets/app-', $response->getContent());
     }
 
     public function test_teacher_cannot_view_report_card_for_a_student_outside_their_roster(): void

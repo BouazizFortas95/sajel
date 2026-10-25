@@ -1,99 +1,137 @@
 @php
     $schoolSetting = $schoolSetting ?? \App\Models\SchoolSetting::current();
 @endphp
-<!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ __('ملف إنجاز الأستاذ') }} — {{ $teacher->name }}</title>
-<style>
-@page { size: A4 portrait; margin: 12mm; @top-left { content: none; } }
-body { font-family: Arial, sans-serif; color: #0f172a; background: #fff; font-size: 11pt; }
-.header { border-bottom: 3px solid #1a3a5c; padding-bottom: 8px; margin-bottom: 12px; }
-.header h1 { font-size: 16pt; margin: 0; color: #1a3a5c; }
-.header .sub { font-size: 9pt; color: #64748b; }
-.card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
-.card h2 { font-size: 13pt; color: #1a3a5c; margin: 0 0 6px 0; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; }
-.table-wrapper { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-th { background: #1a3a5c; color: #fff; padding: 4px 6px; text-align: start; }
-td { border-bottom: 1px solid #e2e8f0; padding: 4px 6px; }
-.signature-box { border-top: 1px solid #334155; padding-top: 4px; min-width: 160px; font-size: 9pt; color: #475569; }
-.footer { margin-top: 10px; font-size: 8pt; color: #64748b; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 4px; }
-</style>
-</head>
-<body dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 
-<div class="header">
-  <div style="display:flex; justify-content:space-between; align-items:center;">
-    <div>
-      <h1>{{ __('ملف إنجاز الأستاذ') }}</h1>
-      <div class="sub">{{ $schoolSetting->directorate_name }} — {{ $schoolSetting->school_name }}</div>
-      <div class="sub">{{ __('وزارة التربية الوطنية') }} — {{ __('السنة الدراسية') }}: {{ $schoolSetting->academic_year }} — {{ __('التقرير المهني') }}</div>
-    </div>
-    <div style="text-align:right; font-size:9pt; color:#475569;">
-      <strong>{{ $teacher->name }}</strong><br>
-      {{ $teacher->primarySubject?->name ?? '' }} / {{ $teacher->secondarySubject?->name ?? '' }}<br>
-      {{ now(config('app.timezone'))->translatedFormat('l, d M Y') }}
-    </div>
-  </div>
-</div>
+@include('print.partials.document-head', [
+    'printTitle' => __('ملف إنجاز الأستاذ'),
+    'printSubtitle' => $teacher->name.' — '.($teacher->primarySubject?->name ?? __('الأستاذ(ة)')),
+    'printAcademicYear' => $schoolSetting->academic_year,
+    'printReference' => __('التقرير المهني'),
+    'printMeta' => $generatedAt->format('Y-m-d'),
+    'printAutoPrint' => $autoPrint ?? false,
+])
 
-<!-- Teacher Identity -->
-<div class="card">
-  <h2>{{ __('بطاقة الهوية المهنية') }}</h2>
-  <table>
-    <tr><th style="width:30%">{{ __('الاسم الكامل') }}</th><td>{{ $teacher->name }}</td></tr>
-    <tr><th>{{ __('المادة الأساسية') }}</th><td>{{ $teacher->primarySubject?->name ?? '—' }}</td></tr>
-    <tr><th>{{ __('المادة الثانوية') }}</th><td>{{ $teacher->secondarySubject?->name ?? '—' }}</td></tr>
-    <tr><th>{{ __('عدد الساعات الأسبوعية') }}</th><td>{{ count($schedules ?? collect()) }} {{ __('حصة') }}</td></tr>
-    <tr><th>{{ __('الأقسام الموكلة') }}</th><td>{{ collect($schedules ?? collect())->map(fn($s) => $s->classroom?->name)->filter()->unique()->join(', ') ?: '—' }}</td></tr>
-  </table>
-</div>
+    <section class="identity-card bg-amber-50/70 border border-amber-200 rounded-2xl p-4">
+        <div class="section-heading">
+            <h2 class="section-title">{{ __('بطاقة الهوية المهنية') }}</h2>
+            <span class="badge badge-primary">{{ __('السنة الدراسية') }}: {{ $schoolSetting->academic_year }}</span>
+        </div>
 
-<!-- Teaching & Register Compliance -->
-<div class="card">
-  <h2>{{ __('التدريس والامتثال لسجل النصوص') }}</h2>
-  <table>
-    <thead><tr><th>{{ __('المؤشر') }}</th><th>{{ __('القيمة') }}</th></tr></thead>
-    <tbody>
-      <tr><td>{{ __('الدروس المنجزة المؤكدة') }}</td><td>{{ $completedLogs }}</td></tr>
-      <tr><td>{{ __('السجلات المؤشرة إدارياً') }}</td><td>{{ $reviewedLogs }}</td></tr>
-      <tr><td>{{ __('المذكرة التربوية المعتمدة') }}</td><td>{{ $memoCount }}</td></tr>
-    </tbody>
-  </table>
-</div>
+        <div class="identity-grid">
+            <div class="identity-item">
+                <p class="identity-label">{{ __('الاسم الكامل') }}</p>
+                <p class="identity-value">{{ $teacher->name }}</p>
+            </div>
+            <div class="identity-item">
+                <p class="identity-label">{{ __('المادة الأساسية') }}</p>
+                <p class="identity-value">{{ $teacher->primarySubject?->name ?? '—' }}</p>
+            </div>
+            <div class="identity-item">
+                <p class="identity-label">{{ __('المادة الثانوية') }}</p>
+                <p class="identity-value">{{ $teacher->secondarySubject?->name ?? '—' }}</p>
+            </div>
+            <div class="identity-item">
+                <p class="identity-label">{{ __('عدد الساعات الأسبوعية') }}</p>
+                <p class="identity-value">{{ count($schedules ?? collect()) }} {{ __('حصة') }}</p>
+            </div>
+            <div class="identity-item" style="grid-column: span 2;">
+                <p class="identity-label">{{ __('الأقسام الموكلة') }}</p>
+                <p class="identity-value">{{ collect($schedules ?? collect())->map(fn ($schedule) => $schedule->classroom?->name)->filter()->unique()->join('، ') ?: '—' }}</p>
+            </div>
+            <div class="identity-item" style="grid-column: span 2;">
+                <p class="identity-label">{{ __('تاريخ الإصدار') }}</p>
+                <p class="identity-value" dir="ltr">{{ $generatedAt->format('Y-m-d H:i') }}</p>
+            </div>
+        </div>
+    </section>
 
-<!-- Meetings -->
-<div class="card">
-  <h2>{{ __('الندوات التربوية والاجتماعات التنسيقية') }}</h2>
-  <table>
-    <thead><tr><th>{{ __('التاريخ') }}</th><th>{{ __('النوع') }}</th><th>{{ __('العنوان') }}</th><th>{{ __('المؤطر') }}</th><th>{{ __('التوصيات') }}</th></tr></thead>
-    <tbody>
-      @forelse ($meetings as $m)
-      <tr>
-        <td>{{ $m->date?->format('Y-m-d') }}</td>
-        <td>{{ match($m->meeting_type ?? '') { 'inspector_seminar' => __('ندوة تكوينية'), 'coordination_meeting' => __('اجتماع تنسيقي'), 'class_council' => __('مجلس القسم'), default => $m->meeting_type } }}</td>
-        <td>{{ $m->title }}</td>
-        <td>{{ $m->supervisor_name ?: '—' }}</td>
-        <td>{{ $m->recommendations ? \Illuminate\Support\Str::limit($m->recommendations, 60) : '—' }}</td>
-      </tr>
-      @empty
-      <tr><td colspan="5" style="text-align:center; padding:8px;">{{ __('لا توجد ندوات مسجلة') }}</td></tr>
-      @endforelse
-    </tbody>
-  </table>
-</div>
+    <section class="report-section">
+        <div class="section-heading">
+            <h2 class="section-title">{{ __('التدريس والامتثال لسجل النصوص') }}</h2>
+        </div>
+        <div class="kpi-strip" style="grid-template-columns: repeat(3, minmax(0, 1fr)) !important;">
+            <div class="kpi-card kpi--emerald">
+                <p class="kpi-card__label">{{ __('الدروس المنجزة المؤكدة') }}</p>
+                <p class="kpi-card__value">{{ $completedLogs }}</p>
+                <p class="kpi-card__hint">{{ __('سجل منجز') }}</p>
+            </div>
+            <div class="kpi-card kpi--amber">
+                <p class="kpi-card__label">{{ __('السجلات المؤشرة إدارياً') }}</p>
+                <p class="kpi-card__value">{{ $reviewedLogs }}</p>
+                <p class="kpi-card__hint">{{ __('تأشيرة إدارية') }}</p>
+            </div>
+            <div class="kpi-card kpi--sky">
+                <p class="kpi-card__label">{{ __('المذكرة التربوية المعتمدة') }}</p>
+                <p class="kpi-card__value">{{ $memoCount }}</p>
+                <p class="kpi-card__hint">{{ __('مذكرة بيداغوجية') }}</p>
+            </div>
+        </div>
+    </section>
 
-<div class="signature-box" style="margin-top:14px; display:flex; gap:40px; flex-wrap:wrap;">
-  <div><strong>{{ __('إمضاء الأستاذ(ة)') }}</strong><br>_________________________</div>
-  <div><strong>{{ __('إمضاء المفتش / المشرف') }}</strong><br>_________________________</div>
-  @if ($schoolSetting->principal_name)
-    <div><strong>{{ __('مدير المتوسطة') }}</strong><br>{{ $schoolSetting->principal_name }}</div>
-  @endif
-</div>
+    <section class="report-section">
+        <div class="section-heading">
+            <h2 class="section-title">{{ __('الندوات التربوية والاجتماعات التنسيقية') }}</h2>
+            <span class="badge badge-gray">{{ $meetings->count() }} {{ __('ندوة / اجتماع') }}</span>
+        </div>
 
-<div class="footer">{{ __('ملف إنجاز الأستاذ — الوثيقة الرسمية') }} | {{ $schoolSetting->school_name }} | {{ $schoolSetting->academic_year }} | {{ now(config('app.timezone'))->translatedFormat('Y') }}</div>
+        <div class="table-wrap">
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>{{ __('التاريخ') }}</th>
+                        <th>{{ __('النوع') }}</th>
+                        <th>{{ __('العنوان') }}</th>
+                        <th>{{ __('المؤطر') }}</th>
+                        <th>{{ __('التوصيات') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($meetings as $meeting)
+                        <tr>
+                            <td dir="ltr">{{ $meeting->date?->format('Y-m-d') }}</td>
+                            <td>
+                                <span class="badge badge-info">
+                                    {{ __(match ($meeting->meeting_type ?? '') {
+                                        'inspector_seminar' => 'ندوة تكوينية',
+                                        'coordination_meeting' => 'اجتماع تنسيقي',
+                                        'class_council' => 'مجلس القسم',
+                                        default => 'اجتماع تربوي',
+                                    }) }}
+                                </span>
+                            </td>
+                            <td><strong>{{ $meeting->title }}</strong></td>
+                            <td>{{ $meeting->supervisor_name ?: '—' }}</td>
+                            <td>{{ $meeting->recommendations ? \Illuminate\Support\Str::limit($meeting->recommendations, 80) : '—' }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="text-center" style="padding: 12px;">{{ __('لا توجد ندوات مسجلة') }}</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <footer class="signature-grid">
+        <div class="signature-box">
+            <strong>{{ __('إمضاء الأستاذ(ة)') }}</strong>
+            <span>{{ $teacher->name }}</span>
+            <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+            <strong>{{ __('إمضاء المفتش / المشرف') }}</strong>
+            <span>{{ __('التاريخ') }}: ____ / ____ / ________</span>
+            <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+            <strong>{{ __('مدير المتوسطة') }}</strong>
+            <span>{{ $schoolSetting->principal_name ?: '_________________________' }}</span>
+            <div class="signature-line"></div>
+        </div>
+    </footer>
+
+    <p class="doc-footer">{{ __('ملف إنجاز الأستاذ — الوثيقة الرسمية') }} | {{ $schoolSetting->school_name }} | {{ $schoolSetting->academic_year }} | {{ $generatedAt->format('Y') }}</p>
+</main>
 </body>
 </html>

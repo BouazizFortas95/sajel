@@ -30,6 +30,11 @@ class ClassCouncilHub extends Page
         }
     }
 
+    public function updatedClassroomId(): void
+    {
+        $this->groupId = null;
+    }
+
     public static function getNavigationLabel(): string
     {
         return __('مجلس القسم');
@@ -62,6 +67,8 @@ class ClassCouncilHub extends Page
         if (! $classroom) {
             return null;
         }
+
+        $classroom->loadMissing('level.educationPhase');
 
         $user = Auth::user();
         if ($user && $user->isTeacher()) {

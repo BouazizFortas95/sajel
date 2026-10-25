@@ -17,22 +17,83 @@ class ParentPortalService
         $group = $student->group;
 
         $recentLogs = DailyLog::query()
-            ->whereHas('schedule', fn (Builder $q) => $q->where('classroom_id', $group?->classroom_id)->orWhere('group_id', $group?->id))
+            ->whereHas('schedule', function (Builder $query) use ($group): void {
+                if (! $group) {
+                    $query->whereRaw('1 = 0');
+
+                    return;
+                }
+
+                $query->where(function (Builder $query) use ($group): void {
+                    $query->where('classroom_id', $group->classroom_id)
+                        ->orWhere('group_id', $group->id);
+                });
+            })
             ->where('status', DailyLogStatus::Completed->value)
-            ->whereNotNull('homework')
-            ->orWhereNotNull('actual_content')
+            ->where(function (Builder $query): void {
+                $query->whereNotNull('homework')->orWhereNotNull('actual_content');
+            })
             ->orderByDesc('date')
             ->limit(10)
             ->with('schedule.subject')
             ->get();
 
-        $attendanceCounts = $student->attendances()->selectRaw('status, count(*) as count')->groupBy('status')->pluck('count', 'status')->toArray();
+        $rawAttendanceCounts = $student->attendances()
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        $attendanceCounts = [
+            'present' => (int) ($rawAttendanceCounts['present'] ?? 0),
+            'absent' => (int) ($rawAttendanceCounts['absent'] ?? 0),
+            'late' => (int) ($rawAttendanceCounts['late'] ?? 0),
+            'excused' => (int) ($rawAttendanceCounts['excused'] ?? 0),
+        ];
         $attendanceTotal = array_sum($attendanceCounts);
-        $attendanceRate = $attendanceTotal > 0 ? round(($attendanceCounts['present'] ?? 0) / $attendanceTotal * 100, 1) : 0;
+        $attendanceRate = $attendanceTotal > 0
+            ? round(($attendanceCounts['present'] / $attendanceTotal) * 100, 1)
+            : 0;
 
-        $gradesBySubject = $student->grades()->with('assessment.schedule.subject')->get()->groupBy(fn ($g) => $g->assessment?->schedule?->subject?->name ?? '—');
+        $gradesBySubject = $student->grades()
+            ->with('assessment.schedule.subject')
+            ->get()
+            ->groupBy(fn ($grade) => $grade->assessment?->schedule?->subject?->name ?? '—');
 
-        $recentAbsences = $student->attendances()->whereIn('status', ['absent', 'late'])->orderByDesc('created_at')->limit(5)->get();
+        $subjectSummaries = $gradesBySubject
+            ->map(function ($grades, string $subject): array {
+                $totalScore = 0.0;
+                $totalMax = 0.0;
+
+                foreach ($grades as $grade) {
+                    $maxScore = (float) ($grade->assessment?->max_score ?? 0);
+
+                    if ($grade->score !== null && $maxScore > 0) {
+                        $totalScore += (float) $grade->score;
+                        $totalMax += $maxScore;
+                    }
+                }
+
+                return [
+                    'subject' => $subject,
+                    'average' => $totalMax > 0 ? round(($totalScore / $totalMax) * 20, 2) : null,
+                    'grades' => $grades,
+                ];
+            })
+            ->values();
+
+        $generalAverage = $subjectSummaries
+            ->pluck('average')
+            ->filter(fn ($average): bool => $average !== null)
+            ->avg();
+        $generalAverage = $generalAverage !== null ? round((float) $generalAverage, 2) : null;
+
+        $recentAbsences = $student->attendances()
+            ->whereIn('status', ['absent', 'late'])
+            ->with('dailyLog.schedule.subject')
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get();
 
         $observations = BehaviorObservation::where('student_id', $student->id)->with('schedule.subject')->orderByDesc('date')->limit(10)->get();
         $remediations = PedagogicalRemediation::where('student_id', $student->id)->with('schedule.subject')->orderByDesc('session_date')->limit(5)->get();
@@ -43,8 +104,11 @@ class ParentPortalService
             'group' => $group,
             'recentLogs' => $recentLogs,
             'attendanceCounts' => $attendanceCounts,
+            'attendanceTotal' => $attendanceTotal,
             'attendanceRate' => $attendanceRate,
             'gradesBySubject' => $gradesBySubject,
+            'subjectSummaries' => $subjectSummaries,
+            'generalAverage' => $generalAverage,
             'recentAbsences' => $recentAbsences,
             'observations' => $observations,
             'remediations' => $remediations,

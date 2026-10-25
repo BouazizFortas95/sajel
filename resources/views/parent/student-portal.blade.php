@@ -1,112 +1,345 @@
-<!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ $student->full_name }} — {{ __('بوابة ولي الأمر') }}</title>
-<style>
-@media screen { body { background: #f8fafc; font-family: system-ui, Arial, sans-serif; } .card { background: #fff; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); } }
-.header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#fff; padding: 24px; border-radius: 16px; text-align:center; }
-.header h1 { font-size: 22pt; margin: 0; }
-.badge { display:inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11pt; font-weight: bold; }
-.grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap:16px; }
-.section-title { font-size: 14pt; color: #1a3a5c; border-right: 4px solid #f59e0b; padding-right: 10px; margin: 0 0 12px 0; }
-.table { width:100%; border-collapse:collapse; font-size: 11pt; }
-.table th { background:#1a3a5c; color:#fff; padding:6px 8px; text-align:start; }
-.table td { border-bottom:1px solid #e2e8f0; padding:6px 8px; }
-.qr { width: 120px; height: 120px; background: #fff; padding: 8px; border-radius: 12px; border: 2px solid #f59e0b; }
-</style>
-</head>
-<body class="bg-slate-50 text-slate-900">
-<div class="max-w-3xl mx-auto px-4 py-6">
+@php
+    $schoolSetting = $schoolSetting ?? \App\Models\SchoolSetting::current();
+    $behaviorLabels = [
+        'positive' => __('إيجابي'),
+        'negative' => __('سلبي'),
+        'disciplinary' => __('انضباطي'),
+        'participation' => __('مشاركة'),
+        'helpfulness' => __('تعاون'),
+        'leadership' => __('قيادة'),
+        'improvement' => __('تحسن'),
+        'other_positive' => __('إيجابي'),
+        'disruption' => __('إخلال بالنظام'),
+        'disrespect' => __('عدم احترام'),
+        'violence' => __('عنف'),
+        'cheating' => __('غش'),
+        'absence_without_leave' => __('غياب بدون إذن'),
+        'other_negative' => __('سلبي'),
+    ];
+@endphp
 
-  <div class="header">
-    <h1>🛡️ {{ __('بوابة متابعة ولي الأمر') }}</h1>
-    <div style="opacity:.95; font-size:12pt;">{{ $student->full_name }} — {{ $student->registration_number }}</div>
-    <div style="font-size:10pt; opacity:.8; margin-top:6px;">{{ $classroom?->name ?? '—' }} / {{ $group?->name ?? '—' }} — {{ $student->date_of_birth?->format('Y-m-d') ?? '—' }}</div>
-  </div>
+@include('print.partials.document-head', [
+    'printTitle' => __('بوابة متابعة ولي الأمر'),
+    'printSubtitle' => $student->full_name.' — '.($classroom?->name ?? __('بدون قسم')),
+    'printAcademicYear' => $classroom?->academic_year ?: $schoolSetting->academic_year,
+    'printReference' => __('بوابة المتابعة الرقمية'),
+    'printMeta' => $student->registration_number ?: null,
+    'printAutoPrint' => false,
+])
 
-  <div class="grid" style="margin-top:16px;">
-    <div class="card">
-      <h2 class="section-title">📋 {{ __('الواجبات المنزلية والدروس الأخيرة') }}</h2>
-      <div class="table-wrapper">
-        <table class="table">
-          <thead><tr><th>{{ __('التاريخ') }}</th><th>{{ __('المادة') }}</th><th>{{ __('عنوان الدرس') }}</th><th>{{ __('الواجب') }}</th></tr></thead>
-          <tbody>
-            @forelse ($recentLogs as $log)
-            <tr>
-              <td>{{ $log->date?->format('Y-m-d') }}</td>
-              <td>{{ $log->schedule?->subject?->name ?? '—' }}</td>
-              <td>{{ $log->title }}</td>
-              <td>{{ $log->homework ? \Illuminate\Support\Str::limit($log->homework, 60) : '—' }}</td>
-            </tr>
-            @empty
-            <tr><td colspan="4" style="text-align:center; color:#64748b;">{{ __('لا يوجد واجبات مسجلة بعد') }}</td></tr>
-            @endforelse
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <section class="identity-card bg-amber-50/70 border border-amber-200 rounded-2xl p-4">
+        <div class="section-heading">
+            <h2 class="section-title">{{ __('بطاقة هوية التلميذ') }}</h2>
+            <span class="badge badge-primary">{{ __('السنة الدراسية') }}: {{ $classroom?->academic_year ?: $schoolSetting->academic_year }}</span>
+        </div>
 
-    <div class="card">
-      <h2 class="section-title">📊 {{ __('ملخص الحضور') }}</h2>
-      <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 8px;">
-        <div style="background:#dcfce7; padding:10px; border-radius:8px;"><strong style="color:#166534">{{ $attendanceCounts['present'] ?? 0 }}</strong> {{ __('حاضر') }}</div>
-        <div style="background:#ffe4e6; padding:10px; border-radius:8px;"><strong style="color:#9f1239">{{ $attendanceCounts['absent'] ?? 0 }}</strong> {{ __('غائب') }}</div>
-        <div style="background:#fef3c7; padding:10px; border-radius:8px;"><strong style="color:#92400e">{{ $attendanceCounts['late'] ?? 0 }}</strong> {{ __('متأخر') }}</div>
-        <div style="background:#dbeafe; padding:10px; border-radius:8px;"><strong style="color:#1e40af">{{ $attendanceCounts['excused'] ?? 0 }}</strong> {{ __('معفى') }}</div>
-      </div>
-      <div style="margin-top:8px; font-size:11pt; color:#475569;">{{ __('نسبة الحضور') }}: <strong>{{ $attendanceRate }}%</strong></div>
-      @if($recentAbsences->isNotEmpty())
-      <div style="margin-top:6px; font-size:10pt; color:#9f1239;">{{ __('أحدث الغيابات / التأخر') }}: {{ $recentAbsences->pluck('date')->map(fn($d)=>$d?->format('Y-m-d'))->join('، ') }}</div>
-      @endif
-    </div>
+        <div class="identity-grid">
+            <div class="identity-item">
+                <p class="identity-label">{{ __('الاسم واللقب') }}</p>
+                <p class="identity-value">{{ $student->full_name }}</p>
+            </div>
+            <div class="identity-item">
+                <p class="identity-label">{{ __('رقم التسجيل') }}</p>
+                <p class="identity-value" dir="ltr">{{ $student->registration_number ?: '—' }}</p>
+            </div>
+            <div class="identity-item">
+                <p class="identity-label">{{ __('تاريخ الميلاد') }}</p>
+                <p class="identity-value" dir="ltr">{{ $student->date_of_birth?->format('Y-m-d') ?? '—' }}</p>
+            </div>
+            <div class="identity-item">
+                <p class="identity-label">{{ __('المستوى والقسم والفوج') }}</p>
+                <p class="identity-value">
+                    {{ $classroom?->level?->name ?? '—' }}
+                    @if ($classroom)
+                        — {{ $classroom->name }}
+                    @endif
+                    @if ($group)
+                        — {{ $group->name }}
+                    @endif
+                </p>
+            </div>
+        </div>
+    </section>
 
-    <div class="card">
-      <h2 class="section-title">🎓 {{ __('التقييمات الدراسية') }}</h2>
-      @forelse ($gradesBySubject as $subject => $grades)
-      <div style="margin-bottom:8px; padding:8px; background:#f1f5f9; border-radius:8px;">
-        <strong>{{ $subject }}</strong>
-        <div style="font-size:10pt; color:#334155;">{{ __('متوسط') }}: <strong style="color:#1a3a5c">{{ round($grades->avg('score') ?? 0, 2) }}/20</strong></div>
-      </div>
-      @empty
-      <div style="color:#64748b;">{{ __('لا توجد تقييمات مسجلة بعد') }}</div>
-      @endforelse
-    </div>
+    <section class="report-section">
+        <div class="section-heading">
+            <h2 class="section-title">{{ __('ملخص الحضور') }}</h2>
+            <span class="badge {{ $generalAverage !== null && $generalAverage >= 10 ? 'badge-success' : 'badge-warning' }}">
+                {{ __('المعدل العام') }}:
+                {{ $generalAverage !== null ? number_format($generalAverage, 2).'/20' : __('لم تُرصد بعد') }}
+            </span>
+        </div>
 
-    <div class="card">
-      <h2 class="section-title">📝 {{ __('الملاحظات والسلوكية') }}</h2>
-      @forelse ($observations as $obs)
-      <div style="font-size:10pt; padding:4px 0; border-bottom:1px dashed #e2e8f0;">{{ $obs->date?->format('Y-m-d') }} — {{ $obs->category }} — {{ $obs->notes }}</div>
-      @empty
-      <div style="color:#64748b;">{{ __('لا توجد ملاحظات') }}</div>
-      @endforelse
-    </div>
+        <div class="kpi-strip grid grid-cols-5 gap-3 text-center">
+            <div class="kpi-card kpi--emerald">
+                <p class="kpi-card__label">{{ __('نسبة الحضور') }}</p>
+                <p class="kpi-card__value">{{ number_format($attendanceRate, 1) }}%</p>
+                <p class="kpi-card__hint">{{ __('من :count حصة', ['count' => $attendanceTotal]) }}</p>
+            </div>
+            <div class="kpi-card kpi--emerald">
+                <p class="kpi-card__label">{{ __('حاضر') }}</p>
+                <p class="kpi-card__value">{{ $attendanceCounts['present'] }}</p>
+                <p class="kpi-card__hint">{{ __('حضور مؤكد') }}</p>
+            </div>
+            <div class="kpi-card kpi--rose">
+                <p class="kpi-card__label">{{ __('غائب') }}</p>
+                <p class="kpi-card__value">{{ $attendanceCounts['absent'] }}</p>
+                <p class="kpi-card__hint">{{ __('غياب مسجل') }}</p>
+            </div>
+            <div class="kpi-card kpi--amber">
+                <p class="kpi-card__label">{{ __('متأخر') }}</p>
+                <p class="kpi-card__value">{{ $attendanceCounts['late'] }}</p>
+                <p class="kpi-card__hint">{{ __('تأخر مسجل') }}</p>
+            </div>
+            <div class="kpi-card kpi--sky">
+                <p class="kpi-card__label">{{ __('معفى') }}</p>
+                <p class="kpi-card__value">{{ $attendanceCounts['excused'] }}</p>
+                <p class="kpi-card__hint">{{ __('غياب بعذر') }}</p>
+            </div>
+        </div>
 
-    <div class="card">
-      <h2 class="section-title">📌 {{ __('التوصيات وال remediation') }}</h2>
-      @forelse ($remediations as $rem)
-      <div style="font-size:10pt; padding:4px 0; border-bottom:1px dashed #e2e8f0;">{{ $rem->session_date?->format('Y-m-d') }} — {{ $rem->reason }}</div>
-      @empty
-      <div style="color:#64748b;">{{ __('لا يوجد') }}</div>
-      @endforelse
-    </div>
-  </div>
+        @if ($recentAbsences->isNotEmpty())
+            <div class="section-heading" style="margin-top: 12px; margin-bottom: 6px;">
+                <h3 class="section-title" style="font-size: 11px;">{{ __('آخر الغيابات والتأخرات') }}</h3>
+            </div>
+            <div class="table-wrap">
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('التاريخ') }}</th>
+                            <th>{{ __('الحالة') }}</th>
+                            <th>{{ __('المادة') }}</th>
+                            <th>{{ __('ملاحظات المعلم') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($recentAbsences as $absence)
+                            <tr>
+                                <td dir="ltr">{{ $absence->dailyLog?->date?->format('Y-m-d') ?? '—' }}</td>
+                                <td>
+                                    <span class="badge {{ $absence->status?->value === 'absent' ? 'badge-danger' : 'badge-warning' }}">
+                                        {{ $absence->status?->label() ?? '—' }}
+                                    </span>
+                                </td>
+                                <td>{{ $absence->dailyLog?->schedule?->subject?->name ?? '—' }}</td>
+                                <td>{{ $absence->remarks ?: '—' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </section>
 
-  <div style="text-align:center; margin-top:24px; padding:12px; background:#fff; border-radius:12px; border:2px dashed #f59e0b;">
-    <div style="font-size:10pt; color:#475569;">{{ __('رابط المتابعة الرقمية لولي الأمر') }}</div>
-    <div style="font-family: monospace; word-break:break-all; background:#1a3a5c; color:#fff; padding:8px 12px; border-radius:8px; margin-top:6px; font-size:10pt;">{{ $portalUrl }}</div>
-    <svg class="qr" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="margin:10px auto 0; display:block;">
-      <rect width="100" height="100" fill="#fff"/>
-      <g fill="#1a3a5c">
-        <rect x="10" y="10" width="30" height="30"/><rect x="15" y="15" width="20" height="20" fill="#fff"/><rect x="20" y="20" width="10" height="10" fill="#1a3a5c"/>
-        <rect x="60" y="10" width="30" height="30"/><rect x="65" y="15" width="20" height="20" fill="#fff"/><rect x="70" y="20" width="10" height="10" fill="#1a3a5c"/>
-        <rect x="10" y="60" width="30" height="30"/><rect x="15" y="65" width="20" height="20" fill="#fff"/><rect x="20" y="70" width="10" height="10" fill="#1a3a5c"/>
-        <rect x="45" y="45" width="10" height="10"/><rect x="55" y="45" width="10" height="10"/><rect x="45" y="55" width="10" height="10"/><rect x="55" y="55" width="10" height="10"/>
-        <rect x="45" y="10" width="10" height="10"/><rect x="65" y="45" width="10" height="10"/><rect x="80" y="80" width="10" height="10"/>
-      </g>
-    </svg>
-  </div>
-</div>
+    <section class="report-section">
+        <div class="section-heading">
+            <h2 class="section-title">{{ __('الواجبات المنزلية والدروس الأخيرة') }}</h2>
+            <span class="badge badge-info">{{ $recentLogs->count() }} {{ __('سجل') }}</span>
+        </div>
+
+        @if ($recentLogs->isNotEmpty())
+            <div class="table-wrap">
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('التاريخ') }}</th>
+                            <th>{{ __('المادة') }}</th>
+                            <th>{{ __('عنوان الدرس') }}</th>
+                            <th>{{ __('الواجب') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($recentLogs as $log)
+                            <tr>
+                                <td dir="ltr">{{ $log->date?->format('Y-m-d') }}</td>
+                                <td><span class="badge badge-primary">{{ $log->schedule?->subject?->name ?? '—' }}</span></td>
+                                <td><strong>{{ $log->title }}</strong></td>
+                                <td>{{ $log->homework ? \Illuminate\Support\Str::limit($log->homework, 80) : '—' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <p class="muted" style="font-size: 10px;">{{ __('لا توجد واجبات مسجلة بعد') }}</p>
+        @endif
+    </section>
+
+    <section class="report-section">
+        <div class="section-heading">
+            <h2 class="section-title">{{ __('التقييمات الدراسية') }}</h2>
+            <span class="badge badge-gray">{{ __('العلامات على 20') }}</span>
+        </div>
+
+        @forelse ($subjectSummaries as $summary)
+            <div class="subject-card">
+                <div class="subject-card__head">
+                    <h3 class="subject-card__title">{{ $summary['subject'] }}</h3>
+                    <span class="subject-card__average">
+                        {{ __('معدل المادة على 20') }}:
+                        {{ $summary['average'] !== null ? number_format($summary['average'], 2) : __('لم تُرصد بعد') }}
+                    </span>
+                </div>
+                <div class="table-wrap" style="border: 0; border-radius: 0;">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>{{ __('التقييم') }}</th>
+                                <th>{{ __('النوع') }}</th>
+                                <th>{{ __('التاريخ') }}</th>
+                                <th>{{ __('العلامة') }}</th>
+                                <th>{{ __('ملاحظات المعلم') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($summary['grades'] as $grade)
+                                <tr>
+                                    <td><strong>{{ $grade->assessment?->title ?? '—' }}</strong></td>
+                                    <td>{{ $grade->assessment?->type?->label() ?? '—' }}</td>
+                                    <td dir="ltr">{{ $grade->assessment?->date?->format('Y-m-d') ?? '—' }}</td>
+                                    <td>
+                                        <span class="badge badge-primary">
+                                            {{ $grade->score ?? '—' }} / {{ $grade->assessment?->max_score ?? '—' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ $grade->remarks ?: '—' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @empty
+            <p class="muted" style="font-size: 10px;">{{ __('لا توجد تقييمات مسجلة بعد') }}</p>
+        @endforelse
+    </section>
+
+    <section class="report-section">
+        <div class="section-heading">
+            <h2 class="section-title">{{ __('الملاحظات والسلوكية') }}</h2>
+            <span class="badge badge-info">{{ $observations->count() }} {{ __('ملاحظة') }}</span>
+        </div>
+
+        @if ($observations->isNotEmpty())
+            <div class="table-wrap">
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('التاريخ') }}</th>
+                            <th>{{ __('النوع') }}</th>
+                            <th>{{ __('الملاحظة') }}</th>
+                            <th>{{ __('المادة') }}</th>
+                            <th>{{ __('المتابعة') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($observations as $observation)
+                            @php
+                                $negative = in_array($observation->category, ['negative', 'disciplinary', 'disruption', 'disrespect', 'violence', 'cheating', 'absence_without_leave', 'other_negative'], true);
+                            @endphp
+                            <tr>
+                                <td dir="ltr">{{ $observation->date?->format('Y-m-d') }}</td>
+                                <td>
+                                    <span class="badge {{ $negative ? 'badge-danger' : 'badge-success' }}">
+                                        {{ $behaviorLabels[$observation->category] ?? __('ملاحظة') }}
+                                    </span>
+                                </td>
+                                <td>{{ $observation->notes }}</td>
+                                <td>{{ $observation->schedule?->subject?->name ?? '—' }}</td>
+                                <td>{{ $observation->is_followed_up ? __('تمت المتابعة') : __('قيد المتابعة') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <p class="muted" style="font-size: 10px;">{{ __('لا توجد ملاحظات') }}</p>
+        @endif
+    </section>
+
+    <section class="report-section">
+        <div class="section-heading">
+            <h2 class="section-title">{{ __('التوصيات والمعالجة البيداغوجية') }}</h2>
+            <span class="badge badge-sky">{{ $remediations->count() }} {{ __('حصة') }}</span>
+        </div>
+
+        @if ($remediations->isNotEmpty())
+            <div class="table-wrap">
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('التاريخ') }}</th>
+                            <th>{{ __('المادة') }}</th>
+                            <th>{{ __('سبب المعالجة') }}</th>
+                            <th>{{ __('الأنشطة') }}</th>
+                            <th>{{ __('الحضور') }}</th>
+                            <th>{{ __('نتيجة المتابعة') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($remediations as $remediation)
+                            <tr>
+                                <td dir="ltr">{{ $remediation->session_date?->format('Y-m-d') ?? '—' }}</td>
+                                <td>{{ $remediation->schedule?->subject?->name ?? '—' }}</td>
+                                <td>{{ $remediation->reason }}</td>
+                                <td>{{ $remediation->activities }}</td>
+                                <td>
+                                    <span class="badge {{ $remediation->attended ? 'badge-success' : 'badge-danger' }}">
+                                        {{ $remediation->attended ? __('حضر') : __('لم يحضر') }}
+                                    </span>
+                                </td>
+                                <td>{{ $remediation->follow_up ?: __('لا توجد متابعة مسجلة') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <p class="muted" style="font-size: 10px;">{{ __('لا توجد حصص معالجة مسجلة') }}</p>
+        @endif
+    </section>
+
+    @if (filled($portalUrl ?? null))
+        <section class="report-section">
+            <div class="section-heading">
+                <h2 class="section-title">{{ __('رابط المتابعة الرقمية لولي الأمر') }}</h2>
+                <span class="badge badge-success">{{ __('صالح لمدة 90 يوماً') }}</span>
+            </div>
+            <div class="qr-card">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="#b45309" stroke-width="2" aria-hidden="true">
+                    <rect x="10" y="10" width="30" height="30" stroke-width="4"/><rect x="15" y="15" width="20" height="20" fill="#fff" stroke-width="2"/><rect x="20" y="20" width="10" height="10" fill="#b45309"/>
+                    <rect x="60" y="10" width="30" height="30" stroke-width="4"/><rect x="65" y="15" width="20" height="20" fill="#fff" stroke-width="2"/><rect x="70" y="20" width="10" height="10" fill="#b45309"/>
+                    <rect x="10" y="60" width="30" height="30" stroke-width="4"/><rect x="15" y="65" width="20" height="20" fill="#fff" stroke-width="2"/><rect x="20" y="70" width="10" height="10" fill="#b45309"/>
+                    <rect x="45" y="45" width="10" height="10" fill="#b45309"/>
+                </svg>
+                <div>
+                    <p style="color: #92400e; font-size: 11px; font-weight: 900;">{{ __('بوابة متابعة ولي الأمر') }}</p>
+                    <p class="qr-card__url">{{ $portalUrl }}</p>
+                    <p class="muted" style="margin-top: 2px; font-size: 8px;">{{ __('صالح لمدة 90 يوماً من تاريخ الطباعة') }}</p>
+                </div>
+            </div>
+        </section>
+    @endif
+
+    <footer class="signature-grid">
+        <div class="signature-box">
+            <strong>{{ __('إمضاء الأستاذ(ة)') }}</strong>
+            <span>{{ __('الأستاذ المسؤول عن المتابعة') }}</span>
+            <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+            <strong>{{ __('تأشيرة الإدارة') }}</strong>
+            <span>{{ $schoolSetting->principal_name ?: __('مستشار التربية / المدير') }}</span>
+            <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+            <strong>{{ __('إطلاع وتوقيع ولي الأمر') }}</strong>
+            <span>{{ __('التاريخ') }}: ____ / ____ / ________</span>
+            <div class="signature-line"></div>
+        </div>
+    </footer>
+
+    <p class="doc-footer">{{ __('بوابة متابعة ولي الأمر') }} · {{ $schoolSetting->school_name }} · {{ $classroom?->academic_year ?: $schoolSetting->academic_year }}</p>
+</main>
 </body>
 </html>

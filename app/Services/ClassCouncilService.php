@@ -14,6 +14,7 @@ use App\Models\Subject;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\ViteException;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\Vite;
 use Spatie\Browsershot\Browsershot;
 
@@ -28,18 +29,26 @@ class ClassCouncilService
     {
         $classroom->loadMissing(['level.educationPhase', 'groups']);
 
+        $groupIds = $classroom->groups->pluck('id');
+
         $students = Student::query()
             ->with('group')
-            ->whereHas('group', fn (Builder $q) => $q->where('classroom_id', $classroom->id))
-            ->when($groupId, fn (Builder $q) => $q->where('group_id', $groupId))
+            ->whereIn('group_id', $groupIds)
+            ->when($groupId, fn (Builder $query): Builder => $query->where('group_id', $groupId))
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get();
 
-        $subjects = $this->getSubjectsForClassroom($classroom);
+        $gradesByStudent = $this->gradesForStudents($students->pluck('id'));
 
-        $studentDeliberations = $students->map(function (Student $student) use ($subjects) {
-            return $this->computeStudentDeliberation($student, $subjects);
+        $subjects = $this->getSubjectsForClassroom($classroom, $gradesByStudent);
+
+        $studentDeliberations = $students->map(function (Student $student) use ($subjects, $gradesByStudent): array {
+            return $this->computeStudentDeliberation(
+                $student,
+                $subjects,
+                $gradesByStudent->get($student->id, collect()),
+            );
         });
 
         $kpis = $this->computeClassroomKpis($studentDeliberations);
@@ -60,27 +69,85 @@ class ClassCouncilService
     }
 
     /**
-     * Get all subjects that have assessments/grades for students in the classroom.
+     * Load every grade for the classroom roster in one query.
+     *
+     * Querying by student_id (instead of by schedule/classroom) guarantees that
+     * grades recorded on direct classroom schedules and on group-scoped
+     * schedules are both included in the deliberation averages.
+     *
+     * @param  SupportCollection<int, int|string>  $studentIds
+     * @return SupportCollection<int, SupportCollection<int, Grade>>
      */
-    private function getSubjectsForClassroom(Classroom $classroom): Collection
+    private function gradesForStudents(SupportCollection $studentIds): SupportCollection
     {
+        if ($studentIds->isEmpty()) {
+            return collect();
+        }
+
+        return Grade::query()
+            ->whereIn('student_id', $studentIds)
+            ->with('assessment.schedule.subject')
+            ->get()
+            ->filter(fn (Grade $grade): bool => $grade->assessment?->schedule?->subject !== null)
+            ->groupBy('student_id');
+    }
+
+    /**
+     * Get every subject taught in the classroom, directly or through a group,
+     * plus any subject that already has a recorded grade for these students.
+     *
+     * @param  SupportCollection<int, SupportCollection<int, Grade>>  $gradesByStudent
+     * @return Collection<int, Subject>
+     */
+    private function getSubjectsForClassroom(Classroom $classroom, SupportCollection $gradesByStudent): Collection
+    {
+        $scheduledSubjectIds = Subject::query()
+            ->whereHas('schedules', function (Builder $query) use ($classroom): void {
+                $query->where('classroom_id', $classroom->id)
+                    ->orWhereHas('group', fn (Builder $query): Builder => $query->where('classroom_id', $classroom->id));
+            })
+            ->pluck('id');
+
+        $gradedSubjectIds = $gradesByStudent
+            ->flatten(1)
+            ->map(fn (Grade $grade): ?int => $grade->assessment?->schedule?->subject_id)
+            ->filter()
+            ->unique();
+
+        $subjectIds = $scheduledSubjectIds
+            ->merge($gradedSubjectIds)
+            ->unique()
+            ->values();
+
+        if ($subjectIds->isEmpty()) {
+            return new Collection;
+        }
+
         return Subject::query()
-            ->whereHas('schedules', fn (Builder $q) => $q->where('classroom_id', $classroom->id))
+            ->whereIn('id', $subjectIds)
             ->orderBy('name')
             ->get();
     }
 
     /**
      * Compute full deliberation data for a single student.
+     *
+     * @param  Collection<int, Subject>  $subjects
+     * @param  SupportCollection<int, Grade>  $grades
+     * @return array<string, mixed>
      */
-    private function computeStudentDeliberation(Student $student, Collection $subjects): array
+    private function computeStudentDeliberation(Student $student, Collection $subjects, SupportCollection $grades): array
     {
         $perSubject = [];
         $weightedSum = 0;
         $totalWeight = 0;
 
         foreach ($subjects as $subject) {
-            $avg = $this->computeSubjectAverage($student, $subject);
+            $subjectGrades = $grades->filter(
+                fn (Grade $grade): bool => $grade->assessment?->schedule?->subject_id === $subject->id,
+            );
+
+            $avg = $this->computeSubjectAverage($subjectGrades);
 
             if ($avg !== null) {
                 $perSubject[] = [
@@ -111,38 +178,33 @@ class ClassCouncilService
             'attendanceCounts' => $attendanceCounts,
             'behaviorCounts' => $behaviorCounts,
             'remediationCount' => $remediationCount,
-            'recommendation' => $recommendation,
+            'recommendation' => $recommendation['label'],
+            'recommendation_key' => $recommendation['key'],
+            'recommendation_color' => $recommendation['color'],
             'passed' => $generalAverage !== null && $generalAverage >= 10.0,
         ];
     }
 
     /**
      * Compute a student's average for a specific subject (/20 scale).
+     *
+     * @param  SupportCollection<int, Grade>  $grades
      */
-    private function computeSubjectAverage(Student $student, Subject $subject): ?float
+    private function computeSubjectAverage(SupportCollection $grades): ?float
     {
-        $grades = Grade::query()
-            ->where('student_id', $student->id)
-            ->whereHas('assessment', fn (Builder $q) => $q
-                ->whereHas('schedule', fn (Builder $s) => $s->where('subject_id', $subject->id)))
-            ->with('assessment.schedule')
-            ->get();
-
-        if ($grades->isEmpty()) {
-            return null;
-        }
-
-        $totalScore = 0;
-        $totalMax = 0;
+        $totalScore = 0.0;
+        $totalMax = 0.0;
 
         foreach ($grades as $grade) {
-            if ($grade->score !== null && $grade->assessment?->max_score) {
+            $maxScore = (float) ($grade->assessment?->max_score ?? 0);
+
+            if ($grade->score !== null && $maxScore > 0) {
                 $totalScore += (float) $grade->score;
-                $totalMax += (float) $grade->assessment->max_score;
+                $totalMax += $maxScore;
             }
         }
 
-        if ($totalMax === 0) {
+        if ($totalMax === 0.0) {
             return null;
         }
 
@@ -151,6 +213,8 @@ class ClassCouncilService
 
     /**
      * Compute attendance tallies for a student.
+     *
+     * @return array{present: int, absent: int, late: int, excused: int}
      */
     private function computeAttendanceCounts(Student $student): array
     {
@@ -162,15 +226,17 @@ class ClassCouncilService
             ->toArray();
 
         return [
-            'present' => $counts[AttendanceStatus::Present->value] ?? 0,
-            'absent' => $counts[AttendanceStatus::Absent->value] ?? 0,
-            'late' => $counts[AttendanceStatus::Late->value] ?? 0,
-            'excused' => $counts[AttendanceStatus::Excused->value] ?? 0,
+            'present' => (int) ($counts[AttendanceStatus::Present->value] ?? 0),
+            'absent' => (int) ($counts[AttendanceStatus::Absent->value] ?? 0),
+            'late' => (int) ($counts[AttendanceStatus::Late->value] ?? 0),
+            'excused' => (int) ($counts[AttendanceStatus::Excused->value] ?? 0),
         ];
     }
 
     /**
      * Compute behavior observation counts (positive vs negative/disciplinary).
+     *
+     * @return array{positive: int, negative: int}
      */
     private function computeBehaviorCounts(Student $student): array
     {
@@ -186,10 +252,10 @@ class ClassCouncilService
         $positive = 0;
         $negative = 0;
 
-        foreach ($obs as $cat => $count) {
-            if (in_array($cat, $positiveCategories, true)) {
+        foreach ($obs as $category => $count) {
+            if (in_array($category, $positiveCategories, true)) {
                 $positive += (int) $count;
-            } elseif (in_array($cat, $negativeCategories, true)) {
+            } elseif (in_array($category, $negativeCategories, true)) {
                 $negative += (int) $count;
             }
         }
@@ -203,55 +269,90 @@ class ClassCouncilService
     /**
      * Compute the automatic pedagogical recommendation based on general average
      * and disciplinary alerts.
+     *
+     * @return array{key: string, label: string, color: string}
      */
-    private function computeRecommendation(?float $generalAverage, int $negativeBehaviorCount): string
+    private function computeRecommendation(?float $generalAverage, int $negativeBehaviorCount): array
     {
         if ($generalAverage === null) {
-            return __('tbd');
+            return [
+                'key' => 'pending',
+                'label' => __('class_council.recommendation.pending'),
+                'color' => 'gray',
+            ];
         }
 
         if ($generalAverage >= 16.0 && $negativeBehaviorCount === 0) {
-            return __('class_council.recommendation.excellence');
+            return [
+                'key' => 'excellence',
+                'label' => __('class_council.recommendation.excellence'),
+                'color' => 'success',
+            ];
         }
 
         if ($generalAverage >= 14.0) {
-            return __('class_council.recommendation.encouragement');
+            return [
+                'key' => 'encouragement',
+                'label' => __('class_council.recommendation.encouragement'),
+                'color' => 'info',
+            ];
         }
 
         if ($generalAverage >= 12.0) {
-            return __('class_council.recommendation.honor_roll');
+            return [
+                'key' => 'honor_roll',
+                'label' => __('class_council.recommendation.honor_roll'),
+                'color' => 'primary',
+            ];
         }
 
         if ($generalAverage >= 10.0) {
-            return __('class_council.recommendation.acceptable');
+            return [
+                'key' => 'acceptable',
+                'label' => __('class_council.recommendation.acceptable'),
+                'color' => 'gray',
+            ];
         }
 
-        return __('class_council.recommendation.warning');
+        return [
+            'key' => 'warning',
+            'label' => __('class_council.recommendation.warning'),
+            'color' => 'danger',
+        ];
     }
 
     /**
      * Compute classroom-level KPIs.
+     *
+     * @param  SupportCollection<int, array<string, mixed>>  $studentDeliberations
+     * @return array<string, int|float|null>
      */
-    private function computeClassroomKpis(\Illuminate\Support\Collection $studentDeliberations): array
+    private function computeClassroomKpis(SupportCollection $studentDeliberations): array
     {
-        $averages = $studentDeliberations
-            ->pluck('generalAverage')
-            ->filter()
+        $totalStudents = $studentDeliberations->count();
+
+        $graded = $studentDeliberations
+            ->filter(fn (array $student): bool => $student['generalAverage'] !== null)
             ->values();
 
-        $count = $averages->count();
+        $averages = $graded->pluck('generalAverage');
+        $gradedCount = $graded->count();
         $passed = $studentDeliberations->where('passed', true)->count();
-        $honorRoll = $studentDeliberations->filter(fn ($s) => $s['generalAverage'] !== null && $s['generalAverage'] >= 14.0)->count();
+        $honorRoll = $studentDeliberations
+            ->filter(fn (array $student): bool => $student['generalAverage'] !== null && $student['generalAverage'] >= 14.0)
+            ->count();
 
-        $totalAbsences = $studentDeliberations->sum(fn ($s) => $s['attendanceCounts']['absent']);
-        $totalLates = $studentDeliberations->sum(fn ($s) => $s['attendanceCounts']['late']);
+        $totalAbsences = $studentDeliberations->sum(fn (array $student): int => $student['attendanceCounts']['absent']);
+        $totalLates = $studentDeliberations->sum(fn (array $student): int => $student['attendanceCounts']['late']);
 
         return [
-            'total_students' => $count,
-            'class_general_average' => $count > 0 ? round($averages->avg(), 2) : null,
-            'pass_rate' => $count > 0 ? round(($passed / $count) * 100, 1) : 0.0,
-            'highest_average' => $count > 0 ? $averages->max() : null,
-            'lowest_average' => $count > 0 ? $averages->min() : null,
+            'total_students' => $totalStudents,
+            'graded_students' => $gradedCount,
+            'pending_students' => $totalStudents - $gradedCount,
+            'class_general_average' => $gradedCount > 0 ? round((float) $averages->avg(), 2) : null,
+            'pass_rate' => $gradedCount > 0 ? round(($passed / $gradedCount) * 100, 1) : 0.0,
+            'highest_average' => $gradedCount > 0 ? (float) $averages->max() : null,
+            'lowest_average' => $gradedCount > 0 ? (float) $averages->min() : null,
             'total_absences' => $totalAbsences,
             'total_lates' => $totalLates,
             'honor_roll_count' => $honorRoll,
@@ -260,33 +361,30 @@ class ClassCouncilService
 
     /**
      * Compute honor roll distribution for summary badges.
+     *
+     * @param  SupportCollection<int, array<string, mixed>>  $studentDeliberations
+     * @return array<string, int>
      */
-    private function computeHonorDistribution(\Illuminate\Support\Collection $studentDeliberations): array
+    private function computeHonorDistribution(SupportCollection $studentDeliberations): array
     {
-        $dist = [
+        $distribution = [
             'excellence' => 0,
             'encouragement' => 0,
             'honor_roll' => 0,
             'acceptable' => 0,
             'warning' => 0,
+            'pending' => 0,
         ];
 
-        foreach ($studentDeliberations as $s) {
-            $rec = $s['recommendation'];
-            if (str_contains($rec, 'امتياز') || str_contains($rec, 'Excellence') || str_contains($rec, 'Félicitations')) {
-                $dist['excellence']++;
-            } elseif (str_contains($rec, 'تشجيع') || str_contains($rec, 'Encouragement')) {
-                $dist['encouragement']++;
-            } elseif (str_contains($rec, 'شرف') || str_contains($rec, 'Honneur')) {
-                $dist['honor_roll']++;
-            } elseif (str_contains($rec, 'مقبول') || str_contains($rec, 'Acceptable')) {
-                $dist['acceptable']++;
-            } else {
-                $dist['warning']++;
+        foreach ($studentDeliberations as $student) {
+            $key = $student['recommendation_key'] ?? 'pending';
+
+            if (array_key_exists($key, $distribution)) {
+                $distribution[$key]++;
             }
         }
 
-        return $dist;
+        return $distribution;
     }
 
     /**
@@ -294,7 +392,7 @@ class ClassCouncilService
      */
     public function renderHtml(Classroom $classroom, ?int $groupId = null): string
     {
-        return view('print.class-council', $this->viewData($classroom, $groupId, autoPrint: true))->render();
+        return view('print.class-council', $this->viewData($classroom, $groupId))->render();
     }
 
     /**
