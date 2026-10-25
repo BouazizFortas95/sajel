@@ -589,6 +589,8 @@
     "تم التأشير الإداري": "Administrative review recorded",
     "تم تأشير :count سجلات بنجاح.": "Successfully stamped :count logs.",
     "تم تحديد :count سجل.": ":count selected logs.",
+    "تحديد كل السجلات": "Select all records",
+    "تحديد جميع السجلات المطابقة للبحث والفلاتر، بما في ذلك السجلات في الصفحات الأخرى.": "Select every record matching the current search and filters, including records on other pages.",
     "ملاحظات الإدارة": "Administrative notes",
     "مركز الإشراف المدرسي": "School Supervision Hub",
     "المراقبة العامة والتفتيش": "General Supervision & Inspection",

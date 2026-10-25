@@ -124,6 +124,53 @@ class DigitalVisaTest extends TestCase
         $this->assertFalse($table->shouldDeselectAllRecordsWhenFiltered());
     }
 
+    public function test_select_all_header_action_targets_every_filtered_record(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $completedLogs = DailyLog::factory()->completed()->count(3)->create();
+        DailyLog::factory()->count(2)->create();
+
+        $this->actingAs($admin);
+
+        $component = Livewire::test(ListDailyLogs::class)
+            ->assertSee(__('تحديد كل السجلات'));
+
+        $selectAll = collect($component->instance()->getTable()->getHeaderActions())
+            ->first(fn ($action): bool => $action->getName() === 'selectAllFiltered');
+
+        $this->assertNotNull($selectAll);
+        $this->assertSame('selectAllRecords', $selectAll->getAlpineClickHandler());
+
+        $component->filterTable('status', DailyLogStatus::Completed->value);
+
+        $this->assertEqualsCanonicalizing(
+            $completedLogs->pluck('id')->map(fn (int $id): string => (string) $id)->all(),
+            $component->instance()->getAllSelectableTableRecordKeys(),
+        );
+    }
+
+    public function test_select_all_filtered_records_reach_the_bulk_visa_action(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        DailyLog::factory()->completed()->count(12)->create();
+
+        $component = Livewire::actingAs($admin)->test(ListDailyLogs::class);
+        $keys = $component->instance()->getAllSelectableTableRecordKeys();
+
+        $this->assertCount(12, $keys);
+
+        $component
+            ->set('selectedTableRecords', $keys)
+            ->call('mountTableBulkAction', 'digitalVisa')
+            ->assertSet('mountedTableBulkAction', 'digitalVisa')
+            ->set('mountedTableBulkActionData.admin_notes', 'تأشير جميع السجلات.')
+            ->call('callMountedTableBulkAction')
+            ->assertHasNoTableBulkActionErrors();
+
+        $this->assertSame(12, DailyLog::query()->where('reviewed_by_id', $admin->id)->count());
+        $this->assertSame(12, DailyLog::query()->whereNotNull('reviewed_at')->count());
+    }
+
     public function test_group_scoped_logs_show_the_classroom_section_in_the_table(): void
     {
         $admin = User::factory()->create(['role' => Role::Admin->value]);

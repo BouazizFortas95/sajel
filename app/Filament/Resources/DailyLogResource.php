@@ -839,6 +839,18 @@ class DailyLogResource extends Resource
             // ticking rows. Otherwise the checkboxes were cleared before the
             // bulk print/visa action could read them.
             ->deselectAllRecordsWhenFiltered(false)
+            ->headerActions([
+                // Filament's built-in "select all" link only appears after a
+                // row is ticked and can be easy to miss. This exposes the same
+                // action directly in the table toolbar, covering every record
+                // that matches the current search and filters, across pages.
+                Tables\Actions\Action::make('selectAllFiltered')
+                    ->label(__('تحديد كل السجلات'))
+                    ->icon('heroicon-o-check-circle')
+                    ->color('gray')
+                    ->tooltip(__('تحديد جميع السجلات المطابقة للبحث والفلاتر، بما في ذلك السجلات في الصفحات الأخرى.'))
+                    ->alpineClickHandler('selectAllRecords'),
+            ])
             ->columns([
                 Tables\Columns\TextColumn::make('date')
                     ->label(__('التاريخ'))
