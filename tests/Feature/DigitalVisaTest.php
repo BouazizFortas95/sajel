@@ -171,6 +171,66 @@ class DigitalVisaTest extends TestCase
         $this->assertSame(12, DailyLog::query()->whereNotNull('reviewed_at')->count());
     }
 
+    public function test_bulk_visa_stamps_only_completed_logs_in_a_mixed_selection(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $completed = DailyLog::factory()->completed()->count(2)->create();
+        $planned = $this->makeLog(DailyLogStatus::Planned);
+        $cancelled = $this->makeLog(DailyLogStatus::Cancelled);
+
+        $selectedIds = $completed
+            ->pluck('id')
+            ->push($planned->id, $cancelled->id)
+            ->all();
+
+        Livewire::actingAs($admin)
+            ->test(ListDailyLogs::class)
+            ->set('selectedTableRecords', $selectedIds)
+            ->call('mountTableBulkAction', 'digitalVisa')
+            ->set('mountedTableBulkActionData.admin_notes', 'تأشير المنجز فقط.')
+            ->call('callMountedTableBulkAction')
+            ->assertHasNoTableBulkActionErrors()
+            ->assertNotified(__('تم تأشير :count سجلات بنجاح.', ['count' => 2]));
+
+        foreach ($completed as $log) {
+            $this->assertDatabaseHas('daily_logs', [
+                'id' => $log->id,
+                'reviewed_by_id' => $admin->id,
+                'admin_notes' => 'تأشير المنجز فقط.',
+            ]);
+        }
+
+        foreach ([$planned, $cancelled] as $log) {
+            $this->assertDatabaseMissing('daily_logs', [
+                'id' => $log->id,
+                'reviewed_by_id' => $admin->id,
+            ]);
+        }
+    }
+
+    public function test_bulk_visa_reports_a_selection_without_completed_logs(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $planned = $this->makeLog(DailyLogStatus::Planned);
+        $cancelled = $this->makeLog(DailyLogStatus::Cancelled);
+
+        Livewire::actingAs($admin)
+            ->test(ListDailyLogs::class)
+            ->set('selectedTableRecords', [$planned->id, $cancelled->id])
+            ->call('mountTableBulkAction', 'digitalVisa')
+            ->set('mountedTableBulkActionData.admin_notes', 'لا يجب حفظها.')
+            ->call('callMountedTableBulkAction')
+            ->assertHasNoTableBulkActionErrors()
+            ->assertNotified(__('لا توجد سجلات منجزة مطابقة للاختيار.'));
+
+        foreach ([$planned, $cancelled] as $log) {
+            $this->assertDatabaseMissing('daily_logs', [
+                'id' => $log->id,
+                'reviewed_by_id' => $admin->id,
+            ]);
+        }
+    }
+
     public function test_group_scoped_logs_show_the_classroom_section_in_the_table(): void
     {
         $admin = User::factory()->create(['role' => Role::Admin->value]);

@@ -962,20 +962,44 @@ class DailyLogResource extends Resource
                             $reviewer = Auth::user();
                             abort_unless($reviewer instanceof User && $reviewer->isAdmin(), 403);
 
-                            foreach ($records as $record) {
+                            // A "select all" can include planned or cancelled
+                            // logs. Stamp only the completed ones instead of
+                            // failing the whole batch on the first incomplete
+                            // record, and report what was left out.
+                            $completed = $records->filter(
+                                fn (DailyLog $record): bool => $record->isCompleted()
+                            );
+                            $skipped = $records->count() - $completed->count();
+
+                            if ($completed->isEmpty()) {
+                                Notification::make()
+                                    ->danger()
+                                    ->title(__('لا توجد سجلات منجزة مطابقة للاختيار.'))
+                                    ->body(__('تم تجاهل :count سجل غير منجز.', ['count' => $skipped]))
+                                    ->send();
+
+                                return;
+                            }
+
+                            foreach ($completed as $record) {
                                 static::authorizeAdministrativeVisa($reviewer, $record);
                             }
 
-                            DB::transaction(function () use ($records, $reviewer, $data): void {
-                                foreach ($records as $record) {
+                            DB::transaction(function () use ($completed, $reviewer, $data): void {
+                                foreach ($completed as $record) {
                                     $record->markAsReviewed($reviewer, $data['admin_notes'] ?? null);
                                 }
                             });
 
-                            Notification::make()
+                            $notification = Notification::make()
                                 ->success()
-                                ->title(__('تم تأشير :count سجلات بنجاح.', ['count' => $records->count()]))
-                                ->send();
+                                ->title(__('تم تأشير :count سجلات بنجاح.', ['count' => $completed->count()]));
+
+                            if ($skipped > 0) {
+                                $notification->body(__('تم تجاهل :count سجل غير منجز.', ['count' => $skipped]));
+                            }
+
+                            $notification->send();
                         })
                         ->deselectRecordsAfterCompletion(),
 
