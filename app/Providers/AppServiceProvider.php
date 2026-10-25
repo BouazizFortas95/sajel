@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\SchoolSetting;
 use App\Policies\ExportPolicy;
 use Filament\Actions\Exports\Models\Export;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,5 +28,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Export::class, ExportPolicy::class);
 
         URL::defaults(['locale' => config('app.locale')]);
+
+        View::composer(
+            ['print.*', 'filament.pages.official-reports'],
+            fn ($view) => $view->with('schoolSetting', SchoolSetting::current()),
+        );
     }
 }

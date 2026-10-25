@@ -1,5 +1,6 @@
 <x-filament-panels::page>
     @php
+        $schoolSetting = $schoolSetting ?? \App\Models\SchoolSetting::current();
         $attendancePrintUrl = $this->attendancePrintUrl();
         $attendancePdfUrl = $this->attendancePdfUrl();
         $transcriptPrintUrl = $this->transcriptPrintUrl();
@@ -9,6 +10,24 @@
 
         $optionClasses = 'bg-white text-gray-950 dark:bg-gray-800 dark:text-white';
     @endphp
+
+    <section class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <p class="text-sm font-black">{{ $schoolSetting->school_name }}</p>
+                <p class="text-xs font-semibold">{{ $schoolSetting->directorate_name }}</p>
+            </div>
+            <div class="text-xs font-semibold">
+                <p>{{ __('السنة الدراسية') }}: {{ $schoolSetting->academic_year }}</p>
+                @if ($schoolSetting->municipality_name)
+                    <p>{{ __('البلدية') }}: {{ $schoolSetting->municipality_name }}</p>
+                @endif
+                @if ($schoolSetting->school_code)
+                    <p>{{ __('الرقم الميكانيكي') }}: <span dir="ltr">{{ $schoolSetting->school_code }}</span></p>
+                @endif
+            </div>
+        </div>
+    </section>
 
     <div class="mb-4">
         <x-filament::tabs :label="__('التقارير الرسمية')">

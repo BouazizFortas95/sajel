@@ -1,3 +1,6 @@
+@php
+    $schoolSetting = $schoolSetting ?? \App\Models\SchoolSetting::current();
+@endphp
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
@@ -26,7 +29,8 @@ td { border-bottom: 1px solid #e2e8f0; padding: 4px 6px; }
   <div style="display:flex; justify-content:space-between; align-items:center;">
     <div>
       <h1>{{ __('ملف إنجاز الأستاذ') }}</h1>
-      <div class="sub">{{ __('وزارة التربية الوطنية') }} — {{ __('التقرير المهني') }}</div>
+      <div class="sub">{{ $schoolSetting->directorate_name }} — {{ $schoolSetting->school_name }}</div>
+      <div class="sub">{{ __('وزارة التربية الوطنية') }} — {{ __('السنة الدراسية') }}: {{ $schoolSetting->academic_year }} — {{ __('التقرير المهني') }}</div>
     </div>
     <div style="text-align:right; font-size:9pt; color:#475569;">
       <strong>{{ $teacher->name }}</strong><br>
@@ -85,8 +89,11 @@ td { border-bottom: 1px solid #e2e8f0; padding: 4px 6px; }
 <div class="signature-box" style="margin-top:14px; display:flex; gap:40px; flex-wrap:wrap;">
   <div><strong>{{ __('إمضاء الأستاذ(ة)') }}</strong><br>_________________________</div>
   <div><strong>{{ __('إمضاء المفتش / المشرف') }}</strong><br>_________________________</div>
+  @if ($schoolSetting->principal_name)
+    <div><strong>{{ __('مدير المتوسطة') }}</strong><br>{{ $schoolSetting->principal_name }}</div>
+  @endif
 </div>
 
-<div class="footer">{{ __('ملف إنجاز الأستاذ — الوثيقة الرسمية') }} | {{ now(config('app.timezone'))->translatedFormat('Y') }}</div>
+<div class="footer">{{ __('ملف إنجاز الأستاذ — الوثيقة الرسمية') }} | {{ $schoolSetting->school_name }} | {{ $schoolSetting->academic_year }} | {{ now(config('app.timezone'))->translatedFormat('Y') }}</div>
 </body>
 </html>

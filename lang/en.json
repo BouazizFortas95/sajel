@@ -696,5 +696,21 @@
     "التوصيات": "Recommendations",
     "عطلة رسمية": "Official Holiday",
     "رزنامة العطل": "School Holiday Calendar",
-    "لا تُحتسب حصص هذا اليوم ضمن الحصص المتأخرة أو غير الموثقة.": "Sessions on this day are excluded from overdue or unlogged compliance checks."
+    "لا تُحتسب حصص هذا اليوم ضمن الحصص المتأخرة أو غير الموثقة.": "Sessions on this day are excluded from overdue or unlogged compliance checks.",
+    "إعدادات المؤسسة التربوية": "School Identity Settings",
+    "هوية المؤسسة التربوية": "School Identity",
+    "البيانات الرسمية للمؤسسة": "Official school information",
+    "تظهر هذه البيانات تلقائياً في كل الوثائق المطبوعة وملفات PDF الرسمية.": "These details appear automatically on every printed document and official PDF.",
+    "اسم المؤسسة (المتوسطة)": "School name (middle school)",
+    "مديرية التربية": "Directorate of Education",
+    "البلدية / الدائرة": "Municipality / District",
+    "اسم مدير المتوسطة": "Headteacher name",
+    "اسم مستشار التربية": "Education counselor name",
+    "الرقم الميكانيكي للمؤسسة": "School mechanical code",
+    "حفظ الإعدادات": "Save settings",
+    "تُحدَّث ذاكرة التخزين المؤقت تلقائياً بعد الحفظ.": "The cache refreshes automatically after saving.",
+    "تم حفظ إعدادات المؤسسة بنجاح": "School settings saved successfully",
+    "البلدية": "Municipality",
+    "الرقم الميكانيكي": "Mechanical code",
+    "مدير المتوسطة": "Headteacher"
 }

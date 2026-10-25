@@ -693,5 +693,21 @@
     "التوصيات": "Recommandations",
     "عطلة رسمية": "Jour férié officiel",
     "رزنامة العطل": "Calendrier des vacances scolaires",
-    "لا تُحتسب حصص هذا اليوم ضمن الحصص المتأخرة أو غير الموثقة.": "Les séances de ce jour sont exclues du contrôle des séances en retard ou non documentées."
+    "لا تُحتسب حصص هذا اليوم ضمن الحصص المتأخرة أو غير الموثقة.": "Les séances de ce jour sont exclues du contrôle des séances en retard ou non documentées.",
+    "إعدادات المؤسسة التربوية": "Paramètres de l’établissement",
+    "هوية المؤسسة التربوية": "Identité de l’établissement",
+    "البيانات الرسمية للمؤسسة": "Informations officielles de l’établissement",
+    "تظهر هذه البيانات تلقائياً في كل الوثائق المطبوعة وملفات PDF الرسمية.": "Ces informations apparaissent automatiquement sur chaque document imprimé et PDF officiel.",
+    "اسم المؤسسة (المتوسطة)": "Nom de l’établissement (collège)",
+    "مديرية التربية": "Direction de l’éducation",
+    "البلدية / الدائرة": "Commune / Circonscription",
+    "اسم مدير المتوسطة": "Nom du directeur",
+    "اسم مستشار التربية": "Nom du conseiller d’éducation",
+    "الرقم الميكانيكي للمؤسسة": "Code mécanique de l’établissement",
+    "حفظ الإعدادات": "Enregistrer les paramètres",
+    "تُحدَّث ذاكرة التخزين المؤقت تلقائياً بعد الحفظ.": "Le cache est actualisé automatiquement après l’enregistrement.",
+    "تم حفظ إعدادات المؤسسة بنجاح": "Paramètres de l’établissement enregistrés avec succès",
+    "البلدية": "Commune",
+    "الرقم الميكانيكي": "Code mécanique",
+    "مدير المتوسطة": "Directeur du collège"
 }

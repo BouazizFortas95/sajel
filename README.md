@@ -12,7 +12,7 @@ Key goals:
 - Prepare lessons per weekly schedule slot (`Schedule`).
 - Confirm logs so they become the official register entry (`DailyLogStatus::Completed`).
 - Record attendance (`Attendance`) and assessment scores (`Grade`) against the same roster.
-- Print reusable A4 RTL memos and official reports (Weekly Schedule, Consolidated Attendance, Grade Transcripts).
+- Print reusable A4 RTL memos and official reports (Weekly Schedule, Consolidated Attendance, Grade Transcripts), all carrying the configured school identity.
 - Track annual curriculum progress (`CurriculumDomain → Sequence → Knowledge Resource`) automatically when lessons are completed.
 - Manage lab rooms, U-shape seating plans, and quick attendance directly from the teacher's panel.
 
@@ -69,7 +69,7 @@ Key goals:
 | Localization | `mcamara/laravel-localization` | `ar`, `en`, `fr` |
 | Timezone | Africa/Algiers | `APP_TIMEZONE` |
 | Font | Cairo (Google Fonts) | RTL body + headings |
-| Testing | PHPUnit | 312 passed, 0 failures (14,800 assertions in the latest run) |
+| Testing | PHPUnit | 316 passed, 0 failures (14,671 assertions in the latest run) |
 
 ---
 
@@ -92,13 +92,13 @@ Student → BehaviorObservation, PedagogicalRemediation
 composer install
 npm install && npm run build
 
-# Database setup (40 migrations + seeders)
+# Database setup (43 migrations + seeders)
 php artisan migrate:fresh --seed
 
 # Demo data (600 students, 30 teachers, ~1,200 daily logs, full curriculum)
 php artisan db:seed --class=MiddleSchoolDatabaseSeeder
 
-# Run tests (312 feature + unit, all green)
+# Run tests (316 feature + unit, all green)
 php artisan test
 vendor/bin/pint
 
@@ -114,10 +114,10 @@ php artisan optimize:clear
 
 ## 6. Project Health (Phases 2–6 Complete)
 
-- **Migrations:** 40 ran
-- **Tests:** 312 passed, 0 failures (14,800 assertions in the latest run)
+- **Migrations:** 43 ran
+- **Tests:** 316 passed, 0 failures (14,671 assertions in the latest run)
 - **Filament Resources:** 20 (includes `SchoolHolidayResource` and `PedagogicalMeetingResource`)
-- **Custom Pages:** Dashboard, CurriculumProgress, OfficialReports, MySchedule, QuickAttendance, LabSeatingPlanPage, DataShowMode, SchoolSupervisionHub, ClassCouncilHub
+- **Custom Pages:** Dashboard, CurriculumProgress, OfficialReports, MySchedule, QuickAttendance, LabSeatingPlanPage, DataShowMode, SchoolSupervisionHub, ClassCouncilHub, ManageSchoolSettings
 - **Branch:** `main` — Phase 2/3/4 all complete (100% across the board)
 - **Build:** `npm run build` passes; `vendor/bin/pint` passes
 
@@ -157,4 +157,18 @@ protected device: the roster and unsynced attendance contain student information
   all of the student's records. Official Reports provides classroom/group/student filters, and the
   Student resource provides row actions.
 
-*Last updated: 2026-10-25 — Phases 2–6 all complete (100%). Suite: 312 passing, 0 failures, 14,800 assertions. Health check: all PASS (AI provider gemini configured).*
+## 9. School Identity Settings (هوية المؤسسة التربوية)
+
+- **One official identity:** The admin-only `ManageSchoolSettings` page (`إعدادات المؤسسة التربوية`,
+  under `التخطيط والمناهج`) edits the single `school_settings` row: school name, directorate,
+  municipality/district, academic year, principal, counselor, and mechanical school code.
+- **Automatic propagation:** `SchoolSetting::current()` caches the row forever and returns safe
+  Algerian middle-school defaults when it is unseeded; saving or deleting busts the cache. A global
+  view composer injects it into every `print.*` view and the Official Reports banner, so register
+  sheets, student report cards, class councils, teacher portfolios, pedagogical memos, and their
+  Browsershot PDFs always show the configured directorate, school, academic year, and signatures.
+- **Authorization & tests:** `ManageSchoolSettings::canAccess()` restricts the page to admins
+  (teachers receive 403). `tests/Feature/SchoolSettingsTest.php` covers the settings update, cache
+  refresh, and dynamic identity output on printed registers, class councils, and Official Reports.
+
+*Last updated: 2026-10-25 — Phases 2–6 all complete (100%) plus school identity settings. Suite: 316 passing, 0 failures, 14,671 assertions. Health check: all PASS (25 tables; AI provider gemini configured).*

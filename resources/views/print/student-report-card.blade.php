@@ -1,3 +1,6 @@
+@php
+    $schoolSetting = $schoolSetting ?? \App\Models\SchoolSetting::current();
+@endphp
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
@@ -21,8 +24,12 @@
         <header class="rounded-2xl border-2 border-amber-500 bg-amber-50 p-5 text-center">
             <p class="text-xs font-bold uppercase tracking-wide text-amber-800">{{ __('الجمهورية الجزائرية الديمقراطية الشعبية') }}</p>
             <p class="mt-1 text-xs font-semibold text-slate-700">{{ __('وزارة التربية الوطنية') }}</p>
+            <p class="mt-1 text-sm font-extrabold text-slate-900">{{ $schoolSetting->school_name }}</p>
+            <p class="text-xs font-semibold text-slate-600">
+                {{ $schoolSetting->directorate_name }}@if ($schoolSetting->municipality_name) — {{ $schoolSetting->municipality_name }}@endif
+            </p>
             <h1 class="mt-2 text-2xl font-black text-slate-950">{{ __('بطاقة المتابعة البيداغوجية والسلوكية للتلميذ') }}</h1>
-            <p class="mt-1 text-sm font-semibold text-slate-700">{{ __('للاجتماع مع الولي') }}</p>
+            <p class="mt-1 text-sm font-semibold text-slate-700">{{ __('للاجتماع مع الولي') }} — {{ __('السنة الدراسية') }}: {{ $schoolSetting->academic_year }}</p>
         </header>
 
         <section class="report-section rounded-xl border border-slate-300 p-4">
@@ -212,6 +219,9 @@
             </div>
             <div>
                 <p class="font-bold">{{ __('تأشيرة الإدارة') }}</p>
+                @if ($schoolSetting->principal_name)
+                    <p class="text-xs text-slate-600">{{ $schoolSetting->principal_name }}</p>
+                @endif
                 <div class="mt-12 border-t border-dotted border-slate-500"></div>
             </div>
             <div>

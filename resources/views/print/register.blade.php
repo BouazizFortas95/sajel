@@ -1,3 +1,6 @@
+@php
+    $schoolSetting = $schoolSetting ?? \App\Models\SchoolSetting::current();
+@endphp
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
@@ -350,19 +353,30 @@
 
                                 <div class="mt-2 space-y-1.5">
                                     <div>
-                                        <p class="text-[8px] font-semibold text-slate-400">الطور التعليمي</p>
-                                        <p class="text-[10px] font-extrabold leading-4 text-slate-800">{{ $phase?->name ?? 'التعليم المتوسط' }}</p>
-                                    </div>
-
-                                    <div>
-                                        <p class="text-[8px] font-semibold text-slate-400">السنة الدراسية</p>
-                                        <p class="text-[10px] font-extrabold leading-4 text-slate-800">{{ $register['academicYear'] }}</p>
+                                        <p class="text-[8px] font-semibold text-slate-400">مديرية التربية</p>
+                                        <p class="text-[9px] font-bold leading-4 text-slate-700">{{ $schoolSetting->directorate_name }}</p>
                                     </div>
 
                                     <div>
                                         <p class="text-[8px] font-semibold text-slate-400">المؤسسة التربوية / متوسطة</p>
-                                        <p class="text-[9px] font-bold leading-4 text-slate-700">مؤسسة التربية والتعليم</p>
+                                        <p class="text-[9px] font-bold leading-4 text-slate-700">{{ $schoolSetting->school_name }}</p>
+                                        @if ($schoolSetting->municipality_name)
+                                            <p class="text-[8px] font-semibold text-slate-500">{{ __('البلدية') }}: {{ $schoolSetting->municipality_name }}</p>
+                                        @endif
+                                        @if ($schoolSetting->school_code)
+                                            <p class="text-[8px] font-semibold text-slate-500">{{ __('الرقم الميكانيكي') }}: <span dir="ltr">{{ $schoolSetting->school_code }}</span></p>
+                                        @endif
                                         <div class="mt-1 border-b border-dotted border-amber-300"></div>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-[8px] font-semibold text-slate-400">السنة الدراسية</p>
+                                        <p class="text-[10px] font-extrabold leading-4 text-slate-800">{{ $register['academicYear'] ?? $schoolSetting->academic_year }}</p>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-[8px] font-semibold text-slate-400">الطور التعليمي</p>
+                                        <p class="text-[10px] font-extrabold leading-4 text-slate-800">{{ $phase?->name ?? 'التعليم المتوسط' }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -670,6 +684,9 @@
 
                             <div class="rounded-xl border border-dashed border-amber-300 bg-white/70 p-3 text-center shadow-sm">
                                 <p class="text-[10px] font-extrabold text-amber-900">تأشيرة السيد(ة) المدير(ة)</p>
+                                @if ($schoolSetting->principal_name)
+                                    <p class="mt-0.5 text-[9px] font-bold text-slate-600">{{ $schoolSetting->principal_name }}</p>
+                                @endif
                                 <div class="mt-8 border-t border-dotted border-slate-400"></div>
                                 <p class="mt-1 text-[8px] font-semibold text-slate-400">الختم والإمضاء</p>
                             </div>

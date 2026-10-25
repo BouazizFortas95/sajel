@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-10-25
-> Verified by `php artisan test` (**312 passed**, 14,800 assertions, **0 failures**),
+> Verified by `php artisan test` (**316 passed**, 14,671 assertions, **0 failures**),
 > `npm run build`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -28,7 +28,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | PDF        | `spatie/browsershot` `^5.4`, Puppeteer  | Headless Chrome; Arabic shaping + Tailwind-preserving PDF |
 | i18n       | `mcamara/laravel-localization` `^2.4`    | `ar`, `en`, `fr` locales                |
 | Timezone   | `Africa/Algiers`                         | `APP_TIMEZONE`, used for weekly dates   |
-| Testing    | PHPUnit `^11.5`                          | **312 tests, all green (14,800 assertions in the latest run)** |
+| Testing    | PHPUnit `^11.5`                          | **316 tests, all green (14,671 assertions in the latest run)** |
 | Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
 
 ## 3. Domain Model
@@ -197,12 +197,12 @@ User (teacher: primary/secondary subject, weekly hours limit)
 
 ## 4. Database
 
-All 40 migrations have run (SQLite):
+All 43 migrations have run (SQLite):
 
 - Framework tables: `users` (with sessions), `cache`, `jobs`, `notifications`.
 - Domain tables: `education_phases`, `levels`, `classrooms`, `groups`, `students`, `subjects`,
   `schedules`, `daily_logs`, `attendances`, `assessments`, `grades`, `pedagogical_memos`,
-  `curriculum_domains`, `curriculum_sequences`, `curriculum_resources`.
+  `curriculum_domains`, `curriculum_sequences`, `curriculum_resources`, `school_settings`.
 - Filament action tables: `imports`, `exports`, `failed_import_rows` (published from
   `filament-actions` for native CSV import/export).
 - `2026_10_20_000001_add_role_to_users_table` adds the `role` column (defaults to `teacher`).
@@ -462,7 +462,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 7. Testing
 
-`php artisan test` — **312 passing, 14,800 assertions in the latest full run, 0 failures**:
+`php artisan test` — **316 passing, 14,671 assertions in the latest full run, 0 failures**:
 
 | Suite                                  | Tests | Covers                                                        |
 |----------------------------------------|-------|---------------------------------------------------------------|
@@ -498,14 +498,15 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | `Tests\Feature\DigitalVisaTest` | 5 | Admin single/bulk stamps, completed-only enforcement, teacher protection, and HTML/PDF register visa output |
 | `Tests\Feature\SchoolSupervisionHubTest` | 6 | Locale-aware admin-only access, weekday/time-based compliance, classroom-scoped attendance and distinct-date repeat absences, behavior follow-up resolution with notes |
 | `Tests\Feature\StudentReportCardTest` | 4 | Teacher roster authorization and subject/record scoping, admin full reports, localized print/PDF routes, and Official Reports student picker |
+| `Tests\Feature\SchoolSettingsTest` | 4 | Admin-only school identity settings view/update (teacher 403), cache refresh, and dynamic school/directorate/headteacher identity on register sheets, class councils, and Official Reports |
 
 ## 8. Project Health Snapshot
 
 | Aspect            | Status                                             |
 |-------------------|----------------------------------------------------|
-| Migrations        | ✅ All 40 migrations ran |
-| Test suite        | ✅ 312/312 passing, 0 failures (14,800 assertions in the latest full run) |
-| Admin panel       | ✅ 18 Filament resources + custom dashboard, schedule, curriculum-progress, data-show pages + ar/en/fr |
+| Migrations        | ✅ All 43 migrations ran |
+| Test suite        | ✅ 316/316 passing, 0 failures (14,671 assertions in the latest full run) |
+| Admin panel       | ✅ 20 Filament resources + custom dashboard, schedule, curriculum-progress, data-show pages + ar/en/fr |
 | Seed data         | ✅ Destructive middle-school dataset + optional SajelSeeder |
 | Version control   | Git repo on `main`; Phase 2/3/4 complete (`f4e776a`, `f8d...`) |
 | README            | ✅ Project-specific bilingual README (English structure + Arabic domain) |
@@ -823,7 +824,27 @@ Phase 6: Parent Engagement, Academic Calendar & Production Readiness.
 - Milestone 1: Signed Parent Portal (`ParentPortalController` / `ParentPortalService`, `parent.student-portal` signed route 90 days, `parent/student-portal.blade.php`, `StudentResource` action, `StudentReportCardService` integration + QR badge, translations, `ParentPortalTest` — 3 assertions pass).
 - Milestone 2: School Holiday Calendar (`SchoolHoliday` model/migration/resource/policy/seeder `SchoolHolidaySeeder`, `scopeCoversDate`/`isHoliday`/`holidayDatesBetween`, `UnloggedSessionsWidget` + `SchoolSupervisionService` holiday-aware, `SchoolHolidayComplianceTest` — pass).
 - Milestone 3: Pedagogical Meeting Resource (`PedagogicalMeetingResource`, `TeacherPortfolioService`, controller/routes/translations/header actions + `MySchedule`) — complete.
-- Milestone 4: Production Readiness (`SajelHealthCheckCommand` `sajel:health-check` + `--json`, DB 24 tables, timezone `Africa/Algiers`, localization `ar/en/fr`, PWA `dir=rtl`, AI provider read from `config/ai.php` with PASS/WARN key detection; `SajelHealthCheckCommandTest`; `pint`/`npm`/`migrate` clean).
+- Milestone 4: Production Readiness (`SajelHealthCheckCommand` `sajel:health-check` + `--json`, DB 25 tables, timezone `Africa/Algiers`, localization `ar/en/fr`, PWA `dir=rtl`, AI provider read from `config/ai.php` with PASS/WARN key detection; `SajelHealthCheckCommandTest`; `pint`/`npm`/`migrate` clean).
 
-Status 2026-10-25: `312 passed`, **0 failures** (`14,800` assertions); `pint` passed; `npm run build` passed; health command reports PASS on database, schema (24 tables), timezone, localization, PWA, and AI (`Provider: gemini (gemini-3.8-flash) | Key: configured`). All Phase 2–6 milestones complete (100%).
+Status 2026-10-25: `316 passed`, **0 failures** (`14,671` assertions); `pint` passed; `npm run build` passed; health command reports PASS on database, schema (25 tables), timezone, localization, PWA, and AI (`Provider: gemini (gemini-3.8-flash) | Key: configured`). All Phase 2–6 milestones complete (100%).
+
+## 16. Phase 7 — School Identity (هوية المؤسسة التربوية)
+
+The school principal can now configure the institution's official identity once from the admin panel,
+and every printed A4 sheet and Browsershot PDF picks it up automatically.
+
+- **Settings storage:** `school_settings` single-row table (`SchoolSetting`) with `school_name`,
+  `directorate_name`, `municipality_name`, `academic_year`, `principal_name`, `counselor_name`, and
+  `school_code`. `SchoolSetting::current()` caches the active row forever and safely returns the
+  Algerian middle-school defaults when the row is missing; `saved`/`deleted` events bust the cache.
+- **Admin page:** `ManageSchoolSettings` (`إعدادات المؤسسة التربوية`) under `التخطيط والمناهج`,
+  restricted to admins through `canAccess()`. Saving refreshes the cache and shows a success
+  notification. Teachers receive `403 Forbidden`.
+- **Dynamic print headers:** a global view composer shares `$schoolSetting` with `print.*` and
+  `filament.pages.official-reports`, so the register, student report card, class council, teacher
+  portfolio, pedagogical memo, and Official Reports banner render the real directorate, school name,
+  academic year, municipality/code, and principal/counselor names, with safe fallbacks.
+- **Verification:** `tests/Feature/SchoolSettingsTest.php` (4 tests, 19 assertions) covers admin
+  view/update, teacher 403, and identity rendering on register sheets, class councils, and Official
+  Reports. Health check now requires 25 tables including `school_settings`.
 

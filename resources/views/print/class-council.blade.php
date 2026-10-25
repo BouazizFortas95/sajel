@@ -1,3 +1,6 @@
+@php
+    $schoolSetting = $schoolSetting ?? \App\Models\SchoolSetting::current();
+@endphp
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
@@ -36,7 +39,8 @@ td { border-bottom: 1px solid #e2e8f0; padding: 3px 6px; }
   <div style="display:flex; justify-content:space-between; align-items:center;">
     <div>
       <h1>{{ __('مجلس القسم') }}</h1>
-      <div class="sub">{{ __('وزارة التربية الوطنية') }} — {{ __('التقرير البيداغوجي') }}</div>
+      <div class="sub">{{ $schoolSetting->directorate_name }} — {{ $schoolSetting->school_name }}</div>
+      <div class="sub">{{ __('وزارة التربية الوطنية') }} — {{ __('السنة الدراسية') }}: {{ $schoolSetting->academic_year }} — {{ __('التقرير البيداغوجي') }}</div>
     </div>
     <div style="text-align:right; font-size:9pt; color:#475569;">
       <strong>{{ $classroom->level?->name ?? '' }}</strong> {{ $classroom->name }}<br>
@@ -115,13 +119,13 @@ td { border-bottom: 1px solid #e2e8f0; padding: 3px 6px; }
 <div style="margin-top:14px; padding-top:6px; border-top:2px solid #1a3a5c;">
   <div style="display:flex; gap:30px; flex-wrap:wrap;">
     <div class="signature-box"><strong>{{ __('إمضاء أساتذة القسم') }}</strong><br>{{ now()->translatedFormat('d M Y') }}</div>
-    <div class="signature-box"><strong>{{ __('تأشيرة مستشار التربية') }}</strong><br>_________________________</div>
-    <div class="signature-box"><strong>{{ __('ختم وإمضاء مدير المتوسطة') }}</strong><br>_________________________</div>
+    <div class="signature-box"><strong>{{ __('تأشيرة مستشار التربية') }}</strong><br>{{ $schoolSetting->counselor_name ?: '_________________________' }}</div>
+    <div class="signature-box"><strong>{{ __('ختم وإمضاء مدير المتوسطة') }}</strong><br>{{ $schoolSetting->principal_name ?: '_________________________' }}</div>
   </div>
 </div>
 
 <div class="footer">
-{{ __('مجلس القسم — الوثيقة الرسمية') }} | {{ $classroom->academic_year }} | {{ __('صادرة عن') }} Sajel
+{{ __('مجلس القسم — الوثيقة الرسمية') }} | {{ $schoolSetting->academic_year ?: $classroom->academic_year }} | {{ $schoolSetting->school_name }} | {{ __('صادرة عن') }} Sajel
 </div>
 </body>
 </html>

@@ -1,5 +1,6 @@
 @php
     $isRtl = app()->getLocale() === 'ar';
+    $schoolSetting = $schoolSetting ?? \App\Models\SchoolSetting::current();
     $activities = is_array($memo->activities) ? array_values($memo->activities) : [];
     $formatDate = fn ($value): string => $value?->format('d/m/Y H:i') ?? '—';
     $text = function ($value): string {
@@ -132,6 +133,8 @@
             <div>
                 <p class="text-2xl font-black tracking-tight text-amber-700">سجِّل</p>
                 <p class="mt-1 text-[11px] font-semibold text-stone-500">{{ __('مساعد أستاذ المعلوماتية — التعليم المتوسط') }}</p>
+                <p class="mt-1 text-[11px] font-bold text-stone-800">{{ $schoolSetting->school_name }}</p>
+                <p class="text-[10px] font-semibold text-stone-500">{{ $schoolSetting->directorate_name }}</p>
             </div>
 
             <div class="text-end">
@@ -139,7 +142,7 @@
                 <p class="mt-1 text-lg font-extrabold text-stone-900">{{ $memo->title }}</p>
                 <p class="mt-1 text-[11px] text-stone-500">
                     {{ __('السنة الدراسية') }}:
-                    <span class="font-bold text-stone-700">{{ $academicYear }}</span>
+                    <span class="font-bold text-stone-700">{{ $schoolSetting->academic_year ?: $academicYear }}</span>
                 </p>
             </div>
         </header>
@@ -173,7 +176,7 @@
 
                 <div>
                     <p class="font-bold text-amber-700">{{ __('السنة الدراسية') }}</p>
-                    <p class="mt-1 font-extrabold text-stone-900">{{ $academicYear }}</p>
+                    <p class="mt-1 font-extrabold text-stone-900">{{ $schoolSetting->academic_year ?: $academicYear }}</p>
                 </div>
 
                 <div>
@@ -303,6 +306,9 @@
                 <div>
                     <div class="mx-auto h-12 w-40 border-b border-dashed border-stone-400"></div>
                     <p class="mt-2 font-bold">{{ __('توقيع مدير المؤسسة') }}</p>
+                    @if ($schoolSetting->principal_name)
+                        <p class="text-[10px] font-semibold text-stone-600">{{ $schoolSetting->principal_name }}</p>
+                    @endif
                 </div>
             </div>
 
