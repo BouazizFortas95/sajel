@@ -69,7 +69,42 @@ class QuickAttendanceTest extends TestCase
             ->test(QuickAttendance::class)
             ->assertSuccessful()
             ->assertSee($subject->name)
+            ->assertSee($classroom->name)
             ->assertSee($group->name);
+    }
+
+    public function test_group_scoped_schedule_shows_the_classroom_section_name(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $classroom = Classroom::factory()->create(['name' => '1 م 1']);
+        $group = Group::factory()->create([
+            'classroom_id' => $classroom->id,
+            'name' => 'المجموعة أ',
+        ]);
+        $subject = Subject::factory()->create(['name' => 'الإعلام الآلي']);
+
+        $todayDayOfWeek = DayOfWeek::cases()[today()->dayOfWeek];
+
+        $schedule = Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'classroom_id' => null,
+            'group_id' => $group->id,
+            'subject_id' => $subject->id,
+            'day_of_week' => $todayDayOfWeek,
+            'start_time' => '08:00',
+            'end_time' => '09:00',
+        ]);
+
+        $component = Livewire::actingAs($teacher)
+            ->test(QuickAttendance::class)
+            ->assertSuccessful()
+            ->assertSee('1 م 1')
+            ->assertSee('المجموعة أ');
+
+        $component->set('selectedScheduleId', $schedule->id);
+        $component->call('loadRoster');
+
+        $component->assertSet('rosterSnapshot.classroom_label', '1 م 1');
     }
 
     public function test_teacher_can_mark_attendance_for_student(): void

@@ -81,7 +81,12 @@ class DailyLogResource extends Resource
      */
     public static function getEloquentQuery(): EloquentBuilder
     {
-        $query = parent::getEloquentQuery()->with('reviewer');
+        $query = parent::getEloquentQuery()->with([
+            'reviewer',
+            'schedule.subject',
+            'schedule.classroom',
+            'schedule.group.classroom',
+        ]);
 
         return auth()->user()?->isAdmin()
             ? $query
@@ -218,7 +223,7 @@ class DailyLogResource extends Resource
                                             })
                                             ->options(function (): array {
                                                 $query = Schedule::query()
-                                                    ->with(['subject', 'classroom.level', 'group', 'user']);
+                                                    ->with(['subject', 'classroom.level', 'group.classroom', 'user']);
 
                                                 if (! auth()->user()?->isAdmin()) {
                                                     $query->forTeacher(Auth::id());
@@ -830,6 +835,10 @@ class DailyLogResource extends Resource
     {
         return $table
             ->defaultSort('date', 'desc')
+            // Keep the teacher's selection when they search or filter after
+            // ticking rows. Otherwise the checkboxes were cleared before the
+            // bulk print/visa action could read them.
+            ->deselectAllRecordsWhenFiltered(false)
             ->columns([
                 Tables\Columns\TextColumn::make('date')
                     ->label(__('التاريخ'))
@@ -847,8 +856,12 @@ class DailyLogResource extends Resource
                     ->badge()
                     ->color(fn (DailyLog $record): string => $record->schedule?->subject?->color ?? 'gray'),
 
-                Tables\Columns\TextColumn::make('schedule.classroom.name')
+                Tables\Columns\TextColumn::make('schedule_section')
                     ->label(__('القسم'))
+                    ->getStateUsing(fn (DailyLog $record): ?string => $record->schedule?->sectionName())
+                    ->description(fn (DailyLog $record): ?string => $record->schedule?->resolvedClassroom()
+                        ? $record->schedule?->group?->name
+                        : null)
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('curriculum_resource')
@@ -920,6 +933,18 @@ class DailyLogResource extends Resource
                         ->form(static::administrativeVisaForm())
                         ->modalHeading(__('تأشير الدفتر رقمياً'))
                         ->modalSubmitActionLabel(__('تأشير'))
+                        ->modalDescription(function (EloquentCollection $records): string {
+                            $preview = $records
+                                ->take(4)
+                                ->map(fn (DailyLog $record): string => trim(
+                                    ($record->date?->format('Y/m/d') ?? '').' — '.$record->title
+                                ))
+                                ->implode(' · ');
+
+                            $summary = __('تم تحديد :count سجل.', ['count' => $records->count()]);
+
+                            return trim($summary.' — '.$preview.($records->count() > 4 ? ' …' : ''));
+                        })
                         ->visible(fn (): bool => Auth::user()?->isAdmin() ?? false)
                         ->action(function (EloquentCollection $records, array $data): void {
                             $reviewer = Auth::user();

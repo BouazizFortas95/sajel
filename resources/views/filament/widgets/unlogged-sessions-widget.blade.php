@@ -55,7 +55,7 @@
                 @foreach ($pendingSessions as $task)
                     @php
                         $schedule = $task['schedule'];
-                        $classroom = $schedule->classroom?->name ?? $schedule->group?->classroom?->name;
+                        $classroom = $schedule->sectionName();
                     @endphp
 
                     <li

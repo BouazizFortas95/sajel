@@ -3,6 +3,10 @@
 namespace Tests\Feature;
 
 use App\Enums\Role;
+use App\Models\Classroom;
+use App\Models\Group;
+use App\Models\Schedule;
+use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -37,5 +41,27 @@ class TeacherPortfolioTest extends TestCase
         $this->actingAs($admin)
             ->get(route('print.teacher-portfolio', ['locale' => 'ar', 'user' => $teacher]))
             ->assertOk();
+    }
+
+    public function test_portfolio_resolves_sections_from_group_scoped_schedules(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $classroom = Classroom::factory()->create(['name' => '1 م 1']);
+        $group = Group::factory()->create([
+            'classroom_id' => $classroom->id,
+            'name' => 'المجموعة أ',
+        ]);
+
+        Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'classroom_id' => null,
+            'group_id' => $group->id,
+            'subject_id' => Subject::factory()->create()->id,
+        ]);
+
+        $this->actingAs($teacher)
+            ->get(route('print.teacher-portfolio', ['locale' => 'ar', 'user' => $teacher]))
+            ->assertOk()
+            ->assertSee('1 م 1');
     }
 }

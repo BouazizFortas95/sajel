@@ -212,7 +212,7 @@
                                                 />
 
                                                 <span class="truncate">
-                                                    {{ $schedule->classroom?->name ?? $schedule->group?->classroom?->name }}
+                                                    {{ $schedule->sectionName() }}
 
                                                     @if ($schedule->group)
                                                         <span class="text-gray-400 dark:text-gray-500">·</span>

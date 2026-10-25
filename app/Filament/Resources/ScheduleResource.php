@@ -283,6 +283,10 @@ class ScheduleResource extends Resource
     {
         return $table
             ->defaultSort('day_of_week')
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with([
+                'classroom.level',
+                'group.classroom.level',
+            ]))
             ->columns([
                 Tables\Columns\TextColumn::make('day_of_week')
                     ->label(__('اليوم'))
@@ -304,9 +308,10 @@ class ScheduleResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('classroom.name')
+                Tables\Columns\TextColumn::make('section')
                     ->label(__('القسم'))
-                    ->description(fn (Schedule $record): ?string => $record->classroom?->level?->name)
+                    ->getStateUsing(fn (Schedule $record): ?string => $record->sectionName())
+                    ->description(fn (Schedule $record): ?string => $record->resolvedClassroom()?->level?->name)
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('group.name')

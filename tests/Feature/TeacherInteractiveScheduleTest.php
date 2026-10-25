@@ -468,7 +468,7 @@ class TeacherInteractiveScheduleTest extends TestCase
     {
         $user = $this->makeTeacher();
 
-        $classroom = Classroom::factory()->create();
+        $classroom = Classroom::factory()->create(['name' => '1 م 1']);
         $group = Group::factory()->create([
             'classroom_id' => $classroom->id,
             'name' => 'المجموعة أ',
@@ -488,7 +488,64 @@ class TeacherInteractiveScheduleTest extends TestCase
         Livewire::test(TeacherInteractiveSchedule::class)
             ->set('selectedDay', DayOfWeek::Monday->value)
             ->assertOk()
+            ->assertSee('1 م 1')
             ->assertSee('المجموعة أ');
+    }
+
+    public function test_it_resolves_the_section_name_for_group_scoped_schedules(): void
+    {
+        $user = $this->makeTeacher();
+
+        $classroom = Classroom::factory()->create(['name' => '1 م 1']);
+        $group = Group::factory()->create([
+            'classroom_id' => $classroom->id,
+            'name' => 'المجموعة أ',
+        ]);
+
+        Schedule::factory()->create([
+            'user_id' => $user->id,
+            'classroom_id' => null,
+            'group_id' => $group->id,
+            'day_of_week' => DayOfWeek::Monday->value,
+            'start_time' => '08:00',
+            'end_time' => '09:00',
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(TeacherInteractiveSchedule::class)
+            ->set('selectedDay', DayOfWeek::Monday->value)
+            ->assertOk()
+            ->assertSee('1 م 1')
+            ->assertSee('المجموعة أ');
+    }
+
+    public function test_it_filters_group_scoped_schedules_by_classroom_name(): void
+    {
+        $user = $this->makeTeacher();
+
+        $classroom = Classroom::factory()->create(['name' => '1 م 1']);
+        $group = Group::factory()->create([
+            'classroom_id' => $classroom->id,
+            'name' => 'المجموعة أ',
+        ]);
+
+        Schedule::factory()->create([
+            'user_id' => $user->id,
+            'classroom_id' => null,
+            'group_id' => $group->id,
+            'day_of_week' => DayOfWeek::Monday->value,
+            'start_time' => '08:00',
+            'end_time' => '09:00',
+        ]);
+
+        $this->actingAs($user);
+
+        $component = Livewire::test(TeacherInteractiveSchedule::class)
+            ->set('selectedDay', DayOfWeek::Monday->value)
+            ->set('search', '1 م 1');
+
+        $this->assertCount(1, $component->instance()->schedules);
     }
 
     /**

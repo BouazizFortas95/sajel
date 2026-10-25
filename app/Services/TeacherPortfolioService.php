@@ -40,7 +40,7 @@ class TeacherPortfolioService
             'reviewedLogs' => $reviewedLogs,
             'memoCount' => $memoCount,
             'meetings' => $meetings,
-            'schedules' => $scheduleQuery->with(['subject', 'classroom', 'group'])->get(),
+            'schedules' => $scheduleQuery->with(['subject', 'classroom', 'group.classroom'])->get(),
             'generatedAt' => now(config('app.timezone', 'Africa/Algiers')),
             'inlineCss' => false,
         ];

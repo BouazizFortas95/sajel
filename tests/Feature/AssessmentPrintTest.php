@@ -272,6 +272,36 @@ class AssessmentPrintTest extends TestCase
             ->assertNotified(__('التقييم غير متاح'));
     }
 
+    public function test_group_scoped_assessment_options_use_the_classroom_section_name(): void
+    {
+        $teacher = User::factory()->create();
+        $classroom = Classroom::factory()->create(['name' => '1 م 1']);
+        $group = Group::factory()->create([
+            'classroom_id' => $classroom->id,
+            'name' => 'المجموعة أ',
+        ]);
+
+        $schedule = Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'classroom_id' => null,
+            'group_id' => $group->id,
+            'subject_id' => Subject::factory()->create(['name' => 'الإعلام الآلي'])->id,
+        ]);
+
+        $assessment = Assessment::factory()->create([
+            'schedule_id' => $schedule->id,
+            'title' => 'الفرض الأول',
+        ]);
+
+        $this->actingAs($teacher);
+
+        $options = AssessmentResource::getAssessmentOptions();
+
+        $this->assertArrayHasKey($assessment->id, $options);
+        $this->assertStringContainsString('1 م 1', $options[$assessment->id]);
+        $this->assertStringContainsString('المجموعة أ', $options[$assessment->id]);
+    }
+
     private function createAssessment(
         User $teacher,
         Classroom $classroom,

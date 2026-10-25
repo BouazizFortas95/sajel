@@ -33,6 +33,15 @@ class DailyLogRegisterService
      */
     public function completedLogs(array $ids, User $user): Collection
     {
+        // Filament checkbox keys hydrate as strings while Eloquent keys are
+        // integers. Normalise once at the boundary so both shapes produce the
+        // same register and invalid keys never widen the query.
+        $ids = $this->normalizeIds($ids);
+
+        if ($ids === []) {
+            return new Collection;
+        }
+
         return DailyLog::query()
             ->with([
                 'schedule.user',
@@ -244,7 +253,30 @@ class DailyLogRegisterService
 
     private function resolveClassroom(DailyLog $log): ?Classroom
     {
-        return $log->schedule?->classroom ?? $log->schedule?->group?->classroom;
+        return $log->schedule?->resolvedClassroom();
+    }
+
+    /**
+     * @param  array<int, int|string>  $ids
+     * @return list<int>
+     */
+    private function normalizeIds(array $ids): array
+    {
+        $normalized = [];
+
+        foreach ($ids as $id) {
+            $id = filter_var($id, FILTER_VALIDATE_INT, [
+                'options' => ['min_range' => 1],
+            ]);
+
+            if ($id === false) {
+                continue;
+            }
+
+            $normalized[$id] = $id;
+        }
+
+        return array_values($normalized);
     }
 
     private function browsershot(string $html): Browsershot

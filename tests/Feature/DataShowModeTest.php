@@ -5,8 +5,11 @@ namespace Tests\Feature;
 use App\Enums\DayOfWeek;
 use App\Enums\Role;
 use App\Livewire\DataShowMode;
+use App\Models\Classroom;
 use App\Models\DailyLog;
+use App\Models\Group;
 use App\Models\Schedule;
+use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -44,6 +47,38 @@ class DataShowModeTest extends TestCase
         Livewire::actingAs($teacher)
             ->test(DataShowMode::class)
             ->assertSuccessful();
+    }
+
+    public function test_it_uses_the_resolved_classroom_name_in_log_labels_and_cover(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $classroom = Classroom::factory()->create(['name' => '1 م 1']);
+        $group = Group::factory()->create([
+            'classroom_id' => $classroom->id,
+            'name' => 'المجموعة أ',
+        ]);
+
+        $schedule = Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'classroom_id' => null,
+            'group_id' => $group->id,
+            'subject_id' => Subject::factory()->create(['name' => 'الإعلام الآلي'])->id,
+        ]);
+
+        $log = DailyLog::factory()->create([
+            'schedule_id' => $schedule->id,
+            'date' => today(),
+            'title' => 'درس اليوم',
+        ]);
+
+        $component = Livewire::actingAs($teacher)
+            ->test(DataShowMode::class, ['logId' => $log->id]);
+
+        $logs = $component->get('logs');
+        $slides = $component->get('content');
+
+        $this->assertStringContainsString('1 م 1', $logs[0]['label']);
+        $this->assertStringContainsString('1 م 1', $slides[0]['subtitle']);
     }
 
     public function test_each_slide_has_clean_plain_text_narration(): void

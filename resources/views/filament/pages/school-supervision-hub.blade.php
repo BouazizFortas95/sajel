@@ -133,7 +133,7 @@
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                             @foreach ($data['overdueSessions'] as $session)
                                 @php($schedule = $session['schedule'])
-                                @php($classroom = $schedule->group?->classroom ?? $schedule->classroom)
+                                @php($classroom = $schedule->resolvedClassroom())
                                 <tr class="text-gray-800 dark:text-gray-100">
                                     <td class="px-3 py-3 font-semibold">{{ $schedule->user?->name ?? '—' }}</td>
                                     <td class="px-3 py-3">{{ $schedule->subject?->name ?? '—' }}</td>

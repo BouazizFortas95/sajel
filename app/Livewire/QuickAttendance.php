@@ -82,7 +82,7 @@ class QuickAttendance extends Component
         $dayOfWeek = DayOfWeek::cases()[$today->dayOfWeek]->value;
 
         $this->schedules = $this->accessibleSchedules($user)
-            ->with(['subject', 'classroom.level', 'group'])
+            ->with(['subject', 'classroom.level', 'group.classroom'])
             ->onDay(DayOfWeek::tryFrom($dayOfWeek))
             ->orderBy('start_time')
             ->get()
@@ -90,7 +90,7 @@ class QuickAttendance extends Component
                 'id' => $schedule->id,
                 'label' => $schedule->label(),
                 'subject' => $schedule->subject?->name ?? '—',
-                'classroom' => $schedule->classroom?->name ?? '—',
+                'classroom' => $schedule->sectionName() ?? '—',
                 'group' => $schedule->group?->name ?? __('القسم كاملاً'),
                 'start' => $schedule->start_time?->format('H:i') ?? '—',
                 'end' => $schedule->end_time?->format('H:i') ?? '—',
@@ -110,7 +110,7 @@ class QuickAttendance extends Component
         }
 
         $schedule = $this->accessibleSchedules()
-            ->with(['subject', 'classroom.level', 'group'])
+            ->with(['subject', 'classroom.level', 'group.classroom'])
             ->find($this->selectedScheduleId);
 
         if (! $schedule) {
@@ -454,7 +454,7 @@ class QuickAttendance extends Component
             'schedule_id' => $schedule->id,
             'date' => $this->selectedDate,
             'daily_log_id' => $dailyLog?->id,
-            'classroom_label' => $schedule->classroom?->name ?? '—',
+            'classroom_label' => $schedule->sectionName() ?? '—',
             'subject_label' => $schedule->subject?->name ?? '—',
             'schedule_label' => $schedule->label(),
             'students' => array_map(

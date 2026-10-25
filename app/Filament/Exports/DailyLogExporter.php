@@ -4,6 +4,7 @@ namespace App\Filament\Exports;
 
 use App\Enums\DailyLogStatus;
 use App\Models\DailyLog;
+use App\Models\Schedule;
 use Carbon\CarbonInterface;
 use Filament\Actions\Exports\ExportColumn;
 use Filament\Actions\Exports\Exporter;
@@ -24,8 +25,9 @@ class DailyLogExporter extends Exporter
                 ->label(__('التاريخ'))
                 ->formatStateUsing(fn (?CarbonInterface $state): string => $state?->format('Y/m/d') ?? ''),
 
-            ExportColumn::make('schedule.classroom.name')
-                ->label(__('القسم')),
+            ExportColumn::make('schedule')
+                ->label(__('القسم'))
+                ->formatStateUsing(fn (?Schedule $state): string => $state?->sectionName() ?? ''),
 
             ExportColumn::make('schedule.subject.name')
                 ->label(__('المادة')),
@@ -48,7 +50,9 @@ class DailyLogExporter extends Exporter
      */
     public static function modifyQuery(Builder $query): Builder
     {
-        return $query->where('status', DailyLogStatus::Completed->value);
+        return $query
+            ->with(['schedule.classroom', 'schedule.group.classroom'])
+            ->where('status', DailyLogStatus::Completed->value);
     }
 
     public static function getCompletedNotificationBody(Export $export): string

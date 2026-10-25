@@ -17,7 +17,9 @@ class PrintDailyLogsController extends Controller
 
         $user = $request->user();
 
-        $logs = $register->completedLogs($validated['ids'], $user);
+        $ids = array_values(array_unique(array_map('intval', $validated['ids'])));
+
+        $logs = $register->completedLogs($ids, $user);
 
         return view('print.register', $register->viewData($logs, $user));
     }

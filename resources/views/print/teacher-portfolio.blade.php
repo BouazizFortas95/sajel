@@ -36,7 +36,7 @@
             </div>
             <div class="identity-item" style="grid-column: span 2;">
                 <p class="identity-label">{{ __('الأقسام الموكلة') }}</p>
-                <p class="identity-value">{{ collect($schedules ?? collect())->map(fn ($schedule) => $schedule->classroom?->name)->filter()->unique()->join('، ') ?: '—' }}</p>
+                <p class="identity-value">{{ collect($schedules ?? collect())->map(fn ($schedule) => $schedule->sectionName())->filter()->unique()->join('، ') ?: '—' }}</p>
             </div>
             <div class="identity-item" style="grid-column: span 2;">
                 <p class="identity-label">{{ __('تاريخ الإصدار') }}</p>

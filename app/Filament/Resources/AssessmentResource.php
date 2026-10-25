@@ -99,14 +99,14 @@ class AssessmentResource extends Resource
             ->with([
                 'schedule.subject',
                 'schedule.classroom',
-                'schedule.group',
+                'schedule.group.classroom',
             ])
             ->orderByDesc('date')
             ->orderByDesc('id')
             ->get()
             ->mapWithKeys(function (Assessment $assessment): array {
                 $schedule = $assessment->schedule;
-                $place = $schedule?->group?->name ?? $schedule?->classroom?->name;
+                $place = $schedule?->placeLabel();
 
                 $label = implode(' — ', array_filter([
                     $assessment->title,
@@ -131,7 +131,7 @@ class AssessmentResource extends Resource
                             ->label(__('الحصة'))
                             ->options(function (): array {
                                 $query = Schedule::query()
-                                    ->with(['subject', 'classroom.level', 'group', 'user']);
+                                    ->with(['subject', 'classroom.level', 'group.classroom', 'user']);
 
                                 if (! auth()->user()?->isAdmin()) {
                                     $query->forTeacher(Auth::id());
@@ -202,7 +202,7 @@ class AssessmentResource extends Resource
             ->modifyQueryUsing(fn (Builder $query): Builder => $query->with([
                 'schedule.subject',
                 'schedule.classroom',
-                'schedule.group',
+                'schedule.group.classroom',
             ]))
             ->columns([
                 Tables\Columns\TextColumn::make('title')
@@ -217,8 +217,9 @@ class AssessmentResource extends Resource
                     ->color('info')
                     ->placeholder('—'),
 
-                Tables\Columns\TextColumn::make('schedule.classroom.name')
+                Tables\Columns\TextColumn::make('schedule_section')
                     ->label(__('القسم'))
+                    ->getStateUsing(fn (Assessment $record): ?string => $record->schedule?->sectionName())
                     ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('schedule.group.name')

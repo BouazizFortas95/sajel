@@ -59,7 +59,7 @@ class TeacherInteractiveSchedule extends Component
     public function schedules()
     {
         $query = Schedule::query()
-            ->with(['subject', 'classroom', 'group', 'dailyLogs'])
+            ->with(['subject', 'classroom', 'group.classroom', 'dailyLogs'])
             ->forTeacher(auth()->user());
 
         if (filled($this->selectedDay)) {
@@ -73,6 +73,7 @@ class TeacherInteractiveSchedule extends Component
             $query->where(function ($q): void {
                 $q->whereHas('subject', fn ($s) => $s->where('name', 'like', "%{$this->search}%"))
                     ->orWhereHas('classroom', fn ($c) => $c->where('name', 'like', "%{$this->search}%"))
+                    ->orWhereHas('group.classroom', fn ($c) => $c->where('name', 'like', "%{$this->search}%"))
                     ->orWhereHas('group', fn ($g) => $g->where('name', 'like', "%{$this->search}%"));
             });
         }

@@ -40,14 +40,14 @@ class DataShowMode extends Component
     public function loadLogs(): void
     {
         $this->logs = DailyLog::query()
-            ->with(['schedule.subject', 'schedule.classroom', 'schedule.group'])
+            ->with(['schedule.subject', 'schedule.classroom', 'schedule.group.classroom'])
             ->whereHas('schedule', fn ($q) => $q->forTeacher(auth()->id()))
             ->orderByDesc('date')
             ->limit(10)
             ->get()
             ->map(fn ($l) => [
                 'id' => $l->id,
-                'label' => $l->date?->format('d/m/Y').' — '.($l->schedule?->classroom?->name ?? '').' — '.$l->title,
+                'label' => $l->date?->format('d/m/Y').' — '.($l->schedule?->sectionName() ?? '').' — '.$l->title,
             ])
             ->toArray();
     }
@@ -78,7 +78,7 @@ class DataShowMode extends Component
             return;
         }
 
-        $log = DailyLog::with('schedule.subject', 'schedule.classroom', 'schedule.group')->find($this->logId);
+        $log = DailyLog::with('schedule.subject', 'schedule.classroom', 'schedule.group.classroom')->find($this->logId);
 
         if (! $log) {
             $this->content = [];
@@ -107,7 +107,7 @@ class DataShowMode extends Component
         $cover = [
             'type' => 'cover',
             'title' => $log->title,
-            'subtitle' => ($log->schedule?->subject?->name ?? '').' — '.($log->schedule?->classroom?->name ?? '').' — '.($log->date?->format('l, d/m/Y') ?? today()->format('l, d/m/Y')),
+            'subtitle' => ($log->schedule?->subject?->name ?? '').' — '.($log->schedule?->sectionName() ?? '').' — '.($log->date?->format('l, d/m/Y') ?? today()->format('l, d/m/Y')),
             'competence' => $competence ?? ($log->actual_content ? $this->extractFirstHeading($log->actual_content) : null),
             'starting_situation' => $startingSituation,
             'subject_color' => $log->schedule?->subject?->color ?? 'amber',

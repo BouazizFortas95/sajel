@@ -9,6 +9,7 @@ use App\Filament\Resources\DailyLogResource\Pages\ListDailyLogs;
 use App\Filament\Widgets\DailyLogExportProgressWidget;
 use App\Models\Classroom;
 use App\Models\DailyLog;
+use App\Models\Group;
 use App\Models\Schedule;
 use App\Models\Subject;
 use App\Models\User;
@@ -334,7 +335,7 @@ class RegisterPrintTest extends TestCase
         $this->assertSame(
             [
                 'date',
-                'schedule.classroom.name',
+                'schedule',
                 'schedule.subject.name',
                 'title',
                 'actual_content',
@@ -344,6 +345,56 @@ class RegisterPrintTest extends TestCase
                 ->map(fn ($column): string => $column->getName())
                 ->all(),
         );
+    }
+
+    public function test_register_service_normalizes_string_and_invalid_ids(): void
+    {
+        $teacher = User::factory()->create();
+        $log = $this->createLog($teacher, title: 'سجل بمعرف نصي');
+
+        $logs = app(DailyLogRegisterService::class)->completedLogs([
+            ' '.$log->id.' ',
+            (string) $log->id,
+            'abc',
+            '0',
+            '1.5',
+        ], $teacher);
+
+        $this->assertCount(1, $logs);
+        $this->assertSame($log->id, $logs->first()?->id);
+    }
+
+    public function test_group_scoped_register_resolves_the_classroom_section(): void
+    {
+        $teacher = User::factory()->create();
+        $classroom = Classroom::factory()->create([
+            'name' => '1 م 1',
+            'academic_year' => '2025/2026',
+        ]);
+        $group = Group::factory()->create([
+            'classroom_id' => $classroom->id,
+            'name' => 'المجموعة أ',
+        ]);
+
+        $schedule = Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'classroom_id' => null,
+            'group_id' => $group->id,
+            'subject_id' => Subject::factory()->create(['name' => 'الإعلام الآلي'])->id,
+        ]);
+
+        $log = DailyLog::factory()->completed()->create([
+            'schedule_id' => $schedule->id,
+            'title' => 'درس الفوج',
+            'date' => '2026-10-20',
+        ]);
+
+        $this->actingAs($teacher)
+            ->get(route('print.register', ['ids' => [(string) $log->id]]))
+            ->assertOk()
+            ->assertSee('1 م 1')
+            ->assertSee('المجموعة أ')
+            ->assertSee('درس الفوج');
     }
 
     private function createLog(

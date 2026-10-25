@@ -61,7 +61,7 @@ class DashboardStats extends Component
         abort_unless($user instanceof User, 403);
 
         $dailyLogQuery = DailyLog::query()
-            ->with(['schedule.subject', 'schedule.classroom', 'schedule.group'])
+            ->with(['schedule.subject', 'schedule.classroom', 'schedule.group.classroom'])
             ->forDate(today());
 
         if (! $user->isAdmin()) {

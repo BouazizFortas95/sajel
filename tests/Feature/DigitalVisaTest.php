@@ -8,6 +8,7 @@ use App\Filament\Resources\DailyLogResource\Pages\EditDailyLog;
 use App\Filament\Resources\DailyLogResource\Pages\ListDailyLogs;
 use App\Models\Classroom;
 use App\Models\DailyLog;
+use App\Models\Group;
 use App\Models\Schedule;
 use App\Models\Subject;
 use App\Models\User;
@@ -70,6 +71,80 @@ class DigitalVisaTest extends TestCase
             ]);
             $this->assertNotNull($log->fresh()->reviewed_at);
         }
+    }
+
+    public function test_string_selected_ids_still_reach_the_bulk_action(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $first = $this->makeLog();
+        $second = $this->makeLog();
+
+        Livewire::actingAs($admin)
+            ->test(ListDailyLogs::class)
+            ->set('selectedTableRecords', [(string) $first->id, (string) $second->id])
+            ->callTableBulkAction('digitalVisa', [$first, $second], data: [
+                'admin_notes' => 'مراجعة جماعية.',
+            ])
+            ->assertHasNoTableBulkActionErrors()
+            ->assertNotified(__('تم تأشير :count سجلات بنجاح.', ['count' => 2]));
+
+        foreach ([$first, $second] as $log) {
+            $this->assertDatabaseHas('daily_logs', [
+                'id' => $log->id,
+                'reviewed_by_id' => $admin->id,
+            ]);
+        }
+    }
+
+    public function test_bulk_action_modal_lists_the_selected_rows(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $first = $this->makeLog();
+        $second = $this->makeLog();
+
+        $component = Livewire::actingAs($admin)
+            ->test(ListDailyLogs::class)
+            ->set('selectedTableRecords', [(string) $first->id, (string) $second->id])
+            ->call('mountTableBulkAction', 'digitalVisa');
+
+        $component
+            ->assertSee(__('تم تحديد :count سجل.', ['count' => 2]))
+            ->assertSee($first->title)
+            ->assertSee($second->title);
+    }
+
+    public function test_daily_log_table_keeps_selection_when_searching_or_filtering(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+
+        $this->actingAs($admin);
+
+        $table = Livewire::test(ListDailyLogs::class)->instance()->getTable();
+
+        $this->assertFalse($table->shouldDeselectAllRecordsWhenFiltered());
+    }
+
+    public function test_group_scoped_logs_show_the_classroom_section_in_the_table(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $classroom = Classroom::factory()->create(['name' => '1 م 1']);
+        $group = Group::factory()->create([
+            'classroom_id' => $classroom->id,
+            'name' => 'المجموعة أ',
+        ]);
+
+        $schedule = Schedule::factory()->create([
+            'classroom_id' => null,
+            'group_id' => $group->id,
+            'subject_id' => Subject::factory()->create()->id,
+        ]);
+
+        DailyLog::factory()->completed()->create(['schedule_id' => $schedule->id]);
+
+        Livewire::actingAs($admin)
+            ->test(ListDailyLogs::class)
+            ->assertSee('1 م 1')
+            ->assertSee('المجموعة أ');
     }
 
     public function test_planned_and_cancelled_logs_cannot_be_stamped(): void

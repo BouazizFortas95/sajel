@@ -41,7 +41,7 @@ class BehaviorObservationResource extends Resource
                 ->label(__('الحصة'))
                 ->options(fn (): array => Schedule::query()
                     ->when(auth()->user()?->isTeacher(), fn ($query) => $query->forTeacher(auth()->id()))
-                    ->with(['user', 'subject', 'classroom', 'group'])
+                    ->with(['user', 'subject', 'classroom', 'group.classroom'])
                     ->get()
                     ->mapWithKeys(fn (Schedule $schedule): array => [$schedule->id => $schedule->label()])
                     ->all())

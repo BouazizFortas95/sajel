@@ -209,7 +209,7 @@
                                             >
                                                 <p class="font-extrabold text-stone-900">{{ $schedule->subject?->name ?? '—' }}</p>
                                                 <p class="text-[9px] text-stone-500">
-                                                    {{ $schedule->group?->name ?? $schedule->classroom?->name ?? '—' }}
+                                                    {{ $schedule->placeLabel() ?? '—' }}
                                                 </p>
                                                 @if (! $teacher || $classroom)
                                                     <p class="text-[9px] text-stone-400">{{ $schedule->user?->name }}</p>

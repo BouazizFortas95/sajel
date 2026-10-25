@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Enums\DayOfWeek;
 use App\Filament\Resources\DailyLogResource;
 use App\Livewire\TeacherTimetable;
+use App\Models\Classroom;
 use App\Models\DailyLog;
+use App\Models\Group;
 use App\Models\Schedule;
 use App\Models\Subject;
 use App\Models\User;
@@ -247,6 +249,33 @@ class TeacherTimetableTest extends TestCase
             ->assertOk()
             ->assertSee('الرياضيات')
             ->assertDontSee('الفيزياء');
+    }
+
+    public function test_it_resolves_the_section_name_for_group_scoped_schedules(): void
+    {
+        $teacher = $this->makeTeacher();
+        $classroom = Classroom::factory()->create(['name' => '1 م 1']);
+        $group = Group::factory()->create([
+            'classroom_id' => $classroom->id,
+            'name' => 'المجموعة أ',
+        ]);
+
+        Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'classroom_id' => null,
+            'group_id' => $group->id,
+            'subject_id' => Subject::factory()->create(['name' => 'الإعلام الآلي'])->id,
+            'day_of_week' => DayOfWeek::Sunday->value,
+            'start_time' => '08:00',
+            'end_time' => '09:00',
+        ]);
+
+        $this->actingAs($teacher);
+
+        Livewire::test(TeacherTimetable::class)
+            ->assertOk()
+            ->assertSee('1 م 1')
+            ->assertSee('المجموعة أ');
     }
 
     public function test_it_passes_the_current_week_date_to_each_schedule_action(): void

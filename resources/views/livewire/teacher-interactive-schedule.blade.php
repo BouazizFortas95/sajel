@@ -170,7 +170,7 @@
                                     {{ $schedule->start_time?->format('H:i') }} - {{ $schedule->end_time?->format('H:i') }}
                                 </x-filament::badge>
 
-                                @if ($place = $schedule->group?->name ?? $schedule->classroom?->name)
+                                @if ($place = $schedule->placeLabel())
                                     <x-filament::badge
                                         color="gray"
                                         size="sm"

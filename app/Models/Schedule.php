@@ -81,13 +81,52 @@ class Schedule extends Model
     }
 
     /**
+     * Resolve the classroom that owns this session.
+     *
+     * A schedule can target a whole classroom (`classroom_id`) or a single
+     * group inside it (`group_id`). Both shapes must resolve to the same
+     * classroom so labels, registers, and reports never depend on the shape
+     * chosen when the schedule was created.
+     */
+    public function resolvedClassroom(): ?Classroom
+    {
+        return $this->classroom ?? $this->group?->classroom;
+    }
+
+    /**
+     * Localized section name. The group name is only a last-resort fallback
+     * for legacy schedules that have neither a classroom nor a classified group.
+     */
+    public function sectionName(): ?string
+    {
+        return $this->resolvedClassroom()?->name ?? $this->group?->name;
+    }
+
+    /**
+     * Section label with the group kept as a secondary qualifier.
+     * Example: "1 م 1 — المجموعة أ"
+     */
+    public function placeLabel(): ?string
+    {
+        $section = $this->sectionName();
+
+        if (blank($section)) {
+            return null;
+        }
+
+        $group = $this->group?->name;
+
+        return filled($group) && $group !== $section
+            ? $section.' — '.$group
+            : $section;
+    }
+
+    /**
      * Human-readable label used across Filament selects and tables.
-     * Example: "الاثنين 08:00-09:00 | الرياضيات | 1 م 1"
+     * Example: "الاثنين 08:00-09:00 | الرياضيات | 1 م 1 — المجموعة أ"
      */
     public function label(): string
     {
-        $place = $this->group?->name ?? $this->classroom?->name;
-
         return implode(' | ', array_filter([
             sprintf(
                 '%s (%s - %s)',
@@ -96,7 +135,7 @@ class Schedule extends Model
                 $this->end_time?->format('H:i'),
             ),
             $this->subject?->name,
-            $place,
+            $this->placeLabel(),
         ]));
     }
 }
