@@ -41,6 +41,8 @@
     "ابنِ التحضير عبر كتل مرنة: درس المرحلة المتوسطة، تمهيد، أو درس عام.": "Build the preparation with flexible blocks: middle school lesson, warm-up, or general lesson.",
     "ابنِ دروسك بكتل مرنة: كفاءة مستهدفة، مواقف بيداغوجية، ومراحل الدرس.": "Build lessons with flexible blocks for competencies, learning situations, and lesson phases.",
     "اتركه فارغاً لجدولة الحصة على القسم كاملاً.": "Leave empty to schedule the lesson for the whole class.",
+    "القسم المحدد غير موجود.": "The selected classroom does not exist.",
+    "المجموعة المحددة لا تنتمي إلى القسم.": "The selected group does not belong to the classroom.",
     "اتركها فارغة عند التعديل للإبقاء على كلمة المرور الحالية.": "Leave blank when editing to keep the current password.",
     "اختبار قصير": "Quiz",
     "اختر التقييم الذي تريد طباعة كشف نقاطه.": "Choose the assessment whose gradebook you want to print.",

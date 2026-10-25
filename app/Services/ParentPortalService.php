@@ -25,8 +25,15 @@ class ParentPortalService
                 }
 
                 $query->where(function (Builder $query) use ($group): void {
-                    $query->where('classroom_id', $group->classroom_id)
-                        ->orWhere('group_id', $group->id);
+                    // Mirror Student::scopeForSchedule(): a group-scoped
+                    // schedule belongs only to that group, even when it also
+                    // carries the classroom id. Only classroom-wide schedules
+                    // (no group) are shared by every group in the classroom.
+                    $query->where('group_id', $group->id)
+                        ->orWhere(function (Builder $query) use ($group): void {
+                            $query->whereNull('group_id')
+                                ->where('classroom_id', $group->classroom_id);
+                        });
                 });
             })
             ->where('status', DailyLogStatus::Completed->value)

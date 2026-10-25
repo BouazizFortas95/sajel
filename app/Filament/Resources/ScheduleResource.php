@@ -131,19 +131,81 @@ class ScheduleResource extends Resource
                             ->searchable()
                             ->preload()
                             ->live()
-                            ->afterStateUpdated(fn (Set $set) => $set('group_id', null)),
+                            ->required()
+                            ->rule(function (): Closure {
+                                return function (string $attribute, mixed $value, callable $fail): void {
+                                    if (blank($value)) {
+                                        return;
+                                    }
+
+                                    if (! Classroom::query()->whereKey($value)->exists()) {
+                                        $fail(__('القسم المحدد غير موجود.'));
+                                    }
+                                };
+                            })
+                            ->afterStateUpdated(function (Set $set, Get $get, mixed $state): void {
+                                $groupId = $get('group_id');
+
+                                if (blank($groupId)) {
+                                    return;
+                                }
+
+                                $group = Group::query()->find($groupId);
+
+                                // Keep the assigned group when the admin picks
+                                // its own classroom; reset it only when the new
+                                // classroom cannot own that group.
+                                if (! $group || (filled($state) && (int) $group->classroom_id !== (int) $state)) {
+                                    $set('group_id', null);
+                                }
+                            }),
 
                         Select::make('group_id')
                             ->label(__('المجموعة (اختياري)'))
-                            ->options(fn (Get $get): array => filled($get('classroom_id'))
-                                ? Group::query()
-                                    ->where('classroom_id', $get('classroom_id'))
-                                    ->pluck('name', 'id')
-                                    ->all()
-                                : [])
+                            ->options(function (Get $get): array {
+                                $classroomId = $get('classroom_id');
+
+                                if (filled($classroomId)) {
+                                    return Group::query()
+                                        ->where('classroom_id', $classroomId)
+                                        ->orderBy('name')
+                                        ->pluck('name', 'id')
+                                        ->all();
+                                }
+
+                                // Legacy group-only schedules: keep the assigned
+                                // group visible while the classroom is required.
+                                $groupId = $get('group_id');
+
+                                return filled($groupId)
+                                    ? Group::query()->whereKey($groupId)->pluck('name', 'id')->all()
+                                    : [];
+                            })
                             ->searchable()
                             ->disabled(fn (Get $get) => blank($get('classroom_id')))
-                            ->helperText(__('اتركه فارغاً لجدولة الحصة على القسم كاملاً.')),
+                            ->helperText(__('اتركه فارغاً لجدولة الحصة على القسم كاملاً.'))
+                            ->rule(function (Get $get): Closure {
+                                return function (string $attribute, mixed $value, callable $fail) use ($get): void {
+                                    if (blank($value)) {
+                                        return;
+                                    }
+
+                                    $classroomId = $get('classroom_id');
+
+                                    if (blank($classroomId)) {
+                                        return;
+                                    }
+
+                                    $belongs = Group::query()
+                                        ->whereKey($value)
+                                        ->where('classroom_id', $classroomId)
+                                        ->exists();
+
+                                    if (! $belongs) {
+                                        $fail(__('المجموعة المحددة لا تنتمي إلى القسم.'));
+                                    }
+                                };
+                            }),
 
                         Select::make('day_of_week')
                             ->label(__('اليوم'))
