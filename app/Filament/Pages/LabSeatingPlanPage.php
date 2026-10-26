@@ -10,7 +10,7 @@ class LabSeatingPlanPage extends Page
 
     protected static ?int $navigationSort = 60;
 
-    protected static string $view = 'livewire.lab-seating-plan';
+    protected static string $view = 'filament.pages.lab-seating-plan';
 
     public static function canAccess(): bool
     {

@@ -4,7 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Group;
 use App\Models\Lab;
-use App\Models\LabSeatingPlan;
+use App\Models\LabSeatingPlan as LabPlan;
 use App\Models\LabSeatingPlanStation;
 use App\Models\Student;
 use Filament\Notifications\Notification;
@@ -151,7 +151,7 @@ class LabSeatingPlan extends Component
             'planName' => 'required|string|max:255',
         ]);
 
-        $plan = LabSeatingPlan::create([
+        $plan = LabPlan::create([
             'lab_id' => $this->labId,
             'group_id' => $this->groupId,
             'name' => $this->planName,

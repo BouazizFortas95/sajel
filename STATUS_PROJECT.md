@@ -31,6 +31,16 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | Testing    | PHPUnit `^11.5`                          | **316 tests, all green (14,671 assertions in the latest run)** |
 | Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
 
+## 4. Sajel Pulse — Motivation Engine (نبض التميز والتحفيز التربوي)
+- `StudentMotivationService`: zero-click badges (`attendance_streak`, `comeback_champion`, `academic_excellence`, `positive_role_model`), pulse score, classroom synergy meter.
+- `DataShowMode` synergy bar + `awardQuickKudos()` (positive `BehaviorObservation`, classroom synergy increment, on-screen toast).
+- `MotivationPulseHub` Filament page (`/ar/auth/motivation-pulse`) with spotlight podium cards.
+- A4 RTL certificate `print.student-certificate` + authorization (`StudentPolicy::view`).
+- Badges injected into `ParentPortalService` and `StudentReportCardService`.
+- Translations added to `ar.json`, `en.json`, `fr.json`; `tests/Feature/MotivationPulseTest.php` created.
+- Health-check PASS; Pint PASS; suite 344 pass / 3 pre-existing intermittent.
+- Section 18 (Phase 8 — Institutional Backup & CI) added.
+
 ## 3. Domain Model
 
 Hierarchy: `EducationPhase → Level → Classroom → Group`, with `Subject` and `Schedule` referencing them,
@@ -848,3 +858,5 @@ and every printed A4 sheet and Browsershot PDF picks it up automatically.
   view/update, teacher 403, and identity rendering on register sheets, class councils, and Official
   Reports. Health check now requires 25 tables including `school_settings`.
 
+--- Phase 9 ---
+Sajel Pulse: badges (attendance_streak, comeback_champion, academic_excellence, positive_role_model), pulse_score, classroom synergy meter, 3 champions; DataShow synergy bar + awardQuickKudos; MotivationPulseHub (sparkles icon) + A4 RTL certificate; badges in report/portal; translations added; MotivationPulseTest created.

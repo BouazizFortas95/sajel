@@ -167,6 +167,7 @@ class StudentReportCardService
             'remediations' => $remediations,
             'generatedAt' => now(config('app.timezone', 'Africa/Algiers')),
             'portalUrl' => URL::temporarySignedRoute('parent.student-portal', now()->addDays(90), ['locale' => app()->getLocale(), 'student' => $student]),
+            'badges' => app(StudentMotivationService::class)->badgesForStudent($student),
             'autoPrint' => $autoPrint,
             'inlineCss' => false,
         ];

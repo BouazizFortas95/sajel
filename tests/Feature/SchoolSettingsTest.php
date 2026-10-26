@@ -9,6 +9,7 @@ use App\Models\DailyLog;
 use App\Models\Schedule;
 use App\Models\SchoolSetting;
 use App\Models\User;
+use App\Services\SchoolBackupService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -115,5 +116,24 @@ class SchoolSettingsTest extends TestCase
             'counselor_name' => 'أ. علي بن سالم',
             'school_code' => '1600123',
         ]);
+    }
+
+    public function test_admin_backup_download_excludes_password_hashes(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $this->actingAs($admin);
+
+        $response = $this->get('/en/auth/manage-school-settings');
+        $response->assertOk();
+
+        $backup = app(SchoolBackupService::class)->snapshot();
+        $this->assertArrayHasKey('metadata', $backup);
+        $this->assertArrayHasKey('institutional_config', $backup);
+        $this->assertArrayHasKey('table_row_counts', $backup['metadata']);
+
+        $json = json_encode($backup);
+        $this->assertStringNotContainsString('password', $json);
+        $this->assertStringNotContainsString('remember_token', $json);
+        $this->assertStringNotContainsString('session', $json);
     }
 }

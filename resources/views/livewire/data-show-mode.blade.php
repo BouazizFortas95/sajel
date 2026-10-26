@@ -283,6 +283,16 @@
             <button @click="zoomIn()" class="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-xs" title="A+">A+</button>
             <button @click="zoomOut()" class="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-xs" title="A-">A-</button>
 
+            {{-- Classroom Synergy Meter --}}
+            <div class="flex items-center gap-2 px-2 py-0.5 rounded bg-gradient-to-r from-amber-500/20 to-amber-300/10 border border-amber-300/30 text-xs font-bold text-amber-200">
+                <span>⚡</span>
+                <span>{{ __('طاقة تفاعل القسم') }}:</span>
+                <span>{{ $this->classroomSynergyPercent() ?? 0 }}%</span>
+                <div class="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden" title="{{ __('طاقة تفاعل القسم') }}">
+                    <div class="h-full bg-gradient-to-r from-amber-400 to-amber-200 rounded-full" style="width: {{ ($this->classroomSynergyPercent() ?? 0) }}%"></div>
+                </div>
+            </div>
+
             <button @click="toggleSpotlight()" :class="spotlight ? 'bg-amber-400 text-slate-950' : 'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium" title="Spotlight">⚡</button>
 
             <button @click="fullscreen()" class="px-2 py-0.5 rounded bg-amber-500 text-white text-xs font-bold" title="Fullscreen">⛶</button>
@@ -379,6 +389,21 @@
                     <button wire:click="toggleTimer(5)" class="w-full text-right px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-sm">⏱️ 5 دقائق</button>
                     <button wire:click="toggleTimer(10)" class="w-full text-right px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-sm">⏱️ 10 دقائق</button>
                     <button wire:click="pickRandomStudent" class="w-full text-right px-3 py-2 rounded bg-emerald-600 text-white text-sm">🎲 {{ __('قرعة عشوائية') }}</button>
+                    @if ($pickedStudents)
+                        @php ($picked = \App\Models\Student::find($pickedStudents[0] ?? null))
+                        @if ($picked)
+                            <div class="mt-2 p-2 rounded bg-gradient-to-l from-amber-500/20 to-amber-300/10 border border-amber-300/30 text-xs font-bold text-amber-200">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span>🎲 {{ $picked->full_name }}</span>
+                                    <span class="text-[10px] text-amber-300/80">{{ $picked->group?->name ?? ($picked->group?->classroom?->name ?? __('—')) }}</span>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button wire:click="awardQuickKudos({{ $picked->id }}, 'kudos_excellence')" class="flex-1 px-2 py-1 rounded bg-amber-400/20 text-amber-200 hover:bg-amber-400/30 text-[10px] font-bold transition">🌟 {{ __('إجابة متميزة') }}</button>
+                                    <button wire:click="awardQuickKudos({{ $picked->id }}, 'kudos_participation')" class="flex-1 px-2 py-1 rounded bg-emerald-400/20 text-emerald-200 hover:bg-emerald-400/30 text-[10px] font-bold transition">🚀 {{ __('مشاركة شجاعة') }}</button>
+                                </div>
+                            </div>
+                        @endif
+                    @endif
                     <button wire:click="toggleSpotlight" class="w-full text-right px-3 py-2 rounded bg-blue-600 text-white text-sm">🔦 {{ __('مؤشر التركيز') }}</button>
                 </div>
             </div>

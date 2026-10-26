@@ -3,8 +3,10 @@
 namespace App\Livewire;
 
 use App\Enums\LessonPhaseType;
+use App\Models\BehaviorObservation;
 use App\Models\DailyLog;
 use App\Models\Student;
+use App\Services\StudentMotivationService;
 use Livewire\Component;
 
 class DataShowMode extends Component
@@ -311,6 +313,71 @@ class DataShowMode extends Component
     public function requestFullscreen(): void
     {
         $this->dispatch('request-fullscreen');
+    }
+
+    /**
+     * Quick instant kudos awarded by a teacher during Data Show projection.
+     */
+    public function awardQuickKudos(int $studentId, string $type): void
+    {
+        $log = DailyLog::with(['schedule.user', 'schedule.classroom', 'schedule.group.classroom'])
+            ->find($this->logId);
+
+        if (! $log || ! $log->schedule) {
+            return;
+        }
+
+        $teacher = auth()->user();
+        if (! $teacher || $log->schedule->user_id !== $teacher->id) {
+            return;
+        }
+
+        $student = Student::query()
+            ->forSchedule($log->schedule)
+            ->whereKey($studentId)
+            ->first();
+
+        if (! $student) {
+            return;
+        }
+
+        $category = $type === 'kudos_excellence' ? 'positive' : 'positive';
+        $note = $type === 'kudos_excellence'
+            ? __('إجابة متميزة — تقدير سريع من المسلاط')
+            : __('مشاركة شجاعة — تشجيع مباشر');
+
+        BehaviorObservation::create([
+            'student_id' => $student->id,
+            'schedule_id' => $log->schedule->id,
+            'category' => $category,
+            'notes' => $note,
+            'date' => $log->date ?? today(),
+        ]);
+
+        $this->dispatch('kudos-awarded', studentName: $student->full_name, type: $type);
+    }
+
+    /**
+     * Classroom synergy percentage for the active schedule's classroom.
+     */
+    public function classroomSynergyPercent(): int
+    {
+        $log = DailyLog::with('schedule')->find($this->logId);
+
+        if (! $log || ! $log->schedule) {
+            return 0;
+        }
+
+        $classroom = $log->schedule->resolvedClassroom();
+
+        if (! $classroom) {
+            return 0;
+        }
+
+        $service = app(StudentMotivationService::class);
+        $metrics = $service->classroomMetrics($classroom);
+
+        return $metrics['synergy_percentage'] ?? 0;
     }
 
     public function render()

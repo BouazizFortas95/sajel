@@ -62,7 +62,6 @@ class LabStationsRelationManager extends RelationManager
                 Tables\Columns\SelectColumn::make('status')
                     ->label(__('الحالة'))
                     ->options(LabStatus::options())
-                    ->map(fn (LabStatus $status): string => $status->label())
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('notes')

@@ -172,3 +172,27 @@ protected device: the roster and unsynced attendance contain student information
   refresh, and dynamic identity output on printed registers, class councils, and Official Reports.
 
 *Last updated: 2026-10-25 — Phases 2–6 all complete (100%) plus school identity settings. Suite: 339 passing, 0 failures, 14,868 assertions. Health check: all PASS (25 tables; AI provider gemini configured).*
+
+---
+## Sajel Pulse — Motivation Engine (نبض التميز والتحفيز التربوي)
+- Zero-Click Automatic Badges: attendance_streak, comeback_champion, academic_excellence, positive_role_model
+- Classroom Synergy Meter: weekly attendance + positive behavior + completed lessons
+- DataShow quick kudos (`awardQuickKudos`) with instant toast and positive BehaviorObservation
+- MotivationPulseHub Filament page with spotlight podium cards
+- A4 RTL certificate (`print.student-certificate`) with official school header and signature boxes
+- Badges surfaced in StudentReportCardService and ParentPortalService
+
+---
+## Phase 8 — Institutional Backup & CI
+- `SchoolBackupService`: timestamped JSON snapshot (`metadata` + row counts for 25 tables + institutional config), excludes password/session tokens.
+- `ManageSchoolSettings` header action `"تحميل نسخة احتياطية للمؤسسة (JSON)"` (Admin-only).
+- `.github/workflows/ci.yml`: automated build/test on push/PR (PHP 8.3, Node 20, SQLite, build, pint, health-check, test suite).
+
+---
+## Phase 9 — Sajel Pulse Motivation System
+- `StudentMotivationService`: zero-click badges + pulse score + classroom synergy meter + 3 champion cards.
+- `DataShowMode`: synergy bar (`⚡ طاقة تفاعل القسم`) and instant kudos (`awardQuickKudos`).
+- `MotivationPulseHub` (`heroicon-o-sparkles`): classroom filter, synergy meter, spotlight podium cards, student pulse table.
+- A4 RTL certificate (`print.student-certificate`) with `StudentPolicy::view` authorization + `.pdf` download.
+- Badges surfaced in `ParentPortalService` and `StudentReportCardService`.
+- Tests (`MotivationPulseTest.php`), translations (`ar/en/fr`), docs (`STATUS_PROJECT.md`, `README.md`).

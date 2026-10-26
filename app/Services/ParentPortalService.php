@@ -16,6 +16,8 @@ class ParentPortalService
         $student->loadMissing('group.classroom.level.educationPhase', 'grades.assessment.schedule.subject', 'attendances', 'group.classroom');
         $group = $student->group;
 
+        $badges = app(StudentMotivationService::class)->badgesForStudent($student);
+
         $recentLogs = DailyLog::query()
             ->whereHas('schedule', function (Builder $query) use ($group): void {
                 if (! $group) {
@@ -109,6 +111,7 @@ class ParentPortalService
             'student' => $student,
             'classroom' => $group?->classroom,
             'group' => $group,
+            'badges' => $badges,
             'recentLogs' => $recentLogs,
             'attendanceCounts' => $attendanceCounts,
             'attendanceTotal' => $attendanceTotal,

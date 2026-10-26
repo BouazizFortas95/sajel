@@ -757,6 +757,24 @@
 
             .report-section--flow .table-wrap {
                 overflow: visible !important;
+                break-inside: auto !important;
+                page-break-inside: auto !important;
+            }
+            .deliberation-section,
+            .table-wrapper,
+            .report-section--flow .table-wrap {
+                break-inside: auto !important;
+                page-break-inside: auto !important;
+                overflow: visible !important;
+            }
+            .deliberation-section thead,
+            .report-section--flow thead {
+                display: table-header-group !important;
+            }
+            .deliberation-section tr,
+            .report-table tbody tr {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
             }
 
             .doc-header-grid {

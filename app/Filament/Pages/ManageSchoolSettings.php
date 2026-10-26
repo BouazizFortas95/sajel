@@ -3,6 +3,8 @@
 namespace App\Filament\Pages;
 
 use App\Models\SchoolSetting;
+use App\Services\SchoolBackupService;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -104,6 +106,18 @@ class ManageSchoolSettings extends Page implements HasForms
                     ]),
             ])
             ->statePath('data');
+    }
+
+    public function getHeaderActions(): array
+    {
+        return [
+            Action::make('downloadBackup')
+                ->label(__('تحميل نسخة احتياطية للمؤسسة (JSON)'))
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('amber')
+                ->visible(fn () => Auth::user()?->isAdmin() ?? false)
+                ->action(fn () => app(SchoolBackupService::class)->streamDownload()),
+        ];
     }
 
     public function save(): void

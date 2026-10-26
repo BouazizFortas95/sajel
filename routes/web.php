@@ -10,7 +10,12 @@ use App\Http\Controllers\PrintPedagogicalMemoController;
 use App\Http\Controllers\StudentReportCardController;
 use App\Http\Controllers\TeacherPortfolioController;
 use App\Http\Middleware\SetFilamentLocale;
+use App\Models\SchoolSetting;
+use App\Models\Student;
+use App\Services\StudentMotivationService;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
+use Spatie\Browsershot\Browsershot;
 
 Route::get('/', function () {
     return view('welcome');
@@ -78,6 +83,44 @@ Route::get('/{locale}/print/students/{student}/report-card/pdf', [StudentReportC
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.student-report-card.pdf');
+
+Route::get('/{locale}/print/students/{student}/certificate', function (string $studentId) {
+    $student = Student::findOrFail($studentId);
+    abort_unless(auth()->user()?->isAdmin() || auth()->user()?->schedules()->whereHas('group', fn ($q) => $q->where('classroom_id', $student->group?->classroom_id))->exists(), 403);
+    Gate::forUser(auth()->user())->authorize('view', $student);
+
+    return view('print.student-certificate', [
+        'student' => $student,
+        'service' => app(StudentMotivationService::class),
+        'badges' => app(StudentMotivationService::class)->badgesForStudent($student),
+        'schoolSetting' => SchoolSetting::first(),
+    ]);
+})
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.student-certificate');
+
+Route::get('/{locale}/print/students/{student}/certificate/pdf', function (string $studentId) {
+    $student = Student::findOrFail($studentId);
+    Gate::forUser(auth()->user())->authorize('view', $student);
+    $service = app(StudentMotivationService::class);
+    $badges = $service->badgesForStudent($student);
+    $view = view('print.student-certificate', [
+        'student' => $student,
+        'service' => $service,
+        'badges' => $badges,
+        'schoolSetting' => SchoolSetting::first(),
+    ]);
+
+    return Browsershot::html((string) $view)
+        ->format('A4')
+        ->landscape()
+        ->setOption('args', ['--no-sandbox'])
+        ->download('certificat-'.$student->full_name.'.pdf');
+})
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.student-certificate.pdf');
 
 Route::get('/{locale}/print/classrooms/{classroom}/class-council', [ClassCouncilController::class, 'print'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
