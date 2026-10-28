@@ -97,7 +97,7 @@ class BehaviorObservationResource extends Resource
                 TextColumn::make('category')->label(__('الفئة')),
                 TextColumn::make('date')->label(__('التاريخ')),
                 TextColumn::make('is_followed_up')->label(__('متابعة'))->badge()
-                    ->formatStateUsing(fn ($s) => $s ? __('نعم') : __('لا')),
+                    ->formatStateUsing(fn ($state) => $state ? __('نعم') : __('لا')),
             ])
             ->filters([
                 SelectFilter::make('category')->label(__('الفئة'))

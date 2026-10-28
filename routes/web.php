@@ -84,8 +84,7 @@ Route::get('/{locale}/print/students/{student}/report-card/pdf', [StudentReportC
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.student-report-card.pdf');
 
-Route::get('/{locale}/print/students/{student}/certificate', function (string $studentId) {
-    $student = Student::findOrFail($studentId);
+Route::get('/{locale}/print/students/{student}/certificate', function (string $locale, Student $student) {
     abort_unless(auth()->user()?->isAdmin() || auth()->user()?->schedules()->whereHas('group', fn ($q) => $q->where('classroom_id', $student->group?->classroom_id))->exists(), 403);
     Gate::forUser(auth()->user())->authorize('view', $student);
 
@@ -100,8 +99,7 @@ Route::get('/{locale}/print/students/{student}/certificate', function (string $s
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.student-certificate');
 
-Route::get('/{locale}/print/students/{student}/certificate/pdf', function (string $studentId) {
-    $student = Student::findOrFail($studentId);
+Route::get('/{locale}/print/students/{student}/certificate/pdf', function (string $locale, Student $student) {
     Gate::forUser(auth()->user())->authorize('view', $student);
     $service = app(StudentMotivationService::class);
     $badges = $service->badgesForStudent($student);

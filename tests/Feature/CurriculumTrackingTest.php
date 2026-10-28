@@ -488,15 +488,21 @@ class CurriculumTrackingTest extends TestCase
         $teacher = User::factory()->create();
         $otherTeacher = User::factory()->create();
         $subject = Subject::factory()->create();
-        $level = Level::factory()->create();
-        $classroom = Classroom::factory()->create(['level_id' => $level->id]);
+        $level = Level::factory()->create(['name' => 'المستوى الأول']);
+        $classroom = Classroom::factory()->create([
+            'level_id' => $level->id,
+            'name' => 'قسم المعلم',
+        ]);
         [, , $resource] = $this->createPlan($subject, $level);
         $schedule = $this->createSchedule($teacher, $classroom, $subject);
         $this->createCompletedLog($schedule, $resource, today()->toDateString());
 
         $otherSubject = Subject::factory()->create();
-        $otherLevel = Level::factory()->create();
-        $otherClassroom = Classroom::factory()->create(['level_id' => $otherLevel->id]);
+        $otherLevel = Level::factory()->create(['name' => 'المستوى الثاني']);
+        $otherClassroom = Classroom::factory()->create([
+            'level_id' => $otherLevel->id,
+            'name' => 'قسم معلم آخر',
+        ]);
         [, , $otherResource] = $this->createPlan($otherSubject, $otherLevel);
         $otherSchedule = $this->createSchedule($otherTeacher, $otherClassroom, $otherSubject);
         $this->createCompletedLog($otherSchedule, $otherResource, today()->toDateString());
@@ -546,6 +552,243 @@ class CurriculumTrackingTest extends TestCase
         $this->get('/fr/auth/curriculum-progress')
             ->assertOk()
             ->assertSee('Progression du programme');
+    }
+
+    public function test_the_progress_page_filters_and_sorts_the_summary(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacher = User::factory()->create();
+        $level = Level::factory()->create();
+
+        $fixtures = [
+            ['Alpha', 4],
+            ['Beta', 1],
+            ['Gamma', 0],
+            ['Delta', 3],
+        ];
+
+        foreach ($fixtures as $index => [$name, $completed]) {
+            $subject = Subject::factory()->create(['name' => $name]);
+            $classroom = Classroom::factory()->create([
+                'level_id' => $level->id,
+                'name' => 'Class '.($index + 1),
+            ]);
+
+            [, $sequence, $firstResource] = $this->createPlan($subject, $level, $name.' resource 1');
+            $resources = collect([$firstResource]);
+
+            for ($position = 2; $position <= 4; $position++) {
+                $resources->push(CurriculumResource::factory()->create([
+                    'curriculum_sequence_id' => $sequence->id,
+                    'name' => $name.' resource '.$position,
+                ]));
+            }
+
+            $schedule = $this->createSchedule($teacher, $classroom, $subject);
+
+            foreach ($resources->take($completed) as $resourceIndex => $resource) {
+                $this->createCompletedLog(
+                    $schedule,
+                    $resource,
+                    today()->subDays($resourceIndex)->toDateString(),
+                );
+            }
+        }
+
+        $this->actingAs($admin);
+
+        $component = Livewire::test(CurriculumProgress::class);
+
+        $this->assertSame(
+            ['Class 1', 'Class 2', 'Class 3', 'Class 4'],
+            $component->instance()->filteredOverview
+                ->map(fn (array $row): string => $row['classroom']->name)
+                ->all(),
+        );
+
+        $component->set('search', 'Delta');
+        $this->assertSame(
+            ['Delta'],
+            $component->instance()->filteredOverview
+                ->map(fn (array $row): string => $row['subject']->name)
+                ->all(),
+        );
+
+        $component->set('search', 'Class 2');
+        $this->assertSame(
+            ['Beta'],
+            $component->instance()->filteredOverview
+                ->map(fn (array $row): string => $row['subject']->name)
+                ->all(),
+        );
+
+        $component->set('search', '');
+
+        $component->set('progressStatus', 'completed');
+        $this->assertSame(
+            ['Class 1'],
+            $component->instance()->filteredOverview
+                ->map(fn (array $row): string => $row['classroom']->name)
+                ->all(),
+        );
+
+        $component->set('progressStatus', 'in_progress');
+        $this->assertSame(
+            ['Class 2', 'Class 4'],
+            $component->instance()->filteredOverview
+                ->map(fn (array $row): string => $row['classroom']->name)
+                ->all(),
+        );
+
+        $component->set('progressStatus', 'not_started');
+        $this->assertSame(
+            ['Class 3'],
+            $component->instance()->filteredOverview
+                ->map(fn (array $row): string => $row['classroom']->name)
+                ->all(),
+        );
+
+        $component->set('progressStatus', 'at_risk');
+        $this->assertSame(
+            ['Class 2', 'Class 3'],
+            $component->instance()->filteredOverview
+                ->map(fn (array $row): string => $row['classroom']->name)
+                ->all(),
+        );
+
+        $component->set('progressStatus', 'all');
+        $component->set('sortBy', 'percentage_desc');
+        $this->assertSame(
+            [100, 75, 25, 0],
+            $component->instance()->filteredOverview
+                ->pluck('percentage')
+                ->all(),
+        );
+
+        $component->set('sortBy', 'percentage_asc');
+        $this->assertSame(
+            [0, 25, 75, 100],
+            $component->instance()->filteredOverview
+                ->pluck('percentage')
+                ->all(),
+        );
+
+        $component->set('sortBy', 'completed_desc');
+        $this->assertSame(
+            [4, 3, 1, 0],
+            $component->instance()->filteredOverview
+                ->pluck('completed_resources')
+                ->all(),
+        );
+
+        $component->set('sortBy', 'subject');
+        $this->assertSame(
+            ['Alpha', 'Beta', 'Delta', 'Gamma'],
+            $component->instance()->filteredOverview
+                ->map(fn (array $row): string => $row['subject']->name)
+                ->all(),
+        );
+    }
+
+    public function test_the_progress_page_paginates_without_scrolling_the_page(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacher = User::factory()->create();
+        $subject = Subject::factory()->create();
+        $level = Level::factory()->create();
+        $this->createPlan($subject, $level);
+
+        foreach (range(1, 12) as $position) {
+            $classroom = Classroom::factory()->create([
+                'level_id' => $level->id,
+                'name' => sprintf('Class %02d', $position),
+            ]);
+
+            $this->createSchedule($teacher, $classroom, $subject);
+        }
+
+        $this->actingAs($admin);
+
+        $component = Livewire::test(CurriculumProgress::class);
+
+        $paginator = $component->instance()->getOverviewPaginatorProperty();
+
+        $this->assertSame(12, $paginator->total());
+        $this->assertSame(10, $paginator->perPage());
+        $this->assertCount(10, $paginator->items());
+
+        $html = $component->html();
+
+        $this->assertStringContainsString('fi-pagination', $html);
+        $this->assertStringNotContainsString('scrollIntoView', $html);
+        $this->assertStringContainsString('nextPage', $html);
+
+        $component->call('gotoPage', 2);
+
+        $paginator = $component->instance()->getOverviewPaginatorProperty();
+
+        $this->assertSame(2, $paginator->currentPage());
+        $this->assertCount(2, $paginator->items());
+
+        $component->set('perPage', 25);
+
+        $paginator = $component->instance()->getOverviewPaginatorProperty();
+
+        $this->assertSame(1, $paginator->currentPage());
+        $this->assertSame(25, $paginator->perPage());
+        $this->assertCount(12, $paginator->items());
+    }
+
+    public function test_the_progress_page_tools_reset_and_export_a_csv(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacher = User::factory()->create();
+        $subject = Subject::factory()->create(['name' => 'الرياضيات']);
+        $level = Level::factory()->create();
+        $classroom = Classroom::factory()->create([
+            'level_id' => $level->id,
+            'name' => 'قسم التصدير',
+        ]);
+        [, , $resource] = $this->createPlan($subject, $level);
+        $schedule = $this->createSchedule($teacher, $classroom, $subject);
+        $this->createCompletedLog($schedule, $resource, today()->toDateString());
+
+        $this->actingAs($admin);
+
+        $component = Livewire::test(CurriculumProgress::class)
+            ->set('search', 'الرياضيات')
+            ->set('progressStatus', 'completed')
+            ->set('sortBy', 'percentage_desc')
+            ->set('perPage', 25);
+
+        $component->call('resetTableTools')
+            ->assertSet('search', '')
+            ->assertSet('progressStatus', 'all')
+            ->assertSet('sortBy', 'classroom')
+            ->assertSet('perPage', 10)
+            ->assertSet('paginators.page', 1);
+
+        $component
+            ->set('subjectId', $subject->id)
+            ->set('classroomId', $classroom->id)
+            ->set('search', 'قسم التصدير')
+            ->set('progressStatus', 'in_progress')
+            ->call('clearFilters')
+            ->assertSet('subjectId', null)
+            ->assertSet('classroomId', null)
+            ->assertSet('search', '')
+            ->assertSet('progressStatus', 'all');
+
+        $component->set('search', 'الرياضيات');
+
+        $component->call('exportCsv')
+            ->assertFileDownloaded('curriculum-progress-'.now()->format('Y-m-d').'.csv');
+
+        $csv = base64_decode((string) data_get($component->effects, 'download.content'));
+
+        $this->assertStringContainsString('قسم التصدير', $csv);
+        $this->assertStringContainsString('الرياضيات', $csv);
+        $this->assertStringContainsString('100%', $csv);
     }
 
     public function test_deleting_a_resource_nulls_the_daily_log_mapping_and_deleting_a_domain_cascades(): void

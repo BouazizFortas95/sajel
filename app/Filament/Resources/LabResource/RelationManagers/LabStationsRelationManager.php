@@ -69,6 +69,9 @@ class LabStationsRelationManager extends RelationManager
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([])
+            ->headerActions([
+                Tables\Actions\CreateAction::make(),
+            ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -82,7 +85,10 @@ class LabStationsRelationManager extends RelationManager
             ->searchPlaceholder(__('بحث عن محطة...'))
             ->emptyStateIcon('heroicon-o-device-tablet')
             ->emptyStateHeading(__('لا توجد محطات في هذا المختبر'))
-            ->emptyStateDescription(__('أضف محطات للمختبر لتحديد عدد الأجهزة وحالة كل منها.'));
+            ->emptyStateDescription(__('أضف محطات للمختبر لتحديد عدد الأجهزة وحالة كل منها.'))
+            ->emptyStateActions([
+                Tables\Actions\CreateAction::make(),
+            ]);
     }
 
     public function form(Form $form): Form

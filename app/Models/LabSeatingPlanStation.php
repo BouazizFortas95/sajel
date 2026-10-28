@@ -36,7 +36,7 @@ class LabSeatingPlanStation extends Model
 
     public function seatingPlan(): BelongsTo
     {
-        return $this->belongsTo(LabSeatingPlan::class);
+        return $this->belongsTo(LabSeatingPlan::class, 'seating_plan_id');
     }
 
     public function labStation(): BelongsTo

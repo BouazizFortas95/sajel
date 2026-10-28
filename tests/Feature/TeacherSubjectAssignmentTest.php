@@ -7,6 +7,7 @@ use App\Enums\Role;
 use App\Filament\Resources\ScheduleResource\Pages\CreateSchedule;
 use App\Filament\Resources\UserResource\Pages\CreateUser;
 use App\Filament\Resources\UserResource\Pages\EditUser;
+use App\Models\Classroom;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -109,6 +110,7 @@ class TeacherSubjectAssignmentTest extends TestCase
     public function test_a_teacher_subject_select_defaults_to_primary_and_accepts_the_secondary_subject(): void
     {
         [$teacher, $primary, $secondary] = $this->makeTeacher();
+        $classroom = Classroom::factory()->create();
 
         $this->actingAs($teacher);
 
@@ -121,6 +123,7 @@ class TeacherSubjectAssignmentTest extends TestCase
             ])
             ->fillForm([
                 'subject_id' => $secondary->id,
+                'classroom_id' => $classroom->id,
                 'day_of_week' => DayOfWeek::Sunday->value,
                 'start_time' => '08:00',
                 'end_time' => '09:00',
@@ -138,12 +141,14 @@ class TeacherSubjectAssignmentTest extends TestCase
     {
         [$teacher] = $this->makeTeacher();
         $unrelatedSubject = Subject::factory()->create(['name' => 'اللغة العربية']);
+        $classroom = Classroom::factory()->create();
 
         $this->actingAs($teacher);
 
         Livewire::test(CreateSchedule::class)
             ->fillForm([
                 'subject_id' => $unrelatedSubject->id,
+                'classroom_id' => $classroom->id,
                 'day_of_week' => DayOfWeek::Monday->value,
                 'start_time' => '09:00',
                 'end_time' => '10:00',
@@ -162,6 +167,7 @@ class TeacherSubjectAssignmentTest extends TestCase
         [$teacher, $primary, $secondary] = $this->makeTeacher();
         $unrelatedSubject = Subject::factory()->create(['name' => 'اللغة العربية']);
         $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $classroom = Classroom::factory()->create();
 
         $this->actingAs($admin);
 
@@ -175,6 +181,7 @@ class TeacherSubjectAssignmentTest extends TestCase
             ])
             ->fillForm([
                 'subject_id' => $secondary->id,
+                'classroom_id' => $classroom->id,
                 'day_of_week' => DayOfWeek::Tuesday->value,
                 'start_time' => '10:00',
                 'end_time' => '11:00',
@@ -191,6 +198,7 @@ class TeacherSubjectAssignmentTest extends TestCase
             ->fillForm([
                 'user_id' => $teacher->id,
                 'subject_id' => $unrelatedSubject->id,
+                'classroom_id' => $classroom->id,
                 'day_of_week' => DayOfWeek::Wednesday->value,
                 'start_time' => '11:00',
                 'end_time' => '12:00',

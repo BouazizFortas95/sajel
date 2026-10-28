@@ -35,12 +35,21 @@ class LabSeatingPlan extends Model
 
     public function stations(): HasMany
     {
-        return $this->hasMany(LabSeatingPlanStation::class)->orderBy('position_x')->orderBy('position_y');
+        return $this->hasMany(LabSeatingPlanStation::class, 'seating_plan_id')
+            ->orderBy('position_x')
+            ->orderBy('position_y');
     }
 
     public function assignedStudents(): HasMany
     {
-        return $this->hasManyThrough(Student::class, LabSeatingPlanStation::class);
+        return $this->hasManyThrough(
+            Student::class,
+            LabSeatingPlanStation::class,
+            'seating_plan_id',
+            'id',
+            'id',
+            'student_id',
+        );
     }
 
     /**

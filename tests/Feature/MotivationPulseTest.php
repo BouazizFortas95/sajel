@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\DailyLogStatus;
+use App\Filament\Pages\MotivationPulseHub;
 use App\Livewire\DataShowMode;
 use App\Models\Assessment;
 use App\Models\Attendance;
@@ -30,10 +31,14 @@ class MotivationPulseTest extends TestCase
         $student = Student::factory()->create();
         $classroom = Classroom::factory()->create();
         $schedule = Schedule::factory()->for($classroom)->create();
-        $log = DailyLog::factory()->for($schedule)->create(['date' => today(), 'status' => DailyLogStatus::Completed]);
 
-        // Attendance streak (5 present, 0 absent in 14 days)
+        // Attendance streak (5 distinct present school days in the last 14 days).
         for ($i = 0; $i < 5; $i++) {
+            $log = DailyLog::factory()->for($schedule)->create([
+                'date' => now()->subDays(4 - $i)->toDateString(),
+                'status' => DailyLogStatus::Completed,
+            ]);
+
             Attendance::factory()->for($log)->create([
                 'student_id' => $student->id,
                 'status' => AttendanceStatus::Present,
@@ -45,6 +50,7 @@ class MotivationPulseTest extends TestCase
             'student_id' => $student->id,
             'schedule_id' => $schedule->id,
             'category' => 'positive',
+            'notes' => 'مشاركة فعالة في الحصة.',
             'date' => today(),
         ]);
 
@@ -105,10 +111,10 @@ class MotivationPulseTest extends TestCase
         $admin = User::factory()->admin()->create();
 
         $this->actingAs($teacher);
-        $this->get('/auth/motivation-pulse')->assertOk();
+        $this->get(MotivationPulseHub::getUrl())->assertOk();
 
         $this->actingAs($admin);
-        $this->get('/auth/motivation-pulse')->assertOk();
+        $this->get(MotivationPulseHub::getUrl())->assertOk();
     }
 
     /** @test */

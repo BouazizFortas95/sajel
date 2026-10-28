@@ -15,7 +15,9 @@ use App\Models\PedagogicalRemediation;
 use App\Models\Schedule;
 use App\Models\Student;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as SupportCollection;
 
 /**
  * Zero-Click Pedagogical Motivation Engine (نبض التميز والتحفيز التربوي)
@@ -121,19 +123,18 @@ class StudentMotivationService
 
     private function attendanceStreak(Student $student, ?Classroom $scopeClassroom = null): bool
     {
-        $attendances = $this->scopedAttendances($student, $scopeClassroom);
-        $last14 = $attendances->where('date', '>=', now()->subDays(14)->toDateString())
-            ->sortBy('date');
+        $last14 = $this->attendanceDays($student, $scopeClassroom)
+            ->filter(fn (array $day): bool => $day['date']->gte(now()->subDays(14)->startOfDay()));
 
         $streak = 0;
         $maxStreak = 0;
         $prevDay = null;
 
-        foreach ($last14 as $att) {
-            if ($att->status === AttendanceStatus::Present) {
-                $currentDay = ($att->dailyLog?->date ?? $att->date)->copy()->startOfDay();
+        foreach ($last14 as $day) {
+            if ($day['status'] === AttendanceStatus::Present) {
+                $currentDay = $day['date'];
 
-                if ($prevDay !== null && $prevDay->addDay()->isSameDay($currentDay)) {
+                if ($prevDay !== null && $prevDay->copy()->addDay()->isSameDay($currentDay)) {
                     $streak++;
                 } else {
                     $streak = 1;
@@ -148,26 +149,27 @@ class StudentMotivationService
         }
 
         // A true streak requires consecutive present days (reset on any gap/non-present).
-        // We check the last 14-day window for any unexcused absence that breaks it.
-        $absentCount = $last14->filter(fn (Attendance $a) => $a->status === AttendanceStatus::Absent)->count();
+        $absentCount = $last14
+            ->filter(fn (array $day): bool => $day['status'] === AttendanceStatus::Absent)
+            ->count();
 
         return $maxStreak >= 5 && $absentCount === 0;
     }
 
     private function attendanceStreakCount(Student $student, ?Classroom $scopeClassroom = null): int
     {
-        $attendances = $this->scopedAttendances($student, $scopeClassroom);
-        $last14 = $attendances->where('date', '>=', now()->subDays(14)->toDateString())->sortBy('date');
+        $last14 = $this->attendanceDays($student, $scopeClassroom)
+            ->filter(fn (array $day): bool => $day['date']->gte(now()->subDays(14)->startOfDay()));
 
         $streak = 0;
         $currentStreak = 0;
         $prevDay = null;
 
-        foreach ($last14 as $att) {
-            if ($att->status === AttendanceStatus::Present) {
-                $currentDay = ($att->dailyLog?->date ?? $att->date)->copy()->startOfDay();
+        foreach ($last14 as $day) {
+            if ($day['status'] === AttendanceStatus::Present) {
+                $currentDay = $day['date'];
 
-                if ($prevDay !== null && $prevDay->addDay()->isSameDay($currentDay)) {
+                if ($prevDay !== null && $prevDay->copy()->addDay()->isSameDay($currentDay)) {
                     $currentStreak++;
                 } else {
                     $currentStreak = 1;
@@ -182,6 +184,34 @@ class StudentMotivationService
         }
 
         return $streak;
+    }
+
+    /**
+     * Collapse all attendance rows into one state per school day.
+     *
+     * Attendance is recorded per session, so a student can have several rows
+     * on the same date. A day only counts as present when every session that
+     * day was present; any absence/lateness/excuse breaks the streak.
+     *
+     * @return SupportCollection<int, array{date: Carbon, status: AttendanceStatus}>
+     */
+    private function attendanceDays(Student $student, ?Classroom $scopeClassroom = null): SupportCollection
+    {
+        return $this->scopedAttendances($student, $scopeClassroom)
+            ->filter(fn (Attendance $attendance): bool => $attendance->dailyLog?->date !== null)
+            ->groupBy(fn (Attendance $attendance): string => $attendance->dailyLog->date->toDateString())
+            ->map(function ($dayAttendances): array {
+                $nonPresent = $dayAttendances->first(
+                    fn (Attendance $attendance): bool => $attendance->status !== AttendanceStatus::Present,
+                );
+
+                return [
+                    'date' => $dayAttendances->first()->dailyLog->date->copy()->startOfDay(),
+                    'status' => $nonPresent?->status ?? AttendanceStatus::Present,
+                ];
+            })
+            ->sortBy(fn (array $day): int => $day['date']->timestamp)
+            ->values();
     }
 
     private function comebackChampion(Student $student, ?Classroom $scopeClassroom = null): bool
@@ -278,7 +308,7 @@ class StudentMotivationService
 
     private function scopedAttendances(Student $student, ?Classroom $scopeClassroom = null): Collection
     {
-        $query = $student->attendances();
+        $query = $student->attendances()->with('dailyLog:id,date');
 
         if ($scopeClassroom) {
             $query->whereHas('dailyLog.schedule', function ($q) use ($scopeClassroom): void {
@@ -292,9 +322,9 @@ class StudentMotivationService
 
     private function presentCountInWindow(Student $student, ?Classroom $scopeClassroom, Carbon $from, Carbon $to): int
     {
-        return $this->scopedAttendances($student, $scopeClassroom)
-            ->filter(fn (Attendance $a) => $a->status === AttendanceStatus::Present
-                && ! $a->date->lt($from) && ! $a->date->gt($to))
+        return $this->attendanceDays($student, $scopeClassroom)
+            ->filter(fn (array $day): bool => $day['status'] === AttendanceStatus::Present
+                && ! $day['date']->lt($from) && ! $day['date']->gt($to))
             ->count();
     }
 
@@ -363,8 +393,6 @@ class StudentMotivationService
      */
     public function classroomMetrics(Classroom $classroom): array
     {
-        $groupIds = $classroom->groups->pluck('id')->all();
-
         $studentIds = Student::whereHas('group', fn ($q) => $q->where('classroom_id', $classroom->id))
             ->pluck('id');
 
@@ -375,17 +403,17 @@ class StudentMotivationService
         ];
 
         // Weekly attendance rate for students in this classroom
-        $weeklyLogs = DailyLog::whereIn('date', [
-            now()->subDays(6)->toDateString(),
-            now()->toDateString(),
-        ])
+        $weeklyLogs = DailyLog::query()
+            ->whereDate('date', '>=', now()->subDays(6)->toDateString())
+            ->whereDate('date', '<=', now()->toDateString())
             ->where('status', DailyLogStatus::Completed)
-            ->whereHas('schedule', fn ($q) => $q->where('classroom_id', $classroom->id)
-                ->orWhereHas('group', fn ($g) => $g->where('classroom_id', $classroom->id)))
+            ->whereHas('schedule', fn (Builder $q) => $q->where('classroom_id', $classroom->id)
+                ->orWhereHas('group', fn (Builder $g) => $g->where('classroom_id', $classroom->id)))
             ->count();
 
-        $scheduledSessions = Schedule::where('classroom_id', $classroom->id)
-            ->orWhereHas('group', fn ($g) => $g->where('classroom_id', $classroom->id))
+        $scheduledSessions = Schedule::query()
+            ->where('classroom_id', $classroom->id)
+            ->orWhereHas('group', fn (Builder $q) => $q->where('classroom_id', $classroom->id))
             ->count();
 
         $synergyComponents['completed_lessons_rate'] = $scheduledSessions > 0 ? ($weeklyLogs / max(1, $scheduledSessions)) * 100 : 0;
@@ -404,22 +432,18 @@ class StudentMotivationService
         $synergyComponents['positive_behavior_ratio'] = ($positiveObs + $negativeObs) > 0 ? ($positiveObs / max(1, $positiveObs + $negativeObs)) * 100 : 0;
 
         // Attendance rate (present / total attendances in last 7 days)
-        $totalAttendances = $studentIds->count() > 0 ? $studentIds->sum(function ($sid) use ($classroom): int {
-            return Attendance::where('student_id', $sid)
-                ->whereHas('dailyLog.schedule', fn ($q) => $q->where('classroom_id', $classroom->id)
-                    ->orWhereHas('group', fn ($g) => $g->where('classroom_id', $classroom->id)))
-                ->where('date', '>=', now()->subDays(7)->toDateString())
-                ->count();
-        }) : 0;
+        $attendanceQuery = Attendance::query()
+            ->whereIn('student_id', $studentIds)
+            ->whereHas('dailyLog', fn (Builder $q) => $q
+                ->whereDate('date', '>=', now()->subDays(6)->toDateString())
+                ->whereDate('date', '<=', now()->toDateString())
+                ->whereHas('schedule', fn (Builder $s) => $s->where('classroom_id', $classroom->id)
+                    ->orWhereHas('group', fn (Builder $g) => $g->where('classroom_id', $classroom->id))));
 
-        $presentAttendances = $studentIds->count() > 0 ? $studentIds->sum(function ($sid) use ($classroom): int {
-            return Attendance::where('student_id', $sid)
-                ->where('status', AttendanceStatus::Present)
-                ->whereHas('dailyLog.schedule', fn ($q) => $q->where('classroom_id', $classroom->id)
-                    ->orWhereHas('group', fn ($g) => $g->where('classroom_id', $classroom->id)))
-                ->where('date', '>=', now()->subDays(7)->toDateString())
-                ->count();
-        }) : 0;
+        $totalAttendances = (clone $attendanceQuery)->count();
+        $presentAttendances = (clone $attendanceQuery)
+            ->where('status', AttendanceStatus::Present->value)
+            ->count();
 
         $synergyComponents['attendance_rate'] = $totalAttendances > 0 ? ($presentAttendances / $totalAttendances) * 100 : 0;
 
@@ -442,7 +466,6 @@ class StudentMotivationService
 
     public function topMomentumStudent(?Classroom $scopeClassroom = null): ?array
     {
-        $scopeClassroom ??= $scopeClassroom;
         $students = Student::whereHas('group', fn ($q) => $q->when($scopeClassroom, fn ($g) => $g->where('classroom_id', $scopeClassroom->id)))->get();
         $best = ['student_name' => null, 'improvement' => 0];
         foreach ($students as $student) {
@@ -473,7 +496,6 @@ class StudentMotivationService
 
     public function topPulseStudent(?Classroom $scopeClassroom = null): ?array
     {
-        $scopeClassroom ??= $scopeClassroom;
         $students = Student::whereHas('group', fn ($q) => $q->when($scopeClassroom, fn ($g) => $g->where('classroom_id', $scopeClassroom->id)))->get();
         $best = ['student_name' => null, 'streak' => 0];
         foreach ($students as $student) {
@@ -488,7 +510,6 @@ class StudentMotivationService
 
     public function topPositiveKudosStudent(?Classroom $scopeClassroom = null): ?array
     {
-        $scopeClassroom ??= $scopeClassroom;
         $students = Student::whereHas('group', fn ($q) => $q->when($scopeClassroom, fn ($g) => $g->where('classroom_id', $scopeClassroom->id)))->get();
         $best = ['student_name' => null, 'positive_count' => 0, 'student_id' => null];
         foreach ($students as $student) {

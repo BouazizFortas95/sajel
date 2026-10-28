@@ -240,8 +240,8 @@ class ClassCouncilService
      */
     private function computeBehaviorCounts(Student $student): array
     {
-        $positiveCategories = ['participation', 'helpfulness', 'leadership', 'improvement', 'other_positive'];
-        $negativeCategories = ['disruption', 'disrespect', 'violence', 'cheating', 'absence_without_leave', 'other_negative'];
+        $positiveCategories = ['positive', 'participation', 'helpfulness', 'leadership', 'improvement', 'other_positive'];
+        $negativeCategories = ['negative', 'disciplinary', 'disruption', 'disrespect', 'violence', 'cheating', 'absence_without_leave', 'other_negative'];
 
         $obs = BehaviorObservation::where('student_id', $student->id)
             ->selectRaw('category, count(*) as count')

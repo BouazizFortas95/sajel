@@ -3,10 +3,13 @@
 namespace Tests\Feature;
 
 use App\Enums\AssessmentType;
+use App\Enums\AttendanceStatus;
 use App\Enums\DailyLogStatus;
 use App\Enums\Role;
 use App\Models\ActiveLearningStrategy;
 use App\Models\Assessment;
+use App\Models\Attendance;
+use App\Models\BehaviorObservation;
 use App\Models\Classroom;
 use App\Models\CurriculumDomain;
 use App\Models\CurriculumResource;
@@ -15,11 +18,21 @@ use App\Models\DailyLog;
 use App\Models\EducationPhase;
 use App\Models\Grade;
 use App\Models\Group;
+use App\Models\Lab;
+use App\Models\LabSeatingPlan;
+use App\Models\LabStation;
 use App\Models\Level;
+use App\Models\PedagogicalMeeting;
+use App\Models\PedagogicalMemo;
+use App\Models\PedagogicalRemediation;
 use App\Models\Schedule;
+use App\Models\SchoolHoliday;
+use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\StudentMotivationService;
+use Carbon\Carbon;
 use Database\Seeders\MiddleSchoolDatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
@@ -30,6 +43,20 @@ use Tests\TestCase;
 class MiddleSchoolSeederTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Carbon::setTestNow(Carbon::parse('2026-10-26 10:30:00', 'Africa/Algiers'));
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
+    }
 
     private function seedDataset(): void
     {
@@ -110,7 +137,10 @@ class MiddleSchoolSeederTest extends TestCase
         $classrooms = Classroom::query()->get();
 
         $this->assertSame(20, $classrooms->count());
-        $this->assertSame(20, $classrooms->where('academic_year', '2025-2026')->count());
+        $this->assertSame(
+            20,
+            $classrooms->where('academic_year', MiddleSchoolDatabaseSeeder::ACADEMIC_YEAR)->count(),
+        );
 
         foreach ($levels as $level) {
             $this->assertSame(5, $classrooms->where('level_id', $level->id)->count());
@@ -209,18 +239,72 @@ class MiddleSchoolSeederTest extends TestCase
         $this->assertTrue(Hash::check(MiddleSchoolDatabaseSeeder::ADMIN_PASSWORD, $admin->password));
     }
 
+    public function test_it_seeds_the_demo_teacher_with_math_physics_and_twenty_two_hours(): void
+    {
+        $this->seedDataset();
+
+        $math = Subject::query()->where('name', 'الرياضيات')->sole();
+        $physics = Subject::query()->where('name', 'العلوم الفيزيائية والتكنولوجيا')->sole();
+
+        $teacher = User::query()
+            ->where('email', MiddleSchoolDatabaseSeeder::DEMO_TEACHER_EMAIL)
+            ->sole();
+
+        $this->assertSame(Role::Teacher, $teacher->role);
+        $this->assertSame($math->id, $teacher->primary_subject_id);
+        $this->assertSame($physics->id, $teacher->secondary_subject_id);
+        $this->assertSame(MiddleSchoolDatabaseSeeder::TEACHER_WEEKLY_HOURS, $teacher->weekly_hours_limit);
+        $this->assertSame(20, $teacher->schedules()->count());
+        $this->assertTrue(Hash::check(MiddleSchoolDatabaseSeeder::ADMIN_PASSWORD, $teacher->password));
+    }
+
+    public function test_it_seeds_the_school_identity_and_an_annual_holiday_calendar(): void
+    {
+        $this->seedDataset();
+
+        $settings = SchoolSetting::current();
+
+        $this->assertSame(MiddleSchoolDatabaseSeeder::SCHOOL_NAME, $settings->school_name);
+        $this->assertSame(MiddleSchoolDatabaseSeeder::DIRECTORATE_NAME, $settings->directorate_name);
+        $this->assertSame(MiddleSchoolDatabaseSeeder::MUNICIPALITY_NAME, $settings->municipality_name);
+        $this->assertSame(MiddleSchoolDatabaseSeeder::ACADEMIC_YEAR, $settings->academic_year);
+        $this->assertSame(MiddleSchoolDatabaseSeeder::PRINCIPAL_NAME, $settings->principal_name);
+        $this->assertSame(MiddleSchoolDatabaseSeeder::COUNSELOR_NAME, $settings->counselor_name);
+        $this->assertSame(MiddleSchoolDatabaseSeeder::SCHOOL_CODE, $settings->school_code);
+
+        $holidays = SchoolHoliday::query()->get();
+
+        $this->assertGreaterThanOrEqual(8, $holidays->count());
+        $this->assertTrue($holidays->every(
+            fn (SchoolHoliday $holiday): bool => $holiday->start_date->year >= 2026
+                && $holiday->end_date->year <= 2027,
+        ));
+
+        $windowStart = now()->startOfWeek(Carbon::SUNDAY)->subWeek()->startOfDay();
+        $windowEnd = now()->startOfWeek(Carbon::SUNDAY)->addDays(4)->endOfDay();
+
+        $this->assertSame(0, $holidays->filter(
+            fn (SchoolHoliday $holiday): bool => $holiday->start_date->lte($windowEnd)
+                && $holiday->end_date->gte($windowStart),
+        )->count());
+
+        foreach (DailyLog::query()->pluck('date') as $date) {
+            $this->assertFalse(SchoolHoliday::isHoliday($date));
+        }
+    }
+
     public function test_it_generates_conflict_free_weekly_schedules_for_teachers_and_classrooms(): void
     {
         $this->seedDataset();
 
         $schedules = Schedule::query()->with(['user', 'group'])->get();
 
-        $this->assertGreaterThanOrEqual(
-            MiddleSchoolDatabaseSeeder::TEACHER_COUNT * MiddleSchoolDatabaseSeeder::MIN_TEACHER_LESSONS,
+        $this->assertSame(
+            MiddleSchoolDatabaseSeeder::TEACHER_COUNT * 20,
             $schedules->count(),
         );
-        $this->assertLessThanOrEqual(
-            MiddleSchoolDatabaseSeeder::TEACHER_COUNT * MiddleSchoolDatabaseSeeder::MAX_TEACHER_LESSONS,
+        $this->assertSame(
+            Classroom::query()->count() * 30,
             $schedules->count(),
         );
 
@@ -263,10 +347,33 @@ class MiddleSchoolSeederTest extends TestCase
         }
 
         foreach (User::query()->where('role', Role::Teacher->value)->get() as $teacher) {
-            $lessons = $teacher->schedules()->count();
+            $this->assertSame(20, $teacher->schedules()->count());
+        }
 
-            $this->assertGreaterThanOrEqual(MiddleSchoolDatabaseSeeder::MIN_TEACHER_LESSONS, $lessons);
-            $this->assertLessThanOrEqual(MiddleSchoolDatabaseSeeder::MAX_TEACHER_LESSONS, $lessons);
+        $labSubjectIds = Subject::query()
+            ->whereIn('name', MiddleSchoolDatabaseSeeder::LAB_SUBJECTS)
+            ->pluck('id')
+            ->all();
+
+        foreach (Classroom::query()->with('groups')->get() as $classroom) {
+            $classroomSchedules = $schedules->where('classroom_id', $classroom->id);
+
+            $this->assertSame(30, $classroomSchedules->count());
+            $this->assertSame(13, $classroomSchedules->pluck('subject_id')->unique()->count());
+
+            $labSchedules = $classroomSchedules->whereIn('subject_id', $labSubjectIds);
+
+            $this->assertSame(6, $labSchedules->count());
+
+            foreach ($labSubjectIds as $labSubjectId) {
+                $sessions = $labSchedules->where('subject_id', $labSubjectId);
+
+                $this->assertSame(2, $sessions->count());
+                $this->assertEqualsCanonicalizing(
+                    $classroom->groups->pluck('id')->all(),
+                    $sessions->pluck('group_id')->all(),
+                );
+            }
         }
     }
 
@@ -274,14 +381,19 @@ class MiddleSchoolSeederTest extends TestCase
     {
         $this->seedDataset();
 
-        $logs = DailyLog::query()->get();
-        $windowStart = now()
-            ->subDays(MiddleSchoolDatabaseSeeder::DAILY_LOG_HISTORY_DAYS - 1)
-            ->startOfDay();
-        $windowEnd = now()->endOfDay();
+        $weekStart = now()->startOfWeek(Carbon::SUNDAY);
+        $windowStart = $weekStart->copy()->subWeek()->startOfDay();
+        $windowEnd = $weekStart->copy()->addDays(4)->endOfDay();
+        $logs = DailyLog::query()->with('schedule:id,end_time')->get();
 
-        // Every weekly slot occurs exactly twice in a 14-day window.
+        // Every weekly slot occurs exactly twice: previous Sunday → current Thursday.
         $this->assertSame(Schedule::query()->count() * 2, $logs->count());
+        $this->assertSame(10, $logs->pluck('date')->map->toDateString()->unique()->count());
+        $this->assertTrue(
+            $logs->groupBy('schedule_id')->every(
+                fn (Collection $scheduleLogs): bool => $scheduleLogs->count() === 2,
+            ),
+        );
         $this->assertSame(
             $logs->count(),
             $logs->unique(
@@ -299,14 +411,28 @@ class MiddleSchoolSeederTest extends TestCase
             $this->assertSame('lesson_structure', $block['type'] ?? null);
             $this->assertNotEmpty($block['data']['competence'] ?? null);
             $this->assertSame(
-                ['التمهيد', 'الاكتشاف', 'الترسيخ', 'التقويم'],
+                ['وضعية الانطلاق', 'بناء التعلمات', 'الترسيخ والممارسة', 'التقويم والاستثمار'],
                 array_column($block['data']['lesson_phases'] ?? [], 'phase_name'),
             );
+
+            $expectedStatus = $log->date->lt(today())
+                || (
+                    $log->date->isToday()
+                    && $log->schedule->end_time->format('H:i') <= now()->format('H:i')
+                )
+                    ? DailyLogStatus::Completed
+                    : DailyLogStatus::Planned;
+
+            $this->assertSame($expectedStatus, $log->status);
             $this->assertSame(
                 $log->status === DailyLogStatus::Completed,
                 filled($log->actual_content),
             );
+            $this->assertNotEmpty($log->homework);
         }
+
+        $this->assertSame(760, $logs->where('status', DailyLogStatus::Completed)->count());
+        $this->assertSame(440, $logs->where('status', DailyLogStatus::Planned)->count());
     }
 
     public function test_it_seeds_a_curriculum_for_every_subject_and_level_and_maps_each_daily_log(): void
@@ -344,8 +470,11 @@ class MiddleSchoolSeederTest extends TestCase
 
         $schedules = Schedule::query()->get();
         $assessments = Assessment::query()->with('schedule')->get();
+        $classroomCount = Classroom::query()->count();
 
-        $this->assertGreaterThan(0, $assessments->count());
+        // Three core subjects × two sequential assessments × every classroom.
+        $this->assertSame($classroomCount * 3 * 2, $assessments->count());
+        $this->assertSame($assessments->count() * 30, Grade::query()->count());
         $this->assertLessThan($schedules->count(), $assessments->count());
 
         $studentsByGroup = Student::query()
@@ -357,13 +486,13 @@ class MiddleSchoolSeederTest extends TestCase
             ->groupBy('assessment_id')
             ->pluck('aggregate', 'assessment_id');
 
+        $windowStart = now()->startOfWeek(Carbon::SUNDAY)->subWeek()->startOfDay();
+        $windowEnd = now()->startOfWeek(Carbon::SUNDAY)->addDays(4)->endOfDay();
+
         foreach ($assessments as $assessment) {
             $this->assertContains($assessment->type, [AssessmentType::Quiz, AssessmentType::Midterm]);
             $this->assertEquals(20, (float) $assessment->max_score);
-            $this->assertTrue($assessment->date->between(
-                now()->subDays(MiddleSchoolDatabaseSeeder::DAILY_LOG_HISTORY_DAYS - 1)->startOfDay(),
-                now()->endOfDay(),
-            ));
+            $this->assertTrue($assessment->date->between($windowStart, $windowEnd));
 
             $schedule = $assessment->schedule;
             $expectedGrades = $schedule->group_id !== null
@@ -392,6 +521,176 @@ class MiddleSchoolSeederTest extends TestCase
                 && (float) $grade->score >= 0
                 && (float) $grade->score <= 20,
         ));
+    }
+
+    public function test_it_seeds_sequential_assessments_with_balanced_learner_profiles(): void
+    {
+        $this->seedDataset();
+
+        $math = Subject::query()->where('name', 'الرياضيات')->sole();
+        $assessments = Assessment::query()
+            ->with('schedule')
+            ->whereHas('schedule', fn ($query) => $query->where('subject_id', $math->id))
+            ->get();
+
+        $this->assertCount(Classroom::query()->count() * 2, $assessments);
+
+        $gradesByAssessment = Grade::query()
+            ->whereIn('assessment_id', $assessments->pluck('id'))
+            ->get()
+            ->groupBy('assessment_id');
+
+        $profileCounts = [
+            'excellence' => 0,
+            'comeback' => 0,
+            'steady' => 0,
+            'struggling' => 0,
+        ];
+
+        foreach (Classroom::query()->get() as $classroom) {
+            $pair = $assessments
+                ->filter(fn (Assessment $assessment): bool => $assessment->schedule->classroom_id === $classroom->id)
+                ->sortBy(fn (Assessment $assessment): string => $assessment->date->toDateString())
+                ->values();
+
+            $this->assertCount(2, $pair);
+            $this->assertNotSame($pair[0]->date->toDateString(), $pair[1]->date->toDateString());
+
+            $firstGrades = $gradesByAssessment->get($pair[0]->id, collect())->keyBy('student_id');
+            $secondGrades = $gradesByAssessment->get($pair[1]->id, collect())->keyBy('student_id');
+
+            $roster = Student::query()
+                ->whereIn('group_id', Group::query()->where('classroom_id', $classroom->id)->pluck('id'))
+                ->orderBy('id')
+                ->pluck('id');
+
+            $this->assertCount(30, $roster);
+
+            foreach ($roster as $studentId) {
+                $this->assertArrayHasKey($studentId, $firstGrades->all());
+                $this->assertArrayHasKey($studentId, $secondGrades->all());
+
+                $firstScore = (float) $firstGrades[$studentId]->score;
+                $secondScore = (float) $secondGrades[$studentId]->score;
+
+                $profile = match (true) {
+                    $firstScore >= 16.0 && $firstScore <= 19.5 => 'excellence',
+                    $firstScore === 9.5 && $secondScore === 13.5 => 'comeback',
+                    $firstScore >= 10.5 && $firstScore <= 15.5 => 'steady',
+                    $firstScore >= 5.5 && $firstScore <= 9.0 => 'struggling',
+                    default => null,
+                };
+
+                $this->assertNotNull($profile);
+                $profileCounts[$profile]++;
+            }
+        }
+
+        $this->assertSame([
+            'excellence' => 120,
+            'comeback' => 150,
+            'steady' => 240,
+            'struggling' => 90,
+        ], $profileCounts);
+    }
+
+    public function test_it_seeds_attendance_with_realistic_distribution_streaks_and_repeat_absentees(): void
+    {
+        $this->seedDataset();
+
+        $counts = Attendance::query()
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status')
+            ->map(fn (int|string $count): int => (int) $count);
+
+        $total = (int) $counts->sum();
+
+        $this->assertGreaterThan(20_000, $total);
+        $this->assertGreaterThan(0.85, $counts['present'] / $total);
+        $this->assertLessThan(0.93, $counts['present'] / $total);
+        $this->assertGreaterThan(0.04, $counts['absent'] / $total);
+        $this->assertLessThan(0.08, $counts['absent'] / $total);
+        $this->assertGreaterThan(0.015, $counts['late'] / $total);
+        $this->assertLessThan(0.04, $counts['late'] / $total);
+        $this->assertGreaterThan(0.005, $counts['excused'] / $total);
+        $this->assertLessThan(0.03, $counts['excused'] / $total);
+
+        $this->assertSame(0, Attendance::query()
+            ->where('status', '!=', AttendanceStatus::Present->value)
+            ->whereNull('remarks')
+            ->count());
+
+        $repeatAbsentees = DB::table('attendances')
+            ->join('daily_logs', 'daily_logs.id', '=', 'attendances.daily_log_id')
+            ->where('attendances.status', AttendanceStatus::Absent->value)
+            ->selectRaw('attendances.student_id, COUNT(DISTINCT daily_logs.date) as absence_days')
+            ->groupBy('attendances.student_id')
+            ->having('absence_days', '>=', 3)
+            ->get()
+            ->count();
+
+        $this->assertGreaterThanOrEqual(40, $repeatAbsentees);
+
+        $classroom = Classroom::query()->with('groups')->orderBy('id')->firstOrFail();
+        $topStudent = Student::query()
+            ->whereIn('group_id', $classroom->groups->pluck('id'))
+            ->orderBy('id')
+            ->firstOrFail();
+
+        $badges = app(StudentMotivationService::class)->badgesForStudent($topStudent, $classroom);
+
+        $this->assertArrayHasKey('attendance_streak', $badges);
+    }
+
+    public function test_it_seeds_three_laboratories_with_stations_and_two_seating_plans(): void
+    {
+        $this->seedDataset();
+
+        $this->assertSame(3, Lab::query()->count());
+        $this->assertSame(60, LabStation::query()->count());
+        $this->assertSame(3, Lab::query()->where('capacity', 20)->count());
+        $this->assertSame(3, Lab::query()->withCount('stations')->get()->where('stations_count', 20)->count());
+        $this->assertSame(54, LabStation::query()->where('status', 'working')->count());
+        $this->assertSame(3, LabStation::query()->where('status', 'under_maintenance')->count());
+        $this->assertSame(3, LabStation::query()->where('status', 'broken')->count());
+
+        $plans = LabSeatingPlan::query()->withCount('stations')->orderBy('id')->get();
+
+        $this->assertSame(2, $plans->count());
+        $this->assertSame(
+            ['1 م 1 — الفوج أ', '1 م 1 — الفوج ب'],
+            $plans->pluck('name')->all(),
+        );
+
+        foreach ($plans as $plan) {
+            $this->assertSame(18, $plan->stations_count);
+            $this->assertSame(15, $plan->stations()->whereNotNull('student_id')->count());
+        }
+    }
+
+    public function test_it_seeds_memos_observations_remediations_and_meetings(): void
+    {
+        $this->seedDataset();
+
+        $this->assertSame(61, PedagogicalMemo::query()->count());
+        $this->assertSame(30, PedagogicalMemo::query()->where('is_template', false)->where('is_archived', false)->count());
+        $this->assertSame(30, PedagogicalMemo::query()->where('is_template', true)->count());
+        $this->assertSame(1, PedagogicalMemo::query()->where('is_archived', true)->count());
+
+        $this->assertSame(120, BehaviorObservation::query()->count());
+        $this->assertSame(60, BehaviorObservation::query()->where('category', 'positive')->count());
+        $this->assertSame(40, BehaviorObservation::query()->whereIn('category', ['negative', 'disciplinary'])->count());
+        $this->assertSame(20, BehaviorObservation::query()->where('category', 'observation')->count());
+        $this->assertSame(0, BehaviorObservation::query()->whereNull('recorded_by_id')->count());
+
+        $this->assertSame(120, PedagogicalRemediation::query()->count());
+        $this->assertSame(0, PedagogicalRemediation::query()->whereNull('recorded_by_id')->count());
+        $this->assertGreaterThan(0, PedagogicalRemediation::query()->where('attended', true)->count());
+
+        $this->assertSame(62, PedagogicalMeeting::query()->count());
+        $this->assertSame(30, PedagogicalMeeting::query()->where('meeting_type', 'inspector_seminar')->count());
+        $this->assertSame(30, PedagogicalMeeting::query()->where('meeting_type', 'coordination_meeting')->count());
     }
 
     public function test_the_seeder_wipes_previous_school_and_user_data(): void
@@ -463,10 +762,10 @@ class MiddleSchoolSeederTest extends TestCase
 
         DB::disableQueryLog();
 
-        // The ~6,000-record dataset, including the curriculum plan and the
-        // school-holiday calendar, should still use a bounded set of bulk
-        // writes instead of one query per row.
-        $this->assertLessThan(220, $queries, "The seeder ran {$queries} queries.");
+        // The two-week dataset — including timetables, 22k+ attendance rows,
+        // assessments/grades, curriculum, labs, and follow-up records — should
+        // still use a bounded set of bulk writes instead of one query per row.
+        $this->assertLessThan(400, $queries, "The seeder ran {$queries} queries.");
     }
 
     public function test_the_student_factory_generates_arabic_test_identities(): void

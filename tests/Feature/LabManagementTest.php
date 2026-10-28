@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Enums\LabStatus;
 use App\Enums\Role;
 use App\Filament\Resources\LabResource;
+use App\Filament\Resources\LabResource\Pages\EditLab;
+use App\Filament\Resources\LabResource\RelationManagers\LabStationsRelationManager;
 use App\Models\EducationPhase;
 use App\Models\Lab;
 use App\Models\LabStation;
@@ -12,6 +14,7 @@ use App\Models\Level;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class LabManagementTest extends TestCase
@@ -223,5 +226,35 @@ class LabManagementTest extends TestCase
 
         $this->assertDatabaseMissing('labs', ['id' => $lab->id]);
         $this->assertDatabaseMissing('lab_stations', ['id' => $station->id]);
+    }
+
+    public function test_admins_can_create_stations_from_the_lab_relation_manager(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $lab = Lab::factory()->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(LabStationsRelationManager::class, [
+            'ownerRecord' => $lab,
+            'pageClass' => EditLab::class,
+        ])
+            ->assertSuccessful()
+            ->assertTableHeaderActionsExistInOrder(['create'])
+            ->assertTableEmptyStateActionsExistInOrder(['create'])
+            ->callTableAction('create', data: [
+                'station_number' => 7,
+                'device_type' => 'computer',
+                'status' => LabStatus::Working->value,
+                'notes' => 'محطة جديدة',
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertDatabaseHas('lab_stations', [
+            'lab_id' => $lab->id,
+            'station_number' => 7,
+            'device_type' => 'computer',
+            'status' => LabStatus::Working->value,
+        ]);
     }
 }

@@ -1,8 +1,8 @@
 # Sajel (سجِّل) — Project Status
 
-> Last updated: 2026-10-25
-> Verified by `php artisan test` (**316 passed**, 14,671 assertions, **0 failures**),
-> `npm run build`, and `vendor/bin/pint`.
+> Last updated: 2026-10-28
+> Verified by `php artisan test` (**364 passed**, 20,418 assertions, **0 failures**),
+> `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
 
@@ -28,7 +28,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | PDF        | `spatie/browsershot` `^5.4`, Puppeteer  | Headless Chrome; Arabic shaping + Tailwind-preserving PDF |
 | i18n       | `mcamara/laravel-localization` `^2.4`    | `ar`, `en`, `fr` locales                |
 | Timezone   | `Africa/Algiers`                         | `APP_TIMEZONE`, used for weekly dates   |
-| Testing    | PHPUnit `^11.5`                          | **316 tests, all green (14,671 assertions in the latest run)** |
+| Testing    | PHPUnit `^11.5`                          | **364 tests, all green (20,418 assertions in the latest run)** |
 | Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
 
 ## 4. Sajel Pulse — Motivation Engine (نبض التميز والتحفيز التربوي)
@@ -38,7 +38,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 - A4 RTL certificate `print.student-certificate` + authorization (`StudentPolicy::view`).
 - Badges injected into `ParentPortalService` and `StudentReportCardService`.
 - Translations added to `ar.json`, `en.json`, `fr.json`; `tests/Feature/MotivationPulseTest.php` created.
-- Health-check PASS; Pint PASS; suite 344 pass / 3 pre-existing intermittent.
+- Health-check PASS; Pint PASS; full suite 364 pass / 0 failures.
 - Section 18 (Phase 8 — Institutional Backup & CI) added.
 
 ## 3. Domain Model
@@ -156,8 +156,10 @@ User (teacher: primary/secondary subject, weekly hours limit)
   resource count once. A sequence is `completed` only when every one of its resources has at least
   one completed lesson; otherwise it is `in_progress` or `not_started`. Teachers see only their own
   classroom/subject pairs in the overview, but the percentages aggregate the whole class; admins see
-  every pair. The custom `CurriculumProgress` page filters by subject and classroom and breaks progress
-  down by domain, sequence, and resource.
+  every pair. The custom `CurriculumProgress` page filters by subject and classroom, exposes search,
+  progress-status, sort, and per-page tools bound to the URL, shows scope KPIs and at-risk badges,
+  paginates the summary with Filament's no-scroll pagination component, exports the filtered rows to
+  UTF-8 CSV, and breaks progress down by domain, sequence, and resource.
 - `Student::scopeForSchedule()` is the single roster resolver used by attendance and gradebook syncs
   and their relation managers; a schedule with neither a group nor a classroom targets no students
   rather than the whole school.
@@ -259,44 +261,44 @@ small demo is wanted.
 `php artisan migrate:fresh --seed` (via `DatabaseSeeder`). It is deliberately destructive: every
 run wipes grades, attendance, daily logs, curriculum resources, curriculum sequences, curriculum
 domains, assessments, schedules, students, groups, classrooms, levels, phases, subjects,
-import/export rows, sessions, and users before rebuilding. The dataset contains 13 official
-subjects (each with a distinct hex colour), the `CEM` phase (abbreviation `م`), 4 levels with grade
-numbers, 20 classrooms (`1 م 1` … `4 م 5`, academic year `2025-2026`), 40 groups (`الفوج أ` /
-`الفوج ب`), 600 students (15 per group, ages 11–15 by grade), one default admin
-(`admin@sajel.test` / `password`), and 30 teachers. Every teacher gets a primary subject (all 13
-subjects are covered) and exactly 6 teachers (20%) also get a different secondary subject. Students
-are built through `StudentFactory` and inserted in six 100-row chunks; teachers use `UserFactory`
-`teacher()`/`admin()` states.
+import/export rows, sessions, and users before rebuilding. The dataset contains the school identity
+`متوسطة الشهيد العربي بن مهيدي` under `مديرية التربية لولاية الوادي` (`بلدية أم الطيور`, academic
+year `2026-2027`), an official holiday calendar, 13 subjects (each with a distinct hex colour), the
+`CEM` phase (abbreviation `م`), 4 levels with grade numbers, 20 classrooms (`1 م 1` … `4 م 5`),
+40 groups (`الفوج أ` / `الفوج ب`), 600 students (15 per group, ages 11–15 by grade), one default
+admin (`admin@sajel.test` / `password`), and 30 teachers. The demo teacher
+(`teacher@sajel.test` / `password`) teaches Mathematics as primary and Physics as secondary with a
+22-hour weekly limit; every teacher gets a primary subject (all 13 subjects are covered) and exactly
+6 teachers (20%) also get a different secondary subject. Students are built through `StudentFactory`
+and inserted in six 100-row chunks; teachers use `UserFactory` `teacher()`/`admin()` states.
 
-The same seed builds the official curriculum for every subject/level pair: 2 domains, 4 sequences,
-and 8 knowledge resources, for 104 domains, 208 sequences, and 416 resources overall. Domains and
-sequences carry ordered Arabic labels (`الميدان الأول`…, `المقطع الأول`…), and each pair has a
-ready-made annual plan.
+The same seed builds the official Algerian `التعليم المتوسط — الجيل الثاني` curriculum for every
+subject/level pair from `Database\Seeders\Support\AlgerianCurriculumCatalog`: 2 domains, 4 sequences,
+and 8 knowledge resources (104 domains, 208 sequences, 416 resources overall). Each resource carries
+a competence, starting situation, the four lesson phases (وضعية الانطلاق، بناء التعلمات، الترسيخ
+والممارسة، التقويم والاستثمار), register-ready HTML, and homework.
 
-A typical run also seeds two weeks of class-register and gradebook history. Every timetable slot
-gets two `DailyLog` rows (one per week) whose `content_data` is a `lesson_structure` block with a
-subject-specific competence and four named phases (التمهيد، الاكتشاف، الترسيخ، التقويم); statuses
-are randomly `completed` or `planned`, and completed logs receive an HTML `actual_content` summary.
-Every daily log is attached to a rotating knowledge resource from its schedule's subject and
-classroom/group level, so the seeded classroom-progress page starts with a realistic spread instead
-of an empty plan. Roughly 25% of schedules receive a `quiz` or `midterm` assessment with
-`max_score = 20`, and every student in that schedule's group/classroom roster gets a grade between
-0 and 20 with one decimal (e.g. `15.5`). Grades are bulk-inserted with `insertOrIgnore` against
-the unique `(assessment_id, student_id)` key, mirroring the idempotent gradebook sync. A typical
-seed with ~595 schedules produces ~1,190 daily logs, 104 curriculum domains, 208 sequences,
-416 resources, ~150 assessments, and ~3,900 grades; the seeder stays below its 215-query budget by
-preloading only the core maps and inserting in chunks.
+A typical run also seeds two academic weeks of class-register and gradebook history: the previous
+Sunday through the current Thursday. Every timetable slot gets two `DailyLog` rows whose
+`content_data` is a `lesson_structure` block with subject-specific Arabic content and the four named
+phases; a log is `completed` once its date is in the past (or its slot has ended today), otherwise
+`planned`. Completed logs receive an HTML `actual_content` summary, and roughly 65% carry an
+administrative visa; a handful are taught by a substitute teacher. Every log is attached to a
+rotating knowledge resource from its schedule's subject and classroom/group level. Two sequential
+assessments (quiz then midterm) are seeded for Arabic, Mathematics, and French in every classroom
+(120 assessments / 3,600 grades), using balanced learner profiles: excellence 16–19.5, comeback
+9.5 → 13.5, steady 10.5–15.5, and struggling 5.5–9.0. Attendance follows a realistic 90% present /
+5% absent / 3% late / 2% excused distribution with Arabic remarks, multi-day present streaks, and
+repeat absentees. Three labs with 20 stations each, 60 stations, and two seating plans for `1 م 1`
+complete the dataset alongside pedagogical memos, behavior observations, remediations, and meetings;
+a typical run writes 1,200 daily logs, 22,725 attendance rows, and stays below its 400-query budget
+by preloading core maps and bulk-inserting in chunks.
 
-The timetable generator produces 18–22 one-hour lessons per teacher on Sunday–Thursday, using the
-`08:00–12:00` / `14:00–17:00` grid. It drains a shuffled teacher queue with a per-slot quota of
-`ceil(remaining lessons / remaining slots)`, capped by the number of classrooms, then returns each
-selected teacher to the back of the queue. Each lesson is linked to a classroom (preferring the
-teacher's grade, with a least-loaded-room strategy), always uses the teacher's **primary** subject,
-and attaches ~20% of lessons to a specific group. Nested teacher and classroom busy maps keyed by
-`[$id][$day][$start_time]` guarantee no double-booking; a typical run yields ~600 lessons with
-roughly 30 lessons per classroom. A safety pass fills any teacher left short, and the seeder throws
-rather than silently emitting an under-target timetable. `ScheduleFactory` now only emits valid
-paired time slots on school days.
+The deterministic timetable generator produces 20 one-hour lessons per teacher (600 schedules) on
+Sunday–Thursday, using the `08:00–12:00` / `14:00–17:00` grid. Each classroom receives 30 lessons
+covering all 13 subjects; Physics, Science, and Informatics lab sessions are group-scoped, with each
+group attending one session per subject. Teacher/slot and classroom/slot busy maps guarantee no
+double-booking, and the seeder validates the resulting grid before inserting.
 
 `StudentFactory` generates given names through Faker's `ar_SA` provider and surnames from a curated
 Algerian family-name pool, with `2026-####` registration numbers and 11–15-year-old birth dates.
@@ -387,12 +389,17 @@ teacher. Print, PDF, duplicate, archive, and restore actions are available from 
 edit page.
 
 `CurriculumProgress` (`/{locale}/auth/curriculum-progress`) is a custom Filament page for all
-authenticated users. It filters by subject and classroom, shows a class summary table (completed and
-total sequences/resources plus a percentage bar), and expands into a domain → sequence → resource
-breakdown with completion badges. Teachers start on their first scheduled class and only see
-subject/classroom pairs they actually teach; admins see every pair. Counts are class-wide even for
-teachers (so co-taught classes show the full programme progress), and duplicate logs for the same
-resource are counted once.
+authenticated users. Its URL-bound toolbar filters by subject and classroom and adds search by
+subject/class/level, progress status (`all`, `completed`, `in_progress`, `not_started`, `at_risk`),
+sorting (classroom, subject, percentage ascending/descending, completed resources), and a per-page
+selector (10/25/50/100). The page shows scope KPIs (pairs, average progress, completed resources,
+at-risk pairs), a class summary table with status badges, at-risk markers, progress bars, and an
+explicit details button, and expands into a domain → sequence → resource breakdown with completion
+badges. Teachers start on their first scheduled class and only see subject/classroom pairs they
+actually teach; admins see every pair. Counts are class-wide even for teachers (so co-taught classes
+show the full programme progress), and duplicate logs for the same resource are counted once. The
+filtered rows export to UTF-8 CSV, and the summary uses Filament's pagination component, which does
+not run Livewire's `scrollIntoView()` on page changes, so the browser keeps its scroll position.
 
 `StudentResource` includes a native Filament CSV import action. Expected headers are
 `first_name`, `last_name`, `registration_number`, `date_of_birth`, and `group`. The `group` value
@@ -426,9 +433,10 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
   Both views resolve weekday dates in the `Africa/Algiers` timezone and open the existing log
   or a prefilled create page.
 - `CurriculumProgress` page (`app/Filament/Pages/CurriculumProgress.php`) at
-  `/{locale}/auth/curriculum-progress`: subject/classroom filters, a teacher-scoped default, summary
-  cards, a domain → sequence → resource breakdown, and a whole-school or teacher-scoped overview
-  table. Its computed properties call `CurriculumProgressService`; the Blade view is
+  `/{locale}/auth/curriculum-progress`: subject/classroom filters, search/status/sort/per-page tools,
+  teacher-scoped default, KPI cards, a domain → sequence → resource breakdown, and a paginated
+  whole-school or teacher-scoped overview table with CSV export. Its computed properties call
+  `CurriculumProgressService`; the Blade view is
   `resources/views/filament/pages/curriculum-progress.blade.php`.
 - `QuickLinks` widget (`app/Filament/Widgets/QuickLinks.php`): dashboard navigation cards,
   including the new weekly schedule page (custom Blade view), using Sajel brand colours and
@@ -472,7 +480,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 7. Testing
 
-`php artisan test` — **316 passing, 14,671 assertions in the latest full run, 0 failures**:
+`php artisan test` — **364 passing, 20,418 assertions in the latest full run, 0 failures**:
 
 | Suite                                  | Tests | Covers                                                        |
 |----------------------------------------|-------|---------------------------------------------------------------|
@@ -481,7 +489,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | `Tests\Feature\ActiveLearningStrategyTest` | 3  | Teacher access, seeded default strategies, strategy availability |
 | `Tests\Feature\AuthorizationTest`      | 18    | Role-based panel access; student/assessment/grade/attendance policies; admin-only core academic structure policies, screens, and navigation hiding; relation-manager parent ownership; admin bypass |
 | `Tests\Feature\ClassroomNamingTest`    | 3     | Auto-generated classroom name from level grade, phase abbreviation, and class number; regeneration on update; graceful fallback when the convention is incomplete |
-| `Tests\Feature\CurriculumTrackingTest` | 14    | Curriculum hierarchy/relationships/ordering, daily-log resource mapping and register summary, admin CRUD page forms, admin-only catalog policies, subject/level-scoped selector options, forged mapping rejection, automatic progress after completion (duplicate logs counted once), classroom/subject/group scoping, teacher class-wide overview vs admin all-pairs, teacher defaults/authorization on the progress page, localized page rendering, resource nulling/domain cascade |
+| `Tests\Feature\CurriculumTrackingTest` | 17    | Curriculum hierarchy/relationships/ordering, daily-log resource mapping and register summary, admin CRUD page forms, admin-only catalog policies, subject/level-scoped selector options, forged mapping rejection, automatic progress after completion (duplicate logs counted once), classroom/subject/group scoping, teacher class-wide overview vs admin all-pairs, teacher defaults/authorization on the progress page, localized page rendering, search/status/sort tools, at-risk filtering, pagination without scroll-jump, tool reset, CSV export, resource nulling/domain cascade |
 | `Tests\Feature\DailyLogPagesTest`      | 6     | List/edit pages, schedule+date prefilling, cross-teacher protection, create-form save, unique `(schedule_id, date)` validation |
 | `Tests\Feature\AttendanceTest`         | 7     | Attendance defaults/relationships, unique pair, group and classroom roster resolution, idempotent sync, new-student insertion, inline status update, relation-manager registration |
 | `Tests\Feature\GradebookTest`          | 12    | Assessment/grade relationships and casts, unique pair, group/classroom roster sync, new-student insertion, inline decimal scores and max validation, teacher-only schedule creation/scoping, schedule immutability on edit, cascade deletes, relation-manager registration |
@@ -489,7 +497,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | `Tests\Feature\DashboardThemeTest`     | 7     | No missing utility classes, dark mode + theme asset, RTL Arabic panel + topbar switcher, brand colours, widget layout/registration, stat tabs |
 | `Tests\Feature\DataShowModeTest`       | 5     | Slide generation and clean narration text, localized voice toolbar and speech locales, Data Show Mode rendering and interactions |
 | `Tests\Feature\MySchedulePageTest`     | 4     | Teacher-only access, day/week views, guest redirect           |
-| `Tests\Feature\TeacherInteractiveScheduleTest` | 22 | Rendering, colours, dark mode, day/search/view/expand interactions, complete/cancel, stats, date-aware log navigation, teacher scoping |
+| `Tests\Feature\TeacherInteractiveScheduleTest` | 24 | Rendering, colours, dark mode, day/search/view/expand interactions, complete/cancel, stats, date-aware log navigation, teacher scoping |
 | `Tests\Feature\TeacherTimetableTest`   | 16    | Fixed five-day/seven-slot grid, matrix mapping, multi-hour row spans with covered cells (2h, 3h, back-to-back, lunch-break clamp), workload totals and overload badge, equality boundary, empty placeholders, subject-colour mapping (all six palette colours), primary fallback for missing/unknown colours, teacher scoping, current-week click dates, stale-date fallback, date-aware log navigation |
 | `Tests\Feature\TeacherSubjectAssignmentTest` | 6 | Primary/secondary relationships, default weekly limit, teacher form default/restriction, admin teacher-scoped subject options, user-form specialization assignment/editing |
 | `Tests\Feature\StudentManagementTest`  | 8     | Student/group relationships, cascade delete, admin-only resource/navigation, form creation, unique nullable registration, group filter, CSV importer group linking |
@@ -498,10 +506,12 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | `Tests\Feature\WelcomeAndDashboardTest`| 7     | Welcome page links, login/register access, guest redirect, dashboard stats/quick links, French and Arabic/RTL localization |
 | `Tests\Feature\UnloggedSessionsWidgetTest` | 4 | Teacher-only visibility, Sunday-to-today missing/planned detection, today's end-time boundary, teacher scoping, completion URLs, five-per-page Livewire pagination with total count, success state |
 | `Tests\Feature\AiLessonPlannerTest`    | 14    | Service contract (locale-aware prompts, Arabic fallback, UUID-keyed `lesson_structure` block, fenced-JSON tolerance, OpenAI driver, provider errors/retries/fallbacks), form-action injection, missing title/schedule guard, teacher-scoped schedules |
-| `Tests\Feature\MiddleSchoolSeederTest` | 15    | Dataset and active-learning strategy seed coverage, official subjects, school structure, students, teachers, schedules, daily logs, curriculum mappings, assessments and grades, destructive wipe, idempotent re-runs, bulk query budget (<215 queries), factory identities |
+| `Tests\Feature\MotivationPulseTest` | 5 | Zero-click badge computation, comeback-champion detection, quick-kudos authorization, teacher/admin hub access, and the A4 RTL certificate route |
+| `Tests\Feature\MiddleSchoolSeederTest` | 21    | Dataset and active-learning strategy seed coverage, official subjects, school identity and holiday calendar, school structure, students, teachers, demo-teacher assignments, deterministic 20-hour schedules, two-week daily logs, authentic curriculum mappings, sequential assessments and balanced learner profiles, attendance distribution/streaks, labs/seating plans, pedagogical follow-up records, destructive wipe, idempotent re-runs, bulk query budget (<400 queries), factory identities |
 | `Tests\Feature\ScheduleOverlapTest`    | 6     | Overlapping/identical teacher-day slots rejected; back-to-back slots allowed; scoping to teacher and day; edit-safe self-exclusion; admin double-booking guard |
 | `Tests\Feature\LocalePersistenceTest`  | 5     | Locale persisted when visiting localized panel routes, updated on language switch, restored on `/livewire/update` (post-save redirect URL generation), applied to non-localized URLs, unsupported locales ignored |
-| `Tests\Feature\LabManagementTest`      | 11    | Lab management and seating-plan behavior |
+| `Tests\Feature\LabManagementTest`      | 12    | Lab management, relation-manager station creation (header + empty-state actions), and seating-plan behavior |
+| `Tests\Feature\BehaviorObservationResourceTest` | 1 | Admin list rendering with follow-up badge formatting |
 | `Tests\Feature\OfficialReportsTest`    | 19    | Official report page access, timetable/attendance/transcript output, scoping, localization, and PDF routes |
 | `Tests\Feature\QuickAttendanceTest`    | 8     | Quick-attendance access, roster display, attendance saving, and authorization |
 | `Tests\Feature\OfflineAttendancePwaTest` | 7   | PWA assets and panel registration, idempotent multi-student sync, schedule/roster authorization, admin bypass, invalid batch validation, offline controls |
@@ -515,7 +525,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | Aspect            | Status                                             |
 |-------------------|----------------------------------------------------|
 | Migrations        | ✅ All 43 migrations ran |
-| Test suite        | ✅ 316/316 passing, 0 failures (14,671 assertions in the latest full run) |
+| Test suite        | ✅ 364/364 passing, 0 failures (20,418 assertions in the latest full run) |
 | Admin panel       | ✅ 20 Filament resources + custom dashboard, schedule, curriculum-progress, data-show pages + ar/en/fr |
 | Seed data         | ✅ Destructive middle-school dataset + optional SajelSeeder |
 | Version control   | Git repo on `main`; Phase 2/3/4 complete (`f4e776a`, `f8d...`) |
@@ -556,7 +566,7 @@ No further Phase 2 work is required. Phase 3 is now complete; see the Phase 3 ro
 >
 > **تم إنجاز متابعة المنهاج الرسمي:** `CurriculumDomainResource` + `CurriculumSequenceResource` +
 > `CurriculumKnowledgeResource` + `CurriculumProgress` (with `CurriculumProgressService`), verified
-> by `CurriculumTrackingTest` (14 tests). The seeder builds 104 domains, 208 sequences, and 416
+> by `CurriculumTrackingTest` (17 tests). The seeder builds 104 domains, 208 sequences, and 416
 > resources, and maps every seeded daily log to a matching resource.
 > Dark mode contrast fixed: selected table row uses `bg-amber-50/90 dark:bg-amber-500/15 ring-1
 > ring-inset ring-amber-500/40 dark:ring-amber-400/40` with `text-amber-950 dark:text-amber-100`
@@ -580,7 +590,8 @@ No further Phase 2 work is required. Phase 3 is now complete; see the Phase 3 ro
 
 > **تم إنجاز الأقسام والمخابر:** `Lab` + `LabStation` models + `LabStatus` enum + migrations (`labs`, `lab_stations`) +
 > factories + policies + `LabResource` with `LabStationsRelationManager` + Filament pages, verified by
-> `LabManagementTest` (11 tests). Admin-only navigation, teacher scoping enforced,
+> `LabManagementTest` (12 tests), including admin station creation from the relation-manager header and
+> empty-state actions. Admin-only navigation, teacher scoping enforced,
 > translations added to `lang/ar.json`, `lang/en.json`, and `lang/fr.json` (20 new keys).
 
 > **تم إنجاز مخطط جلوس المخبر:** `LabSeatingPlan` + `LabSeatingPlanStation` models + migrations (`lab_seating_plans`, `lab_seating_plan_stations`) +
@@ -836,7 +847,7 @@ Phase 6: Parent Engagement, Academic Calendar & Production Readiness.
 - Milestone 3: Pedagogical Meeting Resource (`PedagogicalMeetingResource`, `TeacherPortfolioService`, controller/routes/translations/header actions + `MySchedule`) — complete.
 - Milestone 4: Production Readiness (`SajelHealthCheckCommand` `sajel:health-check` + `--json`, DB 25 tables, timezone `Africa/Algiers`, localization `ar/en/fr`, PWA `dir=rtl`, AI provider read from `config/ai.php` with PASS/WARN key detection; `SajelHealthCheckCommandTest`; `pint`/`npm`/`migrate` clean).
 
-Status 2026-10-25: `316 passed`, **0 failures** (`14,671` assertions); `pint` passed; `npm run build` passed; health command reports PASS on database, schema (25 tables), timezone, localization, PWA, and AI (`Provider: gemini (gemini-3.8-flash) | Key: configured`). All Phase 2–6 milestones complete (100%).
+Status 2026-10-28: `364 passed`, **0 failures** (`20,418` assertions); `pint` passed; `npm run build` passed; health command reports PASS on database, schema (25 tables), timezone, localization, PWA, and AI (`Provider: gemini (gemini-3.8-flash) | Key: configured`). All Phase 2–6 milestones complete (100%).
 
 ## 16. Phase 7 — School Identity (هوية المؤسسة التربوية)
 

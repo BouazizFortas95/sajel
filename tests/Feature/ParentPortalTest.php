@@ -50,8 +50,14 @@ class ParentPortalTest extends TestCase
     public function test_portal_recent_logs_do_not_leak_other_groups_in_the_same_classroom(): void
     {
         $classroom = Classroom::factory()->create();
-        $group = Group::factory()->create(['classroom_id' => $classroom->id]);
-        $otherGroup = Group::factory()->create(['classroom_id' => $classroom->id]);
+        $group = Group::factory()->create([
+            'classroom_id' => $classroom->id,
+            'name' => 'مجموعة الطالب',
+        ]);
+        $otherGroup = Group::factory()->create([
+            'classroom_id' => $classroom->id,
+            'name' => 'مجموعة أخرى',
+        ]);
         $student = Student::factory()->create(['group_id' => $group->id]);
 
         $this->completedLog($classroom, $group, 'درس مجموعتي');

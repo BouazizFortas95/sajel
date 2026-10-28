@@ -1,5 +1,8 @@
 <x-filament::page>
-    @php($service = app(\App\Services\StudentMotivationService::class); $classroom = \App\Models\Classroom::first())
+    @php
+        $service = app(\App\Services\StudentMotivationService::class);
+        $classroom = \App\Models\Classroom::first();
+    @endphp
     <div class="filament-pages-page-wrapper space-y-6">
         {{-- Header card with classroom filter and class-level metrics --}}
         <div class="rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50/60 to-white/60 p-6 shadow-sm dark:border-amber-700/30 dark:from-amber-950/30 dark:to-gray-900/40">
@@ -56,12 +59,13 @@
             <div class="rounded-2xl border border-amber-200/60 bg-gradient-to-br from-white/80 to-amber-50/40 p-6 shadow-sm dark:border-amber-700/30 dark:from-gray-900/60 dark:to-amber-950/20">
                 <h3 class="text-sm font-extrabold text-amber-800 dark:text-amber-200 mb-1">{{ __('نجم المشاركة ⭐') }}</h3>
                 <p class="text-xs text-amber-700/70 dark:text-amber-300/60 mb-4">{{ __('أكثر الطلاب حصدًا لإجابات مميزة ومشاركات شجاعة') }}</p>
-                @if ($service && $service->badgesForStudent($topP ? (\App\Models\Student::find($topP['student_id'] ?? null) ?? \App\Models\Student::first()) : \App\Models\Student::first()))
+                @php($topK = $service ? $service->topPositiveKudosStudent() : null)
+                @if ($topK)
                     <div class="flex items-center gap-3 rounded-xl bg-amber-100/70 dark:bg-amber-950/40 px-4 py-3 border border-amber-200 dark:border-amber-800/40">
                         <span class="text-2xl">⭐</span>
                         <div>
-                            <div class="font-extrabold text-amber-900 dark:text-amber-100">{{ $topP['student_name'] ?? __('—') }}</div>
-                            <div class="text-[11px] text-amber-700 dark:text-amber-300">{{ count($service->badgesForStudent($topP ? (\App\Models\Student::find($topP['student_id'] ?? null) ?? \App\Models\Student::first()) : \App\Models\Student::first())) }} {{ __('وسام') }}</div>
+                            <div class="font-extrabold text-amber-900 dark:text-amber-100">{{ $topK['student_name'] ?? __('—') }}</div>
+                            <div class="text-[11px] text-amber-700 dark:text-amber-300">{{ $topK['positive_count'] ?? 0 }} {{ __('ملاحظة إيجابية') }}</div>
                         </div>
                     </div>
                 @else
