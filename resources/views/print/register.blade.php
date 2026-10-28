@@ -1,8 +1,9 @@
 @php
     $schoolSetting = $schoolSetting ?? \App\Models\SchoolSetting::current();
+    $isRtl = app()->getLocale() === 'ar';
 @endphp
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html dir="{{ $isRtl ? 'rtl' : 'ltr' }}" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -226,17 +227,6 @@
     @php
         $allowedTags = '<p><br><strong><em><u><s><ul><ol><li><h2><h3><h4><blockquote>';
 
-        // Official print output must stay Arabic even when the app locale is English.
-        $arabicWeekdays = [
-            'sunday' => 'الأحد',
-            'monday' => 'الاثنين',
-            'tuesday' => 'الثلاثاء',
-            'wednesday' => 'الأربعاء',
-            'thursday' => 'الخميس',
-            'friday' => 'الجمعة',
-            'saturday' => 'السبت',
-        ];
-
         $filamentColorMap = [
             'primary' => '#d97706',
             'secondary' => '#64748b',
@@ -301,8 +291,8 @@
                     س
                 </span>
                 <div>
-                    <p class="text-sm font-black text-slate-900">معاينة دفتر النصوص</p>
-                    <p class="mt-0.5 text-[11px] font-semibold text-slate-500">دفتر مستقل لكل قسم — جاهز للطباعة أو الحفظ كـ PDF</p>
+                    <p class="text-sm font-black text-slate-900">{{ __('معاينة دفتر النصوص') }}</p>
+                    <p class="mt-0.5 text-[11px] font-semibold text-slate-500">{{ __('دفتر مستقل لكل قسم — جاهز للطباعة أو الحفظ كـ PDF') }}</p>
                 </div>
             </div>
 
@@ -314,7 +304,7 @@
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231a1.125 1.125 0 0 1-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z"/>
                 </svg>
-                طباعة / حفظ كـ PDF
+                {{ __('طباعة / حفظ PDF') }}
             </button>
         </div>
     </div>
@@ -348,17 +338,17 @@
 
                         <div class="grid grid-cols-[1fr_1.25fr_1fr] gap-3 p-4">
                             {{-- Right / start: institutional context --}}
-                            <div class="text-right">
-                                <p class="text-[8px] font-extrabold tracking-wide text-amber-700/80">المعلومات العامة الرسمية</p>
+                            <div class="text-start">
+                                <p class="text-[8px] font-extrabold tracking-wide text-amber-700/80">{{ __('المعلومات العامة الرسمية') }}</p>
 
                                 <div class="mt-2 space-y-1.5">
                                     <div>
-                                        <p class="text-[8px] font-semibold text-slate-400">مديرية التربية</p>
+                                        <p class="text-[8px] font-semibold text-slate-400">{{ __('مديرية التربية') }}</p>
                                         <p class="text-[9px] font-bold leading-4 text-slate-700">{{ $schoolSetting->directorate_name }}</p>
                                     </div>
 
                                     <div>
-                                        <p class="text-[8px] font-semibold text-slate-400">المؤسسة التربوية / متوسطة</p>
+                                        <p class="text-[8px] font-semibold text-slate-400">{{ __('المؤسسة التربوية / متوسطة') }}</p>
                                         <p class="text-[9px] font-bold leading-4 text-slate-700">{{ $schoolSetting->school_name }}</p>
                                         @if ($schoolSetting->municipality_name)
                                             <p class="text-[8px] font-semibold text-slate-500">{{ __('البلدية') }}: {{ $schoolSetting->municipality_name }}</p>
@@ -370,21 +360,21 @@
                                     </div>
 
                                     <div>
-                                        <p class="text-[8px] font-semibold text-slate-400">السنة الدراسية</p>
+                                        <p class="text-[8px] font-semibold text-slate-400">{{ __('السنة الدراسية') }}</p>
                                         <p class="text-[10px] font-extrabold leading-4 text-slate-800">{{ $register['academicYear'] ?? $schoolSetting->academic_year }}</p>
                                     </div>
 
                                     <div>
-                                        <p class="text-[8px] font-semibold text-slate-400">الطور التعليمي</p>
-                                        <p class="text-[10px] font-extrabold leading-4 text-slate-800">{{ $phase?->name ?? 'التعليم المتوسط' }}</p>
+                                        <p class="text-[8px] font-semibold text-slate-400">{{ __('الطور التعليمي') }}</p>
+                                        <p class="text-[10px] font-extrabold leading-4 text-slate-800">{{ $phase?->name ?? __('التعليم المتوسط') }}</p>
                                     </div>
                                 </div>
                             </div>
 
                             {{-- Center: republic and document title --}}
                             <div class="border-x border-amber-200/70 px-3 text-center">
-                                <p class="text-[10px] font-extrabold tracking-wide text-slate-900">الجمهورية الجزائرية الديمقراطية الشعبية</p>
-                                <p class="mt-0.5 text-[8px] font-semibold text-slate-500">وزارة التربية الوطنية</p>
+                                <p class="text-[10px] font-extrabold tracking-wide text-slate-900">{{ __('الجمهورية الجزائرية الديمقراطية الشعبية') }}</p>
+                                <p class="mt-0.5 text-[8px] font-semibold text-slate-500">{{ __('وزارة التربية الوطنية') }}</p>
 
                                 <h1
                                     id="{{ $registerTitleId }}"
@@ -393,33 +383,33 @@
                                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/>
                                     </svg>
-                                    دفتر النصوص الرسمي
+                                    {{ __('دفتر النصوص الرسمي') }}
                                 </h1>
 
-                                <p class="mt-1.5 text-[8.5px] font-bold text-amber-800/80">السجل الرسمي للحصص المنجزة الخاص بالقسم</p>
+                                <p class="mt-1.5 text-[8.5px] font-bold text-amber-800/80">{{ __('السجل الرسمي للحصص المنجزة الخاص بالقسم') }}</p>
                             </div>
 
                             {{-- Left / end: document control and period --}}
-                            <div class="text-left">
-                                <p class="text-[8px] font-extrabold tracking-wide text-amber-700/80">بيانات الوثيقة</p>
+                            <div class="text-end">
+                                <p class="text-[8px] font-extrabold tracking-wide text-amber-700/80">{{ __('بيانات الوثيقة') }}</p>
 
                                 <div class="mt-2 space-y-1.5">
                                     <div>
-                                        <p class="text-[8px] font-semibold text-slate-400">الفترة الزمنية</p>
+                                        <p class="text-[8px] font-semibold text-slate-400">{{ __('الفترة الزمنية') }}</p>
                                         <p class="text-[9px] font-extrabold leading-4 text-slate-800">
-                                            من <span dir="ltr" class="tabular-nums">{{ $periodFrom?->format('Y/m/d') ?? '—' }}</span>
-                                            إلى <span dir="ltr" class="tabular-nums">{{ $periodTo?->format('Y/m/d') ?? '—' }}</span>
+                                            {{ __('من') }} <span dir="ltr" class="tabular-nums">{{ $periodFrom?->format('Y/m/d') ?? '—' }}</span>
+                                            {{ __('إلى') }} <span dir="ltr" class="tabular-nums">{{ $periodTo?->format('Y/m/d') ?? '—' }}</span>
                                         </p>
                                     </div>
 
                                     <div>
-                                        <p class="text-[8px] font-semibold text-slate-400">تاريخ الاستخراج</p>
+                                        <p class="text-[8px] font-semibold text-slate-400">{{ __('تاريخ الاستخراج') }}</p>
                                         <p class="text-[9px] font-extrabold leading-4 text-slate-800">{{ now()->format('Y/m/d') }}</p>
                                     </div>
 
                                     <div>
                                         <span class="inline-flex rounded-full bg-slate-900 px-2.5 py-1 text-[9px] font-extrabold text-white shadow-sm">
-                                            إجمالي الحصص المنجزة: {{ $registerCount }}
+                                            {{ __('إجمالي الحصص المنجزة: :count', ['count' => $registerCount]) }}
                                         </span>
                                     </div>
                                 </div>
@@ -430,20 +420,20 @@
                     {{-- ==================== Tier B: class identity and assigned teachers ==================== --}}
                     <section class="mt-3 grid grid-cols-2 gap-3 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4">
                         <div class="col-span-2 flex items-center justify-between gap-3 border-b border-amber-200/70 pb-2">
-                            <span class="rounded-full border border-amber-200 bg-white/80 px-2.5 py-0.5 text-[8px] font-extrabold text-amber-800">هوية القسم</span>
-                            <p class="text-[9px] font-extrabold tracking-wide text-amber-900/80">بطاقة الهوية الخاصة بالقسم والأساتذة المسندين</p>
+                            <span class="rounded-full border border-amber-200 bg-white/80 px-2.5 py-0.5 text-[8px] font-extrabold text-amber-800">{{ __('هوية القسم') }}</span>
+                            <p class="text-[9px] font-extrabold tracking-wide text-amber-900/80">{{ __('بطاقة الهوية الخاصة بالقسم والأساتذة المسندين') }}</p>
                         </div>
 
                         {{-- Right / start: high-emphasis class identity --}}
-                        <div class="text-right">
-                            <div class="flex items-end justify-end gap-3">
-                                <div class="text-right">
-                                    <p class="text-[9px] font-bold text-slate-500">المستوى الدراسي</p>
+                        <div class="text-start">
+                            <div class="flex items-end justify-start gap-3">
+                                <div class="text-start">
+                                    <p class="text-[9px] font-bold text-slate-500">{{ __('المستوى الدراسي') }}</p>
                                     <p class="mt-0.5 text-[11px] font-extrabold text-slate-800">{{ $register['levelName'] ?? '—' }}</p>
                                 </div>
 
-                                <div class="text-right">
-                                    <p class="text-[9px] font-bold text-slate-500">القسم</p>
+                                <div class="text-start">
+                                    <p class="text-[9px] font-bold text-slate-500">{{ __('القسم') }}</p>
                                     <span class="mt-0.5 inline-flex rounded-2xl bg-slate-900 px-5 py-2 text-2xl font-black tracking-wide text-white shadow-md shadow-slate-900/15">
                                         {{ $classroom?->name ?? '—' }}
                                     </span>
@@ -451,12 +441,12 @@
                             </div>
 
                             <div class="mt-2">
-                                <p class="text-[9px] font-bold text-slate-500">الأفواج التربوية</p>
-                                <div class="mt-1 flex flex-wrap justify-end gap-1.5">
+                                <p class="text-[9px] font-bold text-slate-500">{{ __('الأفواج التربوية') }}</p>
+                                <div class="mt-1 flex flex-wrap justify-start gap-1.5">
                                     @forelse ($groups as $group)
                                         <span class="rounded-full border border-amber-200 bg-white/80 px-2 py-0.5 text-[9px] font-bold text-slate-600">{{ $group->name }}</span>
                                     @empty
-                                        <span class="rounded-full border border-amber-200 bg-white/80 px-2 py-0.5 text-[9px] font-bold text-slate-600">كامل القسم</span>
+                                        <span class="rounded-full border border-amber-200 bg-white/80 px-2 py-0.5 text-[9px] font-bold text-slate-600">{{ __('كامل القسم') }}</span>
                                     @endforelse
                                 </div>
                             </div>
@@ -466,7 +456,7 @@
                         <div class="border-s border-amber-200/80 ps-3">
                             <div class="flex items-center justify-between gap-2">
                                 <span class="rounded-full bg-slate-900 px-2 py-0.5 text-[8px] font-extrabold text-white">{{ $assignments->count() }}</span>
-                                <p class="text-[9px] font-extrabold text-amber-900/80">الأساتذة المتدخلون والمواد المسندة</p>
+                                <p class="text-[9px] font-extrabold text-amber-900/80">{{ __('الأساتذة المتدخلون والمواد المسندة') }}</p>
                             </div>
 
                             <div class="mt-2 space-y-1">
@@ -479,8 +469,8 @@
                                     @endphp
 
                                     <div class="flex items-center justify-between gap-2 rounded-lg border border-amber-200/80 bg-white/85 px-2 py-1.5">
-                                        <div class="min-w-0 text-right">
-                                            <p class="truncate text-[9px] font-extrabold text-slate-800">{{ $assignmentTeacher?->name ?? 'غير محدد' }}</p>
+                                        <div class="min-w-0 text-start">
+                                            <p class="truncate text-[9px] font-extrabold text-slate-800">{{ $assignmentTeacher?->name ?? __('غير محدد') }}</p>
 
                                             @if ($assignmentSubject?->name)
                                                 <span
@@ -494,10 +484,10 @@
                                             @endif
                                         </div>
 
-                                        <span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-extrabold text-amber-900">{{ $assignment['count'] }} حصة</span>
+                                        <span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-extrabold text-amber-900">{{ __(':count حصة', ['count' => $assignment['count']]) }}</span>
                                     </div>
                                 @empty
-                                    <p class="text-[9px] font-semibold text-slate-400">لا توجد حصص مسجلة.</p>
+                                    <p class="text-[9px] font-semibold text-slate-400">{{ __('لا توجد حصص مسجلة.') }}</p>
                                 @endforelse
                             </div>
                         </div>
@@ -508,32 +498,32 @@
                         <div class="mb-2 flex items-center justify-between gap-3">
                             <h2 class="flex items-center gap-2 text-xs font-black text-slate-800">
                                 <span class="h-2 w-2 rounded-full bg-amber-500"></span>
-                                سجل الحصص المنجزة — {{ $classroom?->name ?? 'قسم غير محدد' }}
+                                {{ __('سجل الحصص المنجزة — :classroom', ['classroom' => $classroom?->name ?? __('قسم غير محدد')]) }}
                             </h2>
                             <span class="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[9px] font-bold text-amber-800">
-                                {{ $registerCount }} سجل
+                                {{ __(':count سجل', ['count' => $registerCount]) }}
                             </span>
                         </div>
 
                         {{-- overflow stays visible so the table can fragment cleanly across A4 pages. --}}
                         <div class="overflow-visible rounded-2xl border border-amber-200 bg-white/60 shadow-sm">
-                            <table class="register-table w-full table-fixed text-right text-[11px]">
+                            <table class="register-table w-full table-fixed text-start text-[11px]">
                                 <thead>
                                     <tr class="bg-slate-900 text-white">
                                         <th class="w-[12%] border-b-2 border-amber-400 border-e border-white/10 px-2.5 py-3 text-center text-[9px] font-extrabold">
-                                            التاريخ والتوقيت
+                                            {{ __('التاريخ والتوقيت') }}
                                         </th>
                                         <th class="w-[21%] border-b-2 border-amber-400 border-e border-white/10 px-2.5 py-3 text-[9px] font-extrabold">
-                                            المادة والأستاذ(ة) والفوج
+                                            {{ __('المادة والأستاذ(ة) والفوج') }}
                                         </th>
                                         <th class="w-[18%] border-b-2 border-amber-400 border-e border-white/10 px-2.5 py-3 text-[9px] font-extrabold">
-                                            عنوان الدرس
+                                            {{ __('عنوان الدرس') }}
                                         </th>
                                         <th class="w-[32%] border-b-2 border-amber-400 border-e border-white/10 px-2.5 py-3 text-[9px] font-extrabold">
-                                            المحتوى المنجز (سيرورة الحصة)
+                                            {{ __('المحتوى المنجز (سيرورة الحصة)') }}
                                         </th>
                                         <th class="w-[17%] border-b-2 border-amber-400 px-2.5 py-3 text-[9px] font-extrabold">
-                                            الواجب والملاحظات
+                                            {{ __('الواجب والملاحظات') }}
                                         </th>
                                     </tr>
                                 </thead>
@@ -548,7 +538,7 @@
                                             $rowSubjectColor = $subjectColor($rowSubject?->color);
                                             $rowSubjectForeground = $subjectTextColor($rowSubjectColor);
                                             $rowDay = $schedule?->day_of_week;
-                                            $weekdayLabel = $rowDay instanceof \App\Enums\DayOfWeek ? ($arabicWeekdays[$rowDay->value] ?? '—') : '—';
+                                            $weekdayLabel = $rowDay instanceof \App\Enums\DayOfWeek ? $rowDay->label() : '—';
                                             $hasHomework = filled($log->homework);
                                             $hasObservations = filled($log->observations);
                                         @endphp
@@ -589,7 +579,7 @@
                                                 @endif
 
                                                 <p class="mt-1 text-[9px] font-semibold leading-4 text-slate-600">
-                                                    الأستاذ(ة):
+                                                    {{ __('الأستاذ(ة)') }}:
                                                     <span class="font-extrabold text-slate-800">{{ $rowTeacher?->name ?? '—' }}</span>
                                                 </p>
 
@@ -597,7 +587,7 @@
                                                     @if ($rowGroup)
                                                         {{ $rowClassroom?->name ?? $classroom?->name ?? '—' }} — {{ $rowGroup->name }}
                                                     @else
-                                                        كامل القسم: {{ $rowClassroom?->name ?? $classroom?->name ?? '—' }}
+                                                        {{ __('كامل القسم: :classroom', ['classroom' => $rowClassroom?->name ?? $classroom?->name ?? '—']) }}
                                                     @endif
                                                 </p>
                                             </td>
@@ -636,7 +626,7 @@
                                             <td class="border-b border-amber-100 px-2.5 py-3">
                                                 @if ($hasHomework)
                                                     <div class="rounded-lg border border-amber-100 bg-amber-50/60 px-2.5 py-2">
-                                                        <p class="text-[8px] font-extrabold text-amber-800">الواجب</p>
+                                                        <p class="text-[8px] font-extrabold text-amber-800">{{ __('الواجب') }}</p>
                                                         <p class="mt-0.5 text-[10px] font-semibold leading-5 text-slate-700">
                                                             {!! nl2br(e($log->homework)) !!}
                                                         </p>
@@ -645,7 +635,7 @@
 
                                                 @if ($hasObservations)
                                                     <div class="mt-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
-                                                        <p class="text-[8px] font-extrabold text-slate-500">ملاحظات</p>
+                                                        <p class="text-[8px] font-extrabold text-slate-500">{{ __('ملاحظات') }}</p>
                                                         <p class="mt-0.5 text-[10px] font-semibold leading-5 text-slate-600">
                                                             {!! nl2br(e($log->observations)) !!}
                                                         </p>
@@ -662,8 +652,8 @@
                                             <td colspan="5" class="px-4 py-10 text-center">
                                                 <div class="mx-auto flex max-w-sm flex-col items-center gap-2 rounded-2xl border border-dashed border-amber-300 bg-amber-50/70 px-6 py-8">
                                                     <span class="grid h-12 w-12 place-items-center rounded-2xl bg-amber-500 text-xl font-black text-white shadow-md shadow-amber-500/25">س</span>
-                                                    <p class="text-sm font-extrabold text-amber-900">لا توجد سجلات منجزة مطابقة للاختيار.</p>
-                                                    <p class="text-[10px] font-semibold text-amber-700/70">اختر سجلات منجزة ثم أعد إنشاء الدفتر.</p>
+                                                    <p class="text-sm font-extrabold text-amber-900">{{ __('لا توجد سجلات منجزة مطابقة للاختيار.') }}</p>
+                                                    <p class="text-[10px] font-semibold text-amber-700/70">{{ __('اختر سجلات منجزة ثم أعد إنشاء الدفتر.') }}</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -677,31 +667,31 @@
                     <footer class="signatures mt-5 break-inside-avoid">
                         <div class="grid grid-cols-3 gap-3">
                             <div class="rounded-xl border border-dashed border-amber-300 bg-white/70 p-3 text-center shadow-sm">
-                                <p class="text-[10px] font-extrabold text-amber-900">إمضاء الأستاذ(ة)</p>
+                                <p class="text-[10px] font-extrabold text-amber-900">{{ __('إمضاء الأستاذ(ة)') }}</p>
                                 <div class="mt-8 border-t border-dotted border-slate-400"></div>
-                                <p class="mt-1 text-[8px] font-semibold text-slate-400">التاريخ</p>
+                                <p class="mt-1 text-[8px] font-semibold text-slate-400">{{ __('التاريخ') }}</p>
                             </div>
 
                             <div class="rounded-xl border border-dashed border-amber-300 bg-white/70 p-3 text-center shadow-sm">
-                                <p class="text-[10px] font-extrabold text-amber-900">تأشيرة السيد(ة) المدير(ة)</p>
+                                <p class="text-[10px] font-extrabold text-amber-900">{{ __('تأشيرة السيد(ة) المدير(ة)') }}</p>
                                 @if ($schoolSetting->principal_name)
                                     <p class="mt-0.5 text-[9px] font-bold text-slate-600">{{ $schoolSetting->principal_name }}</p>
                                 @endif
                                 <div class="mt-8 border-t border-dotted border-slate-400"></div>
-                                <p class="mt-1 text-[8px] font-semibold text-slate-400">الختم والإمضاء</p>
+                                <p class="mt-1 text-[8px] font-semibold text-slate-400">{{ __('الختم والإمضاء') }}</p>
                             </div>
 
                             <div class="rounded-xl border border-dashed border-amber-300 bg-white/70 p-3 text-center shadow-sm">
-                                <p class="text-[10px] font-extrabold text-amber-900">تأشيرة السيد(ة) المفتش(ة)</p>
+                                <p class="text-[10px] font-extrabold text-amber-900">{{ __('تأشيرة السيد(ة) المفتش(ة)') }}</p>
                                 <div class="mt-8 border-t border-dotted border-slate-400"></div>
-                                <p class="mt-1 text-[8px] font-semibold text-slate-400">الختم والإمضاء</p>
+                                <p class="mt-1 text-[8px] font-semibold text-slate-400">{{ __('الختم والإمضاء') }}</p>
                             </div>
                         </div>
 
                         <div class="mt-3 flex items-center justify-between gap-3 border-t border-dashed border-amber-200 pt-2 text-[8px] font-semibold text-slate-400">
                             <span class="inline-flex items-center gap-1.5">
                                 <span class="grid h-4 w-4 place-items-center rounded bg-amber-500 text-[8px] font-black text-white">س</span>
-                                دفتر قسم {{ $classroom?->name ?? '—' }} — وثيقة رسمية من منصة سجِّل
+                                {{ __('دفتر قسم :classroom — وثيقة رسمية من منصة سجِّل', ['classroom' => $classroom?->name ?? '—']) }}
                             </span>
                             <span>{{ now()->format('Y/m/d — H:i') }}</span>
                         </div>

@@ -26,9 +26,15 @@ class BehaviorObservationResource extends Resource
 
     protected static ?int $navigationSort = 78;
 
-    protected static ?string $navigationLabel = 'الملاحظات والسلوك';
+    public static function getNavigationLabel(): string
+    {
+        return __('الملاحظات والسلوك');
+    }
 
-    protected static ?string $navigationGroup = 'التشغيل اليومي';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('التشغيل اليومي');
+    }
 
     public static function form(Form $form): Form
     {

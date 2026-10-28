@@ -42,6 +42,7 @@ class UnloggedSessionsWidgetTest extends TestCase
     {
         // Thursday 22 October 2026 at 12:00 in Algeria.
         Carbon::setTestNow(Carbon::create(2026, 10, 22, 12, 0, 0, 'Africa/Algiers'));
+        $this->app->setLocale('ar');
 
         $teacher = User::factory()->create();
         $otherTeacher = User::factory()->create();
@@ -100,6 +101,7 @@ class UnloggedSessionsWidgetTest extends TestCase
     public function test_it_paginates_pending_sessions_five_at_a_time(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 10, 22, 12, 0, 0, 'Africa/Algiers'));
+        $this->app->setLocale('ar');
 
         $teacher = User::factory()->create();
 
@@ -169,6 +171,7 @@ class UnloggedSessionsWidgetTest extends TestCase
     public function test_it_renders_a_success_state_when_nothing_is_pending(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 10, 22, 12, 0, 0, 'Africa/Algiers'));
+        $this->app->setLocale('ar');
 
         $teacher = User::factory()->create();
         $this->scheduleFor($teacher, DayOfWeek::Thursday, '14:00', '15:00');

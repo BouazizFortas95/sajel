@@ -30,7 +30,7 @@
                     <div class="flex items-center gap-3 rounded-xl bg-amber-100/70 dark:bg-amber-950/40 px-4 py-3 border border-amber-200 dark:border-amber-800/40">
                         <span class="text-2xl">🚀</span>
                         <div>
-                            <div class="font-extrabold text-amber-900 dark:text-amber-100">{{ $topM['student_name'] ?? __('—') }}</div>
+                            <div class="font-extrabold text-amber-900 dark:text-amber-100">{{ $topM['student_name'] ?? '—' }}</div>
                             <div class="text-[11px] text-amber-700 dark:text-amber-300">{{ $topM['improvement'] ?? '+' }} {{ __('نقطة تحسن') }}</div>
                         </div>
                     </div>
@@ -47,7 +47,7 @@
                     <div class="flex items-center gap-3 rounded-xl bg-amber-100/70 dark:bg-amber-950/40 px-4 py-3 border border-amber-200 dark:border-amber-800/40">
                         <span class="text-2xl">🔥</span>
                         <div>
-                            <div class="font-extrabold text-amber-900 dark:text-amber-100">{{ $topP['student_name'] ?? __('—') }}</div>
+                            <div class="font-extrabold text-amber-900 dark:text-amber-100">{{ $topP['student_name'] ?? '—' }}</div>
                             <div class="text-[11px] text-amber-700 dark:text-amber-300">{{ $topP['streak'] ?? 0 }} {{ __('أيام متتالية') }}</div>
                         </div>
                     </div>
@@ -64,7 +64,7 @@
                     <div class="flex items-center gap-3 rounded-xl bg-amber-100/70 dark:bg-amber-950/40 px-4 py-3 border border-amber-200 dark:border-amber-800/40">
                         <span class="text-2xl">⭐</span>
                         <div>
-                            <div class="font-extrabold text-amber-900 dark:text-amber-100">{{ $topK['student_name'] ?? __('—') }}</div>
+                            <div class="font-extrabold text-amber-900 dark:text-amber-100">{{ $topK['student_name'] ?? '—' }}</div>
                             <div class="text-[11px] text-amber-700 dark:text-amber-300">{{ $topK['positive_count'] ?? 0 }} {{ __('ملاحظة إيجابية') }}</div>
                         </div>
                     </div>

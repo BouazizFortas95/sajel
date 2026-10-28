@@ -77,7 +77,7 @@ class LabResource extends Resource
 
                         TextInput::make('capacity')
                             ->label(__('السعة (عدد المناصب)'))
-                            ->placeholder(__('20'))
+                            ->placeholder('20')
                             ->numeric()
                             ->integer()
                             ->minValue(0)

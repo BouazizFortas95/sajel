@@ -108,7 +108,7 @@ class LabStationsRelationManager extends RelationManager
                     ->options([
                         'computer' => __('حاسوب'),
                         'tablet' => __('حاسوب لوحي'),
-                        'device' => __('Device'),
+                        'device' => __('جهاز'),
                     ])
                     ->required(),
 

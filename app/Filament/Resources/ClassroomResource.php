@@ -69,7 +69,7 @@ class ClassroomResource extends Resource
 
                         TextInput::make('class_number')
                             ->label(__('رقم القسم'))
-                            ->placeholder(__('1'))
+                            ->placeholder('1')
                             ->numeric()
                             ->integer()
                             ->minValue(1)

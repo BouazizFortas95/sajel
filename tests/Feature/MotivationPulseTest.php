@@ -125,6 +125,29 @@ class MotivationPulseTest extends TestCase
 
         $this->actingAs($admin);
         $this->get('/ar/print/students/'.$student->id.'/certificate')->assertOk()
+            ->assertSee('dir="rtl"', false)
+            ->assertSee('lang="ar"', false)
             ->assertSee(__('شهادة التميز'));
+    }
+
+    /** @test */
+    public function student_certificate_follows_the_requested_locale(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = Student::factory()->create();
+
+        $this->actingAs($admin);
+
+        $this->get('/en/print/students/'.$student->id.'/certificate')->assertOk()
+            ->assertSee('dir="ltr"', false)
+            ->assertSee('lang="en"', false)
+            ->assertSee('Certificate of Excellence and Educational Motivation')
+            ->assertSee('Earned badges');
+
+        $this->get('/fr/print/students/'.$student->id.'/certificate')->assertOk()
+            ->assertSee('dir="ltr"', false)
+            ->assertSee('lang="fr"', false)
+            ->assertSee('Certificat d’excellence et de motivation pédagogique')
+            ->assertSee('Badges obtenus');
     }
 }

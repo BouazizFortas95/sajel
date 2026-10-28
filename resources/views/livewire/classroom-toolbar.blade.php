@@ -7,10 +7,10 @@
     {{-- Timer --}}
     <div class="flex items-center gap-3">
         <span class="font-mono text-2xl font-bold text-amber-900 dark:text-amber-100">{{ $timerFormatted }}</span>
-        <button wire:click="startTimer(5)" class="text-xs px-2 py-1 rounded bg-amber-500 text-white">5m</button>
-        <button wire:click="startTimer(10)" class="text-xs px-2 py-1 rounded bg-amber-600 text-white">10m</button>
-        <button wire:click="startTimer(1)" class="text-xs px-2 py-1 rounded bg-amber-700 text-white">1m</button>
-        <button wire:click="tick" class="text-xs px-2 py-1 rounded bg-amber-200 dark:bg-amber-900">{{ (isset($timerRunning) && $timerRunning) ? 'توقف' : 'تشغيل' }}</button>
+        <button wire:click="startTimer(5)" class="text-xs px-2 py-1 rounded bg-amber-500 text-white">{{ __('5 دقائق') }}</button>
+        <button wire:click="startTimer(10)" class="text-xs px-2 py-1 rounded bg-amber-600 text-white">{{ __('10 دقائق') }}</button>
+        <button wire:click="startTimer(1)" class="text-xs px-2 py-1 rounded bg-amber-700 text-white">{{ __('دقيقة واحدة') }}</button>
+        <button wire:click="tick" class="text-xs px-2 py-1 rounded bg-amber-200 dark:bg-amber-900">{{ (isset($timerRunning) && $timerRunning) ? __('إيقاف المؤقت') : __('تشغيل المؤقت') }}</button>
     </div>
 
     {{-- Random Picker --}}

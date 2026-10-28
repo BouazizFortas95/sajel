@@ -1,5 +1,8 @@
+@php
+    $isRtl = app()->getLocale() === 'ar';
+@endphp
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ $isRtl ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <title>{{ __('شهادة التميز') }}</title>
@@ -22,7 +25,7 @@
         .badge.rocket { background: #e8f5e9; border-color: #2e7d32; color: #1b5e20; }
         .badge.star { background: #fff9c4; border-color: #f0c02e; color: #7a6a00; }
         .badge.hand { background: #e3f2fd; border-color: #1565c0; color: #0d47a1; }
-        .reason { font-size: 13pt; text-align: center; padding: 4mm 6mm; background: rgba(200,160,60,0.08); border-right: 3pt solid #c28a2a; border-radius: 4pt; color: #5d3a00; font-weight: 600; }
+        .reason { font-size: 13pt; text-align: center; padding: 4mm 6mm; background: rgba(200,160,60,0.08); border-inline-start: 3pt solid #c28a2a; border-radius: 4pt; color: #5d3a00; font-weight: 600; }
         .signature-row { display: flex; justify-content: space-between; margin-top: 10mm; padding-top: 4mm; border-top: 1.5pt solid #c28a2a; }
         .sig { text-align: center; width: 45%; font-size: 11pt; }
         .sig strong { display: block; font-size: 13pt; color: #7a5a20; margin-top: 2mm; border-bottom: 1pt solid #c28a2a; padding-bottom: 2mm; }
@@ -40,10 +43,10 @@
 
         <div class="student-box">
             <h2>{{ $student->full_name }}</h2>
-            <div class="group">{{ $student->group?->name ?? __('القسم كاملاً') }} · {{ $student->group?->classroom?->name ?? __('—') }}</div>
+            <div class="group">{{ $student->group?->name ?? __('القسم كاملاً') }} · {{ $student->group?->classroom?->name ?? '—' }}</div>
         </div>
 
-        <div class="badges" aria-label="Earned badges">
+        <div class="badges" aria-label="{{ __('الأوسمة المكتسبة') }}">
             @forelse ($badges as $key => $badge)
                 <span class="badge {{ match($key) { 'attendance_streak' => 'fire', 'comeback_champion' => 'rocket', 'academic_excellence' => 'star', 'positive_role_model' => 'hand', default => '' } }}">{{ $badge['label'] ?? $key }}</span>
             @empty

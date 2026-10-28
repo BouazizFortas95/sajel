@@ -66,10 +66,10 @@ Key goals:
 | Frontend | Vite / Tailwind CSS | v7 / v4 |
 | Database | SQLite | `database/database.sqlite` |
 | PDF / Print | `spatie/browsershot` / Puppeteer | A4 RTL PDF with Arabic shaping |
-| Localization | `mcamara/laravel-localization` | `ar`, `en`, `fr` |
+| Localization | `mcamara/laravel-localization` | `ar`, `en`, `fr`; complete UI and print/PDF label coverage enforced by `LocalizationCompletenessTest` |
 | Timezone | Africa/Algiers | `APP_TIMEZONE` |
 | Font | Cairo (Google Fonts) | RTL body + headings |
-| Testing | PHPUnit | 316 passed, 0 failures (14,671 assertions in the latest run) |
+| Testing | PHPUnit | 373 passed, 0 failures (20,469 assertions in the latest run) |
 
 ---
 
@@ -115,7 +115,8 @@ php artisan optimize:clear
 ## 6. Project Health (Phases 2–6 Complete)
 
 - **Migrations:** 43 ran
-- **Tests:** 339 passed, 0 failures (14,868 assertions in the latest run)
+- **Tests:** 373 passed, 0 failures (20,469 assertions in the latest run)
+- **Localization:** complete `ar`/`en`/`fr` coverage for user-facing UI and print/PDF labels; the official register and student certificate follow the active locale, with Arabic as the default RTL layout
 - **Filament Resources:** 20 (includes `SchoolHolidayResource` and `PedagogicalMeetingResource`)
 - **Custom Pages:** Dashboard, CurriculumProgress, OfficialReports, MySchedule, QuickAttendance, LabSeatingPlanPage, DataShowMode, SchoolSupervisionHub, ClassCouncilHub, ManageSchoolSettings
 - **Branch:** `main` — Phase 2/3/4 all complete (100% across the board)
@@ -176,7 +177,7 @@ in browser storage.
   (teachers receive 403). `tests/Feature/SchoolSettingsTest.php` covers the settings update, cache
   refresh, and dynamic identity output on printed registers, class councils, and Official Reports.
 
-*Last updated: 2026-10-25 — Phases 2–6 all complete (100%) plus school identity settings. Suite: 339 passing, 0 failures, 14,868 assertions. Health check: all PASS (25 tables; AI provider gemini configured).*
+*Last updated: 2026-10-28 — Phases 2–6 all complete (100%) plus school identity settings and complete ar/en/fr localization. Suite: 373 passing, 0 failures, 20,469 assertions. Health check: all PASS (25 tables; AI provider gemini configured).*
 
 ---
 ## Sajel Pulse — Motivation Engine (نبض التميز والتحفيز التربوي)

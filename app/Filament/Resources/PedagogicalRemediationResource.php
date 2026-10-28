@@ -27,9 +27,15 @@ class PedagogicalRemediationResource extends Resource
 
     protected static ?int $navigationSort = 79;
 
-    protected static ?string $navigationLabel = 'المعالجة البيداغوجية';
+    public static function getNavigationLabel(): string
+    {
+        return __('المعالجة البيداغوجية');
+    }
 
-    protected static ?string $navigationGroup = 'التشغيل اليومي';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('التشغيل اليومي');
+    }
 
     public static function form(Form $form): Form
     {

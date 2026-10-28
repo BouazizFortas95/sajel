@@ -219,7 +219,7 @@
                         </p>
                     </div>
                     <span class="rounded-full bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600 ring-1 ring-gray-200 dark:bg-white/5 dark:text-gray-300 dark:ring-white/10">
-                        {{ trans_choice(':count تلميذ|:count تلميذ', $deliberations->count(), ['count' => $deliberations->count()]) }}
+                        {{ __('عدد التلاميذ: :count', ['count' => $deliberations->count()]) }}
                     </span>
                 </div>
 

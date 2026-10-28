@@ -253,7 +253,7 @@ class DailyLogResource extends Resource
                                                     $schedule = Schedule::query()->with('subject')->find($state);
 
                                                     if ($schedule) {
-                                                        $set('title', __('درس: ').($schedule->subject?->name ?? ''));
+                                                        $set('title', __('درس: :subject', ['subject' => $schedule->subject?->name ?? '']));
                                                     }
                                                 }
                                             })
@@ -316,7 +316,7 @@ class DailyLogResource extends Resource
                                     ]),
 
                                 Section::make(__('بطاقة الاستخلاف والتواصل البيداغوجي'))
-                                    ->description(__('نContext for substitute / returning teacher'))
+                                    ->description(__('استخدم هذه البطاقة لضمان استمرارية التعلم أثناء الاستخلاف أو عودة الأستاذ الأصلي.'))
                                     ->icon('heroicon-o-user-group')
                                     ->visible(fn (Get $get): bool => filled($get('schedule_id')))
                                     ->columns(2)

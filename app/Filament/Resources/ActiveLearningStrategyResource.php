@@ -28,9 +28,15 @@ class ActiveLearningStrategyResource extends Resource
 
     protected static ?int $navigationSort = 60;
 
-    protected static ?string $navigationLabel = 'استراتيجيات التعلم النشط';
+    public static function getNavigationLabel(): string
+    {
+        return __('استراتيجيات التعلم النشط');
+    }
 
-    protected static ?string $navigationGroup = 'التشغيل اليومي';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('التشغيل اليومي');
+    }
 
     public static function form(Form $form): Form
     {
@@ -154,7 +160,7 @@ class ActiveLearningStrategyResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return __('استراتيجيةتعلمنشط');
+        return __('استراتيجية تعلم نشط');
     }
 
     public static function getPluralModelLabel(): string

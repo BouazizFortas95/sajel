@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\DailyLogStatus;
+use App\Enums\DayOfWeek;
 use App\Enums\Role;
 use App\Filament\Exports\DailyLogExporter;
 use App\Filament\Resources\DailyLogResource\Pages\ListDailyLogs;
@@ -47,9 +48,11 @@ class RegisterPrintTest extends TestCase
             'title' => 'درس سابق',
         ]);
 
-        $response = $this->actingAs($teacher)->get(route('print.register', [
-            'ids' => [$laterLog->id, $earlierLog->id],
-        ]));
+        $response = $this->withSession(['locale' => 'ar'])
+            ->actingAs($teacher)
+            ->get(route('print.register', [
+                'ids' => [$laterLog->id, $earlierLog->id],
+            ]));
 
         $response->assertOk()
             ->assertSee('dir="rtl"', false)
@@ -62,6 +65,45 @@ class RegisterPrintTest extends TestCase
             ->assertDontSee('<script>alert', false)
             ->assertSee('window.print()', false)
             ->assertSeeInOrder(['درس سابق', 'درس لاحق']);
+    }
+
+    public function test_register_print_follows_the_active_locale(): void
+    {
+        $teacher = User::factory()->create(['name' => 'Amina']);
+        $classroom = Classroom::factory()->create([
+            'name' => 'Class 1',
+            'academic_year' => '2025/2026',
+        ]);
+        $subject = Subject::factory()->create(['name' => 'Mathematics']);
+
+        $log = $this->createLog($teacher, $classroom, $subject, [
+            'date' => '2026-10-19',
+            'title' => 'Lesson one',
+        ]);
+
+        $log->schedule->update(['day_of_week' => DayOfWeek::Monday->value]);
+
+        $this->withSession(['locale' => 'en'])
+            ->actingAs($teacher)
+            ->get(route('print.register', ['ids' => [$log->id]]))
+            ->assertOk()
+            ->assertSee('dir="ltr"', false)
+            ->assertSee('lang="en"', false)
+            ->assertSee('Class register preview')
+            ->assertSee('Date and time')
+            ->assertSee('Subject, teacher and group')
+            ->assertSee('Monday');
+
+        $this->withSession(['locale' => 'fr'])
+            ->actingAs($teacher)
+            ->get(route('print.register', ['ids' => [$log->id]]))
+            ->assertOk()
+            ->assertSee('dir="ltr"', false)
+            ->assertSee('lang="fr"', false)
+            ->assertSee('Aperçu du registre de classe')
+            ->assertSee('Date et heure')
+            ->assertSee('Matière, enseignant(e) et groupe')
+            ->assertSee('Lundi');
     }
 
     public function test_print_view_excludes_other_teachers_and_non_completed_logs(): void
@@ -194,6 +236,7 @@ class RegisterPrintTest extends TestCase
         ]);
 
         $this->actingAs($teacher);
+        $this->app->setLocale('ar');
 
         $this->assertTrue(DailyLogExportProgressWidget::canView());
 
@@ -218,6 +261,7 @@ class RegisterPrintTest extends TestCase
         $this->createLog($teacher);
 
         $this->actingAs($teacher);
+        $this->app->setLocale('ar');
 
         Livewire::test(ListDailyLogs::class)
             ->callAction('export')
@@ -265,6 +309,7 @@ class RegisterPrintTest extends TestCase
         ]);
 
         $this->actingAs($teacher);
+        $this->app->setLocale('ar');
 
         $widget = Livewire::test(DailyLogExportProgressWidget::class)
             ->assertOk()

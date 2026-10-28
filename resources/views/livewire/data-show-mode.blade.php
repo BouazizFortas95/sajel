@@ -276,9 +276,9 @@
                     class="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-1 text-xs font-semibold text-emerald-200"
                 ><span class="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span><span x-text="speechLabels.speaking">{{ __('جاري القراءة الصوتية...') }}</span></span>
             </div>
-            <button @click="toggleTheme('cinema')" :class="theme==='cinema'?'bg-amber-400 text-slate-950':'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium transition">Cinema</button>
-            <button @click="toggleTheme('whiteboard')" :class="theme==='whiteboard'?'bg-amber-400 text-slate-950':'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium transition">Whiteboard</button>
-            <button @click="toggleTheme('chalkboard')" :class="theme==='chalkboard'?'bg-amber-400 text-slate-950':'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium transition">Chalkboard</button>
+            <button @click="toggleTheme('cinema')" :class="theme==='cinema'?'bg-amber-400 text-slate-950':'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium transition">{{ __('سينما') }}</button>
+            <button @click="toggleTheme('whiteboard')" :class="theme==='whiteboard'?'bg-amber-400 text-slate-950':'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium transition">{{ __('سبورة بيضاء') }}</button>
+            <button @click="toggleTheme('chalkboard')" :class="theme==='chalkboard'?'bg-amber-400 text-slate-950':'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium transition">{{ __('سبورة خضراء') }}</button>
 
             <button @click="zoomIn()" class="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-xs" title="A+">A+</button>
             <button @click="zoomOut()" class="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-xs" title="A-">A-</button>
@@ -293,11 +293,11 @@
                 </div>
             </div>
 
-            <button @click="toggleSpotlight()" :class="spotlight ? 'bg-amber-400 text-slate-950' : 'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium" title="Spotlight">⚡</button>
+            <button @click="toggleSpotlight()" :class="spotlight ? 'bg-amber-400 text-slate-950' : 'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium" title="{{ __('مؤشر التركيز') }}">⚡</button>
 
-            <button @click="fullscreen()" class="px-2 py-0.5 rounded bg-amber-500 text-white text-xs font-bold" title="Fullscreen">⛶</button>
+            <button @click="fullscreen()" class="px-2 py-0.5 rounded bg-amber-500 text-white text-xs font-bold" title="{{ __('ملء الشاشة') }}">⛶</button>
 
-            <a href="/ar/auth" class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-200 text-xs border border-rose-400/30 hover:bg-rose-500/30">{{ __('عودة') }}</a>
+            <a href="{{ url('/'.app()->getLocale().'/auth') }}" class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-200 text-xs border border-rose-400/30 hover:bg-rose-500/30">{{ __('عودة') }}</a>
         </div>
     </div>
 
@@ -376,18 +376,18 @@
                         @endforeach
                     </div>
                 </div>
-                <a href="/ar/auth/daily-logs/create" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition shadow-xl">{{ __('إنشاء تحضير درس جديد') }}</a>
+                <a href="{{ url('/'.app()->getLocale().'/auth/daily-logs/create') }}" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition shadow-xl">{{ __('إنشاء تحضير درس جديد') }}</a>
             </div>
         @endif
 
         {{-- Quick Tools Drawer (bottom-right floating) --}}
         <div class="absolute bottom-6 right-6 z-40 flex gap-2" x-data="{ open: false }">
-            <button @click="open = !open" class="w-12 h-12 rounded-full bg-amber-500 text-white shadow-2xl flex items-center justify-center text-xl hover:scale-105 transition" title="Tools">⚡</button>
+            <button @click="open = !open" class="w-12 h-12 rounded-full bg-amber-500 text-white shadow-2xl flex items-center justify-center text-xl hover:scale-105 transition" title="{{ __('أدوات الحصة السريعة') }}">⚡</button>
             <div x-show="open" x-transition.origin.bottom.right class="absolute bottom-14 right-0 w-72 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl text-right">
                 <div class="text-xs font-bold text-amber-300 mb-3">{{ __('أدوات الحصة السريعة') }}</div>
                 <div class="space-y-2">
-                    <button wire:click="toggleTimer(5)" class="w-full text-right px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-sm">⏱️ 5 دقائق</button>
-                    <button wire:click="toggleTimer(10)" class="w-full text-right px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-sm">⏱️ 10 دقائق</button>
+                    <button wire:click="toggleTimer(5)" class="w-full text-right px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-sm">⏱️ {{ __('5 دقائق') }}</button>
+                    <button wire:click="toggleTimer(10)" class="w-full text-right px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-sm">⏱️ {{ __('10 دقائق') }}</button>
                     <button wire:click="pickRandomStudent" class="w-full text-right px-3 py-2 rounded bg-emerald-600 text-white text-sm">🎲 {{ __('قرعة عشوائية') }}</button>
                     @if ($pickedStudents)
                         @php ($picked = \App\Models\Student::find($pickedStudents[0] ?? null))
@@ -395,7 +395,7 @@
                             <div class="mt-2 p-2 rounded bg-gradient-to-l from-amber-500/20 to-amber-300/10 border border-amber-300/30 text-xs font-bold text-amber-200">
                                 <div class="flex items-center justify-between mb-1">
                                     <span>🎲 {{ $picked->full_name }}</span>
-                                    <span class="text-[10px] text-amber-300/80">{{ $picked->group?->name ?? ($picked->group?->classroom?->name ?? __('—')) }}</span>
+                                    <span class="text-[10px] text-amber-300/80">{{ $picked->group?->name ?? ($picked->group?->classroom?->name ?? '—') }}</span>
                                 </div>
                                 <div class="flex gap-1">
                                     <button wire:click="awardQuickKudos({{ $picked->id }}, 'kudos_excellence')" class="flex-1 px-2 py-1 rounded bg-amber-400/20 text-amber-200 hover:bg-amber-400/30 text-[10px] font-bold transition">🌟 {{ __('إجابة متميزة') }}</button>

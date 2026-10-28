@@ -70,7 +70,7 @@ class LevelResource extends Resource
 
                         TextInput::make('grade_number')
                             ->label(__('رقم السنة'))
-                            ->placeholder(__('1'))
+                            ->placeholder('1')
                             ->numeric()
                             ->integer()
                             ->minValue(1)
