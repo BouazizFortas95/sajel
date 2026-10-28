@@ -858,5 +858,6 @@
     "لا توجد نتائج مطابقة": "No matching results",
     "لا يوجد زوج مادة وقسم يطابق عوامل التصفية المختارة.": "No subject and class pair matches the selected filters.",
     "جرّب تعديل البحث أو عوامل التصفية لعرض أزواج أخرى.": "Try adjusting the search or filters to see other pairs.",
-    "المعروض: :first–:last من :total": "Showing: :first–:last of :total"
+    "المعروض: :first–:last من :total": "Showing: :first–:last of :total",
+    "زامن التعديلات قبل تسجيل الخروج لتفادي فقدانها على الأجهزة المشتركة.": "Sync changes before signing out to avoid losing them on shared devices."
 }

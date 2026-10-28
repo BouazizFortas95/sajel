@@ -65,6 +65,66 @@ class OfflineAttendancePwaTest extends TestCase
             ->assertSee('CACHE_QUICK_ATTENDANCE', false);
     }
 
+    public function test_quick_attendance_scopes_offline_storage_to_the_signed_in_teacher(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+
+        $this->actingAs($teacher)
+            ->get('/ar/auth/quick-attendance')
+            ->assertOk()
+            ->assertSee('data-user-key="'.$teacher->id.'"', false)
+            ->assertSee('userKey:', false);
+    }
+
+    public function test_guest_pages_purge_local_attendance_data_and_the_cached_page(): void
+    {
+        $this->get('/en/auth/login')
+            ->assertOk()
+            ->assertSee('purgeGuestAttendanceData', false)
+            ->assertSee('CLEAR_QUICK_ATTENDANCE_DATA', false)
+            ->assertSee('-quick-attendance', false);
+    }
+
+    public function test_authenticated_pages_do_not_run_the_guest_purge(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+
+        $this->actingAs($teacher)
+            ->get('/en/auth')
+            ->assertOk()
+            ->assertDontSee('purgeGuestAttendanceData', false);
+    }
+
+    public function test_service_worker_can_clear_the_cached_attendance_page(): void
+    {
+        $this->get('/sw.js')
+            ->assertOk()
+            ->assertSee('CLEAR_QUICK_ATTENDANCE_DATA', false)
+            ->assertSee('caches.delete(PAGE_CACHE)', false)
+            ->assertSee('sajel-pwa-v4', false);
+    }
+
+    public function test_offline_privacy_warning_is_rendered_and_localized(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $warning = 'زامن التعديلات قبل تسجيل الخروج لتفادي فقدانها على الأجهزة المشتركة.';
+
+        $this->actingAs($teacher)
+            ->get('/ar/auth/quick-attendance')
+            ->assertOk()
+            ->assertSee($warning);
+
+        foreach (['ar', 'en', 'fr'] as $locale) {
+            $translations = json_decode(
+                file_get_contents(lang_path($locale.'.json')),
+                true,
+                flags: JSON_THROW_ON_ERROR,
+            );
+
+            $this->assertArrayHasKey($warning, $translations, "Missing {$locale} translation.");
+        }
+    }
+
     public function test_it_syncs_and_updates_multiple_attendance_rows_idempotently(): void
     {
         $teacher = User::factory()->create(['role' => Role::Teacher->value]);

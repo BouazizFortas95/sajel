@@ -1,3 +1,9 @@
+import {
+    attendanceQueueKey,
+    attendanceRosterKey,
+    prepareAttendanceStorage,
+} from './attendance-storage';
+
 window.sajelQuickAttendance = function (config) {
     return {
         online: navigator.onLine,
@@ -11,9 +17,11 @@ window.sajelQuickAttendance = function (config) {
         date: config.snapshot?.date ?? config.date,
         queue: {},
         labels: config.labels,
+        userKey: String(config.userKey ?? ''),
         queueKey: 'sajel.attendance.queue',
 
         init() {
+            this.initializeStorage();
             this.readQueue();
             this.restoreRoster();
             this.listenForConnection();
@@ -35,8 +43,28 @@ window.sajelQuickAttendance = function (config) {
             return this.schedules.find((schedule) => schedule.id === Number(this.selectedScheduleId));
         },
 
+        initializeStorage() {
+            if (! this.userKey) {
+                return;
+            }
+
+            // Never fall back to the legacy unscoped queue when the owner
+            // marker cannot be written; the scoped key is authoritative.
+            this.queueKey = attendanceQueueKey(this.userKey);
+
+            try {
+                prepareAttendanceStorage(window.localStorage, this.userKey);
+            } catch (error) {
+                console.error('Unable to prepare the offline attendance storage.', error);
+            }
+        },
+
         rosterStorageKey(scheduleId, date) {
-            return `sajel.attendance.roster.${scheduleId}.${date}`;
+            if (! this.userKey) {
+                return `sajel.attendance.roster.${scheduleId}.${date}`;
+            }
+
+            return attendanceRosterKey(this.userKey, scheduleId, date);
         },
 
         readQueue() {

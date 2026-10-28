@@ -1,4 +1,4 @@
-const VERSION = 'sajel-pwa-v3';
+const VERSION = 'sajel-pwa-v4';
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-quick-attendance`;
 const CORE_ASSETS = [
@@ -35,6 +35,12 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('message', (event) => {
+    if (event.data?.type === 'CLEAR_QUICK_ATTENDANCE_DATA') {
+        event.waitUntil(caches.delete(PAGE_CACHE));
+
+        return;
+    }
+
     if (event.data?.type !== 'CACHE_QUICK_ATTENDANCE') {
         return;
     }

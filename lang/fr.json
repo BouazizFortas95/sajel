@@ -855,5 +855,6 @@
     "لا توجد نتائج مطابقة": "Aucun résultat correspondant",
     "لا يوجد زوج مادة وقسم يطابق عوامل التصفية المختارة.": "Aucune paire matière-classe ne correspond aux filtres sélectionnés.",
     "جرّب تعديل البحث أو عوامل التصفية لعرض أزواج أخرى.": "Essayez de modifier la recherche ou les filtres pour afficher d'autres paires.",
-    "المعروض: :first–:last من :total": "Affichage : :first–:last sur :total"
+    "المعروض: :first–:last من :total": "Affichage : :first–:last sur :total",
+    "زامن التعديلات قبل تسجيل الخروج لتفادي فقدانها على الأجهزة المشتركة.": "Synchronisez les modifications avant de vous déconnecter afin d’éviter toute perte sur les appareils partagés."
 }

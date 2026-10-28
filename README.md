@@ -131,13 +131,18 @@ php artisan optimize:clear
 
 ---
 
-The offline roster snapshot is stored at `sajel.attendance.roster.{schedule_id}.{date}`; pending
-changes use `sajel.attendance.queue` with one last-write-wins entry per
+The offline roster snapshot is stored at
+`sajel.attendance.{user_id}.roster.{schedule_id}.{date}`; pending changes use
+`sajel.attendance.{user_id}.queue` with one last-write-wins entry per
 `{schedule_id}:{date}:{student_id}`. The browser retries when connectivity returns or when the
 teacher selects **Sync now**. The server authorizes the teacher's schedule and each student’s roster
 membership, creates a planned daily log when necessary, materializes missing attendance rows, and
-upserts status and remarks in batches of at most 200. Use this feature on a teacher-controlled,
-protected device: the roster and unsynced attendance contain student information in browser storage.
+upserts status and remarks in batches of at most 200. Legacy unscoped attendance keys are discarded
+on the first Quick Attendance load after upgrading. On logout, the cached authenticated attendance
+page and roster snapshots are removed; a non-empty unsynced queue is kept so the same teacher can
+resume, then cleared when another account opens Quick Attendance. Use this feature on a
+teacher-controlled, protected device: the roster and unsynced attendance contain student information
+in browser storage.
 
 ## 8. Phase 4 — School Supervision & Administrative Auditing
 

@@ -31,7 +31,9 @@
 
 <div
     class="space-y-6"
+    data-user-key="{{ auth()->id() }}"
     x-data="sajelQuickAttendance({
+        userKey: @js((string) auth()->id()),
         snapshot: @js($rosterSnapshot),
         schedules: @js($schedules),
         date: @js($selectedDate),
@@ -69,6 +71,9 @@
                     <span x-cloak x-show="syncing" class="text-xs text-gray-500">{{ __('جارٍ مزامنة الحضور...') }}</span>
                     <span x-cloak x-show="syncMessage" class="text-xs text-emerald-700 dark:text-emerald-300" x-text="syncMessage"></span>
                     <span x-cloak x-show="syncError" class="text-xs text-rose-700 dark:text-rose-300" x-text="syncMessage"></span>
+                    <span x-cloak x-show="queuedCount > 0" class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ __('زامن التعديلات قبل تسجيل الخروج لتفادي فقدانها على الأجهزة المشتركة.') }}
+                    </span>
                     <button
                         x-cloak
                         x-show="queuedCount > 0"

@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-10-28
-> Verified by `php artisan test` (**364 passed**, 20,418 assertions, **0 failures**),
+> Verified by `php artisan test` (**369 passed**, 20,436 assertions, **0 failures**),
 > `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -28,7 +28,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | PDF        | `spatie/browsershot` `^5.4`, Puppeteer  | Headless Chrome; Arabic shaping + Tailwind-preserving PDF |
 | i18n       | `mcamara/laravel-localization` `^2.4`    | `ar`, `en`, `fr` locales                |
 | Timezone   | `Africa/Algiers`                         | `APP_TIMEZONE`, used for weekly dates   |
-| Testing    | PHPUnit `^11.5`                          | **364 tests, all green (20,418 assertions in the latest run)** |
+| Testing    | PHPUnit `^11.5`                          | **369 tests, all green (20,436 assertions in the latest run)** |
 | Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
 
 ## 4. Sajel Pulse — Motivation Engine (نبض التميز والتحفيز التربوي)
@@ -38,7 +38,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 - A4 RTL certificate `print.student-certificate` + authorization (`StudentPolicy::view`).
 - Badges injected into `ParentPortalService` and `StudentReportCardService`.
 - Translations added to `ar.json`, `en.json`, `fr.json`; `tests/Feature/MotivationPulseTest.php` created.
-- Health-check PASS; Pint PASS; full suite 364 pass / 0 failures.
+- Health-check PASS; Pint PASS; full suite 369 pass / 0 failures.
 - Section 18 (Phase 8 — Institutional Backup & CI) added.
 
 ## 3. Domain Model
@@ -480,7 +480,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 7. Testing
 
-`php artisan test` — **364 passing, 20,418 assertions in the latest full run, 0 failures**:
+`php artisan test` — **369 passing, 20,436 assertions in the latest full run, 0 failures**:
 
 | Suite                                  | Tests | Covers                                                        |
 |----------------------------------------|-------|---------------------------------------------------------------|
@@ -514,7 +514,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | `Tests\Feature\BehaviorObservationResourceTest` | 1 | Admin list rendering with follow-up badge formatting |
 | `Tests\Feature\OfficialReportsTest`    | 19    | Official report page access, timetable/attendance/transcript output, scoping, localization, and PDF routes |
 | `Tests\Feature\QuickAttendanceTest`    | 8     | Quick-attendance access, roster display, attendance saving, and authorization |
-| `Tests\Feature\OfflineAttendancePwaTest` | 7   | PWA assets and panel registration, idempotent multi-student sync, schedule/roster authorization, admin bypass, invalid batch validation, offline controls |
+| `Tests\Feature\OfflineAttendancePwaTest` | 12  | PWA assets and panel registration, user-scoped offline storage, guest cache/roster purge, localized sync warning, idempotent multi-student sync, schedule/roster authorization, admin bypass, invalid batch validation, offline controls |
 | `Tests\Feature\DigitalVisaTest` | 5 | Admin single/bulk stamps, completed-only enforcement, teacher protection, and HTML/PDF register visa output |
 | `Tests\Feature\SchoolSupervisionHubTest` | 6 | Locale-aware admin-only access, weekday/time-based compliance, classroom-scoped attendance and distinct-date repeat absences, behavior follow-up resolution with notes |
 | `Tests\Feature\StudentReportCardTest` | 4 | Teacher roster authorization and subject/record scoping, admin full reports, localized print/PDF routes, and Official Reports student picker |
@@ -525,7 +525,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | Aspect            | Status                                             |
 |-------------------|----------------------------------------------------|
 | Migrations        | ✅ All 43 migrations ran |
-| Test suite        | ✅ 364/364 passing, 0 failures (20,418 assertions in the latest full run) |
+| Test suite        | ✅ 369/369 passing, 0 failures (20,436 assertions in the latest full run) |
 | Admin panel       | ✅ 20 Filament resources + custom dashboard, schedule, curriculum-progress, data-show pages + ar/en/fr |
 | Seed data         | ✅ Destructive middle-school dataset + optional SajelSeeder |
 | Version control   | Git repo on `main`; Phase 2/3/4 complete (`f4e776a`, `f8d...`) |
@@ -757,13 +757,16 @@ cancellation on navigation.
 - [x] **Locale-aware AI lesson plans:** Localize generation instructions for Arabic, English, and
   French, and align Gemini structured-output descriptions with the selected language.
 - [x] **Offline attendance PWA:** Provide the RTL manifest and service worker; cache snapshots as
-  `sajel.attendance.roster.{schedule_id}.{date}`; queue edits at
-  `sajel.attendance.queue` keyed by `{schedule_id}:{date}:{student_id}`; synchronize online in
-  batches of up to 200. The server validates dates/status/remarks, enforces schedule ownership and
+  `sajel.attendance.{user_id}.roster.{schedule_id}.{date}`; queue edits at
+  `sajel.attendance.{user_id}.queue` keyed by `{schedule_id}:{date}:{student_id}`; synchronize online
+  in batches of up to 200. The server validates dates/status/remarks, enforces schedule ownership and
   roster membership (admin bypass), creates planned daily logs, materializes missing attendance rows,
   and upserts status/remarks idempotently. Sync notifications report the number of entries applied.
-  Roster names and queued attendance are stored in browser storage; use only on a teacher-controlled,
-  protected device and clear site data when the device is shared or retired.
+  Storage is bound to the signed-in user through `sajel.attendance.owner`; legacy unscoped keys are
+  cleared. Guest pages remove cached attendance HTML and roster snapshots, while preserving a pending
+  queue for the same teacher; another account opening Quick Attendance clears all attendance data.
+  Use only on a teacher-controlled, protected device and clear site data when the device is shared or
+  retired.
 - [x] **Arabic voice narration:** Prepare clean plain-text narration for each slide, select a speech
   locale and preferred matching local voice, and provide play, pause/resume, stop, and keyboard
   controls. Playback speed persists in `sajel.datashow.speech_rate`. Speech is cancelled when slides
@@ -847,7 +850,7 @@ Phase 6: Parent Engagement, Academic Calendar & Production Readiness.
 - Milestone 3: Pedagogical Meeting Resource (`PedagogicalMeetingResource`, `TeacherPortfolioService`, controller/routes/translations/header actions + `MySchedule`) — complete.
 - Milestone 4: Production Readiness (`SajelHealthCheckCommand` `sajel:health-check` + `--json`, DB 25 tables, timezone `Africa/Algiers`, localization `ar/en/fr`, PWA `dir=rtl`, AI provider read from `config/ai.php` with PASS/WARN key detection; `SajelHealthCheckCommandTest`; `pint`/`npm`/`migrate` clean).
 
-Status 2026-10-28: `364 passed`, **0 failures** (`20,418` assertions); `pint` passed; `npm run build` passed; health command reports PASS on database, schema (25 tables), timezone, localization, PWA, and AI (`Provider: gemini (gemini-3.8-flash) | Key: configured`). All Phase 2–6 milestones complete (100%).
+Status 2026-10-28: `369 passed`, **0 failures** (`20,436` assertions); `pint` passed; `npm run test:js` passed (8 tests); `npm run build` passed; health command reports PASS on database, schema (25 tables), timezone, localization, PWA, and AI (`Provider: gemini (gemini-3.8-flash) | Key: configured`). All Phase 2–6 milestones complete (100%). The offline attendance PWA now scopes browser storage by user and clears cached attendance HTML and roster snapshots for guests while preserving a pending queue for the same teacher.
 
 ## 16. Phase 7 — School Identity (هوية المؤسسة التربوية)
 
