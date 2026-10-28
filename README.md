@@ -69,7 +69,7 @@ Key goals:
 | Localization | `mcamara/laravel-localization` | `ar`, `en`, `fr`; complete UI and print/PDF label coverage enforced by `LocalizationCompletenessTest` |
 | Timezone | Africa/Algiers | `APP_TIMEZONE` |
 | Font | Cairo (Google Fonts) | RTL body + headings |
-| Testing | PHPUnit | 373 passed, 0 failures (20,469 assertions in the latest run) |
+| Testing | PHPUnit | 395 passed, 0 failures (20,631 assertions in the latest run) |
 
 ---
 
@@ -98,7 +98,7 @@ php artisan migrate:fresh --seed
 # Demo data (600 students, 30 teachers, ~1,200 daily logs, full curriculum)
 php artisan db:seed --class=MiddleSchoolDatabaseSeeder
 
-# Run tests (316 feature + unit, all green)
+# Run tests (395 feature + unit, all green)
 php artisan test
 vendor/bin/pint
 
@@ -115,7 +115,7 @@ php artisan optimize:clear
 ## 6. Project Health (Phases 2–6 Complete)
 
 - **Migrations:** 43 ran
-- **Tests:** 373 passed, 0 failures (20,469 assertions in the latest run)
+- **Tests:** 395 passed, 0 failures (20,631 assertions in the latest run)
 - **Localization:** complete `ar`/`en`/`fr` coverage for user-facing UI and print/PDF labels; the official register and student certificate follow the active locale, with Arabic as the default RTL layout
 - **Filament Resources:** 20 (includes `SchoolHolidayResource` and `PedagogicalMeetingResource`)
 - **Custom Pages:** Dashboard, CurriculumProgress, OfficialReports, MySchedule, QuickAttendance, LabSeatingPlanPage, DataShowMode, SchoolSupervisionHub, ClassCouncilHub, ManageSchoolSettings
@@ -177,7 +177,80 @@ in browser storage.
   (teachers receive 403). `tests/Feature/SchoolSettingsTest.php` covers the settings update, cache
   refresh, and dynamic identity output on printed registers, class councils, and Official Reports.
 
-*Last updated: 2026-10-28 — Phases 2–6 all complete (100%) plus school identity settings and complete ar/en/fr localization. Suite: 373 passing, 0 failures, 20,469 assertions. Health check: all PASS (25 tables; AI provider gemini configured).*
+## 10. Role-Aware Dashboard Hub
+
+`DashboardStats` is a URL-stateful Livewire hub rendered inside the native Filament dashboard. The
+tested `Dashboard::getWidgets()` contract is unchanged, but the dashboard Blade renders the hub once:
+Overview embeds `QuickLinks`, and Lessons embeds the teacher-only `UnloggedSessionsWidget`, so no
+widget is duplicated.
+
+| Tab | Audience | Summary and links |
+|---|---|---|
+| Overview | All | Today’s logs/completed count, weekly sessions, pending documentation, attendance coverage (admin) or next lesson (teacher), latest smart log, quick links |
+| Schedule | All | Recurring weekly timetable by day, subject and classroom counts, next lesson, today’s teacher sessions, holiday notice |
+| Attendance | All | Due vs recorded vs not-recorded sessions, recorded rate, status totals, repeat absentees, quick-attendance/supervision links |
+| Lessons & register | All | Planned/completed/cancelled logs in the period plus the Sunday-to-date pending queue; teachers also see the paginated reminder widget |
+| Assessments & learning | All | Assessments in the period, grade rows/scored rows, not-started assessments, next-two-week list; averages are intentionally omitted |
+| Curriculum | All | Delegates to `CurriculumProgressService`, shows overall completion and the six least-progressed classroom–subject pairs |
+| Students & support | All | Aggregated behavior and remediation counts, open follow-ups, privacy-safe links to the detailed resources |
+| Institutional | Admin only | School totals, official identity, upcoming holidays, supervision/report/council/motivation hubs |
+
+### Shared shell and URL state
+
+- `tab`, `period`, `classroom`, and `subject` are persisted in the query string. Periods are
+  `today`, the current Sunday–Saturday week, and the current calendar month in `Africa/Algiers`.
+- The period selector appears only on period-scoped tabs (attendance, lessons, assessments,
+  support). Schedule, curriculum, and institutional tabs are current-state views; the institutional
+  tab also hides the classroom/subject filters.
+- Classroom and subject options are built from the user’s own timetable. Forged IDs receive `403`;
+  unknown tabs fall back to Overview for teachers, while direct institutional service access also
+  receives `403`. No student or schedule ID is accepted as a dashboard filter, so those identifiers
+  cannot be forged through the URL.
+- The tablist supports arrow/Home/End keyboard navigation, `aria-selected`, focus rings, RTL/LTR
+  direction, light/dark mode, and a mobile horizontal scroller.
+
+### Metric definitions
+
+- **Due session:** a non-cancelled timetable occurrence whose end time has passed in the selected
+  period, excluding school holidays. Future slots are never due.
+- **Recorded attendance:** a due session with a completed daily log and at least one attendance row.
+- **Not recorded:** `due − recorded`. It is neither present nor absent and creates no placeholder
+  rows. Status counts include only attendance rows from completed logs for sessions that have ended.
+- **Repeat absentee:** a student with at least three distinct absence dates inside the period; only
+  the aggregate count leaves the service.
+- **Assessments in period:** dated from the period start through today. **Upcoming** is strictly
+  after today and within 14 days. **Not started** means no grade rows exist — not that every student
+  scored zero. Grade entry reports entered rows / existing grade rows, never an average.
+- **Curriculum progress:** unique resources linked to completed logs ÷ all resources for the
+  displayed pairs. Planned/cancelled logs and duplicate completions do not count. With no linked
+  resources the percentage is `—`, not `0%`.
+- **Open support item:** a negative/disciplinary/observation record without follow-up, or a
+  remediation in `planned`/`ongoing` status. Teachers see only records linked to their schedules or
+  recorded by them.
+
+### Privacy, performance, and scope
+
+- Every dataset is scoped server-side before rendering; hiding a tab or card is never the
+  authorization boundary. Support data is aggregate-only and never includes student names.
+- Only the active tab is computed. There is no polling, AI call, export, or mutation on render.
+- Lists are capped (5 upcoming assessments, 6 curriculum pairs, 5 pending items in the partial) and
+  link to established Filament pages for full workflows. A query-growth test asserts that adding 20
+  sessions does not add per-session queries.
+- No schema change, package, or destructive database operation was introduced.
+
+### Verification
+
+`tests/Feature/DashboardHubTest.php` (22 tests) covers role visibility, forged URL/Livewire
+filters and tabs, teacher scoping through timetable/group targets, Algeria timezone and
+Sunday-first period bounds, holidays, attendance/status boundaries, assessment windows, curriculum
+delegation, aggregate support scope, URL state, contextual filters, localization/RTL/LTR, empty
+states, read-only rendering, capped lists, and query-count stability.
+
+Known limits: the schedule tab shows recurring weekly slots rather than daily register states;
+pending documentation is week-to-date by design; institutional totals are current totals and are
+not period-filtered; the dashboard intentionally links out instead of embedding full reports.
+
+*Last updated: 2026-10-28 — Phases 2–6 all complete (100%) plus school identity settings, complete ar/en/fr localization, and the role-aware dashboard hub. Suite: 395 passing, 0 failures, 20,631 assertions. Health check: all PASS (25 tables; AI provider gemini configured).*
 
 ---
 ## Sajel Pulse — Motivation Engine (نبض التميز والتحفيز التربوي)

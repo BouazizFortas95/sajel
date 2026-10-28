@@ -26,6 +26,7 @@
     --color-primary-800: rgba(var(--primary-800), 1);
 
     --color-danger-50: rgba(var(--danger-50), 1);
+    --color-danger-100: rgba(var(--danger-100), 1);
     --color-danger-200: rgba(var(--danger-200), 1);
     --color-danger-300: rgba(var(--danger-300), 1);
     --color-danger-400: rgba(var(--danger-400), 1);
@@ -35,6 +36,7 @@
     --color-danger-800: rgba(var(--danger-800), 1);
 
     --color-success-50: rgba(var(--success-50), 1);
+    --color-success-100: rgba(var(--success-100), 1);
     --color-success-200: rgba(var(--success-200), 1);
     --color-success-300: rgba(var(--success-300), 1);
     --color-success-400: rgba(var(--success-400), 1);
@@ -44,6 +46,7 @@
     --color-success-800: rgba(var(--success-800), 1);
 
     --color-warning-50: rgba(var(--warning-50), 1);
+    --color-warning-100: rgba(var(--warning-100), 1);
     --color-warning-200: rgba(var(--warning-200), 1);
     --color-warning-300: rgba(var(--warning-300), 1);
     --color-warning-400: rgba(var(--warning-400), 1);

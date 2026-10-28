@@ -1,20 +1,6 @@
 <x-filament-panels::page class="fi-dashboard-page">
-    @if (method_exists($this, 'filtersForm'))
-        {{ $this->filtersForm }}
-    @endif
-
-    <div class="mb-6">
-        @livewire('dashboard-stats')
-    </div>
-
-    <x-filament-widgets::widgets
-        :columns="$this->getColumns()"
-        :data="
-            [
-                ...(property_exists($this, 'filters') ? ['filters' => $this->filters] : []),
-                ...$this->getWidgetData(),
-            ]
-        "
-        :widgets="$this->getVisibleWidgets()"
-    />
+    {{-- The tabbed hub owns all dashboard content, including the quick links
+         and the teacher's pending-session queue, so widgets are not rendered
+         a second time here. --}}
+    @livewire('dashboard-stats')
 </x-filament-panels::page>

@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-10-28
-> Verified by `php artisan test` (**373 passed**, 20,469 assertions, **0 failures**),
+> Verified by `php artisan test` (**395 passed**, 20,631 assertions, **0 failures**),
 > `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -28,7 +28,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | PDF        | `spatie/browsershot` `^5.4`, Puppeteer  | Headless Chrome; Arabic shaping + Tailwind-preserving PDF |
 | i18n       | `mcamara/laravel-localization` `^2.4`    | `ar`, `en`, `fr` locales                |
 | Timezone   | `Africa/Algiers`                         | `APP_TIMEZONE`, used for weekly dates   |
-| Testing    | PHPUnit `^11.5`                          | **373 tests, all green (20,469 assertions in the latest run)** |
+| Testing    | PHPUnit `^11.5`                          | **395 tests, all green (20,631 assertions in the latest run)** |
 | Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
 
 ## 4. Sajel Pulse — Motivation Engine (نبض التميز والتحفيز التربوي)
@@ -38,7 +38,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 - A4 RTL certificate `print.student-certificate` + authorization (`StudentPolicy::view`).
 - Badges injected into `ParentPortalService` and `StudentReportCardService`.
 - Translations added to `ar.json`, `en.json`, `fr.json`; `tests/Feature/MotivationPulseTest.php` created.
-- Health-check PASS; Pint PASS; full suite 373 pass / 0 failures.
+- Health-check PASS; Pint PASS; full suite 395 pass / 0 failures.
 - Section 18 (Phase 8 — Institutional Backup & CI) added.
 
 ## 3. Domain Model
@@ -414,8 +414,14 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
   It renders a single full-width column; `getWidgets()` returns `UnloggedSessionsWidget::class`
   followed by `QuickLinks::class` (the `AccountWidget` is deliberately not shown on the dashboard).
 - `DashboardStats` Livewire component (`app/Livewire/DashboardStats.php`) + Blade view
-  (`resources/views/livewire/dashboard-stats.blade.php`): dark-mode-safe stat cards and
-  "Smart log" tabs (Preparation / Completion).
+  (`resources/views/livewire/dashboard-stats.blade.php`): role-aware, URL-stateful hub with
+  Overview, Schedule, Attendance, Lessons & register, Assessments & learning, Curriculum,
+  Students & support, and admin-only Institutional tabs. Overview embeds the smart log and quick
+  links; Lessons embeds `UnloggedSessionsWidget` for teachers. Periods are today/current
+  Sunday–Saturday week/current month in `Africa/Algiers`; `tab`, `period`, `classroom`, and
+  `subject` persist in the URL. Forged filters are rejected with `403`, and institutional data is
+  guarded in `DashboardMetricsService` as well as hidden from teachers. Exact metric definitions,
+  privacy/performance notes, and gaps are documented in README §10.
 - `MySchedule` page (`app/Filament/Pages/MySchedule.php`) at `/{locale}/auth/my-schedule`
   (teachers only), with two views toggled by `?view=day|week`:
   - **Day view**: `TeacherInteractiveSchedule` — stat cards, day tabs, search, grid/list mode,
@@ -480,7 +486,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 7. Testing
 
-`php artisan test` — **373 passing, 20,469 assertions in the latest full run, 0 failures**:
+`php artisan test` — **395 passing, 20,631 assertions in the latest full run, 0 failures**:
 
 | Suite                                  | Tests | Covers                                                        |
 |----------------------------------------|-------|---------------------------------------------------------------|
@@ -495,6 +501,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | `Tests\Feature\GradebookTest`          | 12    | Assessment/grade relationships and casts, unique pair, group/classroom roster sync, new-student insertion, inline decimal scores and max validation, teacher-only schedule creation/scoping, schedule immutability on edit, cascade deletes, relation-manager registration |
 | `Tests\Feature\AssessmentPrintTest`    | 10    | Localized assessment labels (navigation/breadcrumb/title), localized page rendering, session-locale fallback for unlocalized URLs, A4 RTL gradebook print, owner/admin scoping, guest redirect, unsupported locale, list print action, header print-action scoping |
 | `Tests\Feature\DashboardThemeTest`     | 7     | No missing utility classes, dark mode + theme asset, RTL Arabic panel + topbar switcher, brand colours, widget layout/registration, stat tabs |
+| `Tests\Feature\DashboardHubTest`       | 22    | Role-aware tab visibility, server-scoped teacher metrics, group-targeted schedules, forged URL/Livewire filters and tabs, institutional 403, Algeria timezone and Sunday-first periods, holiday exclusion, attendance due/recorded/not-recorded boundaries, future-log exclusion, assessment windows and grade-entry counts without averages, curriculum delegation/caps, aggregate support scope, URL state, contextual filters, localization/RTL/LTR, empty states, read-only/no-poll rendering, and constant query count |
 | `Tests\Feature\DataShowModeTest`       | 5     | Slide generation and clean narration text, localized voice toolbar and speech locales, Data Show Mode rendering and interactions |
 | `Tests\Feature\MySchedulePageTest`     | 4     | Teacher-only access, day/week views, guest redirect           |
 | `Tests\Feature\TeacherInteractiveScheduleTest` | 24 | Rendering, colours, dark mode, day/search/view/expand interactions, complete/cancel, stats, date-aware log navigation, teacher scoping |
@@ -526,7 +533,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | Aspect            | Status                                             |
 |-------------------|----------------------------------------------------|
 | Migrations        | ✅ All 43 migrations ran |
-| Test suite        | ✅ 373/373 passing, 0 failures (20,469 assertions in the latest full run) |
+| Test suite        | ✅ 395/395 passing, 0 failures (20,631 assertions in the latest full run) |
 | Admin panel       | ✅ 20 Filament resources + custom dashboard, schedule, curriculum-progress, data-show pages + ar/en/fr |
 | Seed data         | ✅ Destructive middle-school dataset + optional SajelSeeder |
 | Version control   | Git repo on `main`; Phase 2/3/4 complete (`f4e776a`, `f8d...`) |
@@ -851,7 +858,7 @@ Phase 6: Parent Engagement, Academic Calendar & Production Readiness.
 - Milestone 3: Pedagogical Meeting Resource (`PedagogicalMeetingResource`, `TeacherPortfolioService`, controller/routes/translations/header actions + `MySchedule`) — complete.
 - Milestone 4: Production Readiness (`SajelHealthCheckCommand` `sajel:health-check` + `--json`, DB 25 tables, timezone `Africa/Algiers`, localization `ar/en/fr`, PWA `dir=rtl`, AI provider read from `config/ai.php` with PASS/WARN key detection; `SajelHealthCheckCommandTest`; `pint`/`npm`/`migrate` clean).
 
-Status 2026-10-28: `373 passed`, **0 failures** (`20,469` assertions); `pint` passed; `npm run test:js` passed (8 tests); `npm run build` passed; health command reports PASS on database, schema (25 tables), timezone, localization, PWA, and AI (`Provider: gemini (gemini-3.8-flash) | Key: configured`). All Phase 2–6 milestones complete (100%). The offline attendance PWA now scopes browser storage by user and clears cached attendance HTML and roster snapshots for guests while preserving a pending queue for the same teacher. Localization is complete across `ar`/`en`/`fr` for user-facing UI and print/PDF labels; the official register and student certificate follow the active locale (Arabic remains the default RTL output), and `LocalizationCompletenessTest` guards against missing keys.
+Status 2026-10-28: `395 passed`, **0 failures** (`20,631` assertions); `pint` passed; `npm run test:js` passed (8 tests); `npm run build` passed; health command reports PASS on database, schema (25 tables), timezone, localization, PWA, and AI (`Provider: gemini (gemini-3.8-flash) | Key: configured`). All Phase 2–6 milestones complete (100%). The offline attendance PWA now scopes browser storage by user and clears cached attendance HTML and roster snapshots for guests while preserving a pending queue for the same teacher. Localization is complete across `ar`/`en`/`fr` for user-facing UI and print/PDF labels; the official register and student certificate follow the active locale (Arabic remains the default RTL output), and `LocalizationCompletenessTest` guards against missing keys. The dashboard is now a role-aware, URL-stateful hub with server-scoped metrics and explicit definitions; see README §10.
 
 ## 16. Phase 7 — School Identity (هوية المؤسسة التربوية)
 

@@ -17,7 +17,11 @@ class Dashboard extends BaseDashboard
     }
 
     /**
-     * Widgets shown on the Sajel dashboard (stats are now handled by the Livewire component).
+     * Widget classes kept for the dashboard contract and widget tests.
+     *
+     * The tabbed DashboardStats component embeds QuickLinks in Overview and
+     * UnloggedSessionsWidget in Lessons, so the dashboard view does not render
+     * this list a second time.
      *
      * @return list<class-string>
      */
