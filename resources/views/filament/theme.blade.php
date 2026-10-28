@@ -13,4 +13,28 @@
     }, 100);
   })();
 </script>
+<script>
+  /*
+   * Filament keeps the sidebar open by default. Below `lg` it renders as an
+   * overlay that covers the page until dismissed, so close it before Alpine
+   * initialises the layout. Desktop keeps Filament's persisted behaviour.
+   */
+  (function () {
+    function closeMobileSidebar() {
+      if (!window.matchMedia('(min-width: 1024px)').matches) {
+        window.Alpine.store('sidebar').isOpen = false;
+      }
+    }
+
+    if (window.Alpine && window.Alpine.store('sidebar')) {
+      closeMobileSidebar();
+    } else {
+      document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('alpine:init', function () {
+          closeMobileSidebar();
+        });
+      });
+    }
+  })();
+</script>
 @include('components.close-dropdowns')

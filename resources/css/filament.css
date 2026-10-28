@@ -7,6 +7,18 @@
 @source '../../app/**/*.php';
 
 /*
+ * Filament's panel views.
+ *
+ * This theme is injected after Filament's own stylesheet, so utilities it
+ * generates (such as `.fixed`) can override Filament's responsive variants
+ * (such as `lg:sticky` on the sidebar). Scanning the vendor views ensures the
+ * responsive variants are generated here too, keeping Tailwind's ordering
+ * intact.
+ */
+@source '../../vendor/filament/filament/resources/views/**/*.blade.php';
+@source '../../vendor/filament/support/resources/views/**/*.blade.php';
+
+/*
  * Filament's panel palette for Tailwind v4.
  *
  * Filament registers its colours as runtime CSS variables holding bare RGB
