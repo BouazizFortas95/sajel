@@ -19,13 +19,14 @@ use App\Models\User;
 use App\Services\StudentMotivationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class MotivationPulseTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function badges_computed_from_existing_domain_data(): void
     {
         $student = Student::factory()->create();
@@ -61,7 +62,7 @@ class MotivationPulseTest extends TestCase
         $this->assertArrayHasKey('positive_role_model', $badges);
     }
 
-    /** @test */
+    #[Test]
     public function comeback_champion_badge_for_grade_improvement(): void
     {
         $student = Student::factory()->create();
@@ -80,7 +81,7 @@ class MotivationPulseTest extends TestCase
         $this->assertArrayHasKey('comeback_champion', $badges);
     }
 
-    /** @test */
+    #[Test]
     public function award_quick_kudos_records_positive_observation_for_authorized_roster_student(): void
     {
         $teacher = User::factory()->teacher()->create();
@@ -104,7 +105,7 @@ class MotivationPulseTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function motivation_pulse_hub_accessible_to_teacher_and_admin(): void
     {
         $teacher = User::factory()->teacher()->create();
@@ -117,7 +118,7 @@ class MotivationPulseTest extends TestCase
         $this->get(MotivationPulseHub::getUrl())->assertOk();
     }
 
-    /** @test */
+    #[Test]
     public function student_certificate_route_authorized_and_shows_badges(): void
     {
         $admin = User::factory()->admin()->create();
@@ -130,7 +131,7 @@ class MotivationPulseTest extends TestCase
             ->assertSee(__('شهادة التميز'));
     }
 
-    /** @test */
+    #[Test]
     public function student_certificate_follows_the_requested_locale(): void
     {
         $admin = User::factory()->admin()->create();

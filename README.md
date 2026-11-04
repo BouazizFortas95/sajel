@@ -250,26 +250,17 @@ Known limits: the schedule tab shows recurring weekly slots rather than daily re
 pending documentation is week-to-date by design; institutional totals are current totals and are
 not period-filtered; the dashboard intentionally links out instead of embedding full reports.
 
-*Last updated: 2026-10-28 — Phases 2–6 all complete (100%) plus school identity settings, complete ar/en/fr localization, and the role-aware dashboard hub. Suite: 395 passing, 0 failures, 20,631 assertions. Health check: all PASS (25 tables; AI provider gemini configured).*
+*Last updated: 2026-11-04 — Phases 2–9 all complete (100%) including School Identity, Institutional Backup & CI, and the Sajel Pulse motivation engine. Suite: 403 passing, 0 failures, 20,689 assertions. Health check: all PASS (25 tables; AI provider gemini configured).*
 
 ---
-## Sajel Pulse — Motivation Engine (نبض التميز والتحفيز التربوي)
-- Zero-Click Automatic Badges: attendance_streak, comeback_champion, academic_excellence, positive_role_model
-- Classroom Synergy Meter: weekly attendance + positive behavior + completed lessons
-- DataShow quick kudos (`awardQuickKudos`) with instant toast and positive BehaviorObservation
-- MotivationPulseHub Filament page with spotlight podium cards
-- A4 RTL certificate (`print.student-certificate`) with official school header and signature boxes
-- Badges surfaced in StudentReportCardService and ParentPortalService
-
----
-## Phase 8 — Institutional Backup & CI
-- `SchoolBackupService`: timestamped JSON snapshot (`metadata` + row counts for 25 tables + institutional config), excludes password/session tokens.
+## Phase 8 — Institutional Backup & CI (100%)
+- `SchoolBackupService`: timestamped JSON snapshot (`metadata` + row counts for all tables + institutional config), excludes password/session tokens.
 - `ManageSchoolSettings` header action `"تحميل نسخة احتياطية للمؤسسة (JSON)"` (Admin-only).
-- `.github/workflows/ci.yml`: automated build/test on push/PR (PHP 8.3, Node 20, SQLite, build, pint, health-check, test suite).
+- `.github/workflows/ci.yml`: automated build/test on push/PR (PHP 8.3, Node 20, SQLite, build, npm test:js, pint, health-check, test suite). Full suite: 403 passed, 20,689 assertions, 0 failures. Pint clean. npm build clean. Health check PASS.
 
 ---
-## Phase 9 — Sajel Pulse Motivation System
-- `StudentMotivationService`: zero-click badges + pulse score + classroom synergy meter + 3 champion cards.
+## Phase 9 — Sajel Pulse Motivation System (نبض التميز والتحفيز التربوي) (100%)
+- `StudentMotivationService`: zero-click badges (`attendance_streak`, `comeback_champion`, `academic_excellence`, `positive_role_model`) + pulse score + classroom synergy meter + 3 champion cards.
 - `DataShowMode`: synergy bar (`⚡ طاقة تفاعل القسم`) and instant kudos (`awardQuickKudos`).
 - `MotivationPulseHub` (`heroicon-o-sparkles`): classroom filter, synergy meter, spotlight podium cards, student pulse table.
 - A4 RTL certificate (`print.student-certificate`) with `StudentPolicy::view` authorization + `.pdf` download.

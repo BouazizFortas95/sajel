@@ -1,8 +1,8 @@
 # Sajel (سجِّل) — Project Status
 
-> Last updated: 2026-10-28
-> Verified by `php artisan test` (**395 passed**, 20,631 assertions, **0 failures**),
-> `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
+> Last updated: 2026-11-04
+> Verified by `php artisan test` (**403 passed**, 20,689 assertions, **0 failures**),
+> `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
 
@@ -19,27 +19,17 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 
 ## 2. Tech Stack
 
-| Layer      | Choice                                   | Notes                                   |
-|------------|------------------------------------------|-----------------------------------------|
-| Framework  | Laravel `^12.0`                          | PHP `^8.2`                              |
-| Admin UI   | Filament `^3.2` (bundles Livewire)       | Single panel, Amber brand color, Cairo font |
-| Database   | SQLite                                   | `database/database.sqlite` present      |
-| Frontend   | Vite `^7`, Tailwind CSS `^4`, Axios      | Filament theme in `resources/css/filament.css` |
-| PDF        | `spatie/browsershot` `^5.4`, Puppeteer  | Headless Chrome; Arabic shaping + Tailwind-preserving PDF |
-| i18n       | `mcamara/laravel-localization` `^2.4`    | `ar`, `en`, `fr` locales                |
-| Timezone   | `Africa/Algiers`                         | `APP_TIMEZONE`, used for weekly dates   |
-| Testing    | PHPUnit `^11.5`                          | **395 tests, all green (20,631 assertions in the latest run)** |
-| Tooling    | Laravel Pint, Pail, Sail, Tinker         | Dev dependencies installed              |
-
-## 4. Sajel Pulse — Motivation Engine (نبض التميز والتحفيز التربوي)
-- `StudentMotivationService`: zero-click badges (`attendance_streak`, `comeback_champion`, `academic_excellence`, `positive_role_model`), pulse score, classroom synergy meter.
-- `DataShowMode` synergy bar + `awardQuickKudos()` (positive `BehaviorObservation`, classroom synergy increment, on-screen toast).
-- `MotivationPulseHub` Filament page (`/ar/auth/motivation-pulse`) with spotlight podium cards.
-- A4 RTL certificate `print.student-certificate` + authorization (`StudentPolicy::view`).
-- Badges injected into `ParentPortalService` and `StudentReportCardService`.
-- Translations added to `ar.json`, `en.json`, `fr.json`; `tests/Feature/MotivationPulseTest.php` created.
-- Health-check PASS; Pint PASS; full suite 395 pass / 0 failures.
-- Section 18 (Phase 8 — Institutional Backup & CI) added.
+| Layer     | Choice                                 | Notes                                                          |
+| --------- | -------------------------------------- | -------------------------------------------------------------- |
+| Framework | Laravel `^12.0`                        | PHP `^8.2`                                                     |
+| Admin UI  | Filament `^3.2` (bundles Livewire)     | Single panel, Amber brand color, Cairo font                    |
+| Database  | SQLite                                 | `database/database.sqlite` present                             |
+| Frontend  | Vite `^7`, Tailwind CSS `^4`, Axios    | Filament theme in `resources/css/filament.css`                 |
+| PDF       | `spatie/browsershot` `^5.4`, Puppeteer | Headless Chrome; Arabic shaping + Tailwind-preserving PDF      |
+| i18n      | `mcamara/laravel-localization` `^2.4`  | `ar`, `en`, `fr` locales                                       |
+| Timezone  | `Africa/Algiers`                       | `APP_TIMEZONE`, used for weekly dates                          |
+| Testing   | PHPUnit `^11.5`                        | **403 tests, all green (20,689 assertions in the latest run)** |
+| Tooling   | Laravel Pint, Pail, Sail, Tinker       | Dev dependencies installed                                     |
 
 ## 3. Domain Model
 
@@ -77,35 +67,35 @@ User (teacher: primary/secondary subject, weekly hours limit)
 
 ### Models (`app/Models`)
 
-| Model            | Purpose                                                            |
-|------------------|--------------------------------------------------------------------|
-| `User`           | Teacher/admin; implements `FilamentUser`; primary/secondary subjects, weekly workload limit, schedules & daily logs |
-| `EducationPhase` | Educational phase (e.g. Middle School) with abbreviation and JSON `settings` |
-| `Level`          | Grade/year within a phase, with a grade number used in classroom names |
-| `Classroom`      | Class section within a level; `name` is auto-generated on save |
-| `Group`          | Sub-division of a classroom; has many students                    |
-| `Student`        | Enrolled student (unique nullable registration number) in a group |
-| `Subject`        | Subject with a display color                                       |
-| `CurriculumDomain` | Annual-plan domain (ميدان) for a subject and level; has many sequences and resources |
-| `CurriculumSequence` | Ordered learning sequence (مقطع تعلمي) inside a curriculum domain |
-| `CurriculumResource` | Ordered knowledge resource (مورد معرفي) inside a sequence; may be mapped by many daily logs |
-| `Schedule`       | A teacher's weekly recurring lesson slot; `label()` for display    |
-| `DailyLog`       | Per-slot daily log; dynamic `content_data` blocks; optional curriculum-resource mapping; register summary generation; has many attendances |
-| `Attendance`     | Per-student status (`present`/`absent`/`late`/`excused`) and remarks for one daily log |
-| `Assessment`     | Quiz/midterm/exam/continuous assessment attached to a schedule; materializes grade rows |
-| `Grade`          | Per-student score and remarks for one assessment; unique per `(assessment, student)` |
-| `PedagogicalMemo` | Reusable teacher-owned memo linked to subject, level, and learning sequence; JSON activities, template/archive flags, duplication, A4 print/PDF |
+| Model                | Purpose                                                                                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `User`               | Teacher/admin; implements `FilamentUser`; primary/secondary subjects, weekly workload limit, schedules & daily logs                             |
+| `EducationPhase`     | Educational phase (e.g. Middle School) with abbreviation and JSON `settings`                                                                    |
+| `Level`              | Grade/year within a phase, with a grade number used in classroom names                                                                          |
+| `Classroom`          | Class section within a level; `name` is auto-generated on save                                                                                  |
+| `Group`              | Sub-division of a classroom; has many students                                                                                                  |
+| `Student`            | Enrolled student (unique nullable registration number) in a group                                                                               |
+| `Subject`            | Subject with a display color                                                                                                                    |
+| `CurriculumDomain`   | Annual-plan domain (ميدان) for a subject and level; has many sequences and resources                                                            |
+| `CurriculumSequence` | Ordered learning sequence (مقطع تعلمي) inside a curriculum domain                                                                               |
+| `CurriculumResource` | Ordered knowledge resource (مورد معرفي) inside a sequence; may be mapped by many daily logs                                                     |
+| `Schedule`           | A teacher's weekly recurring lesson slot; `label()` for display                                                                                 |
+| `DailyLog`           | Per-slot daily log; dynamic `content_data` blocks; optional curriculum-resource mapping; register summary generation; has many attendances      |
+| `Attendance`         | Per-student status (`present`/`absent`/`late`/`excused`) and remarks for one daily log                                                          |
+| `Assessment`         | Quiz/midterm/exam/continuous assessment attached to a schedule; materializes grade rows                                                         |
+| `Grade`              | Per-student score and remarks for one assessment; unique per `(assessment, student)`                                                            |
+| `PedagogicalMemo`    | Reusable teacher-owned memo linked to subject, level, and learning sequence; JSON activities, template/archive flags, duplication, A4 print/PDF |
 
 ### Enums (`app/Enums`)
 
-| Enum               | Cases                                                                    |
-|--------------------|--------------------------------------------------------------------------|
-| `DayOfWeek`        | Sunday…Saturday (Arabic labels, per-day colors)                          |
-| `DailyLogStatus`   | `Planned` (مخطط), `Completed` (منجز), `Cancelled` (ملغى)                |
-| `AttendanceStatus` | `Present` (حاضر), `Absent` (غائب), `Late` (متأخر), `Excused` (معفى)   |
+| Enum               | Cases                                                                                              |
+| ------------------ | -------------------------------------------------------------------------------------------------- |
+| `DayOfWeek`        | Sunday…Saturday (Arabic labels, per-day colors)                                                    |
+| `DailyLogStatus`   | `Planned` (مخطط), `Completed` (منجز), `Cancelled` (ملغى)                                           |
+| `AttendanceStatus` | `Present` (حاضر), `Absent` (غائب), `Late` (متأخر), `Excused` (معفى)                                |
 | `AssessmentType`   | `Quiz` (اختبار قصير), `Midterm` (فرض الفصل), `Exam` (امتحان), `ContinuousAssessment` (تقويم مستمر) |
-| `LessonPhaseType`  | Warmup, Discovery, Institutionalization, Application, Evaluation (مراحل الدرس) |
-| `Role`             | `Admin` (مدير), `Teacher` (أستاذ) with labels/colors/options             |
+| `LessonPhaseType`  | Warmup, Discovery, Institutionalization, Application, Evaluation (مراحل الدرس)                     |
+| `Role`             | `Admin` (مدير), `Teacher` (أستاذ) with labels/colors/options                                       |
 
 ### Key behaviors
 
@@ -331,50 +321,50 @@ Algerian family-name pool, with `2026-####` registration numbers and 11–15-yea
 - Access control: users carry a `role` (`admin` | `teacher`, see `App\Enums\Role`); `User::canAccessPanel()`
   grants panel entry to any user with a role. Fine-grained abilities are enforced by model policies,
   each with an admin bypass via `before()`:
-  - `SchedulePolicy` and `DailyLogPolicy`: teachers are scoped to their own records.
-  - `AssessmentPolicy`: teachers can list/create assessments but only view, edit, or delete assessments
-    attached to their own schedules.
-  - `PedagogicalMemoPolicy`: teachers can list/create memos and view, edit, delete, duplicate, archive,
-    print, or download only their own; admins bypass and can assign memos to teachers.
-  - `CurriculumDomainPolicy`, `CurriculumSequencePolicy`, and `CurriculumResourcePolicy`: the
-    curriculum catalog is admin-only. Teachers map lessons through daily logs and view progress.
-  - `StudentPolicy`: the master list and all mutations are admin-only. A teacher may view an individual
-    student only when scheduled for that student's group, or for the whole classroom when the schedule
-    has no group filter.
-  - `GradePolicy` / `AttendancePolicy`: teachers can view or update rows only when they own the parent
-    `Assessment` / `DailyLog`; manual create/delete is disabled (rows are materialized idempotently).
-  - `UserPolicy`: admin-only user management.
-  - `ExportPolicy`: the owner of an export or an admin may download its generated CSV/XLSX files.
-  - `SubjectPolicy`, `ClassroomPolicy`, `LevelPolicy`, `GroupPolicy`, `EducationPhasePolicy`: the
-    core academic structure catalogs are strictly admin-only; teachers are denied every ability.
+    - `SchedulePolicy` and `DailyLogPolicy`: teachers are scoped to their own records.
+    - `AssessmentPolicy`: teachers can list/create assessments but only view, edit, or delete assessments
+      attached to their own schedules.
+    - `PedagogicalMemoPolicy`: teachers can list/create memos and view, edit, delete, duplicate, archive,
+      print, or download only their own; admins bypass and can assign memos to teachers.
+    - `CurriculumDomainPolicy`, `CurriculumSequencePolicy`, and `CurriculumResourcePolicy`: the
+      curriculum catalog is admin-only. Teachers map lessons through daily logs and view progress.
+    - `StudentPolicy`: the master list and all mutations are admin-only. A teacher may view an individual
+      student only when scheduled for that student's group, or for the whole classroom when the schedule
+      has no group filter.
+    - `GradePolicy` / `AttendancePolicy`: teachers can view or update rows only when they own the parent
+      `Assessment` / `DailyLog`; manual create/delete is disabled (rows are materialized idempotently).
+    - `UserPolicy`: admin-only user management.
+    - `ExportPolicy`: the owner of an export or an admin may download its generated CSV/XLSX files.
+    - `SubjectPolicy`, `ClassroomPolicy`, `LevelPolicy`, `GroupPolicy`, `EducationPhasePolicy`: the
+      core academic structure catalogs are strictly admin-only; teachers are denied every ability.
 
-  Teachers see only their own schedules, daily logs, assessments, and pedagogical memos (query scoping
-  in `ScheduleResource`, `DailyLogResource`, `AssessmentResource`, and `PedagogicalMemoResource`);
-  `StudentResource` is hidden from their navigation entirely. The core academic structure resources
-  (`SubjectResource`, `ClassroomResource`, `LevelResource`, `GroupResource`, `EducationPhaseResource`)
-  are also hidden from teacher navigation via `shouldRegisterNavigation()` and reject direct access
-  with a 403.
-  Relation managers additionally verify parent-record ownership, and inline
-  grade/attendance columns are disabled unless the policy allows `update` on that row.
+    Teachers see only their own schedules, daily logs, assessments, and pedagogical memos (query scoping
+    in `ScheduleResource`, `DailyLogResource`, `AssessmentResource`, and `PedagogicalMemoResource`);
+    `StudentResource` is hidden from their navigation entirely. The core academic structure resources
+    (`SubjectResource`, `ClassroomResource`, `LevelResource`, `GroupResource`, `EducationPhaseResource`)
+    are also hidden from teacher navigation via `shouldRegisterNavigation()` and reject direct access
+    with a 403.
+    Relation managers additionally verify parent-record ownership, and inline
+    grade/attendance columns are disabled unless the policy allows `update` on that row.
 
 ### Resources (`app/Filament/Resources`) — each with List / Create / Edit pages
 
-| Resource                | Manages                                |
-|-------------------------|----------------------------------------|
-| `DailyLogResource`      | Daily logs / lesson preparations (the richest resource: `Builder` content data, `Tabs` form, "تأكيد الإنجاز" action, completion-gated `actual_content`/`homework`, generated register content, CSV/XLSX export, completed-only bulk register PDF download, the AI lesson-plan generator on the title field, and the auto-populated `AttendancesRelationManager`) |
-| `AssessmentResource`    | Assessments and the lazy, auto-populated `GradesRelationManager` (inline decimal scores and remarks, dynamic max-score validation, teacher-scoped schedule choices) |
-| `PedagogicalMemoResource` | Reusable memo bank (subject/level/sequence links, template and archive filters, duplicate/archive/restore actions, A4 print and server-side PDF) |
-| `CurriculumDomainResource` | Annual-plan domains per subject and level (ordered names, optional code/description, sequences/resources counts) |
-| `CurriculumSequenceResource` | Learning sequences inside a domain (ordered, optionally coded, with resource counts) |
-| `CurriculumKnowledgeResource` | Knowledge resources inside a sequence (custom route slug `curriculum-knowledge-resources`) |
-| `ScheduleResource`      | Weekly schedules (cascading classroom → group selects; teacher/admin subject choices restricted to the teacher's primary/secondary assignments) |
-| `SubjectResource`       | Subjects and colors                    |
-| `ClassroomResource`     | Classrooms / academic years (auto-generated `{grade} {abbr} {number}` name; class number form field) |
-| `LevelResource`         | Levels (name + numeric grade number)   |
-| `GroupResource`         | Groups                                 |
-| `StudentResource`       | Students, group assignment, group filter, CSV import |
-| `EducationPhaseResource`| Education phases, abbreviations and settings |
-| `UserResource`          | Users, roles, teacher primary/secondary subjects, and weekly workload limit (admin-only via `UserPolicy`) |
+| Resource                      | Manages                                                                                                                                                                                                                                                                                                                                                          |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DailyLogResource`            | Daily logs / lesson preparations (the richest resource: `Builder` content data, `Tabs` form, "تأكيد الإنجاز" action, completion-gated `actual_content`/`homework`, generated register content, CSV/XLSX export, completed-only bulk register PDF download, the AI lesson-plan generator on the title field, and the auto-populated `AttendancesRelationManager`) |
+| `AssessmentResource`          | Assessments and the lazy, auto-populated `GradesRelationManager` (inline decimal scores and remarks, dynamic max-score validation, teacher-scoped schedule choices)                                                                                                                                                                                              |
+| `PedagogicalMemoResource`     | Reusable memo bank (subject/level/sequence links, template and archive filters, duplicate/archive/restore actions, A4 print and server-side PDF)                                                                                                                                                                                                                 |
+| `CurriculumDomainResource`    | Annual-plan domains per subject and level (ordered names, optional code/description, sequences/resources counts)                                                                                                                                                                                                                                                 |
+| `CurriculumSequenceResource`  | Learning sequences inside a domain (ordered, optionally coded, with resource counts)                                                                                                                                                                                                                                                                             |
+| `CurriculumKnowledgeResource` | Knowledge resources inside a sequence (custom route slug `curriculum-knowledge-resources`)                                                                                                                                                                                                                                                                       |
+| `ScheduleResource`            | Weekly schedules (cascading classroom → group selects; teacher/admin subject choices restricted to the teacher's primary/secondary assignments)                                                                                                                                                                                                                  |
+| `SubjectResource`             | Subjects and colors                                                                                                                                                                                                                                                                                                                                              |
+| `ClassroomResource`           | Classrooms / academic years (auto-generated `{grade} {abbr} {number}` name; class number form field)                                                                                                                                                                                                                                                             |
+| `LevelResource`               | Levels (name + numeric grade number)                                                                                                                                                                                                                                                                                                                             |
+| `GroupResource`               | Groups                                                                                                                                                                                                                                                                                                                                                           |
+| `StudentResource`             | Students, group assignment, group filter, CSV import                                                                                                                                                                                                                                                                                                             |
+| `EducationPhaseResource`      | Education phases, abbreviations and settings                                                                                                                                                                                                                                                                                                                     |
+| `UserResource`                | Users, roles, teacher primary/secondary subjects, and weekly workload limit (admin-only via `UserPolicy`)                                                                                                                                                                                                                                                        |
 
 The six core academic catalog resources are admin-only (hidden from teacher navigation and fully
 denied by policy): `SubjectResource`, `ClassroomResource`, `LevelResource`, `GroupResource`,
@@ -424,20 +414,20 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
   privacy/performance notes, and gaps are documented in README §10.
 - `MySchedule` page (`app/Filament/Pages/MySchedule.php`) at `/{locale}/auth/my-schedule`
   (teachers only), with two views toggled by `?view=day|week`:
-  - **Day view**: `TeacherInteractiveSchedule` — stat cards, day tabs, search, grid/list mode,
-    expandable cards, complete/cancel actions, and "فتح السجل"/"إنشاء سجل".
-  - **Week view**: `TeacherTimetable` — a fixed Sunday–Thursday grid with seven one-hour slots
-    (08:00–12:00 and 14:00–17:00), a lunch-break row, and explicit dashed placeholders for empty
-    slots. All slot rows live in a single CSS grid; a lesson lasting several hours is one card with
-    an explicit `grid-row / span` (computed from the schedule's start/end time), and the rows it
-    covers render no cell at all so the remaining days stay aligned. Spans stop at the lunch break
-    and never paint over the period headings. The header includes a workload badge
-    ("النصاب الزمني: total / limit ساعة") that turns red with a warning icon when the scheduled total
-    exceeds the teacher's weekly limit. Each populated card passes its column's current-week date to
-    `openLog()`, which opens the existing log (edit) or a prefilled create page (`schedule_id` +
-    `date` query parameters).
-  Both views resolve weekday dates in the `Africa/Algiers` timezone and open the existing log
-  or a prefilled create page.
+    - **Day view**: `TeacherInteractiveSchedule` — stat cards, day tabs, search, grid/list mode,
+      expandable cards, complete/cancel actions, and "فتح السجل"/"إنشاء سجل".
+    - **Week view**: `TeacherTimetable` — a fixed Sunday–Thursday grid with seven one-hour slots
+      (08:00–12:00 and 14:00–17:00), a lunch-break row, and explicit dashed placeholders for empty
+      slots. All slot rows live in a single CSS grid; a lesson lasting several hours is one card with
+      an explicit `grid-row / span` (computed from the schedule's start/end time), and the rows it
+      covers render no cell at all so the remaining days stay aligned. Spans stop at the lunch break
+      and never paint over the period headings. The header includes a workload badge
+      ("النصاب الزمني: total / limit ساعة") that turns red with a warning icon when the scheduled total
+      exceeds the teacher's weekly limit. Each populated card passes its column's current-week date to
+      `openLog()`, which opens the existing log (edit) or a prefilled create page (`schedule_id` +
+      `date` query parameters).
+      Both views resolve weekday dates in the `Africa/Algiers` timezone and open the existing log
+      or a prefilled create page.
 - `CurriculumProgress` page (`app/Filament/Pages/CurriculumProgress.php`) at
   `/{locale}/auth/curriculum-progress`: subject/classroom filters, search/status/sort/per-page tools,
   teacher-scoped default, KPI cards, a domain → sequence → resource breakdown, and a paginated
@@ -461,21 +451,21 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 ## 6. Routes & Views
 
 - `routes/web.php`:
-  - `/` closure returning the `welcome` view (landing page with a language dropdown, login/register
-    links for guests, dashboard link for authenticated users).
-  - `/{locale}` (where `{locale}` ∈ `ar`, `en`, `fr`) renders the same welcome view behind
-    `SetFilamentLocale`, so localized home pages share the switcher state.
-  - `/print/daily-logs` (`print.register`, `auth`) accepts `ids[]` query parameters and renders the
-    official A4 register. Completed logs only; teachers are scoped to their own schedules, admins may
-    print any teacher's completed logs. Guests are redirected to the Filament login page. The same
-    register is offered as a server-side PDF from the resource bulk action.
-  - `/{locale}/print/assessments/{assessment}` (`print.assessment`, `auth` + locale middleware)
-    renders the standalone A4 assessment gradebook; teachers are scoped to their own assessments and
-    admins may print any assessment.
-  - `/{locale}/print/pedagogical-memos/{memo}` (`print.pedagogical-memo`, `auth` + locale middleware)
-    renders the standalone A4 memo sheet. Teachers may print their own memos; admins may print any.
-  - `/{locale}/print/pedagogical-memos/{memo}/pdf` (`print.pedagogical-memo.pdf`) streams the same
-    memo as a server-side PDF through `PedagogicalMemoPrintService` and Browsershot.
+    - `/` closure returning the `welcome` view (landing page with a language dropdown, login/register
+      links for guests, dashboard link for authenticated users).
+    - `/{locale}` (where `{locale}` ∈ `ar`, `en`, `fr`) renders the same welcome view behind
+      `SetFilamentLocale`, so localized home pages share the switcher state.
+    - `/print/daily-logs` (`print.register`, `auth`) accepts `ids[]` query parameters and renders the
+      official A4 register. Completed logs only; teachers are scoped to their own schedules, admins may
+      print any teacher's completed logs. Guests are redirected to the Filament login page. The same
+      register is offered as a server-side PDF from the resource bulk action.
+    - `/{locale}/print/assessments/{assessment}` (`print.assessment`, `auth` + locale middleware)
+      renders the standalone A4 assessment gradebook; teachers are scoped to their own assessments and
+      admins may print any assessment.
+    - `/{locale}/print/pedagogical-memos/{memo}` (`print.pedagogical-memo`, `auth` + locale middleware)
+      renders the standalone A4 memo sheet. Teachers may print their own memos; admins may print any.
+    - `/{locale}/print/pedagogical-memos/{memo}/pdf` (`print.pedagogical-memo.pdf`) streams the same
+      memo as a server-side PDF through `PedagogicalMemoPrintService` and Browsershot.
 - The Filament panel is available at `/ar/auth`, `/en/auth`, and `/fr/auth`; pedagogical memos live at
   `/{locale}/auth/pedagogical-memos`.
 - Curriculum catalog (admin-only): `/{locale}/auth/curriculum-domains`,
@@ -486,59 +476,75 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 7. Testing
 
-`php artisan test` — **395 passing, 20,631 assertions in the latest full run, 0 failures**:
+`php artisan test` — **403 passing, 20,689 assertions in the latest full run, 0 failures**:
 
-| Suite                                  | Tests | Covers                                                        |
-|----------------------------------------|-------|---------------------------------------------------------------|
-| `Tests\Unit\ExampleTest`               | 1     | Sanity check                                                  |
-| `Tests\Feature\ExampleTest`            | 1     | `/` returns a successful response                             |
-| `Tests\Feature\ActiveLearningStrategyTest` | 3  | Teacher access, seeded default strategies, strategy availability |
-| `Tests\Feature\AuthorizationTest`      | 18    | Role-based panel access; student/assessment/grade/attendance policies; admin-only core academic structure policies, screens, and navigation hiding; relation-manager parent ownership; admin bypass |
-| `Tests\Feature\ClassroomNamingTest`    | 3     | Auto-generated classroom name from level grade, phase abbreviation, and class number; regeneration on update; graceful fallback when the convention is incomplete |
-| `Tests\Feature\CurriculumTrackingTest` | 17    | Curriculum hierarchy/relationships/ordering, daily-log resource mapping and register summary, admin CRUD page forms, admin-only catalog policies, subject/level-scoped selector options, forged mapping rejection, automatic progress after completion (duplicate logs counted once), classroom/subject/group scoping, teacher class-wide overview vs admin all-pairs, teacher defaults/authorization on the progress page, localized page rendering, search/status/sort tools, at-risk filtering, pagination without scroll-jump, tool reset, CSV export, resource nulling/domain cascade |
-| `Tests\Feature\DailyLogPagesTest`      | 6     | List/edit pages, schedule+date prefilling, cross-teacher protection, create-form save, unique `(schedule_id, date)` validation |
-| `Tests\Feature\AttendanceTest`         | 7     | Attendance defaults/relationships, unique pair, group and classroom roster resolution, idempotent sync, new-student insertion, inline status update, relation-manager registration |
-| `Tests\Feature\GradebookTest`          | 12    | Assessment/grade relationships and casts, unique pair, group/classroom roster sync, new-student insertion, inline decimal scores and max validation, teacher-only schedule creation/scoping, schedule immutability on edit, cascade deletes, relation-manager registration |
-| `Tests\Feature\AssessmentPrintTest`    | 10    | Localized assessment labels (navigation/breadcrumb/title), localized page rendering, session-locale fallback for unlocalized URLs, A4 RTL gradebook print, owner/admin scoping, guest redirect, unsupported locale, list print action, header print-action scoping |
-| `Tests\Feature\DashboardThemeTest`     | 7     | No missing utility classes, dark mode + theme asset, RTL Arabic panel + topbar switcher, brand colours, widget layout/registration, stat tabs |
-| `Tests\Feature\DashboardHubTest`       | 22    | Role-aware tab visibility, server-scoped teacher metrics, group-targeted schedules, forged URL/Livewire filters and tabs, institutional 403, Algeria timezone and Sunday-first periods, holiday exclusion, attendance due/recorded/not-recorded boundaries, future-log exclusion, assessment windows and grade-entry counts without averages, curriculum delegation/caps, aggregate support scope, URL state, contextual filters, localization/RTL/LTR, empty states, read-only/no-poll rendering, and constant query count |
-| `Tests\Feature\DataShowModeTest`       | 5     | Slide generation and clean narration text, localized voice toolbar and speech locales, Data Show Mode rendering and interactions |
-| `Tests\Feature\MySchedulePageTest`     | 4     | Teacher-only access, day/week views, guest redirect           |
-| `Tests\Feature\TeacherInteractiveScheduleTest` | 24 | Rendering, colours, dark mode, day/search/view/expand interactions, complete/cancel, stats, date-aware log navigation, teacher scoping |
-| `Tests\Feature\TeacherTimetableTest`   | 16    | Fixed five-day/seven-slot grid, matrix mapping, multi-hour row spans with covered cells (2h, 3h, back-to-back, lunch-break clamp), workload totals and overload badge, equality boundary, empty placeholders, subject-colour mapping (all six palette colours), primary fallback for missing/unknown colours, teacher scoping, current-week click dates, stale-date fallback, date-aware log navigation |
-| `Tests\Feature\TeacherSubjectAssignmentTest` | 6 | Primary/secondary relationships, default weekly limit, teacher form default/restriction, admin teacher-scoped subject options, user-form specialization assignment/editing |
-| `Tests\Feature\StudentManagementTest`  | 8     | Student/group relationships, cascade delete, admin-only resource/navigation, form creation, unique nullable registration, group filter, CSV importer group linking |
-| `Tests\Feature\RegisterPrintTest`      | 15    | Authenticated print route, teacher/admin scoping, completed-only filtering, validation, guest redirect, locale-aware Arabic/English/French register output, always-visible PDF bulk action with completed-only server filtering + streamed download, exporter columns/filter, live export progress widget (current-user scoping, percentage, polling, export-start integration, hiding when complete, completion poll does not 403), and owner/admin-only export downloads |
-| `Tests\Feature\PedagogicalMemoTest`    | 21    | Memo relationships/casts, teacher/admin resource scoping, create/edit ownership, admin assignment/required teacher, duplicate into current bank, archive/restore, template/archive filters, policy/print/PDF authorization, localized A4 RTL/LTR print views, guest redirect, unsupported locale, localized labels, print/PDF actions, PDF download |
-| `Tests\Feature\WelcomeAndDashboardTest`| 7     | Welcome page links, login/register access, guest redirect, dashboard stats/quick links, French and Arabic/RTL localization |
-| `Tests\Feature\UnloggedSessionsWidgetTest` | 4 | Teacher-only visibility, Sunday-to-today missing/planned detection, today's end-time boundary, teacher scoping, completion URLs, five-per-page Livewire pagination with total count, success state |
-| `Tests\Feature\AiLessonPlannerTest`    | 14    | Service contract (locale-aware prompts, Arabic fallback, UUID-keyed `lesson_structure` block, fenced-JSON tolerance, OpenAI driver, provider errors/retries/fallbacks), form-action injection, missing title/schedule guard, teacher-scoped schedules |
-| `Tests\Feature\MotivationPulseTest` | 6 | Zero-click badge computation, comeback-champion detection, quick-kudos authorization, teacher/admin hub access, and the A4 certificate route in Arabic/English/French |
-| `Tests\Feature\LocalizationCompletenessTest` | 2 | Scans literal `__()`/`trans()`/`@lang()` keys in app, views, routes, and config; requires English/French entries for user-facing strings and Arabic entries for non-Arabic keys |
-| `Tests\Feature\MiddleSchoolSeederTest` | 21    | Dataset and active-learning strategy seed coverage, official subjects, school identity and holiday calendar, school structure, students, teachers, demo-teacher assignments, deterministic 20-hour schedules, two-week daily logs, authentic curriculum mappings, sequential assessments and balanced learner profiles, attendance distribution/streaks, labs/seating plans, pedagogical follow-up records, destructive wipe, idempotent re-runs, bulk query budget (<400 queries), factory identities |
-| `Tests\Feature\ScheduleOverlapTest`    | 6     | Overlapping/identical teacher-day slots rejected; back-to-back slots allowed; scoping to teacher and day; edit-safe self-exclusion; admin double-booking guard |
-| `Tests\Feature\LocalePersistenceTest`  | 5     | Locale persisted when visiting localized panel routes, updated on language switch, restored on `/livewire/update` (post-save redirect URL generation), applied to non-localized URLs, unsupported locales ignored |
-| `Tests\Feature\LabManagementTest`      | 12    | Lab management, relation-manager station creation (header + empty-state actions), and seating-plan behavior |
-| `Tests\Feature\BehaviorObservationResourceTest` | 1 | Admin list rendering with follow-up badge formatting |
-| `Tests\Feature\OfficialReportsTest`    | 19    | Official report page access, timetable/attendance/transcript output, scoping, localization, and PDF routes |
-| `Tests\Feature\QuickAttendanceTest`    | 8     | Quick-attendance access, roster display, attendance saving, and authorization |
-| `Tests\Feature\OfflineAttendancePwaTest` | 12  | PWA assets and panel registration, user-scoped offline storage, guest cache/roster purge, localized sync warning, idempotent multi-student sync, schedule/roster authorization, admin bypass, invalid batch validation, offline controls |
-| `Tests\Feature\DigitalVisaTest` | 5 | Admin single/bulk stamps, completed-only enforcement, teacher protection, and HTML/PDF register visa output |
-| `Tests\Feature\SchoolSupervisionHubTest` | 6 | Locale-aware admin-only access, weekday/time-based compliance, classroom-scoped attendance and distinct-date repeat absences, behavior follow-up resolution with notes |
-| `Tests\Feature\StudentReportCardTest` | 4 | Teacher roster authorization and subject/record scoping, admin full reports, localized print/PDF routes, and Official Reports student picker |
-| `Tests\Feature\SchoolSettingsTest` | 4 | Admin-only school identity settings view/update (teacher 403), cache refresh, and dynamic school/directorate/headteacher identity on register sheets, class councils, and Official Reports |
+| Suite                                           | Tests | Covers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Tests\Unit\ExampleTest`                        | 1     | Sanity check                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `Tests\Feature\ExampleTest`                     | 1     | `/` returns a successful response                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `Tests\Feature\ActiveLearningStrategyTest`      | 3     | Teacher access, seeded default strategies, strategy availability                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `Tests\Feature\AiLessonPlannerTest`             | 14    | Service contract (locale-aware prompts, Arabic fallback, UUID-keyed `lesson_structure` block, fenced-JSON tolerance, OpenAI driver, provider errors/retries/fallbacks), form-action injection, missing title/schedule guard, teacher-scoped schedules                                                                                                                                                                                                                                                                                                                                      |
+| `Tests\Feature\AssessmentPrintTest`             | 11    | Localized assessment labels (navigation/breadcrumb/title), localized page rendering, session-locale fallback for unlocalized URLs, A4 RTL gradebook print, owner/admin scoping, guest redirect, unsupported locale, list print action, header print-action scoping, group-scoped section resolution                                                                                                                                                                                                                                                                                          |
+| `Tests\Feature\AttendanceTest`                  | 7     | Attendance defaults/relationships, unique pair, group and classroom roster resolution, idempotent sync, new-student insertion, inline status update, relation-manager registration                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `Tests\Feature\AuthorizationTest`               | 18    | Role-based panel access; student/assessment/grade/attendance policies; admin-only core academic structure policies, screens, and navigation hiding; relation-manager parent ownership; admin bypass                                                                                                                                                                                                                                                                                                                                                                                        |
+| `Tests\Feature\BehaviorObservationResourceTest` | 1     | Admin list rendering with follow-up badge formatting                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `Tests\Feature\ClassCouncilTest`                | 5     | Deliberation metrics computation, per-subject and general averages, attendance tallies, recommendations, admin wide access, teacher schedule/roster scoping with 403 guard, A4 landscape print/PDF routes                                                                                                                                                                                                                                                                                                                                                                              |
+| `Tests\Feature\ClassroomNamingTest`             | 3     | Auto-generated classroom name from level grade, phase abbreviation, and class number; regeneration on update; graceful fallback when the convention is incomplete                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `Tests\Feature\ClassroomToolbarTest`            | 8     | Livewire classroom toolbar, timer countdown, balanced random student picker, group generator, lesson schedule scoping, admin bypass, empty state, and French localization                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `Tests\Feature\CurriculumTrackingTest`          | 17    | Curriculum hierarchy/relationships/ordering, daily-log resource mapping and register summary, admin CRUD page forms, admin-only catalog policies, subject/level-scoped selector options, forged mapping rejection, automatic progress after completion (duplicate logs counted once), classroom/subject/group scoping, teacher class-wide overview vs admin all-pairs, teacher defaults/authorization on the progress page, localized page rendering, search/status/sort tools, at-risk filtering, pagination without scroll-jump, tool reset, CSV export, resource nulling/domain cascade |
+| `Tests\Feature\DailyLogPagesTest`               | 6     | List/edit pages, schedule+date prefilling, cross-teacher protection, create-form save, unique `(schedule_id, date)` validation                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `Tests\Feature\DashboardHubTest`                | 22    | Role-aware tab visibility, server-scoped teacher metrics, group-targeted schedules, forged URL/Livewire filters and tabs, institutional 403, Algeria timezone and Sunday-first periods, holiday exclusion, attendance due/recorded/not-recorded boundaries, future-log exclusion, assessment windows and grade-entry counts without averages, curriculum delegation/caps, aggregate support scope, URL state, contextual filters, localization/RTL/LTR, empty states, read-only/no-poll rendering, and constant query count                                                                |
+| `Tests\Feature\DashboardThemeTest`              | 7     | No missing utility classes, dark mode + theme asset, RTL Arabic panel + topbar switcher, brand colours, widget layout/registration, stat tabs                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `Tests\Feature\DataShowModeTest`                | 6     | Auto selects today's log, teacher scoped log access, section name in labels/cover, slide generation and clean narration text, localized voice toolbar and speech locales, Data Show Mode rendering and interactions                                                                                                                                                                                                                                                                                                                                                                       |
+| `Tests\Feature\DigitalVisaTest`                 | 14    | Admin single and bulk stamps, completed-only enforcement, teacher protection, review details dialog, review badge in list table, and HTML/PDF register visa output with official administrative signature                                                                                                                                                                                                                                                                                                                                                                                 |
+| `Tests\Feature\GradebookTest`                   | 12    | Assessment/grade relationships and casts, unique pair, group/classroom roster sync, new-student insertion, inline decimal scores and max validation, teacher-only schedule creation/scoping, schedule immutability on edit, cascade deletes, relation-manager registration                                                                                                                                                                                                                                                                                                                 |
+| `Tests\Feature\LabManagementTest`               | 12    | Lab management, relation-manager station creation (header + empty-state actions), station statuses, and U-shape seating-plan assignment and persistence                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `Tests\Feature\LocalePersistenceTest`           | 5     | Locale persisted when visiting localized panel routes, updated on language switch, restored on `/livewire/update` (post-save redirect URL generation), applied to non-localized URLs, unsupported locales ignored                                                                                                                                                                                                                                                                                                                                                                          |
+| `Tests\Feature\LocalizationCompletenessTest`    | 2     | Scans literal `__()`/`trans()`/`@lang()` keys in app, views, routes, and config; requires English/French entries for user-facing strings and Arabic entries for non-Arabic keys                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `Tests\Feature\MiddleSchoolSeederTest`          | 21    | Dataset and active-learning strategy seed coverage, official subjects, school identity and holiday calendar, school structure, students, teachers, demo-teacher assignments, deterministic 20-hour schedules, two-week daily logs, authentic curriculum mappings, sequential assessments and balanced learner profiles, attendance distribution/streaks, labs/seating plans, pedagogical follow-up records, destructive wipe, idempotent re-runs, bulk query budget (<400 queries), factory identities                                                                                     |
+| `Tests\Feature\MotivationPulseTest`             | 6     | Zero-click badge computation, comeback-champion detection, quick-kudos authorization, teacher/admin hub access, and the A4 certificate route in Arabic/English/French                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `Tests\Feature\MySchedulePageTest`              | 4     | Teacher-only access, day/week views, guest redirect                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `Tests\Feature\OfficialReportsTest`             | 19    | Official report page access, timetable/attendance/transcript output, scoping, localization, and PDF routes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `Tests\Feature\OfflineAttendancePwaTest`        | 12    | PWA assets and panel registration, user-scoped offline storage, guest cache/roster purge, localized sync warning, idempotent multi-student sync, schedule/roster authorization, admin bypass, invalid batch validation, offline controls                                                                                                                                                                                                                                                                                                                                                   |
+| `Tests\Feature\ParentPortalTest`                | 4     | Signed 90-day URL validation and rejection of expired tokens, teacher generation for own roster students, group-scoped privacy guard preventing leakage of other sections                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `Tests\Feature\PedagogicalMemoTest`             | 21    | Memo relationships/casts, teacher/admin resource scoping, create/edit ownership, admin assignment/required teacher, duplicate into current bank, archive/restore, template/archive filters, policy/print/PDF authorization, localized A4 RTL/LTR print views, guest redirect, unsupported locale, localized labels, print/PDF actions, PDF download                                                                                                                                                                                                                                        |
+| `Tests\Feature\QuickAttendanceTest`             | 9     | Quick-attendance access, roster display, attendance saving, group-scoped schedule resolution, required fields, authorization guards, and offline state                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `Tests\Feature\RegisterPrintTest`               | 17    | Authenticated print route, teacher/admin scoping, completed-only filtering, validation, guest redirect, locale-aware Arabic/English/French register output, always-visible PDF bulk action with completed-only server filtering + streamed download, exporter columns/filter, live export progress widget (current-user scoping, percentage, polling, export-start integration, hiding when complete, completion poll does not 403), group section resolution, and owner/admin-only export downloads                                                                                         |
+| `Tests\Feature\SajelHealthCheckCommandTest`     | 4     | Fresh database verification, JSON output flag, missing AI key warning, and configured Gemini key pass                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `Tests\Feature\ScheduleOverlapTest`             | 6     | Overlapping/identical teacher-day slots rejected; back-to-back slots allowed; scoping to teacher and day; edit-safe self-exclusion; admin double-booking guard                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `Tests\Feature\ScheduleRosterTest`              | 4     | Classroom-only schedules target all classroom groups; group-scoped schedules target their specific group; group-only schedules resolve roster; empty schedule targets no students                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `Tests\Feature\ScheduleSectionNameTest`         | 3     | Section name fallback and formatting for group-scoped and classroom-scoped schedules across timetable, register, and reports                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `Tests\Feature\ScheduleTargetingTest`           | 3     | Explicit schedule targeting rules, classroom vs group level validations, and conflict prevention                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `Tests\Feature\SchoolHolidayComplianceTest`     | 5     | Holiday date ranges, calendar exclusion from overdue and unlogged compliance checks in supervision hub and unlogged widget, read-only teacher view                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `Tests\Feature\SchoolSettingsTest`              | 5     | Admin-only school identity settings view/update (teacher 403), cache refresh, dynamic school/directorate/headteacher identity on register sheets, class councils, and Official Reports, and admin-only JSON institutional backup export excluding password hashes and tokens                                                                                                                                                                                                                                                                                                             |
+| `Tests\Feature\SchoolSupervisionHubTest`        | 6     | Locale-aware admin-only access, weekday/time-based compliance, classroom-scoped attendance and distinct-date repeat absences, behavior follow-up resolution with notes                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `Tests\Feature\StudentManagementTest`           | 8     | Student/group relationships, cascade delete, admin-only resource/navigation, form creation, unique nullable registration, group filter, CSV importer group linking                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `Tests\Feature\StudentReportCardTest`           | 5     | Teacher roster authorization and subject/record scoping, admin full reports, localized print/PDF routes, and Official Reports student picker                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `Tests\Feature\SubstituteTeacherHandoverTest`   | 4     | Substitute assignment model, schedule association, pedagogical continuity handover banner, and temporary permission delegation                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `Tests\Feature\TeacherInteractiveScheduleTest`  | 24    | Rendering, colours, dark mode, day/search/view/expand interactions, complete/cancel, stats, date-aware log navigation, teacher scoping                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `Tests\Feature\TeacherPortfolioTest`           | 4     | Teacher can view own portfolio, denied other teacher portfolio, admin view all, section resolution from group-scoped schedules                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `Tests\Feature\TeacherSubjectAssignmentTest`    | 6     | Primary/secondary relationships, default weekly limit, teacher form default/restriction, admin teacher-scoped subject options, user-form specialization assignment/editing                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `Tests\Feature\TeacherTimetableTest`            | 17    | Fixed five-day/seven-slot grid, matrix mapping, multi-hour row spans with covered cells (2h, 3h, back-to-back, lunch-break clamp), workload totals and overload badge, equality boundary, empty placeholders, subject-colour mapping (all six palette colours), primary fallback for missing/unknown colours, teacher scoping, current-week click dates, stale-date fallback, date-aware log navigation                                                                                                                                                                                    |
+| `Tests\Feature\UnloggedSessionsWidgetTest`      | 4     | Teacher-only visibility, Sunday-to-today missing/planned detection, today's end-time boundary, teacher scoping, completion URLs, five-per-page Livewire pagination with total count, success state                                                                                                                                                                                                                                                                                                                                                                                         |
+| `Tests\Feature\WelcomeAndDashboardTest`         | 7     | Welcome page links, login/register access, guest redirect, dashboard stats/quick links, French and Arabic/RTL localization                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## 8. Project Health Snapshot
 
-| Aspect            | Status                                             |
-|-------------------|----------------------------------------------------|
-| Migrations        | ✅ All 43 migrations ran |
-| Test suite        | ✅ 395/395 passing, 0 failures (20,631 assertions in the latest full run) |
-| Admin panel       | ✅ 20 Filament resources + custom dashboard, schedule, curriculum-progress, data-show pages + ar/en/fr |
-| Seed data         | ✅ Destructive middle-school dataset + optional SajelSeeder |
-| Version control   | Git repo on `main`; Phase 2/3/4 complete (`f4e776a`, `f8d...`) |
-| README            | ✅ Project-specific bilingual README (English structure + Arabic domain) |
-| `APP_NAME`        | ✅ `Sajel`; `APP_URL` = `https://sajel.dev/` |
+| Aspect          | Status                                                                                                           |
+| --------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Migrations      | ✅ All 43 migrations ran                                                                                         |
+| Test suite      | ✅ 403/403 passing, 0 failures (20,689 assertions in the latest full run)                                        |
+| Admin panel     | ✅ 20 Filament resources + custom dashboard, schedule, curriculum-progress, supervision, pulse, data-show pages |
+| Seed data       | ✅ Destructive middle-school dataset + optional SajelSeeder                                                      |
+| Version control | Git repo on `main`; Phases 2–9 complete (100%)                                                                   |
+| README          | ✅ Project-specific bilingual README (English structure + Arabic domain)                                         |
+| `APP_NAME`      | ✅ `Sajel`; `APP_URL` = `https://sajel.dev/`                                                                     |
+| Test suite      | ✅ 395/395 passing, 0 failures (20,631 assertions in the latest full run)                              |
+| Admin panel     | ✅ 20 Filament resources + custom dashboard, schedule, curriculum-progress, data-show pages + ar/en/fr |
+| Seed data       | ✅ Destructive middle-school dataset + optional SajelSeeder                                            |
+| Version control | Git repo on `main`; Phase 2/3/4 complete (`f4e776a`, `f8d...`)                                         |
+| README          | ✅ Project-specific bilingual README (English structure + Arabic domain)                               |
+| `APP_NAME`      | ✅ `Sajel`; `APP_URL` = `https://sajel.dev/`                                                           |
 
 ## 9. Phase 2 Completion Note
 
@@ -552,13 +558,13 @@ No further Phase 2 work is required. Phase 3 is now complete; see the Phase 3 ro
 
 **Baseline:** All 14 Phase 2 roadmap items complete (100%). This section remains as historical reference only.
 
-| Axis | Done | Remaining | Progress |
-|------|------|-----------|----------|
-| 1. Planning, Curriculum & Reports | 5 | 0 | 100% |
-| 2. Lab & Student Management | 5 | 0 | 100% |
-| 3. Classroom Activities & Presentation | 3 | 0 | 100% |
-| 4. Assessment & Pedagogical Remediation | 1 | 0 | 100% |
-| **Total** | **14** | **0** | **100%** |
+| Axis                                    | Done   | Remaining | Progress |
+| --------------------------------------- | ------ | --------- | -------- |
+| 1. Planning, Curriculum & Reports       | 5      | 0         | 100%     |
+| 2. Lab & Student Management             | 5      | 0         | 100%     |
+| 3. Classroom Activities & Presentation  | 3      | 0         | 100%     |
+| 4. Assessment & Pedagogical Remediation | 1      | 0         | 100%     |
+| **Total**                               | **14** | **0**     | **100%** |
 
 ### 10.1 المحور الأول: التخطيط والمنهاج والتقارير (Planning, Curriculum & Reports)
 
@@ -577,7 +583,7 @@ No further Phase 2 work is required. Phase 3 is now complete; see the Phase 3 ro
 > by `CurriculumTrackingTest` (17 tests). The seeder builds 104 domains, 208 sequences, and 416
 > resources, and maps every seeded daily log to a matching resource.
 > Dark mode contrast fixed: selected table row uses `bg-amber-50/90 dark:bg-amber-500/15 ring-1
-> ring-inset ring-amber-500/40 dark:ring-amber-400/40` with `text-amber-950 dark:text-amber-100`
+ring-inset ring-amber-500/40 dark:ring-amber-400/40` with `text-amber-950 dark:text-amber-100`
 > text colors; all table cells use `text-gray-900 dark:text-gray-100`; rows are clickable via
 > `wire:click="showDetail(...)"` to load domain/sequence/resource detail.
 
@@ -587,7 +593,7 @@ No further Phase 2 work is required. Phase 3 is now complete; see the Phase 3 ro
 > `OfficialReportsTest` (19 tests). No migration required. A4 RTL, teacher scoping enforced,
 > translations added to `lang/ar.json`, `lang/en.json`, and `lang/fr.json` (37 new keys).
 > Dark mode contrast fixed: teacher box uses `bg-gray-50 border border-gray-200 dark:bg-gray-800/90
-> dark:border-white/10` with `text-gray-950 dark:text-white` name value; all select inputs use
+dark:border-white/10` with `text-gray-950 dark:text-white` name value; all select inputs use
 > `dark:bg-gray-800 dark:text-white` option colors.
 
 **Definition of done (Axis 1):**
@@ -663,14 +669,14 @@ No further Phase 2 work is required. Phase 3 is now complete; see the Phase 3 ro
 
 ### Checklist
 
-- [x] 1. Create `app/Livewire/DashboardStats.php` — Livewire component using Filament theme colors (primary, secondary, success, warning, info, danger) with dark/light-aware Tailwind classes
-- [x] 2. Create `resources/views/livewire/dashboard-stats.blade.php` — stat cards with `text-gray-900 dark:text-white` and `bg-white dark:bg-gray-800` etc.
-- [x] 3. Update `app/Filament/Pages/Dashboard.php` — import the Livewire component instead of `SajelStats` widget
-- [x] 4. Remove/replace `SajelStats` widget (dark-mode text visibility issue)
-- [x] 5. Verify dark mode: stat card titles, values, descriptions, and chart colors all readable
-- [x] 6. Run `php artisan test` — all tests pass
-- [x] 7. Run `vendor/bin/pint` — code formatted
-- [x] 8. Update `STATUS_PROJECT.md` with completion notes
+- [x]   1. Create `app/Livewire/DashboardStats.php` — Livewire component using Filament theme colors (primary, secondary, success, warning, info, danger) with dark/light-aware Tailwind classes
+- [x]   2. Create `resources/views/livewire/dashboard-stats.blade.php` — stat cards with `text-gray-900 dark:text-white` and `bg-white dark:bg-gray-800` etc.
+- [x]   3. Update `app/Filament/Pages/Dashboard.php` — import the Livewire component instead of `SajelStats` widget
+- [x]   4. Remove/replace `SajelStats` widget (dark-mode text visibility issue)
+- [x]   5. Verify dark mode: stat card titles, values, descriptions, and chart colors all readable
+- [x]   6. Run `php artisan test` — all tests pass
+- [x]   7. Run `vendor/bin/pint` — code formatted
+- [x]   8. Update `STATUS_PROJECT.md` with completion notes
 
 ## Getting Started
 
@@ -763,22 +769,22 @@ controls, local/native matching voice preference, persisted playback speed, keyb
 cancellation on navigation.
 
 - [x] **Locale-aware AI lesson plans:** Localize generation instructions for Arabic, English, and
-  French, and align Gemini structured-output descriptions with the selected language.
+      French, and align Gemini structured-output descriptions with the selected language.
 - [x] **Offline attendance PWA:** Provide the RTL manifest and service worker; cache snapshots as
-  `sajel.attendance.{user_id}.roster.{schedule_id}.{date}`; queue edits at
-  `sajel.attendance.{user_id}.queue` keyed by `{schedule_id}:{date}:{student_id}`; synchronize online
-  in batches of up to 200. The server validates dates/status/remarks, enforces schedule ownership and
-  roster membership (admin bypass), creates planned daily logs, materializes missing attendance rows,
-  and upserts status/remarks idempotently. Sync notifications report the number of entries applied.
-  Storage is bound to the signed-in user through `sajel.attendance.owner`; legacy unscoped keys are
-  cleared. Guest pages remove cached attendance HTML and roster snapshots, while preserving a pending
-  queue for the same teacher; another account opening Quick Attendance clears all attendance data.
-  Use only on a teacher-controlled, protected device and clear site data when the device is shared or
-  retired.
+      `sajel.attendance.{user_id}.roster.{schedule_id}.{date}`; queue edits at
+      `sajel.attendance.{user_id}.queue` keyed by `{schedule_id}:{date}:{student_id}`; synchronize online
+      in batches of up to 200. The server validates dates/status/remarks, enforces schedule ownership and
+      roster membership (admin bypass), creates planned daily logs, materializes missing attendance rows,
+      and upserts status/remarks idempotently. Sync notifications report the number of entries applied.
+      Storage is bound to the signed-in user through `sajel.attendance.owner`; legacy unscoped keys are
+      cleared. Guest pages remove cached attendance HTML and roster snapshots, while preserving a pending
+      queue for the same teacher; another account opening Quick Attendance clears all attendance data.
+      Use only on a teacher-controlled, protected device and clear site data when the device is shared or
+      retired.
 - [x] **Arabic voice narration:** Prepare clean plain-text narration for each slide, select a speech
-  locale and preferred matching local voice, and provide play, pause/resume, stop, and keyboard
-  controls. Playback speed persists in `sajel.datashow.speech_rate`. Speech is cancelled when slides
-  or lessons change and when leaving the page.
+      locale and preferred matching local voice, and provide play, pause/resume, stop, and keyboard
+      controls. Playback speed persists in `sajel.datashow.speech_rate`. Speech is cancelled when slides
+      or lessons change and when leaving the page.
 
 ## 12. Phase 4 Roadmap
 
@@ -801,17 +807,17 @@ administrators see all student data. `OfficialReports` provides classroom/group/
 `StudentResource` exposes print and PDF row actions.
 
 - [x] **Digital administrative visa & register stamp:** Add nullable reviewer, timestamp, and notes
-  fields; enforce admin-only stamping of completed logs; provide a review-status table badge/filter and
-  read-only review details; include the review stamp in the HTML/PDF register.
+      fields; enforce admin-only stamping of completed logs; provide a review-status table badge/filter and
+      read-only review details; include the review stamp in the HTML/PDF register.
 - [x] **Educational Counselor (مستشار التربية) daily supervision hub:** Implement
-  `SchoolSupervisionHub` and `SchoolSupervisionService` with localized admin-only access, selected-date
-  and classroom/level filters, weekday- and end-time-aware daily compliance, weekly metrics, attendance
-  and distinct-day repeat-absence radar, and discipline follow-up resolution with optional notes.
+      `SchoolSupervisionHub` and `SchoolSupervisionService` with localized admin-only access, selected-date
+      and classroom/level filters, weekday- and end-time-aware daily compliance, weekly metrics, attendance
+      and distinct-day repeat-absence radar, and discipline follow-up resolution with optional notes.
 - [x] **Student comprehensive parent report card (A4 RTL PDF):** `StudentReportCardService` + controller + routes + `StudentResource` actions + `OfficialReports` picker; authorization scoped (Admin = all subjects; Teacher = own schedules); 4/4 feature tests pass (312 total, 14,800 assertions).
-  and Browsershot PDF using `StudentReportCardService`, with attendance summaries and recent alerts,
-  normalized per-subject grade averages and assessment details, behavior/follow-up history,
-  remediation outcomes, teacher schedule/record scoping, admin-wide access, and Official Reports /
-  StudentResource integration.
+      and Browsershot PDF using `StudentReportCardService`, with attendance summaries and recent alerts,
+      normalized per-subject grade averages and assessment details, behavior/follow-up history,
+      remediation outcomes, teacher schedule/record scoping, admin-wide access, and Official Reports /
+      StudentResource integration.
 
 ## 13. Phase 5 Roadmap — Institutional Operations & Professional Portfolio
 
@@ -823,42 +829,42 @@ Authorization mirrors `StudentPolicy`: Admins see all classrooms; Teachers only 
 where they have at least one `Schedule`. Translation keys added for `ar`/`en`/`fr`.
 
 - [x] **Class Council Deliberation Hub (`ClassCouncilHub`):** Filament page with classroom/group
-  selector, KPI cards, honor-roll badges, full student deliberation matrix, and direct print/PDF links.
+      selector, KPI cards, honor-roll badges, full student deliberation matrix, and direct print/PDF links.
 - [x] **Class Council Service (`ClassCouncilService`):** Computes per-subject averages (`/20`),
-  general average, attendance counts, behavior tallies (positive/negative), remediation counts,
-  automatic recommendation (`امتياز` → `تحذير`), and classroom KPIs (pass rate, honor roll, absences).
+      general average, attendance counts, behavior tallies (positive/negative), remediation counts,
+      automatic recommendation (`امتياز` → `تحذير`), and classroom KPIs (pass rate, honor roll, absences).
 - [x] **Official A4 RTL Report (`class-council.blade.php`):** Landscape layout with header,
-  KPI strip, honor distribution badges, full deliberation table, and signature boxes.
+      KPI strip, honor distribution badges, full deliberation table, and signature boxes.
 - [x] **Print Routes (`ClassCouncilController`):** `/{locale}/print/classrooms/{classroom}/class-council`
-  + `.pdf`; `ClassroomPolicy` enforces admin/teacher scoping.
+    - `.pdf`; `ClassroomPolicy` enforces admin/teacher scoping.
 - [x] **Localization:** `ar.json`, `en.json`, `fr.json` updated with `class_council` keys.
 - [x] **Tests:** `tests/Feature/ClassCouncilTest.php` (3 pass: service computation, admin access,
-  teacher scope + 403 guard).
+      teacher scope + 403 guard).
 - [x] **Pedagogical Meeting Log (`PedagogicalMeetingResource`):** Migration + model + factory + policy + Filament resource under `التخطيط والمناهج`; CRUD scoped to teacher/admin.
 - [x] **Teacher Professional Portfolio (`TeacherPortfolioService`, A4 RTL PDF):** Routes `print.teacher-portfolio` + `.pdf`; identity card, compliance summary, memos catalog, meetings table, signatures; header actions on `PedagogicalMeetingResource` + `MySchedule`.
 - [x] **Build & Quality:** `npm run build` passes; `vendor/bin/pint` passes;
-  total suite: `312 passed` (14,800 assertions); 0 failures.
-
+      total suite: `312 passed` (14,800 assertions); 0 failures.
 
 ## 14. Phase 5 Roadmap — Complete (100%)
 
 Phase 5 (Institutional Operations & Professional Portfolio) is complete.
+
 - Milestone 1: Class Council Deliberation Hub + A4 RTL PDF
 - Milestone 2: Substitute Teacher Assignment + Pedagogical Continuity Handover (, , banner)
 - Milestone 3: Pedagogical Meeting Log () + Teacher Professional Portfolio (, A4 RTL PDF, routes, header actions, translations, 3 passing feature tests)
 
 Full suite: 312 passing, 14,800 assertions, 0 failures. Build and Pint clean.
 
-
 ## 15. Phase 6 Roadmap — Complete (100%) — Production Readiness & Parent Engagement
 
 Phase 6: Parent Engagement, Academic Calendar & Production Readiness.
+
 - Milestone 1: Signed Parent Portal (`ParentPortalController` / `ParentPortalService`, `parent.student-portal` signed route 90 days, `parent/student-portal.blade.php`, `StudentResource` action, `StudentReportCardService` integration + QR badge, translations, `ParentPortalTest` — 3 assertions pass).
 - Milestone 2: School Holiday Calendar (`SchoolHoliday` model/migration/resource/policy/seeder `SchoolHolidaySeeder`, `scopeCoversDate`/`isHoliday`/`holidayDatesBetween`, `UnloggedSessionsWidget` + `SchoolSupervisionService` holiday-aware, `SchoolHolidayComplianceTest` — pass).
 - Milestone 3: Pedagogical Meeting Resource (`PedagogicalMeetingResource`, `TeacherPortfolioService`, controller/routes/translations/header actions + `MySchedule`) — complete.
 - Milestone 4: Production Readiness (`SajelHealthCheckCommand` `sajel:health-check` + `--json`, DB 25 tables, timezone `Africa/Algiers`, localization `ar/en/fr`, PWA `dir=rtl`, AI provider read from `config/ai.php` with PASS/WARN key detection; `SajelHealthCheckCommandTest`; `pint`/`npm`/`migrate` clean).
 
-Status 2026-10-28: `395 passed`, **0 failures** (`20,631` assertions); `pint` passed; `npm run test:js` passed (8 tests); `npm run build` passed; health command reports PASS on database, schema (25 tables), timezone, localization, PWA, and AI (`Provider: gemini (gemini-3.8-flash) | Key: configured`). All Phase 2–6 milestones complete (100%). The offline attendance PWA now scopes browser storage by user and clears cached attendance HTML and roster snapshots for guests while preserving a pending queue for the same teacher. Localization is complete across `ar`/`en`/`fr` for user-facing UI and print/PDF labels; the official register and student certificate follow the active locale (Arabic remains the default RTL output), and `LocalizationCompletenessTest` guards against missing keys. The dashboard is now a role-aware, URL-stateful hub with server-scoped metrics and explicit definitions; see README §10.
+Status 2026-11-04: `403 passed`, **0 failures** (`20,689` assertions); `pint` passed; `npm run test:js` passed (8 tests); `npm run build` passed; health command reports PASS on database, schema (25 tables), timezone, localization, PWA, and AI (`Provider: gemini (gemini-3.8-flash) | Key: configured`). All Phase 2–9 milestones complete (100%). The offline attendance PWA now scopes browser storage by user and clears cached attendance HTML and roster snapshots for guests while preserving a pending queue for the same teacher. Localization is complete across `ar`/`en`/`fr` for user-facing UI and print/PDF labels; the official register and student certificate follow the active locale (Arabic remains the default RTL output), and `LocalizationCompletenessTest` guards against missing keys. The dashboard is now a role-aware, URL-stateful hub with server-scoped metrics and explicit definitions; see README §10.
 
 ## 16. Phase 7 — School Identity (هوية المؤسسة التربوية)
 
@@ -876,9 +882,54 @@ and every printed A4 sheet and Browsershot PDF picks it up automatically.
   `filament.pages.official-reports`, so the register, student report card, class council, teacher
   portfolio, pedagogical memo, and Official Reports banner render the real directorate, school name,
   academic year, municipality/code, and principal/counselor names, with safe fallbacks.
-- **Verification:** `tests/Feature/SchoolSettingsTest.php` (4 tests, 19 assertions) covers admin
-  view/update, teacher 403, and identity rendering on register sheets, class councils, and Official
-  Reports. Health check now requires 25 tables including `school_settings`.
+- **Verification:** `tests/Feature/SchoolSettingsTest.php` (5 tests, 26 assertions) covers admin
+  view/update, teacher 403, and identity rendering on register sheets, class councils, Official
+  Reports, and JSON backup generation. Health check now requires 25 tables including `school_settings`.
 
---- Phase 9 ---
-Sajel Pulse: badges (attendance_streak, comeback_champion, academic_excellence, positive_role_model), pulse_score, classroom synergy meter, 3 champions; DataShow synergy bar + awardQuickKudos; MotivationPulseHub (sparkles icon) + A4 RTL certificate; badges in report/portal; translations added; MotivationPulseTest created.
+## 17. Phase 8 Roadmap — Institutional Backup & CI (100%)
+
+Phase 8 guarantees institutional disaster recovery, configuration persistence, and automated quality assurance on every commit.
+
+- [x] **School Backup Service (`SchoolBackupService`):**
+      Creates a timestamped snapshot (`sajel-backup-YYYY-MM-DD.json`) of the school's active database tables (24+ academic domain tables including students, classrooms, schedules, daily logs, attendances, assessments, grades, memos, and curriculum maps) along with table row counts and institutional metadata.
+- [x] **Sensitive Data Protection:**
+      The backup engine explicitly unsets all authentication and security secrets (`password`, `remember_token`, `api_token`, sessions) prior to JSON streaming.
+- [x] **Filament Header Action:**
+      Added an Admin-only header download action `"تحميل نسخة احتياطية للمؤسسة (JSON)"` on the `ManageSchoolSettings` page, with streamed JSON attachment delivery.
+- [x] **Automated Continuous Integration (`.github/workflows/ci.yml`):**
+      GitHub Actions workflow on `main` branch push and pull requests with PHP 8.3 (with `pdo_sqlite`, `gd`, `intl`, `mbstring`, `dom`, `xml`, `zip`), Node 20, composer/npm caching, in-memory SQLite migrations & seed, frontend Vite compilation, JavaScript test suite, Pint formatting verification, Sajel system health check, and full PHP test suite execution.
+- [x] **Verification:**
+      Covered by `SchoolSettingsTest::test_admin_backup_download_excludes_password_hashes`, CI workflow, and full test suite passing with 0 errors.
+
+## 18. Phase 9 Roadmap — Sajel Pulse Motivation System (نبض التميز والتحفيز التربوي) (100%)
+
+Phase 9 implements an integrated pedagogical gamification and motivation engine (نبض التميز والتحفيز التربوي) designed to reward effort, attendance consistency, academic growth, and positive classroom behavior.
+
+- [x] **Student Motivation Service (`StudentMotivationService`):**
+      Computes real-time student motivation profiles without manual data entry using existing academic domain data:
+      - **Zero-Click Badges:**
+        - `attendance_streak` (سلسلة الحضور الذهبية): Earned for 5 or more distinct present days in the recent window with 0 absences and 0 lates.
+        - `comeback_champion` (بطل التحسن / العودة القوية): Awarded for notable academic leaps between consecutive assessments (e.g. +3.0 points or crossing the pass threshold).
+        - `academic_excellence` (فرسان التميز): Awarded for achieving an overall or subject average of 16.0/20 or higher.
+        - `positive_role_model` (القدوة الحسنة): Awarded for logged positive behavior observations with 0 negative conduct flags.
+      - **Student Pulse Score:** A dynamic 0–100 engagement index aggregating attendance reliability, grade trends, and behavioral accolades.
+      - **Classroom Synergy Meter (`⚡ طاقة تفاعل القسم`):** A collective classroom metric (0–100%) factoring in weekly attendance rates, positive kudos awarded, and confirmed daily logs.
+      - **Podium Spotlight Champions:** Identifies the top 3 weekly classroom standouts across Excellence, Comeback, and Attendance.
+- [x] **Data Show Mode Synergy & Quick Kudos (`DataShowMode`):**
+      - Displays the live interactive Classroom Synergy bar (`⚡ طاقة تفاعل القسم`) on the full-screen projector view.
+      - Provides an instant, one-click `awardQuickKudos(studentId, reason)` action for teachers during live presentations, immediately logging a positive `BehaviorObservation`, incrementing classroom synergy, dispatching a Livewire event, and showing on-screen visual confirmation.
+- [x] **Motivation Pulse Hub (`MotivationPulseHub`):**
+      - Custom Filament dashboard page at `/{locale}/auth/motivation-pulse` (icon: `heroicon-o-sparkles`, group: `التخطيط والمناهج`).
+      - Accessible by both teachers and administrators.
+      - Includes classroom selector, live synergy meter widget, weekly champions podium, and searchable student motivation table with badges, pulse score, and direct certificate print links.
+- [x] **Official A4 RTL Certificate of Educational Excellence (`print.student-certificate`):**
+      - High-fidelity printable A4 certificate and downloadable PDF route (`/{locale}/print/students/{student}/certificate` + `.pdf`).
+      - Fully localized in Arabic, English, and French (`Certificate of Excellence`, `Certificat d'excellence`).
+      - Injects official school identity headers from `SchoolSetting`, student details, dynamic badges with descriptions, and signature boxes for the subject teacher and school principal.
+      - Authorized via `StudentPolicy::view` (teachers scoped to their scheduled classrooms/groups; administrators school-wide).
+- [x] **Cross-Platform Integration:**
+      - Motivation badges surfaced directly on the official Student Comprehensive Report Card (`StudentReportCardService`).
+      - Motivation badges displayed on the 90-day Signed Parent Portal (`ParentPortalService`).
+- [x] **Localization & Verification:**
+      - All keys registered across `ar.json`, `en.json`, and `fr.json`.
+      - Comprehensive automated test suite in `tests/Feature/MotivationPulseTest.php` (6 tests, 21 assertions, all green, 0 deprecation warnings).

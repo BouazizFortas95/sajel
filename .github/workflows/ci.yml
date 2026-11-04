@@ -7,55 +7,72 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  build-and-test:
     runs-on: ubuntu-latest
+
+    services:
+      # No external services needed - using SQLite in-memory for tests
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, dom, filter, gd, iconv, json, mbstring, openssl, pdo, pdo_sqlite, tokenizer, xml, zip
+          ini-values: max_execution_time=120
           coverage: none
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
-      - name: Cache Composer
+      - name: Cache Composer dependencies
         uses: actions/cache@v4
         with:
           path: vendor
-          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-php-
+          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            composer-${{ runner.os }}-
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
 
       - name: Install PHP dependencies
-        run: composer install --prefer-dist --no-progress
-
-      - name: Copy environment
-        run: cp .env.example .env
-
-      - name: Generate key
-        run: php artisan key:generate
-
-      - name: Migrate SQLite
-        run: php artisan migrate --force --env=testing
+        run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Test JavaScript
-        run: npm run test:js
+      - name: Prepare Laravel application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+          php artisan migrate:fresh --force --seed
 
-      - name: Build assets
+      - name: Build frontend assets
         run: npm run build
 
-      - name: Lint PHP
+      - name: Run JavaScript tests
+        run: npm run test:js
+
+      - name: Run Laravel Pint (code style)
         run: vendor/bin/pint --test
 
-      - name: Health check
+      - name: Run health check
         run: php artisan sajel:health-check
 
-      - name: Run tests
-        run: vendor/bin/phpunit --no-coverage
+      - name: Run PHP test suite
+        run: php artisan test
