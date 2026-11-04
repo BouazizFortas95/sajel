@@ -353,11 +353,14 @@ class LabManagementTest extends TestCase
             ->set('groupId', $group->id)
             ->assertSet('viewMode', 'seating')
             ->assertSee('مخبر العلوم الفيزيائية والكيمياء')
-            ->assertSee('مخطط طاولات وتجارب المخبر')
-            ->assertSee('إجمالي طاولات التجارب')
+            ->assertSee('مخطط طاولات وتجارب المخبر (6 طاولات كبرى × 4 مقاعد)')
+            ->assertSee('إجمالي المقاعد (6 طاولات)')
             ->assertSee('منصة تجارب الفيزياء والكيمياء للأستاذ')
+            ->assertSee('طاولة تجارب كبرى #01')
+            ->assertSee('مآخذ 220V')
+            ->assertSee('صنابير غاز')
+            ->assertSee('حوض ماء')
             ->assertSee('ميثاق السلامة')
-            ->assertSee('طاولة')
             ->assertDontSee('وضع التحكم المباشر (NetStation)')
             ->assertDontSee('المحطة الرئيسية للأستاذ (Leader PC)');
 

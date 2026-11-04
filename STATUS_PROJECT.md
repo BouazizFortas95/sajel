@@ -1016,13 +1016,16 @@ Adapts the laboratory seating and management workflow dynamically based on the A
 - [x] **Domain Models & Discipline Classification (`Lab`, `LabStation`):**
       - Added helpers: `isInformatics()`, `isPhysics()`, `isNaturalScience()`, `labType()`, `labTypeLabel()`, `stationLabel()`, and `LabStation::isComputer()`.
       - Correctly differentiates computer labs (PC network, NetStation controls) from science laboratories (Physics & Chemistry, Biology / Natural Sciences & Life / SVT).
-- [x] **Dynamic Science Workbench Seating Cockpit (`LabSeatingPlan`):**
-      - Automatically sets `viewMode` to `seating` for science labs (disabling inappropriate PC control modes).
-      - Dynamic header indicating the specific laboratory (`مخبر العلوم الفيزيائية والكيمياء` / `مخبر علوم الطبيعة والحياة`) and lab bench plan badge (`مخطط طاولات وتجارب المخبر`).
-      - Specialized laboratory counters: Total Experiment Benches (`إجمالي طاولات التجارب`), Assigned Students (`التلاميذ المعينون`), Available Benches (`طاولات شاغرة`), and Safety Protocol status (`معتمد وقيد التطبيق 🛡️`).
-      - Central Teacher Demonstration Desk (**منصة تحضير وعرض التجارب للأستاذ**): styled with science workbench aesthetics, experiment readiness status chips (cotton coats mandatory, emergency breakers checked, reagents prepared), auto-assign, bench clearing, and plan saving.
-- [x] **Experiment Bench Cards (`station-monitor-card.blade.php`):**
-      - Renders experiment benches (طاولات التجارب المخبرية) with beaker/microscope iconography, bench number (`طاولة #01`), student assignment avatar, equipment tags (`مأخذ ⚡ كواشف`, `مجهر 🔬 شرائح`), and bench tabletop/legs instead of computer monitors and IP addresses.
+- [x] **6 Long-Tables Laboratory Floor Plan (6 طاولات كبرى × 4 مقاعد = 24 مقعد):**
+      - Modeled directly after Algerian Middle School physical science laboratories (as photographed): 6 long double workbenches arranged into two aisles (Right Aisle: Tables 1–3, Left Aisle: Tables 4–6).
+      - Each Long Table (`science-long-table.blade.php`) seats 4 students: 2 on Side A (front) and 2 on Side B (opposite side facing each other).
+      - Central Service Bridge (*Dosseret technique*) down the center of each table with 220V power sockets (⚡), yellow gas taps (🟡), water sink & faucets (🚰), and microscope/reagents rack (🔬).
+      - Individual seat cards (`science-table-seat.blade.php`) with seat numbers `#01`–`#24`, assigned student avatar/name, quick unassign, and kiosk link.
+      - Student roster cards display precise seating location: `طاولة :table • مقعد :seat`.
+- [x] **Teacher Demonstration & Preparation Desk (منصة تحضير وعرض التجارب للأستاذ):**
+      - Prominently placed at the front facing both aisles with whiteboard/direction indicator (`جهة السبورة ومنصة العرض للأستاذ ⬆️`).
+      - Safety and experiment readiness status chips (cotton lab coats mandatory, emergency breakers checked, reagents prepared).
+      - Actions: `توزيع تلقائي للأفواج` (fills students in groups of 4 per table), `تفريغ الطاولات`, `ميثاق السلامة`, and `حفظ المخطط`.
 - [x] **Laboratory Safety Charter Modal (`ميثاق السلامة والأمن المخبري`):**
       - Discipline-specific safety protocol based on Algerian Middle School regulations (المنشور الوزاري للسلامة في المخابر التعليمية):
         - Physics & Chemistry: Electrical circuit breaker protocol, handling reagents and glassware, emergency shutoffs, and post-experiment hand hygiene.
@@ -1031,8 +1034,8 @@ Adapts the laboratory seating and management workflow dynamically based on the A
       - For science benches, renders a digital experiment bench card and safety guide instead of PC screen locks.
       - Displays bench number, assigned student details, safety protocol cards, and an interactive checklist before leaving the lab.
 - [x] **Testing & Localization:**
-      - Added tests in `tests/Feature/LabManagementTest.php` verifying science lab workbench switching, lack of PC controls, and experiment bench kiosk rendering.
-      - 85 new translations added to `lang/en.json` and `lang/fr.json` (100% covered by `LocalizationCompletenessTest`).
+      - Added tests in `tests/Feature/LabManagementTest.php` verifying science lab 6-table workbench switching, lack of PC controls, and experiment bench kiosk rendering.
+      - Translations added to `lang/en.json` and `lang/fr.json` (100% covered by `LocalizationCompletenessTest`).
       - Full suite: **427 tests, 20,856 assertions, 0 failures, 100% green**.
 
 

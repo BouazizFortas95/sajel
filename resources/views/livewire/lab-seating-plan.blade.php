@@ -1,6 +1,6 @@
 {{--
-    NetStation Lab Control & Science Workbench Seating Cockpit.
-    Adapts dynamically to Informatics Labs (Leader PC, locks, broadcasts) and Science Labs (Experiment benches, demonstration desk, safety protocols).
+    NetStation Lab Control & Science 6 Long-Tables Seating Cockpit.
+    Adapts dynamically to Informatics Labs (Leader PC, locks, broadcasts) and Science Labs (6 Long Tables of 4 seats each with central service bridge).
 --}}
 @php
     $labs = $labs ?? collect();
@@ -19,7 +19,7 @@
     $totalStations = $this->availableStationsCount;
     $lockedCount = $this->lockedCount;
 
-    // Split stations into U-shape groups: top row, left column, right column
+    // Informatics Lab: Split stations into U-shape groups (top row, left column, right column)
     $stationCount = count($workingStations);
     $topCount = (int) ceil($stationCount / 3);
     $leftCount = (int) floor(($stationCount - $topCount) / 2);
@@ -28,6 +28,36 @@
     $topStations = array_slice($workingStations, 0, $topCount);
     $leftStations = array_slice($workingStations, $topCount, $leftCount);
     $rightStations = array_slice($workingStations, $topCount + $leftCount, $rightCount);
+
+    // Science Lab: 6 Long Tables with 4 seats each (2 front, 2 back) = 24 seats
+    $scienceTables = [];
+    if ($isScience) {
+        for ($t = 1; $t <= 6; $t++) {
+            $tableStations = [];
+            for ($s = 1; $s <= 4; $s++) {
+                $seatNumber = ($t - 1) * 4 + $s;
+                $foundStation = collect($workingStations)->firstWhere('station_number', $seatNumber);
+                $tableStations[$s] = $foundStation ?: [
+                    'id' => null,
+                    'station_number' => $seatNumber,
+                    'device_type' => 'device',
+                    'is_locked' => false,
+                    'student_id' => null,
+                    'student_name' => null,
+                    'is_virtual' => true,
+                ];
+            }
+            $scienceTables[$t] = [
+                'number' => $t,
+                'front_seats' => [$tableStations[1], $tableStations[2]],
+                'back_seats' => [$tableStations[3], $tableStations[4]],
+                'assigned_count' => collect($tableStations)->filter(fn ($st) => ! empty($st['student_id']))->count(),
+            ];
+        }
+
+        $rightAisleTables = [$scienceTables[1], $scienceTables[2], $scienceTables[3]];
+        $leftAisleTables = [$scienceTables[4], $scienceTables[5], $scienceTables[6]];
+    }
 @endphp
 
 <div class="space-y-6">
@@ -48,7 +78,7 @@
                             <h2 class="text-xl font-black text-gray-950 dark:text-white flex items-center gap-2">
                                 <span>{{ $selectedLab->labTypeLabel() }}</span>
                                 <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-                                    {{ __('مخطط طاولات وتجارب المخبر') }}
+                                    {{ __('مخطط طاولات وتجارب المخبر (6 طاولات كبرى × 4 مقاعد)') }}
                                 </span>
                                 @if ($this->existingPlanId)
                                     <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
@@ -57,7 +87,7 @@
                                 @endif
                             </h2>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                {{ __('تنظيم وتوزيع تلاميذ الفوج على طاولات ومحطات التجارب المخبرية وضبط بروتوكول السلامة') }}
+                                {{ __('تنظيم وتوزيع تلاميذ الفوج على الطاولات الـ 6 المخبرية (أفواج العمل التطبيقي) ومتابعة بروتوكول السلامة') }}
                             </p>
                         </div>
                     @else
@@ -123,7 +153,7 @@
                         :disabled="count($this->students) === 0"
                         size="sm"
                     >
-                        {{ __('توزيع تلقائي') }}
+                        {{ __('توزيع تلقائي للأفواج') }}
                     </x-filament::button>
 
                     <x-filament::button
@@ -133,7 +163,7 @@
                         :disabled="$assignedCount === 0"
                         size="sm"
                     >
-                        {{ __('تفريغ') }}
+                        {{ __('تفريغ الطاولات') }}
                     </x-filament::button>
                 @endif
 
@@ -216,7 +246,7 @@
             @if ($isScience)
                 {{-- Science Lab Counters --}}
                 <div class="rounded-xl border border-stone-200 p-3 text-center dark:border-white/10 bg-stone-50/50 dark:bg-gray-800/30">
-                    <p class="text-[11px] font-bold text-gray-500 dark:text-gray-400">{{ __('إجمالي طاولات التجارب') }}</p>
+                    <p class="text-[11px] font-bold text-gray-500 dark:text-gray-400">{{ __('إجمالي المقاعد (6 طاولات)') }}</p>
                     <p class="text-2xl font-black text-gray-950 dark:text-white">{{ $totalStations }}</p>
                 </div>
                 <div class="rounded-xl border border-teal-200 p-3 text-center dark:border-teal-500/30 bg-teal-50/50 dark:bg-teal-900/20">
@@ -224,7 +254,7 @@
                     <p class="text-2xl font-black text-teal-800 dark:text-teal-200">{{ $assignedCount }} / {{ count($this->students) }}</p>
                 </div>
                 <div class="rounded-xl border border-emerald-200 p-3 text-center dark:border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-900/20">
-                    <p class="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">{{ __('طاولات شاغرة') }}</p>
+                    <p class="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">{{ __('مقاعد شاغرة') }}</p>
                     <p class="text-2xl font-black text-emerald-800 dark:text-emerald-200">{{ max(0, $totalStations - $assignedCount) }}</p>
                 </div>
                 <div class="rounded-xl border border-amber-200 p-3 text-center dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-900/20">
@@ -260,24 +290,26 @@
     {{-- Main Cockpit View ------------------------------------------------ --}}
     @if ($selectedLab && $selectedGroup)
         <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-sm space-y-8">
-            {{-- Top Row Stations (Top of U) --}}
-            <div class="flex flex-wrap justify-center gap-4">
-                @foreach ($topStations as $station)
-                    @include('livewire.partials.station-monitor-card', ['station' => $station])
-                @endforeach
-            </div>
-
-            {{-- Middle Section: Left Columns, Center Leader/Demonstration Desk, Right Columns --}}
-            <div class="flex justify-between items-center gap-4">
-                {{-- Left Wing of U --}}
-                <div class="flex flex-col gap-4">
-                    @foreach (array_reverse($leftStations) as $station)
+            @if ($isInformatics)
+                {{-- ========================================================= --}}
+                {{-- INFORMATICS LAB: U-SHAPE STATIONS & LEADER PC             --}}
+                {{-- ========================================================= --}}
+                {{-- Top Row Stations (Top of U) --}}
+                <div class="flex flex-wrap justify-center gap-4">
+                    @foreach ($topStations as $station)
                         @include('livewire.partials.station-monitor-card', ['station' => $station])
                     @endforeach
                 </div>
 
-                {{-- Center: Leader PC or Teacher Demonstration Bench --}}
-                @if ($isInformatics)
+                {{-- Middle Section: Left Columns, Center Leader Desk, Right Columns --}}
+                <div class="flex justify-between items-center gap-4">
+                    {{-- Left Wing of U --}}
+                    <div class="flex flex-col gap-4">
+                        @foreach (array_reverse($leftStations) as $station)
+                            @include('livewire.partials.station-monitor-card', ['station' => $station])
+                        @endforeach
+                    </div>
+
                     {{-- Center: Leader PC (منصة الأستاذ / الحاسوب الرئيسي) --}}
                     <div class="flex-1 flex flex-col items-center justify-center p-6 mx-4 rounded-3xl bg-slate-950 text-white border-2 border-amber-500/40 shadow-2xl relative overflow-hidden max-w-xl">
                         <div class="absolute -top-20 -right-20 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -365,94 +397,149 @@
                             </div>
                         @endif
                     </div>
-                @else
-                    {{-- Center: Teacher Demonstration Desk (منصة تحضير وعرض التجارب للأستاذ) --}}
-                    <div class="flex-1 flex flex-col items-center justify-center p-6 mx-4 rounded-3xl bg-slate-950 text-white border-2 border-emerald-500/40 shadow-2xl relative overflow-hidden max-w-xl">
-                        <div class="absolute -top-20 -right-20 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-                        {{-- Demonstration Bench Header --}}
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                            <span class="text-xs font-bold uppercase tracking-widest text-emerald-400">
-                                {{ __('منصة التجارب النموذجية للأستاذ') }}
-                            </span>
+                    {{-- Right Wing of U --}}
+                    <div class="flex flex-col gap-4">
+                        @foreach ($rightStations as $station)
+                            @include('livewire.partials.station-monitor-card', ['station' => $station])
+                        @endforeach
+                    </div>
+                </div>
+            @else
+                {{-- ========================================================= --}}
+                {{-- SCIENCE LAB: 6 LONG TABLES WITH 4 SEATS EACH              --}}
+                {{-- ========================================================= --}}
+
+                {{-- Front: Teacher Demonstration & Preparation Desk --}}
+                <div class="w-full rounded-3xl bg-slate-950 text-white border-2 border-emerald-500/40 shadow-2xl p-6 relative overflow-hidden">
+                    <div class="absolute -top-20 -right-20 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4 pb-4 border-b border-white/10">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
+                                @if ($isPhysics)
+                                    <x-filament::icon icon="heroicon-o-beaker" class="w-7 h-7"/>
+                                @else
+                                    <x-filament::icon icon="heroicon-o-sparkles" class="w-7 h-7"/>
+                                @endif
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    <span class="text-xs font-bold uppercase tracking-widest text-emerald-400">
+                                        {{ __('منصة التجارب النموذجية للأستاذ (Teacher Demo Bench)') }}
+                                    </span>
+                                </div>
+                                <h3 class="text-lg md:text-xl font-black text-white mt-0.5">
+                                    {{ $isPhysics ? __('منصة تجارب الفيزياء والكيمياء للأستاذ') : ($isNaturalScience ? __('منصة العروض المجهرية والتشريح للأستاذ') : __('منصة العرض والتجارب المخبرية للأستاذ')) }}
+                                </h3>
+                                <p class="text-xs text-slate-300 mt-0.5">
+                                    {{ __('إجراء التجربة النموذجية ومتابعة أفواج العمل على الطاولات الـ 6 في :lab', ['lab' => $selectedLab->name]) }}
+                                </p>
+                            </div>
                         </div>
-
-                        <h3 class="text-lg md:text-xl font-black text-white text-center">
-                            {{ $isPhysics ? __('منصة تجارب الفيزياء والكيمياء للأستاذ') : ($isNaturalScience ? __('منصة العروض المجهرية والتشريح للأستاذ') : __('منصة العرض والتجارب المخبرية للأستاذ')) }}
-                        </h3>
-                        <p class="text-xs text-slate-300 text-center mt-1 max-w-sm">
-                            {{ __('إجراء التجربة النموذجية ومتابعة عمل الأفواج المخبرية في :lab', ['lab' => $selectedLab->name]) }}
-                        </p>
 
                         {{-- Action toolbar for science bench --}}
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full mt-6">
-                            <button
+                        <div class="flex flex-wrap items-center gap-2">
+                            <x-filament::button
                                 type="button"
                                 wire:click="autoAssign"
-                                class="p-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 flex flex-col items-center gap-1.5 transition text-center group"
-                                title="{{ __('توزيع تلقائي للطلبة') }}"
+                                color="success"
+                                icon="heroicon-o-sparkles"
+                                size="sm"
                             >
-                                <x-filament::icon icon="heroicon-o-sparkles" class="w-5 h-5 text-emerald-400 group-hover:scale-110 transition"/>
-                                <span class="text-[11px] font-bold">{{ __('توزيع تلقائي') }}</span>
-                            </button>
+                                {{ __('توزيع تلقائي للأفواج') }}
+                            </x-filament::button>
 
-                            <button
+                            <x-filament::button
                                 type="button"
                                 wire:click="clearAssignments"
-                                class="p-2.5 rounded-xl bg-stone-700/30 hover:bg-stone-700/50 text-stone-300 border border-stone-600/40 flex flex-col items-center gap-1.5 transition text-center group"
-                                title="{{ __('تفريغ جميع الطاولات') }}"
+                                color="gray"
+                                icon="heroicon-o-trash"
+                                size="sm"
                             >
-                                <x-filament::icon icon="heroicon-o-trash" class="w-5 h-5 text-stone-400 group-hover:scale-110 transition"/>
-                                <span class="text-[11px] font-bold">{{ __('تفريغ الطاولات') }}</span>
-                            </button>
+                                {{ __('تفريغ الطاولات') }}
+                            </x-filament::button>
 
-                            <button
+                            <x-filament::button
                                 type="button"
                                 wire:click="$set('showSafetyModal', true)"
-                                class="p-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 flex flex-col items-center gap-1.5 transition text-center group"
-                                title="{{ __('ميثاق السلامة والأمن المخبري') }}"
+                                color="warning"
+                                icon="heroicon-o-shield-check"
+                                size="sm"
                             >
-                                <x-filament::icon icon="heroicon-o-shield-check" class="w-5 h-5 text-amber-400 group-hover:scale-110 transition"/>
-                                <span class="text-[11px] font-bold">{{ __('ميثاق السلامة') }}</span>
-                            </button>
+                                {{ __('ميثاق السلامة') }}
+                            </x-filament::button>
 
-                            <button
+                            <x-filament::button
                                 type="button"
                                 wire:click="savePlan"
-                                class="p-2.5 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 flex flex-col items-center gap-1.5 transition text-center group"
-                                title="{{ __('حفظ مخطط الطاولات') }}"
+                                icon="heroicon-o-check-circle"
+                                size="sm"
                             >
-                                <x-filament::icon icon="heroicon-o-check-circle" class="w-5 h-5 text-teal-400 group-hover:scale-110 transition"/>
-                                <span class="text-[11px] font-bold">{{ __('حفظ المخطط') }}</span>
-                            </button>
-                        </div>
-
-                        {{-- Lab Safety Status Ribbon --}}
-                        <div class="mt-4 p-2 rounded-xl bg-emerald-950/60 border border-emerald-500/30 flex flex-wrap items-center justify-around gap-2 w-full text-[10px] text-emerald-200">
-                            <span class="flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                {{ __('المآزر والوقاية: إلزامية 🥼') }}
-                            </span>
-                            <span class="flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                {{ __('قواطع الطوارئ: مفحوصة ⚡') }}
-                            </span>
-                            <span class="flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                {{ __('العتاد والكواشف: جاهزة 🧪') }}
-                            </span>
+                                {{ __('حفظ المخطط') }}
+                            </x-filament::button>
                         </div>
                     </div>
-                @endif
 
-                {{-- Right Wing of U --}}
-                <div class="flex flex-col gap-4">
-                    @foreach ($rightStations as $station)
-                        @include('livewire.partials.station-monitor-card', ['station' => $station])
-                    @endforeach
+                    {{-- Lab Safety & Equipment Status Ribbon --}}
+                    <div class="mt-4 pt-1 flex flex-wrap items-center justify-around gap-3 text-xs text-emerald-200">
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            {{ __('المآزر والوقاية: إلزامية 🥼') }}
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            {{ __('قواطع الطوارئ: مفحوصة ⚡') }}
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            {{ __('العتاد والكواشف: جاهزة 🧪') }}
+                        </span>
+                        <span class="flex items-center gap-1.5 text-slate-300">
+                            <span class="w-2 h-2 rounded-full bg-teal-400"></span>
+                            {{ __('طاقة الاستيعاب: 6 طاولات كبرى × 4 مقاعد (24 تلميذ)') }}
+                        </span>
+                    </div>
                 </div>
-            </div>
+
+                {{-- Central Aisle Divider / Direction Indicator --}}
+                <div class="relative flex items-center justify-center my-4">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-dashed border-gray-300 dark:border-white/10"></div>
+                    </div>
+                    <span class="relative px-4 py-1 rounded-full bg-white dark:bg-gray-800 text-[11px] font-bold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/10 shadow-xs">
+                        {{ __('جهة السبورة ومنصة العرض للأستاذ ⬆️') }}
+                    </span>
+                </div>
+
+                {{-- 6 Long Tables Laboratory Floor Plan (2 Aisles x 3 Tables) --}}
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 relative">
+                    {{-- Right Row (الرواق الأيمن: طاولات 1، 2، 3) --}}
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between px-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            <span>{{ __('الرواق الأيمن — أفواج العمل 1 إلى 3') }}</span>
+                            <span>3 {{ __('طاولات') }} &bull; 12 {{ __('مقعد') }}</span>
+                        </div>
+
+                        @foreach ($rightAisleTables as $table)
+                            @include('livewire.partials.science-long-table', ['table' => $table, 'isPhysics' => $isPhysics])
+                        @endforeach
+                    </div>
+
+                    {{-- Left Row (الرواق الأيسر: طاولات 4، 5، 6) --}}
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between px-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            <span>{{ __('الرواق الأيسر — أفواج العمل 4 إلى 6') }}</span>
+                            <span>3 {{ __('طاولات') }} &bull; 12 {{ __('مقعد') }}</span>
+                        </div>
+
+                        @foreach ($leftAisleTables as $table)
+                            @include('livewire.partials.science-long-table', ['table' => $table, 'isPhysics' => $isPhysics])
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
 
         {{-- Seating Management & Student Roster --}}
@@ -462,7 +549,7 @@
                     <div>
                         <h3 class="text-base font-bold text-gray-950 dark:text-white">{{ __('قائمة تلاميذ الفوج للتوزيع على المقاعد') }}</h3>
                         <p class="text-xs text-gray-500 dark:text-gray-400">
-                            {{ $isScience ? __('حدد طاولة تجارب من المخطط أعلاه ثم اضغط على التلميذ لتعيينه بها، أو استخدم "توزيع تلقائي".') : __('حدد محطة من المخطط أعلاه ثم اضغط على التلميذ لتعيينه بها، أو استخدم "توزيع تلقائي".') }}
+                            {{ $isScience ? __('حدد مقعداً من إحدى الطاولات الـ 6 أعلاه ثم اضغط على التلميذ لتعيينه بها، أو استخدم "توزيع تلقائي للأفواج".') : __('حدد محطة من المخطط أعلاه ثم اضغط على التلميذ لتعيينه بها، أو استخدم "توزيع تلقائي".') }}
                         </p>
                     </div>
                     <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-stone-100 text-stone-700 dark:bg-gray-800 dark:text-gray-300">
@@ -486,9 +573,17 @@
                             </div>
                             <div class="mt-2 flex items-center justify-between">
                                 @if ($isAssigned)
+                                    @php
+                                        $tableNum = (int) ceil($assignedStation['station_number'] / 4);
+                                        $seatInTable = (($assignedStation['station_number'] - 1) % 4) + 1;
+                                    @endphp
                                     <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700 dark:text-teal-300">
                                         <x-filament::icon icon="heroicon-o-check-circle" class="h-3.5 w-3.5 text-teal-500"/>
-                                        {{ $isScience ? __('طاولة') : __('محطة') }} {{ $assignedStation['station_number'] }}
+                                        @if ($isScience)
+                                            {{ __('طاولة :table • مقعد :seat', ['table' => $tableNum, 'seat' => $seatInTable]) }}
+                                        @else
+                                            {{ __('محطة') }} {{ $assignedStation['station_number'] }}
+                                        @endif
                                     </span>
                                     <button
                                         type="button"
