@@ -7,6 +7,7 @@ use App\Models\Lab;
 use App\Models\LabSeatingPlan as LabPlan;
 use App\Models\LabSeatingPlanStation;
 use App\Models\Student;
+use App\Services\NetStationService;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
@@ -31,6 +32,21 @@ class LabSeatingPlan extends Component
 
     public bool $showSaveModal = false;
 
+    /**
+     * Mode: 'control' (NetStation live PC monitoring) or 'seating' (seating arrangement).
+     */
+    public string $viewMode = 'control';
+
+    public bool $showBroadcastModal = false;
+
+    public string $broadcastMessageText = '';
+
+    public bool $showLockModal = false;
+
+    public string $customLockMessage = '';
+
+    public bool $globalInternetEnabled = true;
+
     public function mount(?int $lab = null, ?int $group = null): void
     {
         $this->labId = $lab;
@@ -51,6 +67,11 @@ class LabSeatingPlan extends Component
         $this->refreshState();
     }
 
+    public function setViewMode(string $mode): void
+    {
+        $this->viewMode = in_array($mode, ['control', 'seating'], true) ? $mode : 'control';
+    }
+
     public function refreshState(): void
     {
         $this->stations = [];
@@ -66,6 +87,12 @@ class LabSeatingPlan extends Component
                         'id' => $station->id,
                         'station_number' => $station->station_number,
                         'device_type' => $station->device_type,
+                        'ip_address' => $station->ip_address ?? '192.168.1.'.(100 + $station->station_number),
+                        'is_locked' => (bool) $station->is_locked,
+                        'lock_message' => $station->lock_message,
+                        'active_broadcast' => $station->active_broadcast,
+                        'internet_enabled' => (bool) $station->internet_enabled,
+                        'is_online' => $station->isOnline(),
                         'student_id' => null,
                         'student_name' => null,
                         'position_x' => 0,
@@ -300,6 +327,143 @@ class LabSeatingPlan extends Component
             ->send();
     }
 
+    // =========================================================================
+    // NetStation Leader PC Controls
+    // =========================================================================
+
+    public function lockAllStations(?string $customMsg = null): void
+    {
+        if (! $this->labId) {
+            return;
+        }
+
+        $count = app(NetStationService::class)->lockAll($this->labId, $customMsg);
+
+        foreach ($this->stations as &$st) {
+            $st['is_locked'] = true;
+            $st['lock_message'] = $customMsg ?: __('انتبه للأستاذ! الشاشة مقفلة بأمر من المحطة الرئيسية.');
+        }
+        unset($st);
+
+        $this->showLockModal = false;
+
+        Notification::make()
+            ->title(__('تم قفل جميع شاشات المخبر (:count محطة)', ['count' => $count]))
+            ->warning()
+            ->send();
+    }
+
+    public function unlockAllStations(): void
+    {
+        if (! $this->labId) {
+            return;
+        }
+
+        $count = app(NetStationService::class)->unlockAll($this->labId);
+
+        foreach ($this->stations as &$st) {
+            $st['is_locked'] = false;
+            $st['lock_message'] = null;
+        }
+        unset($st);
+
+        Notification::make()
+            ->title(__('تم إلغاء قفل جميع شاشات المخبر بنجاح'))
+            ->success()
+            ->send();
+    }
+
+    public function toggleStationLock(int $stationId): void
+    {
+        $stationIndex = collect($this->stations)->search(fn ($s) => $s['id'] === $stationId);
+        if ($stationIndex === false) {
+            return;
+        }
+
+        $isCurrentlyLocked = (bool) $this->stations[$stationIndex]['is_locked'];
+
+        if ($isCurrentlyLocked) {
+            app(NetStationService::class)->unlockStation($stationId);
+            $this->stations[$stationIndex]['is_locked'] = false;
+            $this->stations[$stationIndex]['lock_message'] = null;
+
+            Notification::make()
+                ->title(__('تم إلغاء قفل المحطة :num', ['num' => $this->stations[$stationIndex]['station_number']]))
+                ->success()
+                ->send();
+        } else {
+            app(NetStationService::class)->lockStation($stationId);
+            $this->stations[$stationIndex]['is_locked'] = true;
+            $this->stations[$stationIndex]['lock_message'] = __('انتبه للأستاذ! الشاشة مقفلة بأمر من المحطة الرئيسية.');
+
+            Notification::make()
+                ->title(__('تم قفل شاشة المحطة :num', ['num' => $this->stations[$stationIndex]['station_number']]))
+                ->warning()
+                ->send();
+        }
+    }
+
+    public function toggleInternetAll(): void
+    {
+        if (! $this->labId) {
+            return;
+        }
+
+        $this->globalInternetEnabled = ! $this->globalInternetEnabled;
+        app(NetStationService::class)->toggleInternet($this->labId, $this->globalInternetEnabled);
+
+        foreach ($this->stations as &$st) {
+            $st['internet_enabled'] = $this->globalInternetEnabled;
+        }
+        unset($st);
+
+        Notification::make()
+            ->title($this->globalInternetEnabled ? __('تم تمكين الإنترنت لجميع المحطات') : __('تم حجب الإنترنت عن جميع المحطات'))
+            ->info()
+            ->send();
+    }
+
+    public function sendBroadcastMessage(): void
+    {
+        if (! $this->labId || blank($this->broadcastMessageText)) {
+            return;
+        }
+
+        $count = app(NetStationService::class)->broadcastMessage($this->labId, $this->broadcastMessageText);
+
+        foreach ($this->stations as &$st) {
+            $st['active_broadcast'] = $this->broadcastMessageText;
+        }
+        unset($st);
+
+        $this->showBroadcastModal = false;
+        $this->broadcastMessageText = '';
+
+        Notification::make()
+            ->title(__('تم إرسال البث الجماعي إلى :count محطة بنجاح', ['count' => $count]))
+            ->success()
+            ->send();
+    }
+
+    public function clearBroadcastMessage(): void
+    {
+        if (! $this->labId) {
+            return;
+        }
+
+        app(NetStationService::class)->clearBroadcast($this->labId);
+
+        foreach ($this->stations as &$st) {
+            $st['active_broadcast'] = null;
+        }
+        unset($st);
+
+        Notification::make()
+            ->title(__('تم إيقاف ومسح البث الجماعي عن جميع الشاشات'))
+            ->info()
+            ->send();
+    }
+
     public function getAssignedCountProperty(): int
     {
         return collect($this->stations)->filter(fn ($s) => ! empty($s['student_id']))->count();
@@ -308,6 +472,11 @@ class LabSeatingPlan extends Component
     public function getAvailableStationsCountProperty(): int
     {
         return count($this->stations);
+    }
+
+    public function getLockedCountProperty(): int
+    {
+        return collect($this->stations)->filter(fn ($s) => ! empty($s['is_locked']))->count();
     }
 
     public function render(): View

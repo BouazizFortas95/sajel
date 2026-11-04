@@ -476,7 +476,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 7. Testing
 
-`php artisan test` — **419 passing, 20,805 assertions in the latest full run, 0 failures**:
+`php artisan test` — **425 passing, 20,836 assertions in the latest full run, 0 failures**:
 
 | Suite                                           | Tests | Covers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ----------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -504,6 +504,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | `Tests\Feature\MiddleSchoolSeederTest`          | 21    | Dataset and active-learning strategy seed coverage, official subjects, school identity and holiday calendar, school structure, students, teachers, demo-teacher assignments, deterministic 20-hour schedules, two-week daily logs, authentic curriculum mappings, sequential assessments and balanced learner profiles, attendance distribution/streaks, labs/seating plans, pedagogical follow-up records, destructive wipe, idempotent re-runs, bulk query budget (<400 queries), factory identities                                                                                     |
 | `Tests\Feature\MotivationPulseTest`             | 6     | Zero-click badge computation, comeback-champion detection, quick-kudos authorization, teacher/admin hub access, and the A4 certificate route in Arabic/English/French                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `Tests\Feature\MySchedulePageTest`              | 4     | Teacher-only access, day/week views, guest redirect                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `Tests\Feature\NetStationLabControlTest`        | 6     | NetStation service master lock/unlock all stations, instant broadcast distribution and clearing, internet access toggle, student station client screen render, heartbeat pings, locked overlay, and Leader PC Livewire controls                                                                                                                                                                                                                                                                                                                                                        |
 | `Tests\Feature\OfficialReportsTest`             | 19    | Official report page access, timetable/attendance/transcript output, scoping, localization, and PDF routes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `Tests\Feature\OfflineAttendancePwaTest`        | 12    | PWA assets and panel registration, user-scoped offline storage, guest cache/roster purge, localized sync warning, idempotent multi-student sync, schedule/roster authorization, admin bypass, invalid batch validation, offline controls                                                                                                                                                                                                                                                                                                                                                   |
 | `Tests\Feature\ParentPortalTest`                | 4     | Signed 90-day URL validation and rejection of expired tokens, teacher generation for own roster students, group-scoped privacy guard preventing leakage of other sections                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -534,8 +535,8 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 | Aspect          | Status                                                                                                           |
 | --------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Migrations      | ✅ All 44 migrations ran                                                                                         |
-| Test suite      | ✅ 419/419 passing, 0 failures (20,805 assertions in the latest full run)                                        |
+| Migrations      | ✅ All 45 migrations ran                                                                                         |
+| Test suite      | ✅ 425/425 passing, 0 failures (20,836 assertions in the latest full run)                                        |
 | Admin panel     | ✅ 20 Filament resources + custom dashboard, schedule, curriculum-progress, supervision, pulse, data-show, pedagogical-inspector pages |
 | Seed data       | ✅ Destructive middle-school dataset + optional SajelSeeder                                                      |
 | Version control | Git repo on `main`; Phases 2–11 complete (100%)                                                                  |
@@ -979,5 +980,34 @@ Phase 11 equips educational inspectors and school principals with a specialized,
 - [x] **Multilingual Support & Full Test Coverage:**
       - Complete Arabic, English, and French translations across `ar.json`, `en.json`, and `fr.json`.
       - Comprehensive automated test suite in `tests/Feature/PedagogicalInspectorTest.php` (7 tests, 39 assertions, 100% green). All 417 application tests pass with 0 regressions.
+
+## 21. NetStation Suite — Computer Lab Central Control & Student Kiosk System (منظومة التحكم بمخابر الإعلام الآلي) (100%)
+
+Transforms the computer lab management experience into an integrated classroom management suite (NetStation / LanSchool / NetSupport model) allowing teachers to command all student stations directly from their Leader PC:
+
+- [x] **Database Schema & Model Extensions (`lab_stations`):**
+      - Migration `2026_10_26_020001_add_netstation_controls_to_lab_stations_table.php` adding `ip_address`, `is_locked`, `lock_message`, `active_broadcast`, `internet_enabled`, and `last_ping_at`.
+      - Model methods on `LabStation`: `isOnline()`, `lock()`, `unlock()`, `broadcast()`.
+- [x] **Domain Service (`NetStationService`):**
+      - `lockAll()` and `unlockAll()` for whole-lab instant pedagogical control.
+      - `lockStation()` and `unlockStation()` for single-station control.
+      - `broadcastMessage()` and `clearBroadcast()` for real-time guidance alerts.
+      - `toggleInternet()` to centrally restrict or allow web browsing per lab.
+      - `pingStation()` for live client telemetry and status reporting.
+- [x] **Leader PC Live Cockpit (`LabSeatingPlanPage` & `LabSeatingPlan`):**
+      - Dual-mode switcher: **وضع التحكم المباشر (NetStation)** vs **وضع تخطيط الجلوس**.
+      - High-tech Leader PC desk ("الحاسوب الرئيسي للأستاذ") with master command bar: Lock All, Unlock All, Broadcast Message Modal, and Internet Toggle.
+      - Realistic PC monitor cards displaying station number, IP address, online pulse LED, lock state, and assigned student.
+      - Individual quick lock/unlock buttons and instant client kiosk preview links.
+- [x] **Student Station Kiosk Client (`/{locale}/lab/station/{id}`):**
+      - Interactive fullscreen client view for student computers.
+      - Real-time heartbeat polling (`ping`) synchronizing lock state and broadcasts every 3 seconds.
+      - Fullscreen lock overlay with glowing lock icon, warning banners, and custom teacher messages ("انتبه للأستاذ!").
+      - Instant broadcast alert banner with acknowledgment button.
+      - Live connection indicator ("متصل بالحاسوب الرئيسي 🟢") and educational launchpad.
+- [x] **Testing & Localization:**
+      - Test suite in `tests/Feature/NetStationLabControlTest.php` (6 tests, 31 assertions, 100% green).
+      - Complete translations in Arabic, English, and French. All 425 application tests passing with 0 regressions.
+
 
 

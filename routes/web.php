@@ -9,6 +9,7 @@ use App\Http\Controllers\PrintAssessmentController;
 use App\Http\Controllers\PrintDailyLogsController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
 use App\Http\Controllers\StudentReportCardController;
+use App\Http\Controllers\StudentStationController;
 use App\Http\Controllers\TeacherPortfolioController;
 use App\Http\Middleware\SetFilamentLocale;
 use App\Models\SchoolSetting;
@@ -150,6 +151,19 @@ Route::get('/{locale}/parent/students/{student}', [ParentPortalController::class
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['signed', SetFilamentLocale::class])
     ->name('parent.student-portal');
+
+Route::get('/{locale}/lab/station/{labStation}', [StudentStationController::class, 'show'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(SetFilamentLocale::class)
+    ->name('lab.station-client');
+
+Route::get('/{locale}/lab/station/{labStation}/ping', [StudentStationController::class, 'ping'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->name('lab.station-ping');
+
+Route::post('/{locale}/lab/station/{labStation}/acknowledge-broadcast', [StudentStationController::class, 'acknowledgeBroadcast'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->name('lab.station-acknowledge');
 
 Route::get('/{locale}/print/teachers/{user}/portfolio/pdf', [TeacherPortfolioController::class, 'pdf'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))

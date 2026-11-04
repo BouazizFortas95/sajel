@@ -69,7 +69,7 @@ Key goals:
 | Localization | `mcamara/laravel-localization` | `ar`, `en`, `fr`; complete UI and print/PDF label coverage enforced by `LocalizationCompletenessTest` |
 | Timezone | Africa/Algiers | `APP_TIMEZONE` |
 | Font | Cairo (Google Fonts) | RTL body + headings |
-| Testing | PHPUnit | 419 passed, 0 failures (20,805 assertions in the latest run) |
+| Testing | PHPUnit | 425 passed, 0 failures (20,836 assertions in the latest run) |
 
 ---
 
@@ -250,13 +250,13 @@ Known limits: the schedule tab shows recurring weekly slots rather than daily re
 pending documentation is week-to-date by design; institutional totals are current totals and are
 not period-filtered; the dashboard intentionally links out instead of embedding full reports.
 
-*Last updated: 2026-11-04 — Phases 2–11 all complete (100%) including School Identity, Institutional Backup & CI, the Sajel Pulse motivation engine, Disaster Recovery Restoration, and the Pedagogical Inspector Cockpit. Suite: 419 passing, 0 failures, 20,805 assertions. Health check: all PASS (26 tables; AI provider gemini configured).*
+*Last updated: 2026-11-04 — Phases 2–11 all complete (100%) plus NetStation Lab Control Suite including School Identity, Institutional Backup & CI, the Sajel Pulse motivation engine, Disaster Recovery Restoration, the Pedagogical Inspector Cockpit, and NetStation Lab PC Control. Suite: 425 passing, 0 failures, 20,836 assertions. Health check: all PASS (26 tables; AI provider gemini configured).*
 
 ---
 ## Phase 8 — Institutional Backup & CI (100%)
 - `SchoolBackupService`: timestamped JSON snapshot (`metadata` + row counts for all tables + institutional config), excludes password/session tokens.
 - `ManageSchoolSettings` header action `"تحميل نسخة احتياطية للمؤسسة (JSON)"` (Admin-only).
-- `.github/workflows/ci.yml`: automated build/test on push/PR (PHP 8.3, Node 20, SQLite, build, npm test:js, pint, health-check, test suite). Full suite: 417 passed, 20,793 assertions, 0 failures. Pint clean. npm build clean. Health check PASS.
+- `.github/workflows/ci.yml`: automated build/test on push/PR (PHP 8.3, Node 20, SQLite, build, npm test:js, pint, health-check, test suite). Full suite: 425 passed, 20,836 assertions, 0 failures. Pint clean. npm build clean. Health check PASS.
 
 ---
 ## Phase 9 — Sajel Pulse Motivation System (نبض التميز والتحفيز التربوي) (100%)
@@ -282,3 +282,10 @@ not period-filtered; the dashboard intentionally links out instead of embedding 
 - `PedagogicalInspectorHub`: Admin cockpit (`/{locale}/auth/pedagogical-inspector`) with Velocity, Scorecards, and Inspection Visits tabs + `"تسجيل زيارة تفتيشية جديدة"` modal action.
 - `InspectionReportController`: Localized A4 RTL visit report sheet (`print.inspection-report`) and streamed PDF download (`print.inspection-report.pdf`) with ministerial header, school identity, and formal signatures.
 - Tests (`PedagogicalInspectorTest.php`, 7 tests, 39 assertions), translations (`ar/en/fr`), Pint formatted.
+
+---
+## NetStation Suite — Computer Lab Central Control & Student Kiosk (100%)
+- `NetStationService`: Master PC command console allowing teachers to lock/unlock screens, broadcast guidance, and gate internet access.
+- `LabSeatingPlan`: Dual-mode cockpit (NetStation Live Control vs Seating Layout) with glowing Leader PC desk and real PC monitor cards.
+- `StudentStationController` (`/{locale}/lab/station/{id}`): Interactive kiosk screen with 3-second heartbeat polling, locked screen overlays, and broadcast announcement banners.
+- Tests (`NetStationLabControlTest.php`, 6 tests, 31 assertions), translations (`ar/en/fr`).
