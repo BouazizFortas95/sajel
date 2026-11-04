@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-11-04
-> Verified by `php artisan test` (**403 passed**, 20,689 assertions, **0 failures**),
+> Verified by `php artisan test` (**410 passed**, 20,753 assertions, **0 failures**),
 > `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -28,7 +28,7 @@ panel support Arabic, English, and French via `mcamara/laravel-localization`.
 | PDF       | `spatie/browsershot` `^5.4`, Puppeteer | Headless Chrome; Arabic shaping + Tailwind-preserving PDF      |
 | i18n      | `mcamara/laravel-localization` `^2.4`  | `ar`, `en`, `fr` locales                                       |
 | Timezone  | `Africa/Algiers`                       | `APP_TIMEZONE`, used for weekly dates                          |
-| Testing   | PHPUnit `^11.5`                        | **403 tests, all green (20,689 assertions in the latest run)** |
+| Testing   | PHPUnit `^11.5`                        | **410 tests, all green (20,753 assertions in the latest run)** |
 | Tooling   | Laravel Pint, Pail, Sail, Tinker       | Dev dependencies installed                                     |
 
 ## 3. Domain Model
@@ -476,7 +476,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 7. Testing
 
-`php artisan test` — **403 passing, 20,689 assertions in the latest full run, 0 failures**:
+`php artisan test` — **410 passing, 20,753 assertions in the latest full run, 0 failures**:
 
 | Suite                                           | Tests | Covers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ----------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -515,6 +515,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | `Tests\Feature\ScheduleRosterTest`              | 4     | Classroom-only schedules target all classroom groups; group-scoped schedules target their specific group; group-only schedules resolve roster; empty schedule targets no students                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `Tests\Feature\ScheduleSectionNameTest`         | 3     | Section name fallback and formatting for group-scoped and classroom-scoped schedules across timetable, register, and reports                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `Tests\Feature\ScheduleTargetingTest`           | 3     | Explicit schedule targeting rules, classroom vs group level validations, and conflict prevention                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `Tests\Feature\SchoolBackupRestoreTest`         | 7     | Full database table export, inspect validation, dry-run simulation, live restore with clean wipe, artisan command options, and admin Filament actions                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `Tests\Feature\SchoolHolidayComplianceTest`     | 5     | Holiday date ranges, calendar exclusion from overdue and unlogged compliance checks in supervision hub and unlogged widget, read-only teacher view                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `Tests\Feature\SchoolSettingsTest`              | 5     | Admin-only school identity settings view/update (teacher 403), cache refresh, dynamic school/directorate/headteacher identity on register sheets, class councils, and Official Reports, and admin-only JSON institutional backup export excluding password hashes and tokens                                                                                                                                                                                                                                                                                                             |
 | `Tests\Feature\SchoolSupervisionHubTest`        | 6     | Locale-aware admin-only access, weekday/time-based compliance, classroom-scoped attendance and distinct-date repeat absences, behavior follow-up resolution with notes                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -533,16 +534,12 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | Aspect          | Status                                                                                                           |
 | --------------- | ---------------------------------------------------------------------------------------------------------------- |
 | Migrations      | ✅ All 43 migrations ran                                                                                         |
-| Test suite      | ✅ 403/403 passing, 0 failures (20,689 assertions in the latest full run)                                        |
+| Test suite      | ✅ 410/410 passing, 0 failures (20,753 assertions in the latest full run)                                        |
 | Admin panel     | ✅ 20 Filament resources + custom dashboard, schedule, curriculum-progress, supervision, pulse, data-show pages |
 | Seed data       | ✅ Destructive middle-school dataset + optional SajelSeeder                                                      |
-| Version control | Git repo on `main`; Phases 2–9 complete (100%)                                                                   |
+| Version control | Git repo on `main`; Phases 2–10 complete (100%)                                                                  |
 | README          | ✅ Project-specific bilingual README (English structure + Arabic domain)                                         |
 | `APP_NAME`      | ✅ `Sajel`; `APP_URL` = `https://sajel.dev/`                                                                     |
-| Test suite      | ✅ 395/395 passing, 0 failures (20,631 assertions in the latest full run)                              |
-| Admin panel     | ✅ 20 Filament resources + custom dashboard, schedule, curriculum-progress, data-show pages + ar/en/fr |
-| Seed data       | ✅ Destructive middle-school dataset + optional SajelSeeder                                            |
-| Version control | Git repo on `main`; Phase 2/3/4 complete (`f4e776a`, `f8d...`)                                         |
 | README          | ✅ Project-specific bilingual README (English structure + Arabic domain)                               |
 | `APP_NAME`      | ✅ `Sajel`; `APP_URL` = `https://sajel.dev/`                                                           |
 
@@ -864,7 +861,7 @@ Phase 6: Parent Engagement, Academic Calendar & Production Readiness.
 - Milestone 3: Pedagogical Meeting Resource (`PedagogicalMeetingResource`, `TeacherPortfolioService`, controller/routes/translations/header actions + `MySchedule`) — complete.
 - Milestone 4: Production Readiness (`SajelHealthCheckCommand` `sajel:health-check` + `--json`, DB 25 tables, timezone `Africa/Algiers`, localization `ar/en/fr`, PWA `dir=rtl`, AI provider read from `config/ai.php` with PASS/WARN key detection; `SajelHealthCheckCommandTest`; `pint`/`npm`/`migrate` clean).
 
-Status 2026-11-04: `403 passed`, **0 failures** (`20,689` assertions); `pint` passed; `npm run test:js` passed (8 tests); `npm run build` passed; health command reports PASS on database, schema (25 tables), timezone, localization, PWA, and AI (`Provider: gemini (gemini-3.8-flash) | Key: configured`). All Phase 2–9 milestones complete (100%). The offline attendance PWA now scopes browser storage by user and clears cached attendance HTML and roster snapshots for guests while preserving a pending queue for the same teacher. Localization is complete across `ar`/`en`/`fr` for user-facing UI and print/PDF labels; the official register and student certificate follow the active locale (Arabic remains the default RTL output), and `LocalizationCompletenessTest` guards against missing keys. The dashboard is now a role-aware, URL-stateful hub with server-scoped metrics and explicit definitions; see README §10.
+Status 2026-11-04: `410 passed`, **0 failures** (`20,753` assertions); `pint` passed; `npm run test:js` passed (8 tests); `npm run build` passed; health command reports PASS on database, schema (25 tables), timezone, localization, PWA, and AI (`Provider: gemini (gemini-3.8-flash) | Key: configured`). All Phase 2–10 milestones complete (100%). The offline attendance PWA now scopes browser storage by user and clears cached attendance HTML and roster snapshots for guests while preserving a pending queue for the same teacher. Localization is complete across `ar`/`en`/`fr` for user-facing UI and print/PDF labels; the official register and student certificate follow the active locale (Arabic remains the default RTL output), and `LocalizationCompletenessTest` guards against missing keys. The dashboard is now a role-aware, URL-stateful hub with server-scoped metrics and explicit definitions; see README §10.
 
 ## 16. Phase 7 — School Identity (هوية المؤسسة التربوية)
 
@@ -933,3 +930,22 @@ Phase 9 implements an integrated pedagogical gamification and motivation engine 
 - [x] **Localization & Verification:**
       - All keys registered across `ar.json`, `en.json`, and `fr.json`.
       - Comprehensive automated test suite in `tests/Feature/MotivationPulseTest.php` (6 tests, 21 assertions, all green, 0 deprecation warnings).
+
+## 19. Phase 10 Roadmap — Disaster Recovery & Backup Restoration (100%)
+
+Phase 10 completes the institutional resilience suite with a robust, bidirectional backup restoration and disaster recovery engine.
+
+- [x] **Full Table Snapshot (`SchoolBackupService::fullSnapshot`):**
+      Expanded `SchoolBackupService` to capture all 26 core academic domain tables in foreign-key dependency order (school settings, structure, users, curriculum maps, students, schedules, daily logs, attendances, assessments, grades, memos, meetings, remediations, observations, labs, and seating plans), with sensitive credentials (`password`, `remember_token`, `api_token`) strictly redacted.
+- [x] **School Restore Service (`SchoolRestoreService`):**
+      Engine supporting payload validation, simulation, and transactional database restoration:
+      - `inspect()`: JSON structural validation, schema presence verification, academic year comparison warnings, and table row tallies.
+      - `restore()`: Database transaction with foreign-key safety (`PRAGMA foreign_keys = OFF / ON`), clean wipe capability (`wipeExisting`), preserved current admin account, non-destructive user account matching, and automatic cache invalidation (`SchoolSetting::flushCache`).
+      - `--dry-run`: Comprehensive simulation mode reporting exact affected table row counts without database writes.
+- [x] **Artisan CLI Command (`php artisan sajel:restore`):**
+      Full CLI restoration command (`sajel:restore {file} {--dry-run} {--wipe} {--force}`) with colored summary tables, inspection output, confirmation prompts, and timing metrics.
+- [x] **Filament Admin UI Integration (`ManageSchoolSettings`):**
+      Added `"استرجاع نسخة احتياطية (JSON)"` header action with a modal file uploader, dry-run toggle, clean wipe toggle, detailed notification feedback, and form state refresh.
+- [x] **Multilingual Support & Verification:**
+      All modal, notification, and CLI messages localized across Arabic, English, and French. Fully covered by `tests/Feature/SchoolBackupRestoreTest.php` (7 tests, 64 assertions, 0 failures).
+

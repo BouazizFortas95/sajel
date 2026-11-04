@@ -250,13 +250,13 @@ Known limits: the schedule tab shows recurring weekly slots rather than daily re
 pending documentation is week-to-date by design; institutional totals are current totals and are
 not period-filtered; the dashboard intentionally links out instead of embedding full reports.
 
-*Last updated: 2026-11-04 — Phases 2–9 all complete (100%) including School Identity, Institutional Backup & CI, and the Sajel Pulse motivation engine. Suite: 403 passing, 0 failures, 20,689 assertions. Health check: all PASS (25 tables; AI provider gemini configured).*
+*Last updated: 2026-11-04 — Phases 2–10 all complete (100%) including School Identity, Institutional Backup & CI, the Sajel Pulse motivation engine, and Disaster Recovery Restoration. Suite: 410 passing, 0 failures, 20,753 assertions. Health check: all PASS (25 tables; AI provider gemini configured).*
 
 ---
 ## Phase 8 — Institutional Backup & CI (100%)
 - `SchoolBackupService`: timestamped JSON snapshot (`metadata` + row counts for all tables + institutional config), excludes password/session tokens.
 - `ManageSchoolSettings` header action `"تحميل نسخة احتياطية للمؤسسة (JSON)"` (Admin-only).
-- `.github/workflows/ci.yml`: automated build/test on push/PR (PHP 8.3, Node 20, SQLite, build, npm test:js, pint, health-check, test suite). Full suite: 403 passed, 20,689 assertions, 0 failures. Pint clean. npm build clean. Health check PASS.
+- `.github/workflows/ci.yml`: automated build/test on push/PR (PHP 8.3, Node 20, SQLite, build, npm test:js, pint, health-check, test suite). Full suite: 410 passed, 20,753 assertions, 0 failures. Pint clean. npm build clean. Health check PASS.
 
 ---
 ## Phase 9 — Sajel Pulse Motivation System (نبض التميز والتحفيز التربوي) (100%)
@@ -266,3 +266,11 @@ not period-filtered; the dashboard intentionally links out instead of embedding 
 - A4 RTL certificate (`print.student-certificate`) with `StudentPolicy::view` authorization + `.pdf` download.
 - Badges surfaced in `ParentPortalService` and `StudentReportCardService`.
 - Tests (`MotivationPulseTest.php`), translations (`ar/en/fr`), docs (`STATUS_PROJECT.md`, `README.md`).
+
+---
+## Phase 10 — Disaster Recovery & Backup Restoration (100%)
+- `SchoolBackupService::fullSnapshot`: Full snapshot of all 26 academic domain tables, excluding passwords and tokens.
+- `SchoolRestoreService`: Inspection, simulation (`--dry-run`), and transactional database restoration with clean wipe mode (`--wipe`).
+- `php artisan sajel:restore`: Full-featured CLI restoration tool with inspection tables, warnings, and safety confirmation.
+- `ManageSchoolSettings`: Admin modal action `"استرجاع نسخة احتياطية (JSON)"` with file upload, dry-run preview toggle, and clean wipe toggle.
+- Tests (`SchoolBackupRestoreTest.php`, 7 tests, 64 assertions), translations (`ar/en/fr`).
