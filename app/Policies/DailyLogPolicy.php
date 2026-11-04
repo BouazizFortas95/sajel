@@ -8,10 +8,15 @@ use App\Models\User;
 class DailyLogPolicy
 {
     /**
-     * Admins bypass every check.
+     * Admins bypass general checks, EXCEPT creating daily logs,
+     * which is reserved exclusively for teachers conducting lessons.
      */
-    public function before(User $user): ?bool
+    public function before(User $user, string $ability): ?bool
     {
+        if ($ability === 'create' && $user->isAdmin()) {
+            return false;
+        }
+
         return $user->isAdmin() ? true : null;
     }
 
@@ -22,6 +27,10 @@ class DailyLogPolicy
 
     public function view(User $user, DailyLog $dailyLog): bool
     {
+        if ($user->isAdmin()) {
+            return true;
+        }
+
         if ($dailyLog->substitute_teacher_id === $user->id) {
             return true;
         }
@@ -31,7 +40,7 @@ class DailyLogPolicy
 
     public function create(User $user): bool
     {
-        return true;
+        return $user->isTeacher();
     }
 
     public function update(User $user, DailyLog $dailyLog): bool

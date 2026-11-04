@@ -79,6 +79,25 @@ class AuthorizationTest extends TestCase
             ->assertOk();
     }
 
+    public function test_admin_and_moderator_cannot_create_daily_logs_which_is_reserved_for_teachers(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+
+        // Policy gate check
+        $this->assertFalse(Gate::forUser($admin)->allows('create', DailyLog::class));
+        $this->assertTrue(Gate::forUser($teacher)->allows('create', DailyLog::class));
+
+        // Create page route access
+        $this->actingAs($admin)
+            ->get('/en/auth/daily-logs/create')
+            ->assertForbidden();
+
+        $this->actingAs($teacher)
+            ->get('/en/auth/daily-logs/create')
+            ->assertOk();
+    }
+
     public function test_teacher_schedule_list_shows_only_own_records(): void
     {
         $teacher = User::factory()->create();

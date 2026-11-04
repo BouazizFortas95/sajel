@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
-> Last updated: 2026-11-04
-> Verified by `php artisan test` (**427 passed**, 20,856 assertions, **0 failures**),
+> Last updated: 2026-11-05
+> Verified by `php artisan test` (**428 passed**, 20,860 assertions, **0 failures**),
 > `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -1037,6 +1037,23 @@ Adapts the laboratory seating and management workflow dynamically based on the A
       - Added tests in `tests/Feature/LabManagementTest.php` verifying science lab 6-table workbench switching, lack of PC controls, and experiment bench kiosk rendering.
       - Translations added to `lang/en.json` and `lang/fr.json` (100% covered by `LocalizationCompletenessTest`).
       - Full suite: **427 tests, 20,856 assertions, 0 failures, 100% green**.
+
+## 23. Daily Logs Pedagogical Ownership & Administrative Visa Policy (حصرية تدوين دفتر النصوص للأساتذة والتأشيرة الإدارية) (100%)
+
+Enforces strict Algerian institutional pedagogical boundaries regarding the digital class register / daily lesson logs (دفتر النصوص الرقمي):
+
+- [x] **Exclusive Creation Rights for Teachers (`DailyLogPolicy`, `DailyLogResource`):**
+      - `DailyLogPolicy::before()` explicitly denies the `create` ability to administrators/moderators.
+      - `DailyLogPolicy::create()` verifies `$user->isTeacher()`.
+      - `DailyLogResource::canCreate()` returns `false` for admins, automatically hiding the "New Daily Log" action from administrators and returning HTTP 403 Forbidden on `/daily-logs/create`.
+- [x] **Administrative Review & Digital Visa (`administrativeVisaTableAction`, `digitalVisa`):**
+      - Administrators and superadmins retain read/view permissions across all teachers' daily logs.
+      - Administrators review completed lesson logs and stamp official administrative visas with pedagogical notes via `administrativeVisaTableAction()` and bulk visa action.
+      - Added `Tables\Actions\ViewAction::make()` to table row actions for non-destructive log inspection.
+- [x] **Full Test Coverage:**
+      - Verified in `tests/Feature/AuthorizationTest.php` (`test_admin_and_moderator_cannot_create_daily_logs_which_is_reserved_for_teachers`).
+      - All 14 tests in `tests/Feature/DigitalVisaTest.php` passing green.
+
 
 
 

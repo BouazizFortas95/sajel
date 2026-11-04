@@ -73,6 +73,13 @@ class DailyLogResource extends Resource
         return __('التشغيل اليومي');
     }
 
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User && $user->isTeacher() && ! $user->isAdmin();
+    }
+
     protected static ?int $navigationSort = 70;
 
     /**
@@ -933,6 +940,7 @@ class DailyLogResource extends Resource
             ->actions([
                 static::confirmCompletionTableAction(),
                 static::administrativeVisaTableAction(),
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
