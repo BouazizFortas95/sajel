@@ -321,4 +321,76 @@ class LabManagementTest extends TestCase
 
         $this->assertDatabaseCount('lab_seating_plan_stations', 6);
     }
+
+    public function test_physics_and_science_labs_switch_to_experiment_workbench_view_without_pc_controls(): void
+    {
+        app()->setLocale('ar');
+
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin);
+
+        $phase = EducationPhase::factory()->create();
+        $level = Level::factory()->for($phase)->create();
+        $classroom = Classroom::factory()->for($level)->create();
+        $group = Group::factory()->for($classroom)->create();
+        Student::factory()->count(2)->for($group)->create();
+
+        $physicsLab = Lab::factory()->for($level)->create([
+            'name' => 'مخبر العلوم الفيزيائية والتكنولوجيا',
+            'capacity' => 4,
+        ]);
+
+        for ($i = 1; $i <= 4; $i++) {
+            LabStation::factory()->for($physicsLab)->create([
+                'station_number' => $i,
+                'device_type' => 'device',
+                'status' => LabStatus::Working,
+            ]);
+        }
+
+        $component = Livewire::test(LabSeatingPlan::class)
+            ->set('labId', $physicsLab->id)
+            ->set('groupId', $group->id)
+            ->assertSet('viewMode', 'seating')
+            ->assertSee('مخبر العلوم الفيزيائية والكيمياء')
+            ->assertSee('مخطط طاولات وتجارب المخبر')
+            ->assertSee('إجمالي طاولات التجارب')
+            ->assertSee('منصة تجارب الفيزياء والكيمياء للأستاذ')
+            ->assertSee('ميثاق السلامة')
+            ->assertSee('طاولة')
+            ->assertDontSee('وضع التحكم المباشر (NetStation)')
+            ->assertDontSee('المحطة الرئيسية للأستاذ (Leader PC)');
+
+        // Attempting to change mode to 'control' on a science lab remains 'seating'
+        $component->call('setViewMode', 'control')
+            ->assertSet('viewMode', 'seating');
+    }
+
+    public function test_science_lab_kiosk_renders_experiment_bench_card_and_safety_rules(): void
+    {
+        app()->setLocale('ar');
+
+        $phase = EducationPhase::factory()->create();
+        $level = Level::factory()->for($phase)->create();
+        $physicsLab = Lab::factory()->for($level)->create([
+            'name' => 'مخبر العلوم الفيزيائية',
+        ]);
+        $station = LabStation::factory()->for($physicsLab)->create([
+            'station_number' => 3,
+            'device_type' => 'device',
+            'status' => LabStatus::Working,
+        ]);
+
+        $this->get(route('lab.station-client', ['locale' => 'ar', 'labStation' => $station]))
+            ->assertOk()
+            ->assertSee('طاولة التجارب')
+            ->assertSee('3')
+            ->assertSee('مخبر العلوم الفيزيائية')
+            ->assertSee('بروتوكول السلامة المخبرية ساري 🛡️')
+            ->assertSee('الأمن الكهربائي والدارات')
+            ->assertSee('الكواشف والمحاليل')
+            ->assertDontSee('المحطة الرئيسية للأستاذ')
+            ->assertDontSee('متصل بالحاسوب الرئيسي')
+            ->assertDontSee('الإنترنت متاح');
+    }
 }

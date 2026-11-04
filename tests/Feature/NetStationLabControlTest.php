@@ -147,9 +147,10 @@ class NetStationLabControlTest extends TestCase
     {
         $phase = EducationPhase::factory()->create();
         $level = Level::factory()->for($phase)->create();
-        $lab = Lab::factory()->for($level)->create();
+        $lab = Lab::factory()->for($level)->create(['name' => 'مخبر الإعلام الآلي 1']);
         $station = LabStation::factory()->for($lab)->create([
             'station_number' => 2,
+            'device_type' => 'computer',
             'status' => LabStatus::Working,
             'is_locked' => true,
             'lock_message' => 'انتبه للأستاذ! سيتم بدء العرض التقديمي الآن.',
@@ -172,10 +173,11 @@ class NetStationLabControlTest extends TestCase
         $classroom = Classroom::factory()->for($level)->create();
         $group = Group::factory()->for($classroom)->create();
 
-        $lab = Lab::factory()->for($level)->create();
+        $lab = Lab::factory()->for($level)->create(['name' => 'مخبر الإعلام الآلي 1']);
         for ($i = 1; $i <= 3; $i++) {
             LabStation::factory()->for($lab)->create([
                 'station_number' => $i,
+                'device_type' => 'computer',
                 'status' => LabStatus::Working,
             ]);
         }

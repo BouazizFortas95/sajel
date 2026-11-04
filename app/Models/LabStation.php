@@ -54,6 +54,11 @@ class LabStation extends Model
         return $this->last_ping_at !== null && $this->last_ping_at->isAfter(now()->subMinutes(2));
     }
 
+    public function isComputer(): bool
+    {
+        return $this->device_type === 'computer' || ($this->lab?->isInformatics() ?? false);
+    }
+
     public function lock(?string $message = null): void
     {
         $this->update([

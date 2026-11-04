@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-11-04
-> Verified by `php artisan test` (**410 passed**, 20,753 assertions, **0 failures**),
+> Verified by `php artisan test` (**427 passed**, 20,856 assertions, **0 failures**),
 > `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -987,7 +987,7 @@ Transforms the computer lab management experience into an integrated classroom m
 
 - [x] **Database Schema & Model Extensions (`lab_stations`):**
       - Migration `2026_10_26_020001_add_netstation_controls_to_lab_stations_table.php` adding `ip_address`, `is_locked`, `lock_message`, `active_broadcast`, `internet_enabled`, and `last_ping_at`.
-      - Model methods on `LabStation`: `isOnline()`, `lock()`, `unlock()`, `broadcast()`.
+      - Model methods on `LabStation`: `isOnline()`, `lock()`, `unlock()`, `broadcast()`, `isComputer()`.
 - [x] **Domain Service (`NetStationService`):**
       - `lockAll()` and `unlockAll()` for whole-lab instant pedagogical control.
       - `lockStation()` and `unlockStation()` for single-station control.
@@ -1007,7 +1007,34 @@ Transforms the computer lab management experience into an integrated classroom m
       - Live connection indicator ("متصل بالحاسوب الرئيسي 🟢") and educational launchpad.
 - [x] **Testing & Localization:**
       - Test suite in `tests/Feature/NetStationLabControlTest.php` (6 tests, 31 assertions, 100% green).
-      - Complete translations in Arabic, English, and French. All 425 application tests passing with 0 regressions.
+      - Complete translations in Arabic, English, and French.
+
+## 22. Science Laboratory Benches & Experiment Safety System (طاولات ومحطات التجارب المخبرية وضوابط السلامة) (100%)
+
+Adapts the laboratory seating and management workflow dynamically based on the Algerian Middle School curriculum discipline:
+
+- [x] **Domain Models & Discipline Classification (`Lab`, `LabStation`):**
+      - Added helpers: `isInformatics()`, `isPhysics()`, `isNaturalScience()`, `labType()`, `labTypeLabel()`, `stationLabel()`, and `LabStation::isComputer()`.
+      - Correctly differentiates computer labs (PC network, NetStation controls) from science laboratories (Physics & Chemistry, Biology / Natural Sciences & Life / SVT).
+- [x] **Dynamic Science Workbench Seating Cockpit (`LabSeatingPlan`):**
+      - Automatically sets `viewMode` to `seating` for science labs (disabling inappropriate PC control modes).
+      - Dynamic header indicating the specific laboratory (`مخبر العلوم الفيزيائية والكيمياء` / `مخبر علوم الطبيعة والحياة`) and lab bench plan badge (`مخطط طاولات وتجارب المخبر`).
+      - Specialized laboratory counters: Total Experiment Benches (`إجمالي طاولات التجارب`), Assigned Students (`التلاميذ المعينون`), Available Benches (`طاولات شاغرة`), and Safety Protocol status (`معتمد وقيد التطبيق 🛡️`).
+      - Central Teacher Demonstration Desk (**منصة تحضير وعرض التجارب للأستاذ**): styled with science workbench aesthetics, experiment readiness status chips (cotton coats mandatory, emergency breakers checked, reagents prepared), auto-assign, bench clearing, and plan saving.
+- [x] **Experiment Bench Cards (`station-monitor-card.blade.php`):**
+      - Renders experiment benches (طاولات التجارب المخبرية) with beaker/microscope iconography, bench number (`طاولة #01`), student assignment avatar, equipment tags (`مأخذ ⚡ كواشف`, `مجهر 🔬 شرائح`), and bench tabletop/legs instead of computer monitors and IP addresses.
+- [x] **Laboratory Safety Charter Modal (`ميثاق السلامة والأمن المخبري`):**
+      - Discipline-specific safety protocol based on Algerian Middle School regulations (المنشور الوزاري للسلامة في المخابر التعليمية):
+        - Physics & Chemistry: Electrical circuit breaker protocol, handling reagents and glassware, emergency shutoffs, and post-experiment hand hygiene.
+        - Biology & Natural Sciences (SVT): Careful microscope transport and lens care, bubble-free 45° coverslip placement, anatomical model conservation, and workbench disinfection.
+- [x] **Digital Experiment Bench Kiosk Screen (`resources/views/lab/student-station.blade.php`):**
+      - For science benches, renders a digital experiment bench card and safety guide instead of PC screen locks.
+      - Displays bench number, assigned student details, safety protocol cards, and an interactive checklist before leaving the lab.
+- [x] **Testing & Localization:**
+      - Added tests in `tests/Feature/LabManagementTest.php` verifying science lab workbench switching, lack of PC controls, and experiment bench kiosk rendering.
+      - 85 new translations added to `lang/en.json` and `lang/fr.json` (100% covered by `LocalizationCompletenessTest`).
+      - Full suite: **427 tests, 20,856 assertions, 0 failures, 100% green**.
+
 
 
 

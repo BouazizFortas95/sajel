@@ -37,6 +37,8 @@ class LabSeatingPlan extends Component
      */
     public string $viewMode = 'control';
 
+    public bool $showSafetyModal = false;
+
     public bool $showBroadcastModal = false;
 
     public string $broadcastMessageText = '';
@@ -69,6 +71,13 @@ class LabSeatingPlan extends Component
 
     public function setViewMode(string $mode): void
     {
+        $selectedLab = $this->labId ? Lab::find($this->labId) : null;
+        if ($selectedLab && ! $selectedLab->isInformatics()) {
+            $this->viewMode = 'seating';
+
+            return;
+        }
+
         $this->viewMode = in_array($mode, ['control', 'seating'], true) ? $mode : 'control';
     }
 
@@ -82,6 +91,10 @@ class LabSeatingPlan extends Component
         if ($this->labId) {
             $lab = Lab::query()->with('workingStations')->find($this->labId);
             if ($lab) {
+                if (! $lab->isInformatics()) {
+                    $this->viewMode = 'seating';
+                }
+
                 foreach ($lab->workingStations as $station) {
                     $this->stations[] = [
                         'id' => $station->id,
@@ -93,6 +106,7 @@ class LabSeatingPlan extends Component
                         'active_broadcast' => $station->active_broadcast,
                         'internet_enabled' => (bool) $station->internet_enabled,
                         'is_online' => $station->isOnline(),
+                        'is_computer' => $station->isComputer(),
                         'student_id' => null,
                         'student_name' => null,
                         'position_x' => 0,
@@ -337,6 +351,11 @@ class LabSeatingPlan extends Component
             return;
         }
 
+        $lab = Lab::find($this->labId);
+        if (! $lab?->isInformatics()) {
+            return;
+        }
+
         $count = app(NetStationService::class)->lockAll($this->labId, $customMsg);
 
         foreach ($this->stations as &$st) {
@@ -359,6 +378,11 @@ class LabSeatingPlan extends Component
             return;
         }
 
+        $lab = Lab::find($this->labId);
+        if (! $lab?->isInformatics()) {
+            return;
+        }
+
         $count = app(NetStationService::class)->unlockAll($this->labId);
 
         foreach ($this->stations as &$st) {
@@ -375,6 +399,11 @@ class LabSeatingPlan extends Component
 
     public function toggleStationLock(int $stationId): void
     {
+        $lab = $this->labId ? Lab::find($this->labId) : null;
+        if (! $lab?->isInformatics()) {
+            return;
+        }
+
         $stationIndex = collect($this->stations)->search(fn ($s) => $s['id'] === $stationId);
         if ($stationIndex === false) {
             return;
@@ -409,6 +438,11 @@ class LabSeatingPlan extends Component
             return;
         }
 
+        $lab = Lab::find($this->labId);
+        if (! $lab?->isInformatics()) {
+            return;
+        }
+
         $this->globalInternetEnabled = ! $this->globalInternetEnabled;
         app(NetStationService::class)->toggleInternet($this->labId, $this->globalInternetEnabled);
 
@@ -426,6 +460,11 @@ class LabSeatingPlan extends Component
     public function sendBroadcastMessage(): void
     {
         if (! $this->labId || blank($this->broadcastMessageText)) {
+            return;
+        }
+
+        $lab = Lab::find($this->labId);
+        if (! $lab?->isInformatics()) {
             return;
         }
 
@@ -448,6 +487,11 @@ class LabSeatingPlan extends Component
     public function clearBroadcastMessage(): void
     {
         if (! $this->labId) {
+            return;
+        }
+
+        $lab = Lab::find($this->labId);
+        if (! $lab?->isInformatics()) {
             return;
         }
 

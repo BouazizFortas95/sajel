@@ -1,6 +1,6 @@
 {{--
-    NetStation Lab Control & U-Shape Seating Cockpit.
-    Leader PC commanding all lab stations with live lock, broadcast, internet toggle, and student assignment.
+    NetStation Lab Control & Science Workbench Seating Cockpit.
+    Adapts dynamically to Informatics Labs (Leader PC, locks, broadcasts) and Science Labs (Experiment benches, demonstration desk, safety protocols).
 --}}
 @php
     $labs = $labs ?? collect();
@@ -8,6 +8,11 @@
 
     $selectedLab = $labs->firstWhere('id', $this->labId);
     $selectedGroup = $groups->firstWhere('id', $this->groupId);
+
+    $isInformatics = $selectedLab ? $selectedLab->isInformatics() : true;
+    $isScience = $selectedLab && ! $selectedLab->isInformatics();
+    $isPhysics = $selectedLab ? $selectedLab->isPhysics() : false;
+    $isNaturalScience = $selectedLab ? $selectedLab->isNaturalScience() : false;
 
     $workingStations = $this->stations;
     $assignedCount = $this->assignedCount;
@@ -31,48 +36,86 @@
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-white shadow-md shadow-amber-500/20">
-                        <x-filament::icon icon="heroicon-o-computer-desktop" class="w-6 h-6"/>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-black text-gray-950 dark:text-white flex items-center gap-2">
-                            <span>{{ __('منظومة التحكم بالمخبر (NetStation Suite)') }}</span>
-                            @if ($this->existingPlanId)
-                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
-                                    {{ __('خطة محفوظة') }}
-                                </span>
+                    @if ($isScience)
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
+                            @if ($isPhysics)
+                                <x-filament::icon icon="heroicon-o-beaker" class="w-6 h-6"/>
+                            @else
+                                <x-filament::icon icon="heroicon-o-sparkles" class="w-6 h-6"/>
                             @endif
-                        </h2>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            {{ __('إدارة ومراقبة محطات المخبر من حاسوب الأستاذ الرئيسي (Leader PC) وتوزيع التلاميذ') }}
-                        </p>
-                    </div>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-black text-gray-950 dark:text-white flex items-center gap-2">
+                                <span>{{ $selectedLab->labTypeLabel() }}</span>
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                    {{ __('مخطط طاولات وتجارب المخبر') }}
+                                </span>
+                                @if ($this->existingPlanId)
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                                        {{ __('خطة محفوظة') }}
+                                    </span>
+                                @endif
+                            </h2>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                {{ __('تنظيم وتوزيع تلاميذ الفوج على طاولات ومحطات التجارب المخبرية وضبط بروتوكول السلامة') }}
+                            </p>
+                        </div>
+                    @else
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-white shadow-md shadow-amber-500/20">
+                            <x-filament::icon icon="heroicon-o-computer-desktop" class="w-6 h-6"/>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-black text-gray-950 dark:text-white flex items-center gap-2">
+                                <span>{{ __('منظومة التحكم بالمخبر (NetStation Suite)') }}</span>
+                                @if ($this->existingPlanId)
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                                        {{ __('خطة محفوظة') }}
+                                    </span>
+                                @endif
+                            </h2>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                {{ __('إدارة ومراقبة محطات المخبر من حاسوب الأستاذ الرئيسي (Leader PC) وتوزيع التلاميذ') }}
+                            </p>
+                        </div>
+                    @endif
                 </div>
             </div>
 
             {{-- Mode Switcher & Save Button --}}
             <div class="flex flex-wrap items-center gap-3">
-                {{-- View Mode Toggle --}}
-                <div class="inline-flex p-1 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-white/10">
+                @if ($isInformatics)
+                    {{-- Informatics Lab: View Mode Toggle --}}
+                    <div class="inline-flex p-1 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-white/10">
+                        <button
+                            type="button"
+                            wire:click="setViewMode('control')"
+                            class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 {{ $viewMode === 'control' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900' }}"
+                        >
+                            <x-filament::icon icon="heroicon-o-command-line" class="w-4 h-4"/>
+                            <span>{{ __('وضع التحكم المباشر (NetStation)') }}</span>
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="setViewMode('seating')"
+                            class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 {{ $viewMode === 'seating' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900' }}"
+                        >
+                            <x-filament::icon icon="heroicon-o-user-group" class="w-4 h-4"/>
+                            <span>{{ __('وضع تخطيط الجلوس') }}</span>
+                        </button>
+                    </div>
+                @else
+                    {{-- Science Lab: Safety Charter Button --}}
                     <button
                         type="button"
-                        wire:click="setViewMode('control')"
-                        class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 {{ $viewMode === 'control' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900' }}"
+                        wire:click="$set('showSafetyModal', true)"
+                        class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 shadow-sm"
                     >
-                        <x-filament::icon icon="heroicon-o-command-line" class="w-4 h-4"/>
-                        <span>{{ __('وضع التحكم المباشر (NetStation)') }}</span>
+                        <x-filament::icon icon="heroicon-o-shield-check" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"/>
+                        <span>{{ __('ميثاق السلامة المخبرية') }}</span>
                     </button>
-                    <button
-                        type="button"
-                        wire:click="setViewMode('seating')"
-                        class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 {{ $viewMode === 'seating' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900' }}"
-                    >
-                        <x-filament::icon icon="heroicon-o-user-group" class="w-4 h-4"/>
-                        <span>{{ __('وضع تخطيط الجلوس') }}</span>
-                    </button>
-                </div>
+                @endif
 
-                @if ($viewMode === 'seating' && $selectedLab && $selectedGroup)
+                @if (($viewMode === 'seating' || $isScience) && $selectedLab && $selectedGroup)
                     <x-filament::button
                         wire:click="autoAssign"
                         color="success"
@@ -148,7 +191,7 @@
                     <input
                         type="text"
                         wire:model.live.debounce.300ms="planName"
-                        placeholder="{{ __('مثال: خطة الجلوس - مخبر الإعلام الآلي') }}"
+                        placeholder="{{ $isScience ? __('مثال: خطة طاولات التجارب - مخبر العلوم') : __('مثال: خطة الجلوس - مخبر الإعلام الآلي') }}"
                         class="w-full border border-gray-300 bg-white p-2 text-sm text-gray-950 rounded-xl focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     >
                 </x-filament::input.wrapper>
@@ -161,33 +204,56 @@
                     <input
                         type="text"
                         wire:model.live.debounce.300ms="planNotes"
-                        placeholder="{{ __('ملاحظات حول الأجهزة أو الجلسة...') }}"
+                        placeholder="{{ $isScience ? __('ملاحظات حول عتاد التجربة أو الجلسة...') : __('ملاحظات حول الأجهزة أو الجلسة...') }}"
                         class="w-full border border-gray-300 bg-white p-2 text-sm text-gray-950 rounded-xl focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     >
                 </x-filament::input.wrapper>
             </div>
         </div>
 
-        {{-- Live Network Counters --}}
+        {{-- Live Network / Lab Counters --}}
         <div class="mt-4 grid gap-3 grid-cols-2 md:grid-cols-4">
-            <div class="rounded-xl border border-stone-200 p-3 text-center dark:border-white/10 bg-stone-50/50 dark:bg-gray-800/30">
-                <p class="text-[11px] font-bold text-gray-500 dark:text-gray-400">{{ __('إجمالي الأجهزة') }}</p>
-                <p class="text-2xl font-black text-gray-950 dark:text-white">{{ $totalStations }}</p>
-            </div>
-            <div class="rounded-xl border border-blue-200 p-3 text-center dark:border-blue-500/30 bg-blue-50/50 dark:bg-blue-900/20">
-                <p class="text-[11px] font-bold text-blue-700 dark:text-blue-300">{{ __('التلاميذ المسجلون') }}</p>
-                <p class="text-2xl font-black text-blue-800 dark:text-blue-200">{{ $assignedCount }} / {{ count($this->students) }}</p>
-            </div>
-            <div class="rounded-xl border border-amber-200 p-3 text-center dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-900/20">
-                <p class="text-[11px] font-bold text-amber-700 dark:text-amber-300">{{ __('الشاشات المقفلة') }}</p>
-                <p class="text-2xl font-black text-amber-800 dark:text-amber-200">{{ $lockedCount }}</p>
-            </div>
-            <div class="rounded-xl border border-emerald-200 p-3 text-center dark:border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-900/20">
-                <p class="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">{{ __('حالة الإنترنت') }}</p>
-                <p class="text-base font-black text-emerald-800 dark:text-emerald-200 mt-1">
-                    {{ $globalInternetEnabled ? __('متاح للجميع') : __('محجوب مركزياً') }}
-                </p>
-            </div>
+            @if ($isScience)
+                {{-- Science Lab Counters --}}
+                <div class="rounded-xl border border-stone-200 p-3 text-center dark:border-white/10 bg-stone-50/50 dark:bg-gray-800/30">
+                    <p class="text-[11px] font-bold text-gray-500 dark:text-gray-400">{{ __('إجمالي طاولات التجارب') }}</p>
+                    <p class="text-2xl font-black text-gray-950 dark:text-white">{{ $totalStations }}</p>
+                </div>
+                <div class="rounded-xl border border-teal-200 p-3 text-center dark:border-teal-500/30 bg-teal-50/50 dark:bg-teal-900/20">
+                    <p class="text-[11px] font-bold text-teal-700 dark:text-teal-300">{{ __('التلاميذ المعينون') }}</p>
+                    <p class="text-2xl font-black text-teal-800 dark:text-teal-200">{{ $assignedCount }} / {{ count($this->students) }}</p>
+                </div>
+                <div class="rounded-xl border border-emerald-200 p-3 text-center dark:border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-900/20">
+                    <p class="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">{{ __('طاولات شاغرة') }}</p>
+                    <p class="text-2xl font-black text-emerald-800 dark:text-emerald-200">{{ max(0, $totalStations - $assignedCount) }}</p>
+                </div>
+                <div class="rounded-xl border border-amber-200 p-3 text-center dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-900/20">
+                    <p class="text-[11px] font-bold text-amber-700 dark:text-amber-300">{{ __('بروتوكول السلامة') }}</p>
+                    <p class="text-base font-black text-amber-800 dark:text-amber-200 mt-1">
+                        {{ __('معتمد وقيد التطبيق 🛡️') }}
+                    </p>
+                </div>
+            @else
+                {{-- Informatics Lab Counters --}}
+                <div class="rounded-xl border border-stone-200 p-3 text-center dark:border-white/10 bg-stone-50/50 dark:bg-gray-800/30">
+                    <p class="text-[11px] font-bold text-gray-500 dark:text-gray-400">{{ __('إجمالي الأجهزة') }}</p>
+                    <p class="text-2xl font-black text-gray-950 dark:text-white">{{ $totalStations }}</p>
+                </div>
+                <div class="rounded-xl border border-blue-200 p-3 text-center dark:border-blue-500/30 bg-blue-50/50 dark:bg-blue-900/20">
+                    <p class="text-[11px] font-bold text-blue-700 dark:text-blue-300">{{ __('التلاميذ المسجلون') }}</p>
+                    <p class="text-2xl font-black text-blue-800 dark:text-blue-200">{{ $assignedCount }} / {{ count($this->students) }}</p>
+                </div>
+                <div class="rounded-xl border border-amber-200 p-3 text-center dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-900/20">
+                    <p class="text-[11px] font-bold text-amber-700 dark:text-amber-300">{{ __('الشاشات المقفلة') }}</p>
+                    <p class="text-2xl font-black text-amber-800 dark:text-amber-200">{{ $lockedCount }}</p>
+                </div>
+                <div class="rounded-xl border border-emerald-200 p-3 text-center dark:border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-900/20">
+                    <p class="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">{{ __('حالة الإنترنت') }}</p>
+                    <p class="text-base font-black text-emerald-800 dark:text-emerald-200 mt-1">
+                        {{ $globalInternetEnabled ? __('متاح للجميع') : __('محجوب مركزياً') }}
+                    </p>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -201,7 +267,7 @@
                 @endforeach
             </div>
 
-            {{-- Middle Section: Left Columns, Center Leader Desk, Right Columns --}}
+            {{-- Middle Section: Left Columns, Center Leader/Demonstration Desk, Right Columns --}}
             <div class="flex justify-between items-center gap-4">
                 {{-- Left Wing of U --}}
                 <div class="flex flex-col gap-4">
@@ -210,93 +276,175 @@
                     @endforeach
                 </div>
 
-                {{-- Center: Leader PC (منصة الأستاذ / الحاسوب الرئيسي) --}}
-                <div class="flex-1 flex flex-col items-center justify-center p-6 mx-4 rounded-3xl bg-slate-950 text-white border-2 border-amber-500/40 shadow-2xl relative overflow-hidden max-w-xl">
-                    <div class="absolute -top-20 -right-20 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                {{-- Center: Leader PC or Teacher Demonstration Bench --}}
+                @if ($isInformatics)
+                    {{-- Center: Leader PC (منصة الأستاذ / الحاسوب الرئيسي) --}}
+                    <div class="flex-1 flex flex-col items-center justify-center p-6 mx-4 rounded-3xl bg-slate-950 text-white border-2 border-amber-500/40 shadow-2xl relative overflow-hidden max-w-xl">
+                        <div class="absolute -top-20 -right-20 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-                    {{-- Leader Screen Header --}}
-                    <div class="flex items-center gap-2 mb-3">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-                        <span class="text-xs font-bold uppercase tracking-widest text-amber-400">
-                            {{ __('المحطة الرئيسية للأستاذ (Leader PC)') }}
-                        </span>
-                    </div>
+                        {{-- Leader Screen Header --}}
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                            <span class="text-xs font-bold uppercase tracking-widest text-amber-400">
+                                {{ __('المحطة الرئيسية للأستاذ (Leader PC)') }}
+                            </span>
+                        </div>
 
-                    <h3 class="text-lg md:text-xl font-black text-white text-center">
-                        {{ __('لوحة التحكم البيداغوجي المباشر') }}
-                    </h3>
-                    <p class="text-xs text-slate-400 text-center mt-1 max-w-sm">
-                        {{ __('إرسال الأوامر الفورية لجميع أجهزة التلاميذ في :lab', ['lab' => $selectedLab->name]) }}
-                    </p>
+                        <h3 class="text-lg md:text-xl font-black text-white text-center">
+                            {{ __('لوحة التحكم البيداغوجي المباشر') }}
+                        </h3>
+                        <p class="text-xs text-slate-400 text-center mt-1 max-w-sm">
+                            {{ __('إرسال الأوامر الفورية لجميع أجهزة التلاميذ في :lab', ['lab' => $selectedLab->name]) }}
+                        </p>
 
-                    {{-- Leader Global Action Bar --}}
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full mt-6">
-                        {{-- Lock All --}}
-                        <button
-                            type="button"
-                            wire:click="lockAllStations"
-                            class="p-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 flex flex-col items-center gap-1.5 transition text-center group"
-                            title="{{ __('قفل جميع الشاشات') }}"
-                        >
-                            <x-filament::icon icon="heroicon-o-lock-closed" class="w-5 h-5 text-amber-400 group-hover:scale-110 transition"/>
-                            <span class="text-[11px] font-bold">{{ __('قفل الكل') }}</span>
-                        </button>
-
-                        {{-- Unlock All --}}
-                        <button
-                            type="button"
-                            wire:click="unlockAllStations"
-                            class="p-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 flex flex-col items-center gap-1.5 transition text-center group"
-                            title="{{ __('إلغاء قفل جميع الشاشات') }}"
-                        >
-                            <x-filament::icon icon="heroicon-o-lock-open" class="w-5 h-5 text-emerald-400 group-hover:scale-110 transition"/>
-                            <span class="text-[11px] font-bold">{{ __('فتح الكل') }}</span>
-                        </button>
-
-                        {{-- Broadcast Message Modal Trigger --}}
-                        <button
-                            type="button"
-                            wire:click="$set('showBroadcastModal', true)"
-                            class="p-2.5 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/40 flex flex-col items-center gap-1.5 transition text-center group"
-                            title="{{ __('بث توجيه أو رسالة للجميع') }}"
-                        >
-                            <x-filament::icon icon="heroicon-o-megaphone" class="w-5 h-5 text-blue-400 group-hover:scale-110 transition"/>
-                            <span class="text-[11px] font-bold">{{ __('بث رسالة') }}</span>
-                        </button>
-
-                        {{-- Toggle Internet --}}
-                        <button
-                            type="button"
-                            wire:click="toggleInternetAll"
-                            class="p-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 flex flex-col items-center gap-1.5 transition text-center group"
-                            title="{{ __('حجب أو إتاحة الإنترنت') }}"
-                        >
-                            <x-filament::icon icon="heroicon-o-globe-alt" class="w-5 h-5 text-purple-400 group-hover:scale-110 transition"/>
-                            <span class="text-[11px] font-bold">{{ $globalInternetEnabled ? __('حجب الويب') : __('إتاحة الويب') }}</span>
-                        </button>
-                    </div>
-
-                    {{-- Active broadcast notice on Leader Desk --}}
-                    @php
-                        $activeBcast = collect($this->stations)->firstWhere('active_broadcast')['active_broadcast'] ?? null;
-                    @endphp
-                    @if ($activeBcast)
-                        <div class="mt-4 p-2.5 rounded-xl bg-blue-900/50 border border-blue-500/40 flex items-center justify-between gap-3 w-full">
-                            <div class="flex items-center gap-2 overflow-hidden text-xs text-blue-200 truncate">
-                                <span class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
-                                <span class="font-bold">{{ __('بث نشط:') }}</span>
-                                <span class="truncate">{{ $activeBcast }}</span>
-                            </div>
+                        {{-- Leader Global Action Bar --}}
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full mt-6">
+                            {{-- Lock All --}}
                             <button
                                 type="button"
-                                wire:click="clearBroadcastMessage"
-                                class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/30 text-rose-300 hover:bg-rose-500/50 shrink-0"
+                                wire:click="lockAllStations"
+                                class="p-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 flex flex-col items-center gap-1.5 transition text-center group"
+                                title="{{ __('قفل جميع الشاشات') }}"
                             >
-                                {{ __('إيقاف البث') }}
+                                <x-filament::icon icon="heroicon-o-lock-closed" class="w-5 h-5 text-amber-400 group-hover:scale-110 transition"/>
+                                <span class="text-[11px] font-bold">{{ __('قفل الكل') }}</span>
+                            </button>
+
+                            {{-- Unlock All --}}
+                            <button
+                                type="button"
+                                wire:click="unlockAllStations"
+                                class="p-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 flex flex-col items-center gap-1.5 transition text-center group"
+                                title="{{ __('إلغاء قفل جميع الشاشات') }}"
+                            >
+                                <x-filament::icon icon="heroicon-o-lock-open" class="w-5 h-5 text-emerald-400 group-hover:scale-110 transition"/>
+                                <span class="text-[11px] font-bold">{{ __('فتح الكل') }}</span>
+                            </button>
+
+                            {{-- Broadcast Message Modal Trigger --}}
+                            <button
+                                type="button"
+                                wire:click="$set('showBroadcastModal', true)"
+                                class="p-2.5 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/40 flex flex-col items-center gap-1.5 transition text-center group"
+                                title="{{ __('بث توجيه أو رسالة للجميع') }}"
+                            >
+                                <x-filament::icon icon="heroicon-o-megaphone" class="w-5 h-5 text-blue-400 group-hover:scale-110 transition"/>
+                                <span class="text-[11px] font-bold">{{ __('بث رسالة') }}</span>
+                            </button>
+
+                            {{-- Toggle Internet --}}
+                            <button
+                                type="button"
+                                wire:click="toggleInternetAll"
+                                class="p-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 flex flex-col items-center gap-1.5 transition text-center group"
+                                title="{{ __('حجب أو إتاحة الإنترنت') }}"
+                            >
+                                <x-filament::icon icon="heroicon-o-globe-alt" class="w-5 h-5 text-purple-400 group-hover:scale-110 transition"/>
+                                <span class="text-[11px] font-bold">{{ $globalInternetEnabled ? __('حجب الويب') : __('إتاحة الويب') }}</span>
                             </button>
                         </div>
-                    @endif
-                </div>
+
+                        {{-- Active broadcast notice on Leader Desk --}}
+                        @php
+                            $activeBcast = collect($this->stations)->firstWhere('active_broadcast')['active_broadcast'] ?? null;
+                        @endphp
+                        @if ($activeBcast)
+                            <div class="mt-4 p-2.5 rounded-xl bg-blue-900/50 border border-blue-500/40 flex items-center justify-between gap-3 w-full">
+                                <div class="flex items-center gap-2 overflow-hidden text-xs text-blue-200 truncate">
+                                    <span class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
+                                    <span class="font-bold">{{ __('بث نشط:') }}</span>
+                                    <span class="truncate">{{ $activeBcast }}</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    wire:click="clearBroadcastMessage"
+                                    class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/30 text-rose-300 hover:bg-rose-500/50 shrink-0"
+                                >
+                                    {{ __('إيقاف البث') }}
+                                </button>
+                            </div>
+                        @endif
+                    </div>
+                @else
+                    {{-- Center: Teacher Demonstration Desk (منصة تحضير وعرض التجارب للأستاذ) --}}
+                    <div class="flex-1 flex flex-col items-center justify-center p-6 mx-4 rounded-3xl bg-slate-950 text-white border-2 border-emerald-500/40 shadow-2xl relative overflow-hidden max-w-xl">
+                        <div class="absolute -top-20 -right-20 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                        {{-- Demonstration Bench Header --}}
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span class="text-xs font-bold uppercase tracking-widest text-emerald-400">
+                                {{ __('منصة التجارب النموذجية للأستاذ') }}
+                            </span>
+                        </div>
+
+                        <h3 class="text-lg md:text-xl font-black text-white text-center">
+                            {{ $isPhysics ? __('منصة تجارب الفيزياء والكيمياء للأستاذ') : ($isNaturalScience ? __('منصة العروض المجهرية والتشريح للأستاذ') : __('منصة العرض والتجارب المخبرية للأستاذ')) }}
+                        </h3>
+                        <p class="text-xs text-slate-300 text-center mt-1 max-w-sm">
+                            {{ __('إجراء التجربة النموذجية ومتابعة عمل الأفواج المخبرية في :lab', ['lab' => $selectedLab->name]) }}
+                        </p>
+
+                        {{-- Action toolbar for science bench --}}
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full mt-6">
+                            <button
+                                type="button"
+                                wire:click="autoAssign"
+                                class="p-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 flex flex-col items-center gap-1.5 transition text-center group"
+                                title="{{ __('توزيع تلقائي للطلبة') }}"
+                            >
+                                <x-filament::icon icon="heroicon-o-sparkles" class="w-5 h-5 text-emerald-400 group-hover:scale-110 transition"/>
+                                <span class="text-[11px] font-bold">{{ __('توزيع تلقائي') }}</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                wire:click="clearAssignments"
+                                class="p-2.5 rounded-xl bg-stone-700/30 hover:bg-stone-700/50 text-stone-300 border border-stone-600/40 flex flex-col items-center gap-1.5 transition text-center group"
+                                title="{{ __('تفريغ جميع الطاولات') }}"
+                            >
+                                <x-filament::icon icon="heroicon-o-trash" class="w-5 h-5 text-stone-400 group-hover:scale-110 transition"/>
+                                <span class="text-[11px] font-bold">{{ __('تفريغ الطاولات') }}</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                wire:click="$set('showSafetyModal', true)"
+                                class="p-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 flex flex-col items-center gap-1.5 transition text-center group"
+                                title="{{ __('ميثاق السلامة والأمن المخبري') }}"
+                            >
+                                <x-filament::icon icon="heroicon-o-shield-check" class="w-5 h-5 text-amber-400 group-hover:scale-110 transition"/>
+                                <span class="text-[11px] font-bold">{{ __('ميثاق السلامة') }}</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                wire:click="savePlan"
+                                class="p-2.5 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 flex flex-col items-center gap-1.5 transition text-center group"
+                                title="{{ __('حفظ مخطط الطاولات') }}"
+                            >
+                                <x-filament::icon icon="heroicon-o-check-circle" class="w-5 h-5 text-teal-400 group-hover:scale-110 transition"/>
+                                <span class="text-[11px] font-bold">{{ __('حفظ المخطط') }}</span>
+                            </button>
+                        </div>
+
+                        {{-- Lab Safety Status Ribbon --}}
+                        <div class="mt-4 p-2 rounded-xl bg-emerald-950/60 border border-emerald-500/30 flex flex-wrap items-center justify-around gap-2 w-full text-[10px] text-emerald-200">
+                            <span class="flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                {{ __('المآزر والوقاية: إلزامية 🥼') }}
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                {{ __('قواطع الطوارئ: مفحوصة ⚡') }}
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                {{ __('العتاد والكواشف: جاهزة 🧪') }}
+                            </span>
+                        </div>
+                    </div>
+                @endif
 
                 {{-- Right Wing of U --}}
                 <div class="flex flex-col gap-4">
@@ -307,14 +455,14 @@
             </div>
         </div>
 
-        {{-- Seating Management & Student Roster (when in Seating Mode) --}}
-        @if ($viewMode === 'seating')
+        {{-- Seating Management & Student Roster --}}
+        @if ($viewMode === 'seating' || $isScience)
             <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-gray-200 dark:border-white/10">
                     <div>
                         <h3 class="text-base font-bold text-gray-950 dark:text-white">{{ __('قائمة تلاميذ الفوج للتوزيع على المقاعد') }}</h3>
                         <p class="text-xs text-gray-500 dark:text-gray-400">
-                            {{ __('حدد محطة من المخطط أعلاه ثم اضغط على التلميذ لتعيينه بها، أو استخدم "توزيع تلقائي".') }}
+                            {{ $isScience ? __('حدد طاولة تجارب من المخطط أعلاه ثم اضغط على التلميذ لتعيينه بها، أو استخدم "توزيع تلقائي".') : __('حدد محطة من المخطط أعلاه ثم اضغط على التلميذ لتعيينه بها، أو استخدم "توزيع تلقائي".') }}
                         </p>
                     </div>
                     <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-stone-100 text-stone-700 dark:bg-gray-800 dark:text-gray-300">
@@ -330,7 +478,7 @@
                         @endphp
                         <div
                             wire:click="assignStudent({{ $student['id'] }})"
-                            class="p-3 rounded-xl border cursor-pointer hover:shadow-sm transition {{ $isAssigned ? 'bg-blue-50/80 dark:bg-blue-900/20 border-blue-200 dark:border-blue-600/40' : 'bg-white dark:bg-gray-800/80 border-gray-200 dark:border-white/10 hover:border-primary-400' }}"
+                            class="p-3 rounded-xl border cursor-pointer hover:shadow-sm transition {{ $isAssigned ? 'bg-teal-50/80 dark:bg-teal-900/20 border-teal-200 dark:border-teal-600/40' : 'bg-white dark:bg-gray-800/80 border-gray-200 dark:border-white/10 hover:border-primary-400' }}"
                         >
                             <div class="flex items-center justify-between gap-2">
                                 <span class="font-bold text-sm text-gray-950 dark:text-white truncate">{{ $student['full_name'] }}</span>
@@ -338,9 +486,9 @@
                             </div>
                             <div class="mt-2 flex items-center justify-between">
                                 @if ($isAssigned)
-                                    <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 dark:text-blue-300">
-                                        <x-filament::icon icon="heroicon-o-check-circle" class="h-3.5 w-3.5 text-blue-500"/>
-                                        {{ __('محطة') }} {{ $assignedStation['station_number'] }}
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700 dark:text-teal-300">
+                                        <x-filament::icon icon="heroicon-o-check-circle" class="h-3.5 w-3.5 text-teal-500"/>
+                                        {{ $isScience ? __('طاولة') : __('محطة') }} {{ $assignedStation['station_number'] }}
                                     </span>
                                     <button
                                         type="button"
@@ -366,52 +514,149 @@
         @endif
     @else
         <div class="text-center py-16 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-300 dark:border-white/10 p-8 shadow-xs">
-            <x-filament::icon icon="heroicon-o-computer-desktop" class="h-12 w-12 text-primary-500 mx-auto mb-3 opacity-80"/>
+            <x-filament::icon icon="heroicon-o-beaker" class="h-12 w-12 text-primary-500 mx-auto mb-3 opacity-80"/>
             <h4 class="text-lg font-bold text-gray-950 dark:text-white mb-1">{{ __('حدد المختبر والفوج للمتابعة') }}</h4>
             <p class="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                {{ __('يرجى اختيار مختبر وفوج من القوائم أعلاه لعرض مخطط الجلوس وتفعيل منظومة التحكم NetStation.') }}
+                {{ __('يرجى اختيار مختبر وفوج من القوائم أعلاه لعرض مخطط الجلوس وإدارة محطات وتجارب المخبر.') }}
             </p>
         </div>
     @endif
 
-    {{-- Broadcast Message Modal ----------------------------------------- --}}
-    @if ($showBroadcastModal)
+    {{-- Broadcast Message Modal (Informatics Only) ---------------------- --}}
+    @if ($showBroadcastModal && $isInformatics)
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" wire:click="$set('showBroadcastModal', false)"></div>
-            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-2xl p-6 max-w-lg w-full shadow-2xl relative z-10 space-y-4">
+            <div class="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
                 <div class="flex items-center gap-3">
-                    <div class="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400">
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                         <x-filament::icon icon="heroicon-o-megaphone" class="w-6 h-6"/>
                     </div>
                     <div>
-                        <h3 class="text-base font-bold text-gray-950 dark:text-white">{{ __('بث رسالة فورية لجميع المحطات') }}</h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('تظهر هذه الرسالة مباشرة كشريط تنبيه على شاشات التلاميذ المتصلة.') }}</p>
+                        <h3 class="text-base font-bold text-gray-950 dark:text-white">{{ __('بث توجيه جماعي لجميع الشاشات') }}</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('ستظهر هذه الرسالة أعلى شاشات أجهزة التلاميذ فوراً.') }}</p>
                     </div>
                 </div>
 
-                <div>
-                    <label class="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">{{ __('نص الرسالة أو التوجيه:') }}</label>
-                    <textarea
-                        wire:model="broadcastMessageText"
-                        rows="3"
-                        placeholder="{{ __('مثال: افتحوا برنامج معالج النصوص صفحة 45 وابدأوا التمرين الأول.') }}"
-                        class="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm rounded-xl p-3 text-gray-950 dark:text-white focus:ring-primary-500 focus:border-primary-500"
-                    ></textarea>
-                </div>
+                <textarea
+                    wire:model="broadcastMessageText"
+                    rows="3"
+                    class="w-full border border-gray-300 dark:border-gray-700 rounded-xl p-3 text-sm bg-white dark:bg-gray-800 text-gray-950 dark:text-white focus:ring-1 focus:ring-primary-500"
+                    placeholder="{{ __('اكتب نص التوجيه هنا (مثال: يرجى حفظ ملف العمل وإيقاف البرامج...)') }}"
+                ></textarea>
 
-                <div class="flex justify-end gap-2 pt-2">
+                <div class="flex items-center justify-end gap-2 pt-2">
                     <x-filament::button
-                        wire:click="$set('showBroadcastModal', false)"
+                        type="button"
                         color="gray"
+                        wire:click="$set('showBroadcastModal', false)"
+                        size="sm"
                     >
                         {{ __('إلغاء') }}
                     </x-filament::button>
-
                     <x-filament::button
+                        type="button"
                         wire:click="sendBroadcastMessage"
-                        icon="heroicon-o-paper-airplane"
+                        size="sm"
+                        :disabled="blank($broadcastMessageText)"
                     >
                         {{ __('إرسال البث الآن') }}
+                    </x-filament::button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Science Lab Safety Modal --------------------------------------- --}}
+    @if ($showSafetyModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" wire:click="$set('showSafetyModal', false)"></div>
+            <div class="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-3xl p-6 max-w-2xl w-full shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-white/10">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                            <x-filament::icon icon="heroicon-o-shield-check" class="w-6 h-6"/>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-gray-950 dark:text-white">
+                                {{ __('ميثاق وقواعد السلامة والأمن المخبري') }}
+                            </h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                {{ __('المنشور الوزاري المنظم للأنشطة التجريبية في التعليم المتوسط') }}
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        wire:click="$set('showSafetyModal', false)"
+                        class="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-white"
+                    >
+                        <x-filament::icon icon="heroicon-o-x-mark" class="w-5 h-5"/>
+                    </button>
+                </div>
+
+                @if ($isPhysics)
+                    {{-- Physics & Chemistry Safety Rules --}}
+                    <div class="space-y-3">
+                        <div class="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-xs text-amber-900 dark:text-amber-200 space-y-1.5">
+                            <h4 class="font-bold flex items-center gap-1.5 text-amber-800 dark:text-amber-300">
+                                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                {{ __('إرشادات الأمن الكهربائي') }}
+                            </h4>
+                            <p>{{ __('قطع التيار الكهربائي دائماً قبل تركيب أو تفكيك الدارات، وعدم تشغيل المولد إلا بعد موافقة وتفقد الأستاذ.') }}</p>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 text-xs text-blue-900 dark:text-blue-200 space-y-1.5">
+                            <h4 class="font-bold flex items-center gap-1.5 text-blue-800 dark:text-blue-300">
+                                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                {{ __('التعامل مع الكواشف والزجاجيات') }}
+                            </h4>
+                            <p>{{ __('ارتداء المئزر القطني الأبيض والنظارات الواقية، تفادي استنشاق الغازات أو لمس الكواشف، والتعامل الحذر مع أنابيب الاختبار والحوجلات.') }}</p>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 text-xs text-emerald-900 dark:text-emerald-200 space-y-1.5">
+                            <h4 class="font-bold flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                {{ __('نهاية النشاط والتنظيف') }}
+                            </h4>
+                            <p>{{ __('غسل اليدين جيداً بالماء والصابون، التأكد من غلق مآخذ الكهرباء ومحابس الغاز والماء، وترتيب العتاد في أماكنه المخصصة.') }}</p>
+                        </div>
+                    </div>
+                @else
+                    {{-- Biology & Natural Sciences Safety Rules --}}
+                    <div class="space-y-3">
+                        <div class="p-3.5 rounded-xl bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/40 text-xs text-teal-900 dark:text-teal-200 space-y-1.5">
+                            <h4 class="font-bold flex items-center gap-1.5 text-teal-800 dark:text-teal-300">
+                                <span class="w-2 h-2 rounded-full bg-teal-500"></span>
+                                {{ __('العناية بالمجهر الضوئي') }}
+                            </h4>
+                            <p>{{ __('حمل المجهر بكلتا اليدين (القاعدة والذراع)، البدء بالتكبير الأصغر، وتنظيف العدسات بورق التنظيف الخاص دون فرك خشن.') }}</p>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 text-xs text-emerald-900 dark:text-emerald-200 space-y-1.5">
+                            <h4 class="font-bold flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                {{ __('إعداد الشرائح والعينات البيولوجية') }}
+                            </h4>
+                            <p>{{ __('وضع الساترة بزاوية 45 درجة لتفادي فقاعات الهواء، واستخدام الملاقط والمشارط تحت إشراف وتوجيه الأستاذ المباشر.') }}</p>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/40 text-xs text-purple-900 dark:text-purple-200 space-y-1.5">
+                            <h4 class="font-bold flex items-center gap-1.5 text-purple-800 dark:text-purple-300">
+                                <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                                {{ __('حفظ المجسمات ونظافة المحطة') }}
+                            </h4>
+                            <p>{{ __('الحفاظ على المجسمات التشريحية واللوحات الحائطية، تعقيم وتنظيف سطح الطاولة وغسل اليدين فور انتهاء الحصة المخبرية.') }}</p>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="flex justify-end pt-2">
+                    <x-filament::button
+                        type="button"
+                        wire:click="$set('showSafetyModal', false)"
+                        size="sm"
+                    >
+                        {{ __('فهمت وتعهدت بالتطبيق') }}
                     </x-filament::button>
                 </div>
             </div>
