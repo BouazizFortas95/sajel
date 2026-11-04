@@ -42,6 +42,7 @@ class SchoolRestoreService
         'grades',
         'behavior_observations',
         'pedagogical_remediations',
+        'inspection_reports',
     ];
 
     /**

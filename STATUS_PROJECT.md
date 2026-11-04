@@ -476,7 +476,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 ## 7. Testing
 
-`php artisan test` — **410 passing, 20,753 assertions in the latest full run, 0 failures**:
+`php artisan test` — **417 passing, 20,793 assertions in the latest full run, 0 failures**:
 
 | Suite                                           | Tests | Covers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ----------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -507,6 +507,7 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 | `Tests\Feature\OfficialReportsTest`             | 19    | Official report page access, timetable/attendance/transcript output, scoping, localization, and PDF routes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `Tests\Feature\OfflineAttendancePwaTest`        | 12    | PWA assets and panel registration, user-scoped offline storage, guest cache/roster purge, localized sync warning, idempotent multi-student sync, schedule/roster authorization, admin bypass, invalid batch validation, offline controls                                                                                                                                                                                                                                                                                                                                                   |
 | `Tests\Feature\ParentPortalTest`                | 4     | Signed 90-day URL validation and rejection of expired tokens, teacher generation for own roster students, group-scoped privacy guard preventing leakage of other sections                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `Tests\Feature\PedagogicalInspectorTest`        | 7     | Curriculum velocity & parallel section pacing radar, teacher pedagogical scorecard & administrative visas, global KPIs & appreciation distribution, admin-only cockpit access with teacher 403, report authorization & owner teacher access with cross-teacher 403, official A4 RTL inspection print rendering, and PDF streamed download                                                                                                                                                                                                                                             |
 | `Tests\Feature\PedagogicalMemoTest`             | 21    | Memo relationships/casts, teacher/admin resource scoping, create/edit ownership, admin assignment/required teacher, duplicate into current bank, archive/restore, template/archive filters, policy/print/PDF authorization, localized A4 RTL/LTR print views, guest redirect, unsupported locale, localized labels, print/PDF actions, PDF download                                                                                                                                                                                                                                        |
 | `Tests\Feature\QuickAttendanceTest`             | 9     | Quick-attendance access, roster display, attendance saving, group-scoped schedule resolution, required fields, authorization guards, and offline state                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `Tests\Feature\RegisterPrintTest`               | 17    | Authenticated print route, teacher/admin scoping, completed-only filtering, validation, guest redirect, locale-aware Arabic/English/French register output, always-visible PDF bulk action with completed-only server filtering + streamed download, exporter columns/filter, live export progress widget (current-user scoping, percentage, polling, export-start integration, hiding when complete, completion poll does not 403), group section resolution, and owner/admin-only export downloads                                                                                         |
@@ -533,11 +534,11 @@ Blank registration numbers and birth dates are stored as `null`. Imports run on 
 
 | Aspect          | Status                                                                                                           |
 | --------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Migrations      | ✅ All 43 migrations ran                                                                                         |
-| Test suite      | ✅ 410/410 passing, 0 failures (20,753 assertions in the latest full run)                                        |
-| Admin panel     | ✅ 20 Filament resources + custom dashboard, schedule, curriculum-progress, supervision, pulse, data-show pages |
+| Migrations      | ✅ All 44 migrations ran                                                                                         |
+| Test suite      | ✅ 417/417 passing, 0 failures (20,793 assertions in the latest full run)                                        |
+| Admin panel     | ✅ 20 Filament resources + custom dashboard, schedule, curriculum-progress, supervision, pulse, data-show, pedagogical-inspector pages |
 | Seed data       | ✅ Destructive middle-school dataset + optional SajelSeeder                                                      |
-| Version control | Git repo on `main`; Phases 2–10 complete (100%)                                                                  |
+| Version control | Git repo on `main`; Phases 2–11 complete (100%)                                                                  |
 | README          | ✅ Project-specific bilingual README (English structure + Arabic domain)                                         |
 | `APP_NAME`      | ✅ `Sajel`; `APP_URL` = `https://sajel.dev/`                                                                     |
 | README          | ✅ Project-specific bilingual README (English structure + Arabic domain)                               |
@@ -948,4 +949,35 @@ Phase 10 completes the institutional resilience suite with a robust, bidirection
       Added `"استرجاع نسخة احتياطية (JSON)"` header action with a modal file uploader, dry-run toggle, clean wipe toggle, detailed notification feedback, and form state refresh.
 - [x] **Multilingual Support & Verification:**
       All modal, notification, and CLI messages localized across Arabic, English, and French. Fully covered by `tests/Feature/SchoolBackupRestoreTest.php` (7 tests, 64 assertions, 0 failures).
+
+## 20. Phase 11 Roadmap — Pedagogical Inspector Cockpit (فضاء المفتش التربوي ومتابعة المنهاج) (100%)
+
+Phase 11 equips educational inspectors and school principals with a specialized, institutional supervision cockpit for curriculum velocity tracking, parallel section pacing radar, teacher compliance scorecards, and official A4 RTL inspection visit reports.
+
+- [x] **Database Schema & Eloquent Domain Models (`inspection_reports`):**
+      - Migration `2026_10_26_010001_create_inspection_reports_table.php` adding the 26th core domain table.
+      - Eloquent model `InspectionReport` with casts for evaluation criteria (`criteria_scores`), visit date, scores, and appreciation enums (`excellent`, `very_good`, `good`, `fair`, `needs_followup`).
+      - Factory `InspectionReportFactory` with realistic Arabic educational visit observations and Algerian pedagogical criteria.
+      - Integrated into `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` (26 verified tables).
+- [x] **Domain Service (`PedagogicalInspectionService`):**
+      - **Curriculum Velocity & Section Pacing Radar (`getCurriculumVelocity`):** Real-time comparative analysis between parallel sections of the same subject and grade level (e.g. `1 م 1` vs `1 م 2`), flagging sections as `ahead`, `on_track`, or `lagging` ($\ge 2$ resources gap).
+      - **Teacher Pedagogical Scorecard (`getTeacherPedagogicalScorecard`):** Aggregates confirmed daily logs, administrative visa coverage rates, total inspection visits, and average pedagogical scores.
+      - **Global Inspection KPIs (`getInspectionMetrics`):** Macro-level metrics summarizing visit counts, teacher coverage %, average pedagogical mark, and appreciation distribution.
+      - **A4 RTL Document & PDF Generation:** High-fidelity HTML view compilation and headless PDF generation via Browsershot.
+- [x] **Inspector Cockpit Filament Page (`PedagogicalInspectorHub`):**
+      - Route `/{locale}/auth/pedagogical-inspector` (icon: `heroicon-o-academic-cap`, group: `التخطيط والمناهج`).
+      - Admin-only access guard (strictly forbidden to teachers with 403).
+      - 3 interactive tabs:
+        1. **Curriculum Velocity Radar (رادار توازي الأقسام والتدرج):** Subject and level filters, completion progress bars, pacing tags, resource gaps, and leading section callouts.
+        2. **Teacher Compliance & Scorecards (سجل امتثال وتأشيرات الأساتذة):** Textbooks logged, administrative visa %, inspection history, and latest pedagogical notes.
+        3. **Official Inspection Visits Register (سجل الزيارات والتقارير الرسمية):** Archive of official visit reports with direct A4 print and PDF download buttons.
+      - Modal Action `"تسجيل زيارة تفتيشية جديدة"` with auto-suggested lesson topics, criteria sliders, scores, qualitative appreciations, strengths, and pedagogical recommendations.
+- [x] **Official A4 RTL Inspection Report (`print.inspection-report`):**
+      - Route `/{locale}/print/inspection-reports/{inspectionReport}` and downloadable stream `.../pdf`.
+      - Strict policy authorization (`InspectionReportPolicy`): accessible to administrators and the specific evaluated teacher; cross-teacher access denied (403).
+      - Official Algerian ministerial header, school identity from `SchoolSetting`, inspector credentials, 4-criteria pedagogical evaluation grid, qualitative appreciation badge, and formal signature/visa boxes (Teacher, Principal, National Education Inspector).
+- [x] **Multilingual Support & Full Test Coverage:**
+      - Complete Arabic, English, and French translations across `ar.json`, `en.json`, and `fr.json`.
+      - Comprehensive automated test suite in `tests/Feature/PedagogicalInspectorTest.php` (7 tests, 39 assertions, 100% green). All 417 application tests pass with 0 regressions.
+
 

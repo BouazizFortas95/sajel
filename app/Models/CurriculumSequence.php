@@ -40,6 +40,11 @@ class CurriculumSequence extends Model
         return $this->belongsTo(CurriculumDomain::class, 'curriculum_domain_id');
     }
 
+    public function curriculumDomain(): BelongsTo
+    {
+        return $this->domain();
+    }
+
     public function resources(): HasMany
     {
         return $this->hasMany(CurriculumResource::class, 'curriculum_sequence_id');

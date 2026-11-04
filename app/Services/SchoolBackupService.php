@@ -40,6 +40,7 @@ class SchoolBackupService
         'grades',
         'behavior_observations',
         'pedagogical_remediations',
+        'inspection_reports',
     ];
 
     /**

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ClassCouncilController;
 use App\Http\Controllers\DownloadPedagogicalMemoPdfController;
+use App\Http\Controllers\InspectionReportController;
 use App\Http\Controllers\OfficialReportController;
 use App\Http\Controllers\ParentPortalController;
 use App\Http\Controllers\PrintAssessmentController;
@@ -134,6 +135,16 @@ Route::get('/{locale}/print/teachers/{user}/portfolio', [TeacherPortfolioControl
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.teacher-portfolio');
+
+Route::get('/{locale}/print/inspection-reports/{inspectionReport}', [InspectionReportController::class, 'print'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.inspection-report');
+
+Route::get('/{locale}/print/inspection-reports/{inspectionReport}/pdf', [InspectionReportController::class, 'pdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.inspection-report.pdf');
 
 Route::get('/{locale}/parent/students/{student}', [ParentPortalController::class, 'portal'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))

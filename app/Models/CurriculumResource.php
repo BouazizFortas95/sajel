@@ -40,6 +40,11 @@ class CurriculumResource extends Model
         return $this->belongsTo(CurriculumSequence::class, 'curriculum_sequence_id');
     }
 
+    public function curriculumSequence(): BelongsTo
+    {
+        return $this->sequence();
+    }
+
     public function dailyLogs(): HasMany
     {
         return $this->hasMany(DailyLog::class, 'curriculum_resource_id');
