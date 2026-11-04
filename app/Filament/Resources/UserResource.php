@@ -45,6 +45,11 @@ class UserResource extends Resource
 
     protected static ?int $navigationSort = 90;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     /**
      * Visibility and record actions are enforced by UserPolicy
      * (admin-only); teachers receive a 403 on all user pages.

@@ -2,16 +2,25 @@
 
 namespace Tests\Feature;
 
+use App\Enums\DailyLogStatus;
 use App\Enums\Role;
+use App\Filament\Pages\LabSeatingPlanPage;
+use App\Filament\Pages\ManageSchoolSettings;
+use App\Filament\Pages\MySchedule;
+use App\Filament\Pages\PedagogicalInspectorHub;
+use App\Filament\Pages\QuickAttendance;
+use App\Filament\Pages\SchoolSupervisionHub;
 use App\Filament\Resources\AssessmentResource\Pages\EditAssessment;
 use App\Filament\Resources\AssessmentResource\RelationManagers\GradesRelationManager;
 use App\Filament\Resources\ClassroomResource;
+use App\Filament\Resources\DailyLogResource;
 use App\Filament\Resources\DailyLogResource\Pages\EditDailyLog;
 use App\Filament\Resources\DailyLogResource\RelationManagers\AttendancesRelationManager;
 use App\Filament\Resources\EducationPhaseResource;
 use App\Filament\Resources\GroupResource;
 use App\Filament\Resources\LevelResource;
 use App\Filament\Resources\SubjectResource;
+use App\Filament\Resources\UserResource;
 use App\Models\Assessment;
 use App\Models\Attendance;
 use App\Models\Classroom;
@@ -403,6 +412,109 @@ class AuthorizationTest extends TestCase
         foreach ($resources as $resource) {
             $this->assertTrue($resource::shouldRegisterNavigation());
         }
+    }
+
+    public function test_user_resource_is_hidden_from_teacher_navigation_and_visible_to_admin(): void
+    {
+        $this->assertFalse(UserResource::shouldRegisterNavigation());
+
+        $this->actingAs(User::factory()->create());
+        $this->assertFalse(UserResource::shouldRegisterNavigation());
+
+        $this->actingAs(User::factory()->create(['role' => Role::Admin->value]));
+        $this->assertTrue(UserResource::shouldRegisterNavigation());
+    }
+
+    public function test_admin_only_and_teacher_only_pages_are_hidden_from_unauthorized_navigation(): void
+    {
+        $adminOnlyPages = [
+            ManageSchoolSettings::class,
+            PedagogicalInspectorHub::class,
+            SchoolSupervisionHub::class,
+            LabSeatingPlanPage::class,
+        ];
+
+        $teacherOnlyPages = [
+            MySchedule::class,
+            QuickAttendance::class,
+        ];
+
+        $teacher = User::factory()->create();
+        $this->actingAs($teacher);
+
+        foreach ($adminOnlyPages as $page) {
+            $this->assertFalse(
+                $page::shouldRegisterNavigation(),
+                "Page {$page} should be hidden from teacher navigation."
+            );
+            $this->assertFalse(
+                $page::canAccess(),
+                "Page {$page} should not be accessible by teacher."
+            );
+        }
+
+        foreach ($teacherOnlyPages as $page) {
+            $this->assertTrue(
+                $page::shouldRegisterNavigation(),
+                "Page {$page} should be visible in teacher navigation."
+            );
+            $this->assertTrue(
+                $page::canAccess(),
+                "Page {$page} should be accessible by teacher."
+            );
+        }
+
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $this->actingAs($admin);
+
+        foreach ($adminOnlyPages as $page) {
+            $this->assertTrue(
+                $page::shouldRegisterNavigation(),
+                "Page {$page} should be visible in admin navigation."
+            );
+            $this->assertTrue(
+                $page::canAccess(),
+                "Page {$page} should be accessible by admin."
+            );
+        }
+
+        foreach ($teacherOnlyPages as $page) {
+            $this->assertFalse(
+                $page::shouldRegisterNavigation(),
+                "Page {$page} should be hidden from admin navigation."
+            );
+            $this->assertFalse(
+                $page::canAccess(),
+                "Page {$page} should not be accessible by admin."
+            );
+        }
+    }
+
+    public function test_confirm_completion_action_is_strictly_hidden_from_administrators_and_other_teachers(): void
+    {
+        $owner = User::factory()->create();
+        $otherTeacher = User::factory()->create();
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+
+        $schedule = Schedule::factory()->create(['user_id' => $owner->id]);
+        $log = DailyLog::factory()->create([
+            'schedule_id' => $schedule->id,
+            'status' => DailyLogStatus::Planned,
+        ]);
+
+        $action = DailyLogResource::confirmCompletionTableAction();
+
+        $this->actingAs($owner);
+        $action->record($log);
+        $this->assertTrue($action->isVisible());
+
+        $this->actingAs($otherTeacher);
+        $action->record($log);
+        $this->assertFalse($action->isVisible());
+
+        $this->actingAs($admin);
+        $action->record($log);
+        $this->assertFalse($action->isVisible());
     }
 
     /**

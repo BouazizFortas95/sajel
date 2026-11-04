@@ -12,6 +12,16 @@ class ClassroomToolbar extends Page
 
     protected static string $view = 'filament.pages.classroom-toolbar';
 
+    public static function canAccess(): bool
+    {
+        return auth()->check();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function getNavigationGroup(): ?string
     {
         return __('التشغيل اليومي');

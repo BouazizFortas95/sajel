@@ -38,6 +38,11 @@ class ManageSchoolSettings extends Page implements HasForms
         return Auth::user()?->isAdmin() ?? false;
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function getNavigationLabel(): string
     {
         return __('إعدادات المؤسسة التربوية');

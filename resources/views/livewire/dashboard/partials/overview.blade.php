@@ -216,13 +216,19 @@
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ __('الأستاذ') }}: {{ $schedule->user?->name ?? '—' }}</p>
                             @endif
 
-                            <a
-                                href="{{ $task['url'] }}"
-                                class="mt-2 inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300"
-                            >
-                                {{ __('إكمال السجل') }}
-                                <x-filament::icon icon="heroicon-o-arrow-left" class="h-3.5 w-3.5" />
-                            </a>
+                            @if ($task['url'])
+                                <a
+                                    href="{{ $task['url'] }}"
+                                    class="mt-2 inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300"
+                                >
+                                    {{ $isAdmin && $task['log'] ? __('معاينة السجل') : __('إكمال السجل') }}
+                                    <x-filament::icon icon="heroicon-o-arrow-left" class="h-3.5 w-3.5" />
+                                </a>
+                            @else
+                                <span class="mt-2 inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                    {{ __('بانتظار تحضير الأستاذ') }}
+                                </span>
+                            @endif
                         </li>
                     @endforeach
                 </ul>

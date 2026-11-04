@@ -16,6 +16,16 @@ class MotivationPulseHub extends Page
 
     protected ?string $maxWidth = 'full';
 
+    public static function canAccess(): bool
+    {
+        return auth()->check();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function getNavigationGroup(): ?string
     {
         return __('التشغيل اليومي');

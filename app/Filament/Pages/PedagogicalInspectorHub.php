@@ -45,6 +45,11 @@ class PedagogicalInspectorHub extends Page
         return Auth::user()?->isAdmin() ?? false;
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function getNavigationLabel(): string
     {
         return __('فضاء المفتش التربوي');

@@ -35,6 +35,23 @@ class ClassCouncilHub extends Page
         $this->groupId = null;
     }
 
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        return $user?->isAdmin() || $user?->isTeacher();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('التخطيط والمناهج');
+    }
+
     public static function getNavigationLabel(): string
     {
         return __('مجلس القسم');

@@ -1577,5 +1577,8 @@
     "مقعد": "Place",
     "مقعد شاغر": "Place disponible",
     "مقعد غير متاح": "Place indisponible",
-    "منصة التجارب النموذجية للأستاذ (Teacher Demo Bench)": "Paillasse témoin de l'enseignant (Teacher Demo Bench)"
+    "منصة التجارب النموذجية للأستاذ (Teacher Demo Bench)": "Paillasse témoin de l'enseignant (Teacher Demo Bench)",
+    "بانتظار تحضير الأستاذ": "En attente de la préparation de l'enseignant",
+    "معاينة السجل": "Consulter le cahier",
+    "عرض دفتر النصوص": "Afficher le cahier de textes"
 }

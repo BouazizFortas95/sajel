@@ -696,8 +696,12 @@ class DailyLogResource extends Resource
             ->modalHeading(__('تأكيد إنجاز الحصة'))
             ->modalDescription(__('سيتم تغيير الحالة إلى "منجز" ونسخ ملخص المحتوى المخطط إلى حقل الأداء الفعلي ليصبح السجل الرسمي.'))
             ->modalSubmitActionLabel(__('تأكيد'))
-            ->visible(fn (DailyLog $record): bool => $record->isPlanned())
+            ->visible(fn (DailyLog $record): bool => (Auth::user()?->isTeacher() ?? false)
+                && $record->isPlanned()
+                && (Auth::id() === $record->schedule?->user_id || Auth::id() === $record->substitute_teacher_id))
             ->action(function (DailyLog $record): void {
+                abort_unless(Auth::user()?->isTeacher() && (Auth::id() === $record->schedule?->user_id || Auth::id() === $record->substitute_teacher_id), 403);
+
                 $record->markAsCompleted(static::generateActualContent($record));
 
                 Notification::make()

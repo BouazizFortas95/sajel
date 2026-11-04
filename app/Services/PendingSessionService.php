@@ -114,6 +114,8 @@ class PendingSessionService
                 continue;
             }
 
+            $canCreate = $user->can('create', DailyLog::class);
+
             $pending->push([
                 'date' => $date->copy(),
                 'schedule' => $schedule,
@@ -124,11 +126,13 @@ class PendingSessionService
                         'record' => $log,
                         'locale' => app()->getLocale(),
                     ])
-                    : DailyLogResource::getUrl('create', [
-                        'schedule_id' => $schedule->id,
-                        'date' => $date->toDateString(),
-                        'locale' => app()->getLocale(),
-                    ]),
+                    : ($canCreate
+                        ? DailyLogResource::getUrl('create', [
+                            'schedule_id' => $schedule->id,
+                            'date' => $date->toDateString(),
+                            'locale' => app()->getLocale(),
+                        ])
+                        : null),
             ]);
         }
 

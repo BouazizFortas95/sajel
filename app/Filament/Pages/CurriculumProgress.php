@@ -51,6 +51,11 @@ class CurriculumProgress extends Page
         return Auth::check();
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function getNavigationLabel(): string
     {
         return __('تقدم المنهاج');

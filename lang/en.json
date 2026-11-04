@@ -1580,5 +1580,8 @@
     "مقعد": "Seat",
     "مقعد شاغر": "Available Seat",
     "مقعد غير متاح": "Seat Unavailable",
-    "منصة التجارب النموذجية للأستاذ (Teacher Demo Bench)": "Teacher Demonstration Station (Teacher Demo Bench)"
+    "منصة التجارب النموذجية للأستاذ (Teacher Demo Bench)": "Teacher Demonstration Station (Teacher Demo Bench)",
+    "بانتظار تحضير الأستاذ": "Awaiting teacher entry",
+    "معاينة السجل": "View register entry",
+    "عرض دفتر النصوص": "View class register"
 }

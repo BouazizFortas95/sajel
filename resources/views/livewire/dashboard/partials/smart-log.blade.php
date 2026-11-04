@@ -185,12 +185,21 @@
             </span>
             <h3 class="mt-3 font-bold text-gray-900 dark:text-white">{{ __('ابدأ سجل اليوم') }}</h3>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('سيظهر أحدث تحضير وسجل قسم هنا.') }}</p>
-            <a
-                href="{{ \App\Filament\Resources\DailyLogResource::getUrl('create') }}"
-                class="mt-4 inline-flex items-center rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-amber-600"
-            >
-                {{ __('إنشاء سجل يومي') }}
-            </a>
+            @can('create', \App\Models\DailyLog::class)
+                <a
+                    href="{{ \App\Filament\Resources\DailyLogResource::getUrl('create') }}"
+                    class="mt-4 inline-flex items-center rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-amber-600"
+                >
+                    {{ __('إنشاء سجل يومي') }}
+                </a>
+            @else
+                <a
+                    href="{{ \App\Filament\Resources\DailyLogResource::getUrl() }}"
+                    class="mt-4 inline-flex items-center rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-amber-600"
+                >
+                    {{ __('عرض دفتر النصوص') }}
+                </a>
+            @endcan
         </div>
     @endif
 </section>

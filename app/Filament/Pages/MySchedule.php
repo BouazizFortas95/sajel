@@ -26,6 +26,11 @@ class MySchedule extends Page
         return auth()->user()?->isTeacher() ?? false;
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function getNavigationLabel(): string
     {
         return __('جدولي الأسبوعي');

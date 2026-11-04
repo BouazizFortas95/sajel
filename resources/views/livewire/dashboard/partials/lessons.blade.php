@@ -86,12 +86,14 @@
                 <x-filament::icon icon="heroicon-o-arrow-left" class="h-4 w-4" />
             </a>
 
-            <a
-                href="{{ \App\Filament\Resources\DailyLogResource::getUrl('create') }}"
-                class="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-800 transition hover:bg-amber-100 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:bg-amber-400/20"
-            >
-                {{ __('إنشاء سجل يومي') }}
-            </a>
+            @can('create', \App\Models\DailyLog::class)
+                <a
+                    href="{{ \App\Filament\Resources\DailyLogResource::getUrl('create') }}"
+                    class="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-800 transition hover:bg-amber-100 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:bg-amber-400/20"
+                >
+                    {{ __('إنشاء سجل يومي') }}
+                </a>
+            @endcan
 
             @if ($isAdmin)
                 <a
@@ -149,12 +151,18 @@
                                 </p>
                             </div>
 
-                            <a
-                                href="{{ $task['url'] }}"
-                                class="inline-flex shrink-0 items-center gap-1 rounded-xl bg-danger-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-danger-700"
-                            >
-                                {{ __('إكمال السجل') }}
-                            </a>
+                            @if ($task['url'])
+                                <a
+                                    href="{{ $task['url'] }}"
+                                    class="inline-flex shrink-0 items-center gap-1 rounded-xl bg-danger-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-danger-700"
+                                >
+                                    {{ $task['log'] ? __('معاينة السجل') : __('إكمال السجل') }}
+                                </a>
+                            @else
+                                <span class="inline-flex shrink-0 items-center gap-1 rounded-xl bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                                    {{ __('بانتظار تحضير الأستاذ') }}
+                                </span>
+                            @endif
                         </li>
                     @endforeach
                 </ul>

@@ -66,6 +66,11 @@ class OfficialReports extends Page
         return $user?->isAdmin() || $user?->isTeacher();
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function getNavigationLabel(): string
     {
         return __('التقارير الرسمية');

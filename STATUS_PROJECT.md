@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-11-05
-> Verified by `php artisan test` (**428 passed**, 20,860 assertions, **0 failures**),
+> Verified by `php artisan test` (**431 passed**, 20,893 assertions, **0 failures**),
 > `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -1053,6 +1053,29 @@ Enforces strict Algerian institutional pedagogical boundaries regarding the digi
 - [x] **Full Test Coverage:**
       - Verified in `tests/Feature/AuthorizationTest.php` (`test_admin_and_moderator_cannot_create_daily_logs_which_is_reserved_for_teachers`).
       - All 14 tests in `tests/Feature/DigitalVisaTest.php` passing green.
+
+## 24. Navigation & Link Visibility Hardening Across Roles (حجب الروابط والأزرار غير المصرح بها) (100%)
+
+Strictly hides all inaccessible navigation items, sidebar groups, quick links, table actions, and dashboard buttons to prevent any HTTP 403 Forbidden encounters for users lacking permissions:
+
+- [x] **Page Navigation Visibility Synchronization (`shouldRegisterNavigation()`):**
+      - Synchronized `shouldRegisterNavigation()` across all Filament Pages (`MySchedule`, `QuickAttendance`, `LabSeatingPlanPage`, `ManageSchoolSettings`, `PedagogicalInspectorHub`, `SchoolSupervisionHub`, `ClassCouncilHub`, `ClassroomToolbar`, `CurriculumProgress`, `DataShowMode`, `MotivationPulseHub`, `OfficialReports`).
+      - Ensured teacher-only pages (`MySchedule`, `QuickAttendance`) are strictly hidden from admin navigation (`shouldRegisterNavigation()` and `canAccess()` return `false` for admins).
+      - Ensured admin-only pages (`ManageSchoolSettings`, `PedagogicalInspectorHub`, `SchoolSupervisionHub`, `LabSeatingPlanPage`) are strictly hidden from teacher navigation (`shouldRegisterNavigation()` and `canAccess()` return `false` for teachers).
+      - Grouped `ClassCouncilHub` neatly under `__('التخطيط والمناهج')` with explicit access control (`isAdmin() || isTeacher()`).
+- [x] **Resource Navigation Visibility Hardening:**
+      - Added explicit `shouldRegisterNavigation(): bool { return auth()->user()?->isAdmin() ?? false; }` to `UserResource` to ensure consistent sidebar omission for non-administrators.
+      - Core academic structure resources (`ClassroomResource`, `LevelResource`, `SubjectResource`, `EducationPhaseResource`, `GroupResource`, `LabResource`, `StudentResource`, `CurriculumDomainResource`, `CurriculumSequenceResource`, `CurriculumKnowledgeResource`) are strictly hidden from teacher navigation.
+- [x] **Daily Log Action Visibility Scoping (`DailyLogResource`):**
+      - Restricted `confirmCompletionTableAction` and header action exclusively to the lesson's teacher: `Auth::user()?->isTeacher() && (Auth::id() === $record->schedule?->user_id || Auth::id() === $record->substitute_teacher_id)`. Administrators only view or apply administrative visas; they never see "Confirm Completion".
+- [x] **Dashboard Links & Pending Sessions Guarding:**
+      - In `lessons.blade.php`: "إنشاء سجل يومي" (New Daily Log) button guarded with `@can('create', \App\Models\DailyLog::class)`.
+      - In `smart-log.blade.php`: Create button guarded with `@can('create', \App\Models\DailyLog::class)`, gracefully falling back to "عرض دفتر النصوص" (View class register) for administrators.
+      - In `PendingSessionService::forUser`: For missing daily logs, URL is only set to `DailyLogResource::getUrl('create', ...)` when the user can create daily logs (`$user->can('create', DailyLog::class)`), otherwise `null`.
+      - In `overview.blade.php` and `lessons.blade.php`: Pending items for administrators with missing logs show a clean informative badge `بانتظار تحضير الأستاذ` (Awaiting teacher entry) rather than an invalid link pointing to HTTP 403.
+- [x] **Localization & Test Suite:**
+      - Added translations for all newly introduced strings (`بانتظار تحضير الأستاذ`, `معاينة السجل`, `عرض دفتر النصوص`) to `lang/en.json` and `lang/fr.json`.
+      - Verified full suite: **431 passed tests, 20,893 assertions, 0 failures, 100% green**.
 
 
 

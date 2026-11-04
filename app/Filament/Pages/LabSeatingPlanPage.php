@@ -17,6 +17,11 @@ class LabSeatingPlanPage extends Page
         return auth()->user()?->isAdmin() ?? false;
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function getNavigationLabel(): string
     {
         return __('مخطط جلوس المخبر');
