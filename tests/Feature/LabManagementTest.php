@@ -4,13 +4,18 @@ namespace Tests\Feature;
 
 use App\Enums\LabStatus;
 use App\Enums\Role;
+use App\Filament\Pages\LabSeatingPlanPage;
 use App\Filament\Resources\LabResource;
 use App\Filament\Resources\LabResource\Pages\EditLab;
 use App\Filament\Resources\LabResource\RelationManagers\LabStationsRelationManager;
+use App\Livewire\LabSeatingPlan;
+use App\Models\Classroom;
 use App\Models\EducationPhase;
+use App\Models\Group;
 use App\Models\Lab;
 use App\Models\LabStation;
 use App\Models\Level;
+use App\Models\Student;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -256,5 +261,64 @@ class LabManagementTest extends TestCase
             'device_type' => 'computer',
             'status' => LabStatus::Working->value,
         ]);
+    }
+
+    public function test_lab_seating_plan_page_accessible_to_admin_and_forbidden_to_teacher(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teacher = User::factory()->teacher()->create();
+
+        $this->actingAs($admin)
+            ->get(LabSeatingPlanPage::getUrl(['locale' => 'ar']))
+            ->assertOk()
+            ->assertSee('مخطط جلوس المخبر');
+
+        $this->actingAs($teacher)
+            ->get(LabSeatingPlanPage::getUrl(['locale' => 'ar']))
+            ->assertForbidden();
+    }
+
+    public function test_lab_seating_plan_livewire_interactively_assigns_and_saves_plan(): void
+    {
+        app()->setLocale('ar');
+
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin);
+
+        $phase = EducationPhase::factory()->create();
+        $level = Level::factory()->for($phase)->create();
+        $classroom = Classroom::factory()->for($level)->create();
+        $group = Group::factory()->for($classroom)->create();
+        $students = Student::factory()->count(3)->for($group)->create();
+
+        $lab = Lab::factory()->for($level)->create(['capacity' => 6]);
+        for ($i = 1; $i <= 6; $i++) {
+            LabStation::factory()->for($lab)->create([
+                'station_number' => $i,
+                'status' => LabStatus::Working,
+            ]);
+        }
+
+        $component = Livewire::test(LabSeatingPlan::class)
+            ->assertSee('حدد المختبر والفوج للمتابعة')
+            ->set('labId', $lab->id)
+            ->set('groupId', $group->id)
+            ->assertDontSee('حدد المختبر والفوج للمتابعة')
+            ->assertCount('stations', 6)
+            ->assertCount('students', 3)
+            ->call('autoAssign')
+            ->assertCount('stations', 6);
+
+        $this->assertSame(3, $component->get('assignedCount'));
+
+        $component->call('savePlan')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('lab_seating_plans', [
+            'lab_id' => $lab->id,
+            'group_id' => $group->id,
+        ]);
+
+        $this->assertDatabaseCount('lab_seating_plan_stations', 6);
     }
 }

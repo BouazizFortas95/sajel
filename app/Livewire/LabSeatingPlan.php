@@ -8,16 +8,16 @@ use App\Models\LabSeatingPlan as LabPlan;
 use App\Models\LabSeatingPlanStation;
 use App\Models\Student;
 use Filament\Notifications\Notification;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
-use Livewire\WithPagination;
 
 class LabSeatingPlan extends Component
 {
-    use WithPagination;
-
     public ?int $labId = null;
 
     public ?int $groupId = null;
+
+    public ?int $existingPlanId = null;
 
     public string $planName = '';
 
@@ -27,39 +27,39 @@ class LabSeatingPlan extends Component
 
     public array $students = [];
 
-    public array $assignments = [];
-
     public ?int $selectedStationId = null;
 
     public bool $showSaveModal = false;
 
-    public function mount(): void
+    public function mount(?int $lab = null, ?int $group = null): void
     {
-        $this->resetStations();
+        $this->labId = $lab;
+        $this->groupId = $group;
+
+        $this->refreshState();
     }
 
     public function updatedLabId(): void
     {
-        $this->groupId = null;
-        $this->planName = '';
-        $this->planNotes = '';
-        $this->resetStations();
+        $this->selectedStationId = null;
+        $this->refreshState();
     }
 
     public function updatedGroupId(): void
     {
-        $this->loadStudents();
+        $this->selectedStationId = null;
+        $this->refreshState();
     }
 
-    public function resetStations(): void
+    public function refreshState(): void
     {
         $this->stations = [];
         $this->students = [];
-        $this->assignments = [];
         $this->selectedStationId = null;
 
+        // 1. Load stations if lab is selected
         if ($this->labId) {
-            $lab = Lab::query()->find($this->labId);
+            $lab = Lab::query()->with('workingStations')->find($this->labId);
             if ($lab) {
                 foreach ($lab->workingStations as $station) {
                     $this->stations[] = [
@@ -68,18 +68,16 @@ class LabSeatingPlan extends Component
                         'device_type' => $station->device_type,
                         'student_id' => null,
                         'student_name' => null,
+                        'position_x' => 0,
+                        'position_y' => 0,
                     ];
                 }
             }
         }
-    }
 
-    public function loadStudents(): void
-    {
-        $this->students = [];
-
+        // 2. Load students if group is selected
         if ($this->groupId) {
-            $group = Group::query()->find($this->groupId);
+            $group = Group::query()->with('students')->find($this->groupId);
             if ($group) {
                 foreach ($group->students as $student) {
                     $this->students[] = [
@@ -87,6 +85,43 @@ class LabSeatingPlan extends Component
                         'full_name' => $student->full_name,
                         'registration_number' => $student->registration_number ?? '—',
                     ];
+                }
+            }
+        }
+
+        // 3. If both lab and group are selected, look for existing saved plan
+        if ($this->labId && $this->groupId) {
+            $existingPlan = LabPlan::query()
+                ->with(['stations.student'])
+                ->where('lab_id', $this->labId)
+                ->where('group_id', $this->groupId)
+                ->latest()
+                ->first();
+
+            if ($existingPlan) {
+                $this->existingPlanId = $existingPlan->id;
+                $this->planName = $existingPlan->name;
+                $this->planNotes = $existingPlan->notes ?? '';
+
+                $planStations = $existingPlan->stations->keyBy('lab_station_id');
+                foreach ($this->stations as &$st) {
+                    if ($ps = $planStations->get($st['id'])) {
+                        $st['student_id'] = $ps->student_id;
+                        $st['student_name'] = $ps->student?->full_name;
+                        $st['position_x'] = $ps->position_x;
+                        $st['position_y'] = $ps->position_y;
+                    }
+                }
+                unset($st);
+            } else {
+                $this->existingPlanId = null;
+                $lab = Lab::find($this->labId);
+                $group = Group::find($this->groupId);
+                if ($lab && $group) {
+                    $this->planName = __('خطة جلوس :lab — :group', [
+                        'lab' => $lab->name,
+                        'group' => $group->display_name(),
+                    ]);
                 }
             }
         }
@@ -101,7 +136,7 @@ class LabSeatingPlan extends Component
     {
         if (! $this->selectedStationId) {
             Notification::make()
-                ->title(__('يرجى اختيار محطة أولاً'))
+                ->title(__('يرجى اختيار محطة أولاً بالنقر عليها، ثم النقر على التلميذ لتعيينه'))
                 ->warning()
                 ->send();
 
@@ -141,30 +176,118 @@ class LabSeatingPlan extends Component
             }
         }
         unset($station);
+
+        if ($this->selectedStationId === $stationId) {
+            $this->selectedStationId = null;
+        }
+    }
+
+    public function autoAssign(): void
+    {
+        if (empty($this->stations) || empty($this->students)) {
+            return;
+        }
+
+        $assignedStudentIds = collect($this->stations)->pluck('student_id')->filter()->all();
+        $unassignedStudents = collect($this->students)
+            ->reject(fn ($s) => in_array($s['id'], $assignedStudentIds))
+            ->values();
+
+        $studentIdx = 0;
+        foreach ($this->stations as &$station) {
+            if (! $station['student_id'] && $studentIdx < $unassignedStudents->count()) {
+                $student = $unassignedStudents[$studentIdx++];
+                $station['student_id'] = $student['id'];
+                $station['student_name'] = $student['full_name'];
+            }
+        }
+        unset($station);
+
+        Notification::make()
+            ->title(__('تم توزيع التلاميذ على المحطات تلقائياً'))
+            ->success()
+            ->send();
+    }
+
+    public function clearAssignments(): void
+    {
+        foreach ($this->stations as &$station) {
+            $station['student_id'] = null;
+            $station['student_name'] = null;
+        }
+        unset($station);
+        $this->selectedStationId = null;
+
+        Notification::make()
+            ->title(__('تم تفريغ جميع المحطات'))
+            ->info()
+            ->send();
+    }
+
+    public function resetStations(): void
+    {
+        $this->refreshState();
+
+        Notification::make()
+            ->title(__('تمت استعادة حالة الخطة'))
+            ->info()
+            ->send();
     }
 
     public function savePlan(): void
     {
+        if (blank($this->planName) && $this->labId && $this->groupId) {
+            $lab = Lab::find($this->labId);
+            $group = Group::find($this->groupId);
+            $this->planName = __('خطة جلوس :lab — :group', [
+                'lab' => $lab?->name ?? '',
+                'group' => $group?->display_name() ?? '',
+            ]);
+        }
+
         $this->validate([
             'labId' => 'required|exists:labs,id',
             'groupId' => 'required|exists:groups,id',
             'planName' => 'required|string|max:255',
         ]);
 
-        $plan = LabPlan::create([
-            'lab_id' => $this->labId,
-            'group_id' => $this->groupId,
-            'name' => $this->planName,
-            'notes' => $this->planNotes,
-        ]);
+        if ($this->existingPlanId) {
+            $plan = LabPlan::find($this->existingPlanId);
+            if ($plan) {
+                $plan->update([
+                    'name' => $this->planName,
+                    'notes' => $this->planNotes,
+                ]);
+                $plan->stations()->delete();
+            } else {
+                $plan = LabPlan::create([
+                    'lab_id' => $this->labId,
+                    'group_id' => $this->groupId,
+                    'name' => $this->planName,
+                    'notes' => $this->planNotes,
+                ]);
+                $this->existingPlanId = $plan->id;
+            }
+        } else {
+            $plan = LabPlan::firstOrNew([
+                'lab_id' => $this->labId,
+                'name' => $this->planName,
+            ]);
+            $plan->group_id = $this->groupId;
+            $plan->notes = $this->planNotes;
+            $plan->save();
 
-        foreach ($this->stations as $station) {
+            $plan->stations()->delete();
+            $this->existingPlanId = $plan->id;
+        }
+
+        foreach ($this->stations as $index => $station) {
             LabSeatingPlanStation::create([
                 'seating_plan_id' => $plan->id,
                 'lab_station_id' => $station['id'],
                 'student_id' => $station['student_id'],
-                'position_x' => $station['position_x'] ?? 0,
-                'position_y' => $station['position_y'] ?? 0,
+                'position_x' => $station['position_x'] ?? (int) ($index / 6),
+                'position_y' => $station['position_y'] ?? (int) ($index % 6),
             ]);
         }
 
@@ -172,25 +295,14 @@ class LabSeatingPlan extends Component
 
         Notification::make()
             ->title(__('تم حفظ خطة الجلوس بنجاح'))
+            ->body(__('المحطات المشغولة: :count محطة', ['count' => $this->assignedCount]))
             ->success()
             ->send();
-
-        $this->redirect(
-            route('filament.admin.lab-seating-plans.edit', [
-                'locale' => app()->getLocale(),
-                'record' => $plan->id,
-            ])
-        );
-    }
-
-    public function cancelSave(): void
-    {
-        $this->showSaveModal = false;
     }
 
     public function getAssignedCountProperty(): int
     {
-        return collect($this->stations)->filter(fn ($s) => $s['student_id'])->count();
+        return collect($this->stations)->filter(fn ($s) => ! empty($s['student_id']))->count();
     }
 
     public function getAvailableStationsCountProperty(): int
@@ -198,10 +310,10 @@ class LabSeatingPlan extends Component
         return count($this->stations);
     }
 
-    public function render()
+    public function render(): View
     {
         $labs = Lab::query()->with('workingStations')->orderBy('name')->get();
-        $groups = Group::query()->with('students')->orderBy('name')->get();
+        $groups = Group::query()->with(['students', 'classroom.level'])->orderBy('name')->get();
 
         return view('livewire.lab-seating-plan', [
             'labs' => $labs,

@@ -69,7 +69,7 @@ Key goals:
 | Localization | `mcamara/laravel-localization` | `ar`, `en`, `fr`; complete UI and print/PDF label coverage enforced by `LocalizationCompletenessTest` |
 | Timezone | Africa/Algiers | `APP_TIMEZONE` |
 | Font | Cairo (Google Fonts) | RTL body + headings |
-| Testing | PHPUnit | 417 passed, 0 failures (20,793 assertions in the latest run) |
+| Testing | PHPUnit | 419 passed, 0 failures (20,805 assertions in the latest run) |
 
 ---
 
@@ -250,7 +250,7 @@ Known limits: the schedule tab shows recurring weekly slots rather than daily re
 pending documentation is week-to-date by design; institutional totals are current totals and are
 not period-filtered; the dashboard intentionally links out instead of embedding full reports.
 
-*Last updated: 2026-11-04 — Phases 2–11 all complete (100%) including School Identity, Institutional Backup & CI, the Sajel Pulse motivation engine, Disaster Recovery Restoration, and the Pedagogical Inspector Cockpit. Suite: 417 passing, 0 failures, 20,793 assertions. Health check: all PASS (26 tables; AI provider gemini configured).*
+*Last updated: 2026-11-04 — Phases 2–11 all complete (100%) including School Identity, Institutional Backup & CI, the Sajel Pulse motivation engine, Disaster Recovery Restoration, and the Pedagogical Inspector Cockpit. Suite: 419 passing, 0 failures, 20,805 assertions. Health check: all PASS (26 tables; AI provider gemini configured).*
 
 ---
 ## Phase 8 — Institutional Backup & CI (100%)
