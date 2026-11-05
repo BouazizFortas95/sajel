@@ -175,3 +175,4 @@ class StudentAwardsHub extends Page
         );
     }
 }
+
