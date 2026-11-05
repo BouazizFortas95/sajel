@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Auth;
 
 class LabSeatingPlanPage extends Page
 {
@@ -14,7 +15,9 @@ class LabSeatingPlanPage extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        $user = Auth::user();
+
+        return $user?->isAdmin() || $user?->isTeacher();
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -29,7 +32,7 @@ class LabSeatingPlanPage extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('البنية التربوية');
+        return __('التشغيل اليومي');
     }
 
     public function getTitle(): string

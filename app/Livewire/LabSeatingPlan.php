@@ -2,21 +2,46 @@
 
 namespace App\Livewire;
 
+use App\Enums\AttendanceStatus;
+use App\Enums\DailyLogStatus;
+use App\Models\Attendance;
+use App\Models\DailyLog;
 use App\Models\Group;
 use App\Models\Lab;
 use App\Models\LabSeatingPlan as LabPlan;
 use App\Models\LabSeatingPlanStation;
+use App\Models\Schedule;
 use App\Models\Student;
 use App\Services\NetStationService;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 class LabSeatingPlan extends Component
 {
+    #[Url(as: 'schedule')]
+    public ?int $scheduleId = null;
+
+    #[Url(as: 'lab')]
     public ?int $labId = null;
 
+    #[Url(as: 'group')]
     public ?int $groupId = null;
+
+    #[Url(as: 'date')]
+    public string $attendanceDate = '';
+
+    public ?int $dailyLogId = null;
+
+    /**
+     * Map of student_id => attendance_status ('present'|'absent'|'late'|'excused')
+     *
+     * @var array<int, string>
+     */
+    public array $attendances = [];
+
+    public bool $showExperimentModal = false;
 
     public ?int $existingPlanId = null;
 
@@ -49,24 +74,252 @@ class LabSeatingPlan extends Component
 
     public bool $globalInternetEnabled = true;
 
-    public function mount(?int $lab = null, ?int $group = null): void
+    public function mount(?int $lab = null, ?int $group = null, ?int $schedule = null): void
     {
-        $this->labId = $lab;
-        $this->groupId = $group;
+        if (blank($this->attendanceDate)) {
+            $this->attendanceDate = today()->toDateString();
+        }
+
+        if ($schedule) {
+            $this->scheduleId = $schedule;
+        }
+
+        if ($lab) {
+            $this->labId = $lab;
+        }
+
+        if ($group) {
+            $this->groupId = $group;
+        }
+
+        if ($this->scheduleId) {
+            $this->loadFromSchedule();
+        }
 
         $this->refreshState();
+        $this->loadAttendances();
+    }
+
+    public function updatedScheduleId(): void
+    {
+        if ($this->scheduleId) {
+            $this->loadFromSchedule();
+        }
+        $this->refreshState();
+        $this->loadAttendances();
+    }
+
+    public function updatedAttendanceDate(): void
+    {
+        if ($this->scheduleId) {
+            $this->resolveDailyLog();
+        }
+        $this->loadAttendances();
     }
 
     public function updatedLabId(): void
     {
         $this->selectedStationId = null;
         $this->refreshState();
+        $this->loadAttendances();
     }
 
     public function updatedGroupId(): void
     {
         $this->selectedStationId = null;
         $this->refreshState();
+        $this->loadAttendances();
+    }
+
+    public function loadFromSchedule(): void
+    {
+        if (! $this->scheduleId) {
+            return;
+        }
+
+        $schedule = Schedule::query()
+            ->with(['subject', 'classroom.groups', 'classroom.level', 'group'])
+            ->find($this->scheduleId);
+
+        if (! $schedule) {
+            return;
+        }
+
+        // Set group from schedule
+        if ($schedule->group_id) {
+            $this->groupId = $schedule->group_id;
+        } elseif ($schedule->classroom && $schedule->classroom->groups->isNotEmpty()) {
+            $this->groupId = $schedule->classroom->groups->first()->id;
+        }
+
+        // Auto-select lab matching subject if lab is not yet selected
+        if (! $this->labId) {
+            $subjectName = $schedule->subject?->name ?? '';
+            $matchingLab = null;
+
+            if (str_contains($subjectName, 'فيزياء') || str_contains($subjectName, 'فيزيائ') || str_contains($subjectName, 'كيمياء')) {
+                $matchingLab = Lab::all()->first(fn (Lab $l) => $l->isPhysics());
+            } elseif (str_contains($subjectName, 'طبيعة') || str_contains($subjectName, 'علوم') || str_contains($subjectName, 'أحياء')) {
+                $matchingLab = Lab::all()->first(fn (Lab $l) => $l->isNaturalScience());
+            } elseif (str_contains($subjectName, 'إعلام') || str_contains($subjectName, 'حاسوب') || str_contains($subjectName, 'تقنية')) {
+                $matchingLab = Lab::all()->first(fn (Lab $l) => $l->isInformatics());
+            }
+
+            if (! $matchingLab) {
+                $matchingLab = Lab::first();
+            }
+
+            if ($matchingLab) {
+                $this->labId = $matchingLab->id;
+            }
+        }
+
+        // Resolve daily log
+        $this->resolveDailyLog($schedule);
+    }
+
+    public function resolveDailyLog(?Schedule $schedule = null): void
+    {
+        if (! $schedule && $this->scheduleId) {
+            $schedule = Schedule::find($this->scheduleId);
+        }
+
+        if (! $schedule) {
+            $this->dailyLogId = null;
+
+            return;
+        }
+
+        $date = ! blank($this->attendanceDate) ? $this->attendanceDate : today()->toDateString();
+
+        $log = DailyLog::query()
+            ->where('schedule_id', $schedule->id)
+            ->whereDate('date', $date)
+            ->first();
+
+        if (! $log) {
+            $user = auth()->user();
+            if ($user && ($user->isTeacher() || $user->isAdmin())) {
+                $log = DailyLog::create([
+                    'schedule_id' => $schedule->id,
+                    'date' => $date,
+                    'title' => __('حصة مخبرية: :subject', ['subject' => $schedule->subject?->name ?? '']),
+                    'status' => DailyLogStatus::Planned->value,
+                    'content_data' => [],
+                ]);
+            }
+        }
+
+        $this->dailyLogId = $log?->id;
+    }
+
+    public function loadAttendances(): void
+    {
+        $this->attendances = [];
+
+        if (! $this->dailyLogId) {
+            foreach ($this->students as $student) {
+                $this->attendances[$student['id']] = AttendanceStatus::Present->value;
+            }
+
+            return;
+        }
+
+        $records = Attendance::query()
+            ->where('daily_log_id', $this->dailyLogId)
+            ->get()
+            ->keyBy('student_id');
+
+        foreach ($this->students as $student) {
+            $sId = $student['id'];
+            if ($att = $records->get($sId)) {
+                $this->attendances[$sId] = $att->status instanceof AttendanceStatus ? $att->status->value : (string) $att->status;
+            } else {
+                $this->attendances[$sId] = AttendanceStatus::Present->value;
+            }
+        }
+    }
+
+    public function toggleAttendance(int $studentId): void
+    {
+        $current = $this->attendances[$studentId] ?? AttendanceStatus::Present->value;
+
+        $next = match ($current) {
+            AttendanceStatus::Present->value => AttendanceStatus::Absent->value,
+            AttendanceStatus::Absent->value => AttendanceStatus::Late->value,
+            AttendanceStatus::Late->value => AttendanceStatus::Excused->value,
+            default => AttendanceStatus::Present->value,
+        };
+
+        $this->attendances[$studentId] = $next;
+        $this->saveStudentAttendance($studentId, $next);
+
+        $studentName = collect($this->students)->firstWhere('id', $studentId)['full_name'] ?? '';
+        $statusLabel = AttendanceStatus::from($next)->label();
+
+        Notification::make()
+            ->title("{$studentName}: {$statusLabel}")
+            ->color(AttendanceStatus::from($next)->color())
+            ->duration(2000)
+            ->send();
+    }
+
+    public function setStudentAttendance(int $studentId, string $status): void
+    {
+        $this->attendances[$studentId] = $status;
+        $this->saveStudentAttendance($studentId, $status);
+    }
+
+    public function markAllPresent(): void
+    {
+        foreach ($this->students as $student) {
+            $this->attendances[$student['id']] = AttendanceStatus::Present->value;
+            $this->saveStudentAttendance($student['id'], AttendanceStatus::Present->value);
+        }
+
+        Notification::make()
+            ->title(__('تم تسجيل جميع التلاميذ حاضرين'))
+            ->success()
+            ->send();
+    }
+
+    protected function saveStudentAttendance(int $studentId, string $status): void
+    {
+        if (! $this->dailyLogId && $this->scheduleId) {
+            $this->resolveDailyLog();
+        }
+
+        if ($this->dailyLogId) {
+            Attendance::updateOrCreate(
+                [
+                    'daily_log_id' => $this->dailyLogId,
+                    'student_id' => $studentId,
+                ],
+                [
+                    'status' => $status,
+                ]
+            );
+        }
+    }
+
+    public function getPresentCountProperty(): int
+    {
+        return collect($this->attendances)->filter(fn ($st) => $st === AttendanceStatus::Present->value)->count();
+    }
+
+    public function getAbsentCountProperty(): int
+    {
+        return collect($this->attendances)->filter(fn ($st) => $st === AttendanceStatus::Absent->value)->count();
+    }
+
+    public function getLateCountProperty(): int
+    {
+        return collect($this->attendances)->filter(fn ($st) => $st === AttendanceStatus::Late->value)->count();
+    }
+
+    public function getExcusedCountProperty(): int
+    {
+        return collect($this->attendances)->filter(fn ($st) => $st === AttendanceStatus::Excused->value)->count();
     }
 
     public function setViewMode(string $mode): void
@@ -525,12 +778,42 @@ class LabSeatingPlan extends Component
 
     public function render(): View
     {
+        $user = auth()->user();
+
         $labs = Lab::query()->with('workingStations')->orderBy('name')->get();
-        $groups = Group::query()->with(['students', 'classroom.level'])->orderBy('name')->get();
+
+        $groupsQuery = Group::query()->with(['students', 'classroom.level'])->orderBy('name');
+        if ($user && $user->isTeacher()) {
+            $groupsQuery->where(function ($q) use ($user) {
+                $q->whereHas('schedules', fn ($sq) => $sq->where('user_id', $user->id))
+                    ->orWhereHas('classroom.schedules', fn ($sq) => $sq->where('user_id', $user->id));
+            });
+        }
+        $groups = $groupsQuery->get();
+        if ($groups->isEmpty()) {
+            $groups = Group::query()->with(['students', 'classroom.level'])->orderBy('name')->get();
+        }
+
+        $schedulesQuery = Schedule::query()
+            ->with(['subject', 'classroom.level', 'group'])
+            ->orderBy('day_of_week')
+            ->orderBy('start_time');
+
+        if ($user && $user->isTeacher()) {
+            $schedulesQuery->forTeacher($user->id);
+        }
+        $schedules = $schedulesQuery->get();
+
+        $activeDailyLog = $this->dailyLogId
+            ? DailyLog::query()->with(['schedule.subject', 'schedule.user', 'curriculumResource'])->find($this->dailyLogId)
+            : null;
 
         return view('livewire.lab-seating-plan', [
             'labs' => $labs,
             'groups' => $groups,
+            'schedules' => $schedules,
+            'activeDailyLog' => $activeDailyLog,
+            'activeSchedule' => $this->scheduleId ? Schedule::find($this->scheduleId) : null,
         ]);
     }
 }

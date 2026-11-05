@@ -1,6 +1,8 @@
 @php
     $isSelected = $this->selectedStationId === $station['id'];
     $isAssigned = ! empty($station['student_id']);
+    $studentId = $station['student_id'] ?? null;
+    $attendance = $studentId ? ($this->attendances[$studentId] ?? 'present') : null;
     $isLocked = (bool) ($station['is_locked'] ?? false);
     $hasBroadcast = ! empty($station['active_broadcast']);
     $stationUrl = route('lab.station-client', ['locale' => app()->getLocale(), 'labStation' => $station['id']]);
@@ -17,8 +19,19 @@
         $monitorBorder = 'border-amber-600/70 dark:border-amber-500/50 shadow-md shadow-amber-900/30';
         $screenBg = 'bg-amber-950/90 text-amber-300';
     } elseif ($isAssigned) {
-        $monitorBorder = 'border-blue-500/50 dark:border-blue-500/40 shadow-sm';
-        $screenBg = 'bg-slate-900/90 text-blue-100';
+        if ($attendance === 'absent') {
+            $monitorBorder = 'border-rose-500 ring-1 ring-rose-500/50 shadow-sm';
+            $screenBg = 'bg-rose-950/80 text-rose-100';
+        } elseif ($attendance === 'late') {
+            $monitorBorder = 'border-amber-500 ring-1 ring-amber-500/50 shadow-sm';
+            $screenBg = 'bg-amber-950/80 text-amber-100';
+        } elseif ($attendance === 'excused') {
+            $monitorBorder = 'border-sky-500 ring-1 ring-sky-500/50 shadow-sm';
+            $screenBg = 'bg-sky-950/80 text-sky-100';
+        } else {
+            $monitorBorder = 'border-blue-500/50 dark:border-blue-500/40 shadow-sm';
+            $screenBg = 'bg-slate-900/90 text-blue-100';
+        }
     } else {
         $monitorBorder = 'border-emerald-500/40 dark:border-emerald-500/30';
         $screenBg = 'bg-emerald-950/40 text-emerald-200';
@@ -57,12 +70,30 @@
                     </div>
                 @elseif ($isAssigned)
                     <div class="flex flex-col items-center justify-center w-full">
-                        <div class="w-5 h-5 rounded-full bg-blue-500/30 text-blue-300 flex items-center justify-center text-[10px] font-bold mb-1">
+                        <div class="w-5 h-5 rounded-full {{ $attendance === 'absent' ? 'bg-rose-500/30 text-rose-300' : ($attendance === 'late' ? 'bg-amber-500/30 text-amber-300' : 'bg-blue-500/30 text-blue-300') }} flex items-center justify-center text-[10px] font-bold mb-0.5">
                             {{ mb_substr($station['student_name'] ?? 'T', 0, 1) }}
                         </div>
                         <span class="text-[10px] font-bold text-white truncate w-full px-0.5">
                             {{ $station['student_name'] }}
                         </span>
+                        @if ($studentId)
+                            <button
+                                type="button"
+                                wire:click.stop="toggleAttendance({{ $studentId }})"
+                                class="mt-0.5 inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[8px] font-bold transition {{ $attendance === 'absent' ? 'bg-rose-500 text-white hover:bg-rose-600' : ($attendance === 'late' ? 'bg-amber-500 text-slate-950 hover:bg-amber-400' : ($attendance === 'excused' ? 'bg-sky-500 text-white hover:bg-sky-600' : 'bg-emerald-500/30 text-emerald-300 hover:bg-emerald-500/50 border border-emerald-400/30')) }}"
+                                title="{{ __('انقر لتبديل حالة الحضور') }}"
+                            >
+                                @if ($attendance === 'absent')
+                                    {{ __('غائب ❌') }}
+                                @elseif ($attendance === 'late')
+                                    {{ __('متأخر ⏳') }}
+                                @elseif ($attendance === 'excused')
+                                    {{ __('معفى 📝') }}
+                                @else
+                                    {{ __('حاضر ✔️') }}
+                                @endif
+                            </button>
+                        @endif
                     </div>
                 @else
                     <div class="flex flex-col items-center justify-center text-emerald-400/80">
@@ -126,9 +157,23 @@
         $benchBorder = $isSelected
             ? 'border-emerald-500 ring-2 ring-emerald-400 dark:ring-emerald-500 shadow-lg shadow-emerald-500/20'
             : ($isAssigned
-                ? 'border-teal-500/60 dark:border-teal-500/50 shadow-sm'
+                ? ($attendance === 'absent'
+                    ? 'border-rose-500 ring-1 ring-rose-500/50'
+                    : ($attendance === 'late'
+                        ? 'border-amber-500 ring-1 ring-amber-500/50'
+                        : ($attendance === 'excused'
+                            ? 'border-sky-500 ring-1 ring-sky-500/50'
+                            : 'border-teal-500/60 dark:border-teal-500/50 shadow-sm')))
                 : 'border-slate-700/80 hover:border-emerald-500/50');
-        $benchSurfaceBg = $isAssigned ? 'bg-teal-950/60 text-teal-100' : 'bg-slate-800/60 text-emerald-300';
+        $benchSurfaceBg = $isAssigned
+            ? ($attendance === 'absent'
+                ? 'bg-rose-950/70 text-rose-100'
+                : ($attendance === 'late'
+                    ? 'bg-amber-950/70 text-amber-100'
+                    : ($attendance === 'excused'
+                        ? 'bg-sky-950/70 text-sky-100'
+                        : 'bg-teal-950/60 text-teal-100')))
+            : 'bg-slate-800/60 text-emerald-300';
     @endphp
     <div
         wire:click="selectStation({{ $station['id'] }})"
@@ -157,13 +202,30 @@
             <div class="w-full h-16 rounded-lg {{ $benchSurfaceBg }} p-1.5 flex flex-col items-center justify-center text-center relative overflow-hidden">
                 @if ($isAssigned)
                     <div class="flex flex-col items-center justify-center w-full">
-                        <div class="w-5 h-5 rounded-full bg-teal-500/30 text-teal-200 flex items-center justify-center text-[10px] font-bold mb-1">
+                        <div class="w-5 h-5 rounded-full {{ $attendance === 'absent' ? 'bg-rose-500/30 text-rose-300' : ($attendance === 'late' ? 'bg-amber-500/30 text-amber-300' : 'bg-teal-500/30 text-teal-200') }} flex items-center justify-center text-[10px] font-bold mb-0.5">
                             {{ mb_substr($station['student_name'] ?? 'T', 0, 1) }}
                         </div>
                         <span class="text-[10px] font-bold text-white truncate w-full px-0.5">
                             {{ $station['student_name'] }}
                         </span>
-                        <span class="text-[8px] text-teal-300/80">{{ __('تلميذ مجرّب') }}</span>
+                        @if ($studentId)
+                            <button
+                                type="button"
+                                wire:click.stop="toggleAttendance({{ $studentId }})"
+                                class="mt-0.5 inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[8px] font-bold transition {{ $attendance === 'absent' ? 'bg-rose-500 text-white hover:bg-rose-600' : ($attendance === 'late' ? 'bg-amber-500 text-slate-950 hover:bg-amber-400' : ($attendance === 'excused' ? 'bg-sky-500 text-white hover:bg-sky-600' : 'bg-teal-500/30 text-teal-200 hover:bg-teal-500/50 border border-teal-400/30')) }}"
+                                title="{{ __('انقر لتبديل حالة الحضور') }}"
+                            >
+                                @if ($attendance === 'absent')
+                                    {{ __('غائب ❌') }}
+                                @elseif ($attendance === 'late')
+                                    {{ __('متأخر ⏳') }}
+                                @elseif ($attendance === 'excused')
+                                    {{ __('معفى 📝') }}
+                                @else
+                                    {{ __('حاضر ✔️') }}
+                                @endif
+                            </button>
+                        @endif
                     </div>
                 @else
                     <div class="flex flex-col items-center justify-center text-emerald-400/80">

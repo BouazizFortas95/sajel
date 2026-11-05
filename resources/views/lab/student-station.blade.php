@@ -242,6 +242,43 @@
                         </div>
                     </div>
 
+                    @if ($todayLog)
+                        {{-- Active Lesson / Experiment Card --}}
+                        <div class="p-6 rounded-2xl bg-slate-900/80 border border-blue-500/30 shadow-lg relative overflow-hidden">
+                            <div class="flex items-center justify-between gap-3 pb-3 border-b border-white/10">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse"></span>
+                                    <span class="text-xs font-bold uppercase tracking-wider text-blue-400">
+                                        {{ __('بطاقة التجربة البيداغوجية للحصة') }}
+                                    </span>
+                                </div>
+                                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                    {{ $todayLog->schedule?->subject?->name ?? __('المادة المقررة') }}
+                                </span>
+                            </div>
+
+                            <div class="mt-4 space-y-2">
+                                <h4 class="text-lg font-bold text-white">{{ $todayLog->title }}</h4>
+                                @if ($todayLog->actual_content)
+                                    <p class="text-sm text-slate-300 leading-relaxed">{{ $todayLog->actual_content }}</p>
+                                @endif
+                                <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400 pt-2">
+                                    @if ($todayLog->schedule?->user)
+                                        <span>
+                                            {{ __('الأستاذ المشرف:') }} <strong class="text-slate-200">{{ $todayLog->schedule->user->name }}</strong>
+                                        </span>
+                                    @endif
+                                    @if ($todayLog->homework)
+                                        <span>&bull;</span>
+                                        <span>
+                                            {{ __('العمل المطلوب:') }} <strong class="text-amber-300">{{ $todayLog->homework }}</strong>
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     {{-- Recommended Classroom Tools & Guidelines --}}
                     <div class="grid gap-4 sm:grid-cols-3">
                         <div class="p-5 rounded-2xl bg-slate-900/40 border border-slate-800/80 hover:border-slate-700 transition">
@@ -364,6 +401,52 @@
                             </div>
                         </div>
                     </div>
+
+                    @if ($todayLog)
+                        {{-- Active Experiment Protocol Card --}}
+                        <div class="p-6 rounded-3xl bg-slate-900/80 border border-emerald-500/30 shadow-xl relative overflow-hidden">
+                            <div class="flex items-center justify-between gap-3 pb-3 border-b border-white/10">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                                        {{ __('بطاقة التجربة البيداغوجية للحصة') }}
+                                    </span>
+                                </div>
+                                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                    {{ $todayLog->schedule?->subject?->name ?? __('النشاط التجريبي') }}
+                                </span>
+                            </div>
+
+                            <div class="mt-4 space-y-3">
+                                <div>
+                                    <h4 class="text-xl font-bold text-white">{{ $todayLog->title }}</h4>
+                                    @if ($todayLog->actual_content)
+                                        <p class="text-sm text-slate-300 mt-1 leading-relaxed">{{ $todayLog->actual_content }}</p>
+                                    @endif
+                                </div>
+
+                                <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400 pt-2 border-t border-white/5">
+                                    @if ($todayLog->schedule?->user)
+                                        <span>
+                                            {{ __('الأستاذ المشرف:') }} <strong class="text-slate-200">{{ $todayLog->schedule->user->name }}</strong>
+                                        </span>
+                                    @endif
+                                    @if ($todayLog->homework)
+                                        <span>&bull;</span>
+                                        <span>
+                                            {{ __('المهمة المطلوبة:') }} <strong class="text-emerald-300">{{ $todayLog->homework }}</strong>
+                                        </span>
+                                    @endif
+                                    @if ($todayLog->observations)
+                                        <span>&bull;</span>
+                                        <span>
+                                            {{ __('توجيهات السلامة:') }} <strong class="text-amber-300">{{ $todayLog->observations }}</strong>
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endif
 
                     {{-- Discipline-Specific Safety & Protocol Rules --}}
                     @if ($isPhysics)

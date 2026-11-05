@@ -133,7 +133,20 @@
                             <span>{{ __('وضع تخطيط الجلوس') }}</span>
                         </button>
                     </div>
-                @else
+                @endif
+
+                {{-- Experiment Protocol Button --}}
+                <x-filament::button
+                    type="button"
+                    wire:click="$set('showExperimentModal', true)"
+                    color="info"
+                    icon="heroicon-o-clipboard-document-list"
+                    size="sm"
+                >
+                    {{ __('بروتوكول التجربة') }}
+                </x-filament::button>
+
+                @if (! $isInformatics)
                     {{-- Science Lab: Safety Charter Button --}}
                     <button
                         type="button"
@@ -145,10 +158,22 @@
                     </button>
                 @endif
 
+                @if ($selectedGroup && count($this->students) > 0)
+                    <x-filament::button
+                        type="button"
+                        wire:click="markAllPresent"
+                        color="success"
+                        icon="heroicon-o-check-badge"
+                        size="sm"
+                    >
+                        {{ __('تعيين الجميع حاضراً') }}
+                    </x-filament::button>
+                @endif
+
                 @if (($viewMode === 'seating' || $isScience) && $selectedLab && $selectedGroup)
                     <x-filament::button
                         wire:click="autoAssign"
-                        color="success"
+                        color="gray"
                         icon="heroicon-o-sparkles"
                         :disabled="count($this->students) === 0"
                         size="sm"
@@ -182,6 +207,36 @@
     {{-- Setup Selectors ------------------------------------------------- --}}
     <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
         <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4 lg:items-end">
+            {{-- Schedule Select --}}
+            <div class="grid gap-2">
+                <label class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">{{ __('الحصة الدراسية (الجدول الأسبوعي)') }}</label>
+                <x-filament::input.wrapper class="bg-transparent border-0">
+                    <select
+                        wire:model.live="scheduleId"
+                        class="w-full border border-gray-300 bg-white p-2.5 text-sm text-gray-950 rounded-xl focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white appearance-none"
+                    >
+                        <option value="">{{ __('اختر الحصة (اختياري)') }}</option>
+                        @foreach ($schedules as $sched)
+                            <option value="{{ $sched->id }}">
+                                {{ $sched->label() }}
+                            </option>
+                        @endforeach
+                    </select>
+                </x-filament::input.wrapper>
+            </div>
+
+            {{-- Attendance Date --}}
+            <div class="grid gap-2">
+                <label class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">{{ __('تاريخ الحصة') }}</label>
+                <x-filament::input.wrapper class="bg-transparent border-0">
+                    <input
+                        type="date"
+                        wire:model.live="attendanceDate"
+                        class="w-full border border-gray-300 bg-white p-2 text-sm text-gray-950 rounded-xl focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    >
+                </x-filament::input.wrapper>
+            </div>
+
             {{-- Lab Select --}}
             <div class="grid gap-2">
                 <label class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">{{ __('المختبر') }}</label>
@@ -213,7 +268,9 @@
                     </select>
                 </x-filament::input.wrapper>
             </div>
+        </div>
 
+        <div class="mt-4 grid gap-4 md:grid-cols-2 lg:items-end">
             {{-- Plan Name --}}
             <div class="grid gap-2">
                 <label class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">{{ __('اسم الخطة') }}</label>
@@ -240,6 +297,49 @@
                 </x-filament::input.wrapper>
             </div>
         </div>
+
+        {{-- Live Attendance Strip --}}
+        @if ($selectedGroup && count($this->students) > 0)
+            <div class="mt-4 p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-slate-50/70 dark:bg-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                            <span>{{ __('تسجيل الحضور التفاعلي للحصة') }}</span>
+                            @if ($this->dailyLogId)
+                                <span class="px-2 py-0.5 rounded text-[10px] bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300 font-normal">
+                                    {{ __('دفتر النصوص مربوط') }} #{{ $this->dailyLogId }}
+                                </span>
+                            @endif
+                        </h4>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                            {{ __('انقر على أي مقعد أو شاشة لتبديل الحالة بين (حاضر ✔️، غائب ❌، متأخر ⏳، معفى 📝)') }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>{{ __('الحاضرون:') }} {{ $this->presentCount }}</span>
+                    </div>
+                    <div class="px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        <span>{{ __('الغائبون:') }} {{ $this->absentCount }}</span>
+                    </div>
+                    <div class="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        <span>{{ __('المتأخرون:') }} {{ $this->lateCount }}</span>
+                    </div>
+                    @if ($this->excusedCount > 0)
+                        <div class="px-3 py-1.5 rounded-lg bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/30 text-xs font-bold flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                            <span>{{ __('المعفون:') }} {{ $this->excusedCount }}</span>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @endif
 
         {{-- Live Network / Lab Counters --}}
         <div class="mt-4 grid gap-3 grid-cols-2 md:grid-cols-4">
@@ -752,6 +852,102 @@
                         size="sm"
                     >
                         {{ __('فهمت وتعهدت بالتطبيق') }}
+                    </x-filament::button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Experiment Protocol Modal --------------------------------------- --}}
+    @if ($showExperimentModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" wire:click="$set('showExperimentModal', false)"></div>
+            <div class="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-3xl p-6 max-w-2xl w-full shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-white/10">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                            <x-filament::icon icon="heroicon-o-clipboard-document-list" class="w-6 h-6"/>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-gray-950 dark:text-white">
+                                {{ __('بروتوكول التجربة المخبرية والتحضير البيداغوجي') }}
+                            </h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                {{ $activeSchedule ? $activeSchedule->subject?->name : ($selectedLab ? $selectedLab->name : '') }} &bull; {{ $this->attendanceDate }}
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        wire:click="$set('showExperimentModal', false)"
+                        class="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-white"
+                    >
+                        <x-filament::icon icon="heroicon-o-x-mark" class="w-5 h-5"/>
+                    </button>
+                </div>
+
+                {{-- Experiment Card / Daily Log Context --}}
+                <div class="space-y-4 text-xs">
+                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-gray-900 dark:text-white">
+                                {{ $activeDailyLog?->title ?? __('حصة تجريبية مخبرية') }}
+                            </span>
+                            @if ($this->dailyLogId)
+                                <a
+                                    href="{{ route('filament.admin.resources.daily-logs.view', ['record' => $this->dailyLogId]) }}"
+                                    target="_blank"
+                                    class="text-primary-600 dark:text-primary-400 hover:underline font-semibold flex items-center gap-1"
+                                >
+                                    <span>{{ __('فتح دفتر النصوص') }}</span>
+                                    <x-filament::icon icon="heroicon-o-arrow-top-right-on-square" class="w-3.5 h-3.5"/>
+                                </a>
+                            @endif
+                        </div>
+
+                        @if ($activeDailyLog?->actual_content)
+                            <div class="pt-2 border-t border-gray-200 dark:border-white/5 text-gray-700 dark:text-gray-300">
+                                <p class="font-bold mb-1">{{ __('سير الأنشطة والخطوات التجريبية:') }}</p>
+                                <p class="leading-relaxed whitespace-pre-line">{{ $activeDailyLog->actual_content }}</p>
+                            </div>
+                        @else
+                            <div class="pt-2 border-t border-gray-200 dark:border-white/5 text-gray-500 dark:text-gray-400">
+                                <p>{{ __('لم يتم تدوين ملخص تفصيلي في دفتر النصوص بعد. يمكنك فتح دفتر النصوص لتوثيق خطوات التجربة.') }}</p>
+                            </div>
+                        @endif
+
+                        @if ($activeDailyLog?->homework)
+                            <div class="pt-2 border-t border-gray-200 dark:border-white/5 text-gray-700 dark:text-gray-300">
+                                <p class="font-bold text-amber-700 dark:text-amber-400 mb-0.5">{{ __('العمل المطلوب / تقرير التجربة:') }}</p>
+                                <p class="leading-relaxed">{{ $activeDailyLog->homework }}</p>
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- Supervisor & Group details --}}
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-white/5">
+                            <p class="text-gray-500 dark:text-gray-400 font-medium">{{ __('الأستاذ المشرف') }}</p>
+                            <p class="font-bold text-gray-900 dark:text-white mt-0.5">
+                                {{ $activeDailyLog?->schedule?->user?->name ?? auth()->user()?->name }}
+                            </p>
+                        </div>
+                        <div class="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-white/5">
+                            <p class="text-gray-500 dark:text-gray-400 font-medium">{{ __('الفوج والمخبر') }}</p>
+                            <p class="font-bold text-gray-900 dark:text-white mt-0.5">
+                                {{ $selectedGroup?->display_name() }} &bull; {{ $selectedLab?->name }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <x-filament::button
+                        type="button"
+                        wire:click="$set('showExperimentModal', false)"
+                        size="sm"
+                    >
+                        {{ __('إغلاق') }}
                     </x-filament::button>
                 </div>
             </div>

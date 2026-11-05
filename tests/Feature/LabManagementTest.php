@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AttendanceStatus;
+use App\Enums\DayOfWeek;
 use App\Enums\LabStatus;
 use App\Enums\Role;
 use App\Filament\Pages\LabSeatingPlanPage;
@@ -9,13 +11,18 @@ use App\Filament\Resources\LabResource;
 use App\Filament\Resources\LabResource\Pages\EditLab;
 use App\Filament\Resources\LabResource\RelationManagers\LabStationsRelationManager;
 use App\Livewire\LabSeatingPlan;
+use App\Models\Attendance;
 use App\Models\Classroom;
+use App\Models\DailyLog;
 use App\Models\EducationPhase;
 use App\Models\Group;
 use App\Models\Lab;
+use App\Models\LabSeatingPlanStation;
 use App\Models\LabStation;
 use App\Models\Level;
+use App\Models\Schedule;
 use App\Models\Student;
+use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -263,7 +270,7 @@ class LabManagementTest extends TestCase
         ]);
     }
 
-    public function test_lab_seating_plan_page_accessible_to_admin_and_forbidden_to_teacher(): void
+    public function test_lab_seating_plan_page_accessible_to_both_admin_and_teacher(): void
     {
         $admin = User::factory()->admin()->create();
         $teacher = User::factory()->teacher()->create();
@@ -275,7 +282,8 @@ class LabManagementTest extends TestCase
 
         $this->actingAs($teacher)
             ->get(LabSeatingPlanPage::getUrl(['locale' => 'ar']))
-            ->assertForbidden();
+            ->assertOk()
+            ->assertSee('مخطط جلوس المخبر');
     }
 
     public function test_lab_seating_plan_livewire_interactively_assigns_and_saves_plan(): void
@@ -395,5 +403,203 @@ class LabManagementTest extends TestCase
             ->assertDontSee('المحطة الرئيسية للأستاذ')
             ->assertDontSee('متصل بالحاسوب الرئيسي')
             ->assertDontSee('الإنترنت متاح');
+    }
+
+    public function test_lab_seating_plan_loads_schedule_and_prefills_group_and_lab(): void
+    {
+        app()->setLocale('ar');
+
+        $teacher = User::factory()->teacher()->create();
+        $this->actingAs($teacher);
+
+        $phase = EducationPhase::factory()->create();
+        $level = Level::factory()->for($phase)->create();
+        $classroom = Classroom::factory()->for($level)->create();
+        $group = Group::factory()->for($classroom)->create();
+        Student::factory()->count(4)->for($group)->create();
+
+        $physicsSubject = Subject::factory()->create(['name' => 'العلوم الفيزيائية والتكنولوجيا']);
+        $physicsLab = Lab::factory()->for($level)->create([
+            'name' => 'مخبر العلوم الفيزيائية',
+            'capacity' => 24,
+        ]);
+
+        for ($i = 1; $i <= 4; $i++) {
+            LabStation::factory()->for($physicsLab)->create([
+                'station_number' => $i,
+                'status' => LabStatus::Working,
+            ]);
+        }
+
+        $schedule = Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'subject_id' => $physicsSubject->id,
+            'classroom_id' => $classroom->id,
+            'group_id' => $group->id,
+            'day_of_week' => DayOfWeek::Monday,
+            'start_time' => '08:00',
+            'end_time' => '09:00',
+        ]);
+
+        $component = Livewire::test(LabSeatingPlan::class, ['schedule' => $schedule->id])
+            ->assertSet('scheduleId', $schedule->id)
+            ->assertSet('groupId', $group->id)
+            ->assertSet('labId', $physicsLab->id)
+            ->assertCount('students', 4);
+
+        $this->assertNotNull($component->get('dailyLogId'));
+
+        $this->assertDatabaseHas('daily_logs', [
+            'schedule_id' => $schedule->id,
+        ]);
+    }
+
+    public function test_interactive_attendance_toggle_from_seating_plan_syncs_to_daily_log(): void
+    {
+        app()->setLocale('ar');
+
+        $teacher = User::factory()->teacher()->create();
+        $this->actingAs($teacher);
+
+        $phase = EducationPhase::factory()->create();
+        $level = Level::factory()->for($phase)->create();
+        $classroom = Classroom::factory()->for($level)->create();
+        $group = Group::factory()->for($classroom)->create();
+        $students = Student::factory()->count(2)->for($group)->create();
+
+        $subject = Subject::factory()->create(['name' => 'الإعلام الآلي']);
+        $lab = Lab::factory()->for($level)->create(['name' => 'مخبر الإعلام الآلي']);
+
+        $schedule = Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'subject_id' => $subject->id,
+            'classroom_id' => $classroom->id,
+            'group_id' => $group->id,
+        ]);
+
+        $component = Livewire::test(LabSeatingPlan::class, ['schedule' => $schedule->id])
+            ->assertSet('scheduleId', $schedule->id);
+
+        $student1 = $students->first();
+
+        // Default attendance is present
+        $this->assertSame(AttendanceStatus::Present->value, $component->get('attendances')[$student1->id]);
+
+        // Toggle 1: Present -> Absent
+        $component->call('toggleAttendance', $student1->id);
+        $this->assertSame(AttendanceStatus::Absent->value, $component->get('attendances')[$student1->id]);
+
+        $this->assertDatabaseHas('attendances', [
+            'student_id' => $student1->id,
+            'status' => AttendanceStatus::Absent->value,
+        ]);
+
+        // Toggle 2: Absent -> Late
+        $component->call('toggleAttendance', $student1->id);
+        $this->assertSame(AttendanceStatus::Late->value, $component->get('attendances')[$student1->id]);
+
+        $this->assertDatabaseHas('attendances', [
+            'student_id' => $student1->id,
+            'status' => AttendanceStatus::Late->value,
+        ]);
+    }
+
+    public function test_mark_all_present_action_in_lab_seating_plan(): void
+    {
+        app()->setLocale('ar');
+
+        $teacher = User::factory()->teacher()->create();
+        $this->actingAs($teacher);
+
+        $phase = EducationPhase::factory()->create();
+        $level = Level::factory()->for($phase)->create();
+        $classroom = Classroom::factory()->for($level)->create();
+        $group = Group::factory()->for($classroom)->create();
+        $students = Student::factory()->count(3)->for($group)->create();
+
+        $schedule = Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'classroom_id' => $classroom->id,
+            'group_id' => $group->id,
+        ]);
+
+        $component = Livewire::test(LabSeatingPlan::class, ['schedule' => $schedule->id]);
+
+        // Set one as absent
+        $component->call('toggleAttendance', $students[0]->id);
+        $this->assertSame(AttendanceStatus::Absent->value, $component->get('attendances')[$students[0]->id]);
+
+        // Mark all present
+        $component->call('markAllPresent');
+
+        foreach ($students as $st) {
+            $this->assertSame(AttendanceStatus::Present->value, $component->get('attendances')[$st->id]);
+            $this->assertDatabaseHas('attendances', [
+                'student_id' => $st->id,
+                'status' => AttendanceStatus::Present->value,
+            ]);
+        }
+    }
+
+    public function test_student_station_kiosk_displays_active_experiment_protocol_for_today(): void
+    {
+        app()->setLocale('ar');
+
+        $teacher = User::factory()->teacher()->create(['name' => 'الأستاذ أحمد بلخير']);
+
+        $phase = EducationPhase::factory()->create();
+        $level = Level::factory()->for($phase)->create();
+        $classroom = Classroom::factory()->for($level)->create();
+        $group = Group::factory()->for($classroom)->create();
+        $student = Student::factory()->for($group)->create([
+            'first_name' => 'ياسين',
+            'last_name' => 'بن علي',
+        ]);
+
+        $subject = Subject::factory()->create(['name' => 'العلوم الفيزيائية']);
+        $lab = Lab::factory()->for($level)->create(['name' => 'مخبر الفيزياء']);
+        $station = LabStation::factory()->for($lab)->create([
+            'station_number' => 2,
+            'device_type' => 'device',
+            'status' => LabStatus::Working,
+        ]);
+
+        $plan = \App\Models\LabSeatingPlan::create([
+            'lab_id' => $lab->id,
+            'group_id' => $group->id,
+            'name' => 'خطة تجارب الفوج 1',
+        ]);
+
+        LabSeatingPlanStation::create([
+            'seating_plan_id' => $plan->id,
+            'lab_station_id' => $station->id,
+            'student_id' => $student->id,
+        ]);
+
+        $schedule = Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'subject_id' => $subject->id,
+            'classroom_id' => $classroom->id,
+            'group_id' => $group->id,
+        ]);
+
+        DailyLog::create([
+            'schedule_id' => $schedule->id,
+            'date' => today(),
+            'title' => 'تجربة التحليل الكهربائي البسيط للماء',
+            'actual_content' => 'تحقيق الدارة الكهربائية لوعاء فولطا واستنتاج الغازين المنطلقين عند المسريين.',
+            'homework' => 'رسم المخطط وتدوين الملاحظات في كراس التجارب.',
+            'observations' => 'التأكد من عزل الأسلاك وارتداء النظارات الواقية.',
+            'content_data' => [],
+        ]);
+
+        $this->get(route('lab.station-client', ['locale' => 'ar', 'labStation' => $station]))
+            ->assertOk()
+            ->assertSee('بطاقة التجربة البيداغوجية للحصة')
+            ->assertSee('تجربة التحليل الكهربائي البسيط للماء')
+            ->assertSee('تحقيق الدارة الكهربائية لوعاء فولطا')
+            ->assertSee('الأستاذ أحمد بلخير')
+            ->assertSee('رسم المخطط وتدوين الملاحظات')
+            ->assertSee('التأكد من عزل الأسلاك');
     }
 }

@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-11-05
-> Verified by `php artisan test` (**431 passed**, 20,893 assertions, **0 failures**),
+> Verified by `php artisan test` (**435 passed**, 20,920 assertions, **0 failures**),
 > `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -1076,6 +1076,40 @@ Strictly hides all inaccessible navigation items, sidebar groups, quick links, t
 - [x] **Localization & Test Suite:**
       - Added translations for all newly introduced strings (`بانتظار تحضير الأستاذ`, `معاينة السجل`, `عرض دفتر النصوص`) to `lang/en.json` and `lang/fr.json`.
       - Verified full suite: **431 passed tests, 20,893 assertions, 0 failures, 100% green**.
+
+## 25. Teacher Schedule Binding, Live Attendance Tracking & Laboratory Pedagogical Protocols (ربط مخطط المخبر بالحصص والحضور التفاعلي وبروتوكول التجارب) (100%)
+
+Enables middle school science and informatics teachers to seamlessly link laboratory sessions with their weekly timetable, take live 1-click attendance from seating benches, and broadcast active experiment protocols:
+
+- [x] **Role-Based Navigation & Page Access (`LabSeatingPlanPage`):**
+      - Updated `canAccess()` to allow access for both Teachers and Admins: `$user?->isAdmin() || $user?->isTeacher()`.
+      - Updated navigation group to `__('التشغيل اليومي')` (`Daily Operations`) for intuitive discovery during teaching periods.
+      - Tested in `AuthorizationTest` to ensure visibility and access for teachers and admins alike.
+- [x] **Schedule Slot Binding & Auto-Resolution (`LabSeatingPlan.php`):**
+      - Bound query parameters `#[Url(as: 'schedule')] public ?int $scheduleId` and `#[Url(as: 'date')] public string $attendanceDate`.
+      - Implemented automatic resolution of matching laboratory (Physics/Chemistry, Biology/Natural Sciences, Informatics) based on schedule subject.
+      - Automatically sets classroom/group from the selected schedule.
+      - Resolves or safely creates the session's active `DailyLog` record for today's lesson.
+- [x] **Live Interactive Attendance from Bench Seats & PC Monitors:**
+      - Added 1-click attendance toggle on bench seats (`science-table-seat.blade.php`) and PC monitor cards (`station-monitor-card.blade.php`): cycling through Present (حاضر ✔️), Absent (غائب ❌), Late (متأخر ⏳), and Excused (معفى 📝).
+      - Immediate real-time persistence to `attendances` table linked to the active `daily_log_id`.
+      - Real-time visual feedback: color-coded borders and backgrounds for absent (rose), late (amber), excused (sky), and present (teal).
+      - Instant KPI summary counters strip for Live Attendance: present count, absent count, late count, and excused count.
+      - "تعيين الجميع حاضراً" (Mark All Present) quick action button.
+- [x] **Pedagogical Experiment Protocol Modal & Student Station Kiosk Cards:**
+      - Added "بروتوكول التجربة" modal in the teacher's cockpit displaying experiment title, lesson steps, safety instructions, and a direct link to the class register (دفتر النصوص).
+      - Updated `StudentStationController` to resolve today's scheduled lesson daily log (`$todayLog`).
+      - Rendered "بطاقة التجربة البيداغوجية للحصة" on student kiosks (`student-station.blade.php`) for both science benches and informatics PC stations, displaying experiment objective, supervisor teacher, and required tasks.
+- [x] **Comprehensive Testing & Verification:**
+      - Added 4 new feature tests in `LabManagementTest`:
+        - `test_lab_seating_plan_loads_schedule_and_prefills_group_and_lab`
+        - `test_interactive_attendance_toggle_from_seating_plan_syncs_to_daily_log`
+        - `test_mark_all_present_action_in_lab_seating_plan`
+        - `test_student_station_kiosk_displays_active_experiment_protocol_for_today`
+      - Verified `LocalizationCompletenessTest` is 100% green with complete Arabic, English, and French translations.
+      - Verified full test suite: **435 passed tests, 20,920 assertions, 0 failures, 100% green**.
+      - Verified clean Pint formatting across all code files.
+
 
 
 

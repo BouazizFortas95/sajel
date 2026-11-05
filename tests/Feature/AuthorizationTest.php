@@ -431,7 +431,6 @@ class AuthorizationTest extends TestCase
             ManageSchoolSettings::class,
             PedagogicalInspectorHub::class,
             SchoolSupervisionHub::class,
-            LabSeatingPlanPage::class,
         ];
 
         $teacherOnlyPages = [
@@ -441,6 +440,9 @@ class AuthorizationTest extends TestCase
 
         $teacher = User::factory()->create();
         $this->actingAs($teacher);
+
+        $this->assertTrue(LabSeatingPlanPage::shouldRegisterNavigation(), 'LabSeatingPlanPage should be visible in teacher navigation.');
+        $this->assertTrue(LabSeatingPlanPage::canAccess(), 'LabSeatingPlanPage should be accessible by teacher.');
 
         foreach ($adminOnlyPages as $page) {
             $this->assertFalse(
@@ -466,6 +468,9 @@ class AuthorizationTest extends TestCase
 
         $admin = User::factory()->create(['role' => Role::Admin->value]);
         $this->actingAs($admin);
+
+        $this->assertTrue(LabSeatingPlanPage::shouldRegisterNavigation(), 'LabSeatingPlanPage should be visible in admin navigation.');
+        $this->assertTrue(LabSeatingPlanPage::canAccess(), 'LabSeatingPlanPage should be accessible by admin.');
 
         foreach ($adminOnlyPages as $page) {
             $this->assertTrue(
