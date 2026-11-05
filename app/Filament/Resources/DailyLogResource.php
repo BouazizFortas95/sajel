@@ -70,7 +70,7 @@ class DailyLogResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('التعليم والتدريس اليومي');
     }
 
     public static function canCreate(): bool
@@ -80,7 +80,7 @@ class DailyLogResource extends Resource
         return $user instanceof User && $user->isTeacher() && ! $user->isAdmin();
     }
 
-    protected static ?int $navigationSort = 70;
+    protected static ?int $navigationSort = 2;
 
     /**
      * Teachers see only their logs; admins see everything

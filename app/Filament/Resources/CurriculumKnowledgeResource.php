@@ -23,7 +23,7 @@ class CurriculumKnowledgeResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-book-open';
 
-    protected static ?int $navigationSort = 32;
+    protected static ?int $navigationSort = 9;
 
     public static function getNavigationLabel(): string
     {
@@ -42,7 +42,7 @@ class CurriculumKnowledgeResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التخطيط والمناهج');
+        return __('التخطيط والمناهج والتفتيش');
     }
 
     public static function getSlug(): string

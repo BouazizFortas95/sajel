@@ -24,7 +24,7 @@ class ManageSchoolSettings extends Page implements HasForms
 
     protected static ?string $navigationIcon = 'heroicon-o-building-library';
 
-    protected static ?int $navigationSort = 27;
+    protected static ?int $navigationSort = 5;
 
     protected static string $view = 'filament.pages.manage-school-settings';
 
@@ -50,7 +50,7 @@ class ManageSchoolSettings extends Page implements HasForms
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التخطيط والمناهج');
+        return __('الإدارة المدرسية والرقمنة والأرشيف');
     }
 
     public function getTitle(): string

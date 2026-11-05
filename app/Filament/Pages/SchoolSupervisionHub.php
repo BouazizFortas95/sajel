@@ -19,7 +19,7 @@ class SchoolSupervisionHub extends Page
 
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
 
-    protected static ?int $navigationSort = 8;
+    protected static ?int $navigationSort = 4;
 
     protected static string $view = 'filament.pages.school-supervision-hub';
 
@@ -44,7 +44,7 @@ class SchoolSupervisionHub extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('الحياة المدرسية وشؤون التلاميذ');
     }
 
     public function getTitle(): string

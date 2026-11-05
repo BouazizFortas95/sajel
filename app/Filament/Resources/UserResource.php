@@ -40,10 +40,10 @@ class UserResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('الإدارة');
+        return __('الإدارة المدرسية والرقمنة والأرشيف');
     }
 
-    protected static ?int $navigationSort = 90;
+    protected static ?int $navigationSort = 6;
 
     public static function shouldRegisterNavigation(): bool
     {

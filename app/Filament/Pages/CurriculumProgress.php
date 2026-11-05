@@ -24,7 +24,7 @@ class CurriculumProgress extends Page
 
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 1;
 
     protected static string $view = 'filament.pages.curriculum-progress';
 
@@ -63,7 +63,7 @@ class CurriculumProgress extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التخطيط والمناهج');
+        return __('التخطيط والمناهج والتفتيش');
     }
 
     public function getTitle(): string

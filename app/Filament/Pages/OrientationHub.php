@@ -18,7 +18,7 @@ class OrientationHub extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-up';
 
-    protected static ?int $navigationSort = 92;
+    protected static ?int $navigationSort = 5;
 
     protected static string $view = 'filament.pages.orientation-hub';
 
@@ -83,7 +83,7 @@ class OrientationHub extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('المتابعة البيداغوجية والإرشاد');
     }
 
     public static function getNavigationLabel(): string

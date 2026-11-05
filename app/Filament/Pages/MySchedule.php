@@ -10,7 +10,7 @@ class MySchedule extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 1;
 
     protected static string $view = 'filament.pages.my-schedule';
 
@@ -49,7 +49,7 @@ class MySchedule extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('التعليم والتدريس اليومي');
     }
 
     public function getTitle(): string

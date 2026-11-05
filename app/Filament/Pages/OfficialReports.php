@@ -18,7 +18,7 @@ class OfficialReports extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
 
-    protected static ?int $navigationSort = 25;
+    protected static ?int $navigationSort = 3;
 
     protected static string $view = 'filament.pages.official-reports';
 
@@ -78,7 +78,7 @@ class OfficialReports extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التخطيط والمناهج');
+        return __('التخطيط والمناهج والتفتيش');
     }
 
     public function getTitle(): string

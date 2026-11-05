@@ -25,7 +25,7 @@ class TeacherAbsenceHub extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-user-minus';
 
-    protected static ?int $navigationSort = 85;
+    protected static ?int $navigationSort = 3;
 
     protected static string $view = 'filament.pages.teacher-absence-hub';
 
@@ -80,7 +80,7 @@ class TeacherAbsenceHub extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('الإدارة المدرسية والرقمنة والأرشيف');
     }
 
     public static function getNavigationLabel(): string

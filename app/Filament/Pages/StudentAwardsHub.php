@@ -16,7 +16,7 @@ class StudentAwardsHub extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static ?int $navigationSort = 84;
+    protected static ?int $navigationSort = 4;
 
     protected static string $view = 'filament.pages.student-awards-hub';
 
@@ -58,7 +58,7 @@ class StudentAwardsHub extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('التقويمات والامتحانات والمجالس');
     }
 
     public static function getNavigationLabel(): string

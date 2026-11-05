@@ -14,7 +14,7 @@ class SchoolCensusHub extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
 
-    protected static ?int $navigationSort = 90;
+    protected static ?int $navigationSort = 1;
 
     protected static string $view = 'filament.pages.school-census-hub';
 
@@ -98,7 +98,7 @@ class SchoolCensusHub extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('الإدارة المدرسية والرقمنة والأرشيف');
     }
 
     public static function getNavigationLabel(): string

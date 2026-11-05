@@ -25,7 +25,7 @@ class PedagogicalRemediationResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-heart';
 
-    protected static ?int $navigationSort = 79;
+    protected static ?int $navigationSort = 1;
 
     public static function getNavigationLabel(): string
     {
@@ -34,7 +34,7 @@ class PedagogicalRemediationResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('المتابعة البيداغوجية والإرشاد');
     }
 
     public static function form(Form $form): Form

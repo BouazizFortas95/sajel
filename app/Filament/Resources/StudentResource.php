@@ -39,10 +39,10 @@ class StudentResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('شؤون التلاميذ');
+        return __('الحياة المدرسية وشؤون التلاميذ');
     }
 
-    protected static ?int $navigationSort = 45;
+    protected static ?int $navigationSort = 1;
 
     /**
      * Student management is admin-only; teachers have no navigation entry.

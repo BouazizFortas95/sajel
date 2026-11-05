@@ -26,7 +26,7 @@ class ActiveLearningStrategyResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-light-bulb';
 
-    protected static ?int $navigationSort = 60;
+    protected static ?int $navigationSort = 7;
 
     public static function getNavigationLabel(): string
     {
@@ -35,7 +35,7 @@ class ActiveLearningStrategyResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('التعليم والتدريس اليومي');
     }
 
     public static function form(Form $form): Form

@@ -60,10 +60,10 @@ class PedagogicalMemoResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التخطيط والمناهج');
+        return __('التخطيط والمناهج والتفتيش');
     }
 
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 5;
 
     /**
      * Teachers see only their own memo bank; admins see every memo.

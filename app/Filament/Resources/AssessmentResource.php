@@ -58,10 +58,10 @@ class AssessmentResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('التقويمات والامتحانات والمجالس');
     }
 
-    protected static ?int $navigationSort = 80;
+    protected static ?int $navigationSort = 1;
 
     /**
      * Teachers see only assessments attached to their own schedules.

@@ -25,7 +25,7 @@ class PedagogicalInspectorHub extends Page
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static ?int $navigationSort = 26;
+    protected static ?int $navigationSort = 2;
 
     protected static string $view = 'filament.pages.pedagogical-inspector-hub';
 
@@ -57,7 +57,7 @@ class PedagogicalInspectorHub extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التخطيط والمناهج');
+        return __('التخطيط والمناهج والتفتيش');
     }
 
     public function getTitle(): string

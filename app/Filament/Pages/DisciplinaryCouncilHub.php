@@ -26,7 +26,7 @@ class DisciplinaryCouncilHub extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-scale';
 
-    protected static ?int $navigationSort = 88;
+    protected static ?int $navigationSort = 3;
 
     protected static string $view = 'filament.pages.disciplinary-council-hub';
 
@@ -69,7 +69,7 @@ class DisciplinaryCouncilHub extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('الحياة المدرسية وشؤون التلاميذ');
     }
 
     public static function getNavigationLabel(): string

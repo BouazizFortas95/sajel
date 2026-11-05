@@ -47,10 +47,10 @@ class ScheduleResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('التعليم والتدريس اليومي');
     }
 
-    protected static ?int $navigationSort = 60;
+    protected static ?int $navigationSort = 8;
 
     /**
      * Teachers see only their own schedules; admins see everything.

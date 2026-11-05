@@ -13,7 +13,7 @@ class ClassCouncilHub extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
-    protected static ?int $navigationSort = 26;
+    protected static ?int $navigationSort = 3;
 
     protected static string $view = 'filament.pages.class-council-hub';
 
@@ -49,7 +49,7 @@ class ClassCouncilHub extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التخطيط والمناهج');
+        return __('التقويمات والامتحانات والمجالس');
     }
 
     public static function getNavigationLabel(): string

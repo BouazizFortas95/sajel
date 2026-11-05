@@ -22,7 +22,7 @@ class PedagogicalMeetingResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
-    protected static ?int $navigationSort = 27;
+    protected static ?int $navigationSort = 4;
 
     public static function getNavigationLabel(): string
     {
@@ -41,7 +41,7 @@ class PedagogicalMeetingResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التخطيط والمناهج');
+        return __('التخطيط والمناهج والتفتيش');
     }
 
     public static function getEloquentQuery(): Builder

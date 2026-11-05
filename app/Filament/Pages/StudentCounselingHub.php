@@ -15,6 +15,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class StudentCounselingHub extends Page
 {
@@ -22,7 +23,7 @@ class StudentCounselingHub extends Page
 
     protected static string $view = 'filament.pages.student-counseling-hub';
 
-    protected static ?int $navigationSort = 94;
+    protected static ?int $navigationSort = 4;
 
     public string $activeTab = 'profiles';
 
@@ -96,9 +97,21 @@ class StudentCounselingHub extends Page
 
     public string $sessionStatus = 'open';
 
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        return $user !== null;
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('المتابعة البيداغوجية والإرشاد');
     }
 
     public static function getNavigationLabel(): string

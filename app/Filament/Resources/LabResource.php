@@ -38,10 +38,10 @@ class LabResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('البنية التربوية');
+        return __('الهياكل والتنظيم التربوي');
     }
 
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 6;
 
     /**
      * The lab catalog is admin-only; teachers have no navigation entry.

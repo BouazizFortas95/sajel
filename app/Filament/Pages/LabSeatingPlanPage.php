@@ -9,7 +9,7 @@ class LabSeatingPlanPage extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-device-tablet';
 
-    protected static ?int $navigationSort = 60;
+    protected static ?int $navigationSort = 6;
 
     protected static string $view = 'filament.pages.lab-seating-plan';
 
@@ -32,7 +32,7 @@ class LabSeatingPlanPage extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('التعليم والتدريس اليومي');
     }
 
     public function getTitle(): string

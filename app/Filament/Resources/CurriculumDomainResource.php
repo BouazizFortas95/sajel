@@ -24,7 +24,7 @@ class CurriculumDomainResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-map';
 
-    protected static ?int $navigationSort = 30;
+    protected static ?int $navigationSort = 7;
 
     public static function getNavigationLabel(): string
     {
@@ -43,7 +43,7 @@ class CurriculumDomainResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التخطيط والمناهج');
+        return __('التخطيط والمناهج والتفتيش');
     }
 
     /**

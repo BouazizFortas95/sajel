@@ -23,7 +23,7 @@ class TextbookInventoryHub extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-book-open';
 
-    protected static ?int $navigationSort = 86;
+    protected static ?int $navigationSort = 5;
 
     protected static string $view = 'filament.pages.textbook-inventory-hub';
 
@@ -77,7 +77,7 @@ class TextbookInventoryHub extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('الحياة المدرسية وشؤون التلاميذ');
     }
 
     public static function getNavigationLabel(): string

@@ -16,7 +16,7 @@ class ExamTimetableHub extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static ?int $navigationSort = 82;
+    protected static ?int $navigationSort = 2;
 
     protected static string $view = 'filament.pages.exam-timetable-hub';
 
@@ -55,7 +55,7 @@ class ExamTimetableHub extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('التقويمات والامتحانات والمجالس');
     }
 
     public static function getNavigationLabel(): string

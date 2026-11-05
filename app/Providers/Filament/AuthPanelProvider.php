@@ -9,6 +9,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -30,6 +31,30 @@ class AuthPanelProvider extends PanelProvider
             ->id('auth')
             ->path('{locale}/auth')
             ->sidebarCollapsibleOnDesktop()
+            ->navigationGroups([
+                NavigationGroup::make()
+                    ->label(fn () => __('التعليم والتدريس اليومي'))
+                    ->icon('heroicon-o-academic-cap'),
+                NavigationGroup::make()
+                    ->label(fn () => __('التقويمات والامتحانات والمجالس'))
+                    ->icon('heroicon-o-clipboard-document-check'),
+                NavigationGroup::make()
+                    ->label(fn () => __('المتابعة البيداغوجية والإرشاد'))
+                    ->icon('heroicon-o-sparkles'),
+                NavigationGroup::make()
+                    ->label(fn () => __('الحياة المدرسية وشؤون التلاميذ'))
+                    ->icon('heroicon-o-user-group'),
+                NavigationGroup::make()
+                    ->label(fn () => __('التخطيط والمناهج والتفتيش'))
+                    ->icon('heroicon-o-document-chart-bar'),
+                NavigationGroup::make()
+                    ->label(fn () => __('الإدارة المدرسية والرقمنة والأرشيف'))
+                    ->icon('heroicon-o-building-office-2'),
+                NavigationGroup::make()
+                    ->label(fn () => __('الهياكل والتنظيم التربوي'))
+                    ->icon('heroicon-o-building-library')
+                    ->collapsed(),
+            ])
             ->brandName('سجِّل')
             ->font('Cairo', provider: GoogleFontProvider::class)
             ->login()

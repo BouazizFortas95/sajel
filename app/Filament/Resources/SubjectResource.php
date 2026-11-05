@@ -36,10 +36,10 @@ class SubjectResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('البنية التربوية');
+        return __('الهياكل والتنظيم التربوي');
     }
 
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 5;
 
     /**
      * The subject catalog is admin-only; teachers have no navigation entry.

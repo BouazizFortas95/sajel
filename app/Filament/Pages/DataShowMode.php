@@ -8,7 +8,7 @@ class DataShowMode extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
-    protected static ?int $navigationSort = 77;
+    protected static ?int $navigationSort = 5;
 
     protected static string $view = 'filament.pages.data-show-mode';
 
@@ -26,7 +26,7 @@ class DataShowMode extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('التعليم والتدريس اليومي');
     }
 
     public static function getNavigationLabel(): string

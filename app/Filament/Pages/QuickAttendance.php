@@ -8,7 +8,7 @@ class QuickAttendance extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
-    protected static ?int $navigationSort = 75;
+    protected static ?int $navigationSort = 3;
 
     protected static string $view = 'livewire.quick-attendance';
 
@@ -29,7 +29,7 @@ class QuickAttendance extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('التعليم والتدريس اليومي');
     }
 
     public function getTitle(): string

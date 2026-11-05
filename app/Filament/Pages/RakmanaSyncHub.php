@@ -21,7 +21,7 @@ class RakmanaSyncHub extends Page
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-path-rounded-square';
 
-    protected static ?int $navigationSort = 89;
+    protected static ?int $navigationSort = 2;
 
     protected static string $view = 'filament.pages.rakmana-sync-hub';
 
@@ -86,7 +86,7 @@ class RakmanaSyncHub extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('الإدارة المدرسية والرقمنة والأرشيف');
     }
 
     public static function getNavigationLabel(): string

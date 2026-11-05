@@ -8,7 +8,7 @@ class ClassroomToolbar extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
 
-    protected static ?int $navigationSort = 76;
+    protected static ?int $navigationSort = 4;
 
     protected static string $view = 'filament.pages.classroom-toolbar';
 
@@ -24,7 +24,7 @@ class ClassroomToolbar extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('التعليم والتدريس اليومي');
     }
 
     public static function getNavigationLabel(): string

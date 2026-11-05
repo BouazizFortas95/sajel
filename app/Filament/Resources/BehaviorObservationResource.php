@@ -24,7 +24,7 @@ class BehaviorObservationResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-face-smile';
 
-    protected static ?int $navigationSort = 78;
+    protected static ?int $navigationSort = 3;
 
     public static function getNavigationLabel(): string
     {
@@ -33,7 +33,7 @@ class BehaviorObservationResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التشغيل اليومي');
+        return __('المتابعة البيداغوجية والإرشاد');
     }
 
     public static function form(Form $form): Form
