@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-11-05
-> Verified by `php artisan test` (**478 passed**, 21,141 assertions, **0 failures**),
+> Verified by `php artisan test` (**487 passed**, 21,192 assertions, **0 failures**),
 > `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -1228,34 +1228,38 @@ Comprehensive institutional management system compliant with Algerian Ministry o
       - Added 150 translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
       - Full test suite: **478 passed tests, 21,141 assertions, 0 failures, 100% green**.
 
-Equips middle school principals, education advisors (مستشار التربية), and directors of studies (ناظر الدروس) with a proactive real-time dashboard to track teacher absences, instantly identify affected classes, smart-match available substitute teachers without timetable collisions, and generate official Algerian ministerial mandates and monthly replacement audit ledgers:
+## 31. Student Transfers, Mobility & General Matriculation Register (منظومة شهادات التحويل وحركية التلاميذ وسجل القيد العام) (100%)
 
-- [x] **Database Schema & Eloquent Domain Models (`teacher_absences`):**
-      - Migration `2026_10_27_010001_create_teacher_absences_table.php` introducing the 27th core domain table.
-      - Enums `TeacherAbsenceReason` (Sick leave, Official mission, Authorized leave, Maternity leave, Family emergency, Unjustified) and `TeacherAbsenceStatus` (Pending, Covered, Partially covered, Uncovered, Completed).
-      - Model `TeacherAbsence` with date casts, duration calculators (`durationInDays`, `durationLabel`), query scopes (`activeOnDate`, `overlapping`, `forTeacher`, `pendingOrUncovered`), and relationships to `User` (absent teacher and recording administrator).
-      - Integrated into `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` (27 verified tables).
-- [x] **Domain Service (`TeacherAbsenceService`):**
-      - **Active School Days Resolver (`getActiveSchoolDates`):** Iterates across the absence window, filtering out Algerian weekends (Fridays and Saturdays) and national holidays from `SchoolHoliday`.
-      - **Affected Sessions Extraction (`getAffectedSessions`):** Maps active dates to scheduled timetable slots from `schedules`, resolves or initializes linked `DailyLog` entries, and computes missed instructional hours.
-      - **Smart Substitute Matching Engine (`findAvailableSubstitutes`):** Discovers all available teachers in the school, strictly excluding those with overlapping timetable commitments or active absence records. Ranks candidates by pedagogical relevance: Priority 1 (same primary subject specialization), Priority 2 (same secondary subject specialization), and Priority 3 (general study duty / educational supervision).
-      - **Instant Substitution Assignment (`assignSubstitute` & `unassignSubstitute`):** Links the substitute teacher (`substitute_teacher_id`) on the `DailyLog`, appends pedagogical directives, and automatically transitions the absence status (`Covered` vs `PartiallyCovered` vs `Uncovered`).
-      - **Radar KPI Aggregator (`getRadarKpis`):** Summarizes active absences today, total affected sessions, missed vs recovered teaching hours, substitution coverage %, and distinct contributing teachers.
-      - **Monthly Audit Ledger Engine (`assembleMonthlyLedger`):** Compiles monthly institutional summary data for submission to the Directorate of Education.
-- [x] **Interactive Filament Cockpit (`TeacherAbsenceHub`):**
-      - Registered under `__('التشغيل اليومي')` (`Daily Operations`) with icon `heroicon-o-user-minus`.
-      - Live URL bindings for month, year, teacher, status filter, and tab navigation (`radar`, `sessions`, `ledger`).
-      - 5 responsive KPI cards: Active Absences Today, Total Affected Sessions, Substituted Sessions, Vacant Sessions, and Coverage & Continuity Rate %.
-      - "تسجيل غياب أستاذ جديد" header action modal with date pickers, reason options, medical certificate references, and administrative notes.
-      - Interactive live substitution modal: 1-click candidate selection with subject priority badges and pedagogical instruction notes.
-      - Header actions for printing and downloading the official monthly absence ledger.
-- [x] **Official Algerian A4 Printable Documents & PDFs (`TeacherAbsenceController`):**
-      - **Pedagogical Substitution Mandate (`print.teacher-absence.mandate` + `.pdf`):** Formal A4 portrait document featuring the Algerian Republic header, Directorate of Education, school identity from `SchoolSetting`, absent teacher details, reason & medical reference, target classroom and time slot, assigned substitute teacher credentials, pedagogical directives, and tripartite approval block (Substitute Teacher, Director of Studies, Principal & Official Seal).
-      - **Monthly Absence & Replacement Ledger (`print.teacher-absence.monthly-ledger` + `.pdf`):** A4 landscape administrative audit ledger for transmission to the Directorate of Education (Staff & Inspection Department), detailing all absences, medical references, missed vs recovered hours, substitute teachers, and official approval block.
+Complete statutory student mobility and registration tracking system compliant with Algerian National Education decrees, managing incoming/outgoing transfers, ministerial transfer authorizations, paper dossier forwarding, and the official institution matriculation index (سجل القيد العام - Registre Matricule):
+
+- [x] **Database Schema & Eloquent Domain Models (`student_transfers` & `students` enhancement):**
+      - Migration `2026_10_29_010001_add_matricule_and_enrollment_to_students_table.php` adding permanent institutional matricule number (`matricule_number`), national ID number (`national_id_number`), birth place (`place_of_birth`), entry date (`enrollment_date`), exit date (`departure_date`), and active flag (`is_active`).
+      - Migration `2026_10_29_010002_create_student_transfers_table.php` introducing the 30th core domain table.
+      - Enums `TransferType` (Inward, Outward), `TransferReason` (Change of residence, Parent employment, Orientation, Disciplinary, Health, Other), and `TransferStatus` (Pending, Approved, Cancelled).
+      - Model `StudentTransfer` with casts, scopes (`inward`, `outward`, `approved`, `pending`, `forAcademicYear`), and relationships to `Student` and approving `User`.
+      - Model `Student` extended with `transfers(): HasMany` and `latestTransfer(): HasOne`.
+      - Integrated into `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` (30 verified tables).
+- [x] **Domain Service (`StudentMobilityService`):**
+      - **Transfer Registration & State Synchronization (`registerTransfer`):** Records movements with automatic student lifecycle transitions (sets `is_active = false` and `departure_date` on approved outward transfers; sets `is_active = true` and `enrollment_date` on approved inward transfers).
+      - **Status Transitions (`updateTransferStatus`):** Reversible approval and cancellation workflows maintaining student registry consistency.
+      - **Dossier Transmission Tracker (`markSchoolFileForwarded`):** Records official dispatch/receipt of physical student files.
+      - **Mobility Flow KPIs Engine (`getMobilityKpis`):** Aggregates incoming, outgoing, net student enrollment delta, and pending transfers.
+      - **Data Assemblers & Browsershot PDF Generators:** Assembles data and streams official A4 PDFs for transfer certificates, annual movement ledgers, and file forwarding slips.
+- [x] **Interactive Filament Cockpit (`StudentMobilityHub`):**
+      - Registered under `__('التشغيل اليومي')` (`Daily Operations`) with icon `heroicon-o-arrows-right-left`.
+      - 3 primary tabs:
+        1. **سجل الحركية والتحويلات (Transfers Ledger):** Dynamic search and filterable table of student movements, file forwarding toggles, and direct links to certificates and slips.
+        2. **سجل القيد العام (Matricule Register):** Complete legal institutional roster ordered by matricule, featuring class filters, enrollment dates, and departure status badges.
+        3. **مؤشرات التدفق والحركية (Mobility KPIs):** Net student balance analytics and dossier tracking guidance.
+      - Header actions: "تسجيل تحويل تلميذ جديد" modal and "طباعة سجل الحركة السنوي (A4)".
+- [x] **Official Algerian A4 Printable Documents & PDFs (`StudentMobilityController`):**
+      - **Official Student Transfer Certificate (`print.student-transfer.certificate` + `.pdf`):** Formal A4 portrait certificate with Republic header, bilingual student identity, matriculation numbers, destination school and directorate, legal attestation, and tripartite approval block (Studies Counselor, Studies Director, Principal & Official Seal).
+      - **Annual Student Mobility Ledger (`print.student-transfer.ledger` + `.pdf`):** Formal A4 landscape ministerial register listing all arrivals and departures with KPI summary cards.
+      - **School File Forwarding Slip (`print.student-transfer.forwarding-slip` + `.pdf`):** Official forwarding letter enclosing the student's primary physical dossier (health book, grade records, clearance, transfer certificate) with a perforated tear-off receipt slip.
 - [x] **Comprehensive Testing & Complete Tri-Lingual Localization:**
-      - Added 6 feature tests in `tests/Feature/TeacherAbsenceTest.php` covering access permissions, affected session resolution, smart substitute discovery, absence status transitions, layout rendering, and PDF streams.
-      - Added 146 translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
-      - Full test suite: **470 passed tests, 21,093 assertions, 0 failures, 100% green**.
+      - Added 9 feature tests in `tests/Feature/StudentMobilityTest.php` covering inward/outward transfers, state synchronization, file forwarding, KPI calculations, authorization policies, and PDF streams.
+      - Added 180+ translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
+      - Full test suite: **487 passed tests, 21,192 assertions, 0 failures, 100% green**.
 
 
 
