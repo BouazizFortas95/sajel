@@ -1192,7 +1192,38 @@ Assembles, audits, and exports the complete class register (دفتر النصو�
 - [x] **Comprehensive Testing & Complete Tri-Lingual Localization:**
       - Added 7 feature tests in `tests/Feature/SchoolArchiveTest.php` covering access permissions, curriculum completion calculations, trimester/teacher filtering, layout rendering, and PDF streams.
       - Added 80 translation keys covering Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
-      - Full test suite: **463 passed tests, 21,044 assertions, 0 failures, 100% green**.
+      - Full test suite: **464 passed tests, 21,048 assertions, 0 failures, 100% green**.
+
+## 29. Teacher Absence Radar & Quick Pedagogical Replacement Management (رادار غيابات الأساتذة وإدارة الاستخلاف البيداغوجي السريع) (100%)
+
+Equips middle school principals, education advisors (مستشار التربية), and directors of studies (ناظر الدروس) with a proactive real-time dashboard to track teacher absences, instantly identify affected classes, smart-match available substitute teachers without timetable collisions, and generate official Algerian ministerial mandates and monthly replacement audit ledgers:
+
+- [x] **Database Schema & Eloquent Domain Models (`teacher_absences`):**
+      - Migration `2026_10_27_010001_create_teacher_absences_table.php` introducing the 27th core domain table.
+      - Enums `TeacherAbsenceReason` (Sick leave, Official mission, Authorized leave, Maternity leave, Family emergency, Unjustified) and `TeacherAbsenceStatus` (Pending, Covered, Partially covered, Uncovered, Completed).
+      - Model `TeacherAbsence` with date casts, duration calculators (`durationInDays`, `durationLabel`), query scopes (`activeOnDate`, `overlapping`, `forTeacher`, `pendingOrUncovered`), and relationships to `User` (absent teacher and recording administrator).
+      - Integrated into `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` (27 verified tables).
+- [x] **Domain Service (`TeacherAbsenceService`):**
+      - **Active School Days Resolver (`getActiveSchoolDates`):** Iterates across the absence window, filtering out Algerian weekends (Fridays and Saturdays) and national holidays from `SchoolHoliday`.
+      - **Affected Sessions Extraction (`getAffectedSessions`):** Maps active dates to scheduled timetable slots from `schedules`, resolves or initializes linked `DailyLog` entries, and computes missed instructional hours.
+      - **Smart Substitute Matching Engine (`findAvailableSubstitutes`):** Discovers all available teachers in the school, strictly excluding those with overlapping timetable commitments or active absence records. Ranks candidates by pedagogical relevance: Priority 1 (same primary subject specialization), Priority 2 (same secondary subject specialization), and Priority 3 (general study duty / educational supervision).
+      - **Instant Substitution Assignment (`assignSubstitute` & `unassignSubstitute`):** Links the substitute teacher (`substitute_teacher_id`) on the `DailyLog`, appends pedagogical directives, and automatically transitions the absence status (`Covered` vs `PartiallyCovered` vs `Uncovered`).
+      - **Radar KPI Aggregator (`getRadarKpis`):** Summarizes active absences today, total affected sessions, missed vs recovered teaching hours, substitution coverage %, and distinct contributing teachers.
+      - **Monthly Audit Ledger Engine (`assembleMonthlyLedger`):** Compiles monthly institutional summary data for submission to the Directorate of Education.
+- [x] **Interactive Filament Cockpit (`TeacherAbsenceHub`):**
+      - Registered under `__('التشغيل اليومي')` (`Daily Operations`) with icon `heroicon-o-user-minus`.
+      - Live URL bindings for month, year, teacher, status filter, and tab navigation (`radar`, `sessions`, `ledger`).
+      - 5 responsive KPI cards: Active Absences Today, Total Affected Sessions, Substituted Sessions, Vacant Sessions, and Coverage & Continuity Rate %.
+      - "تسجيل غياب أستاذ جديد" header action modal with date pickers, reason options, medical certificate references, and administrative notes.
+      - Interactive live substitution modal: 1-click candidate selection with subject priority badges and pedagogical instruction notes.
+      - Header actions for printing and downloading the official monthly absence ledger.
+- [x] **Official Algerian A4 Printable Documents & PDFs (`TeacherAbsenceController`):**
+      - **Pedagogical Substitution Mandate (`print.teacher-absence.mandate` + `.pdf`):** Formal A4 portrait document featuring the Algerian Republic header, Directorate of Education, school identity from `SchoolSetting`, absent teacher details, reason & medical reference, target classroom and time slot, assigned substitute teacher credentials, pedagogical directives, and tripartite approval block (Substitute Teacher, Director of Studies, Principal & Official Seal).
+      - **Monthly Absence & Replacement Ledger (`print.teacher-absence.monthly-ledger` + `.pdf`):** A4 landscape administrative audit ledger for transmission to the Directorate of Education (Staff & Inspection Department), detailing all absences, medical references, missed vs recovered hours, substitute teachers, and official approval block.
+- [x] **Comprehensive Testing & Complete Tri-Lingual Localization:**
+      - Added 6 feature tests in `tests/Feature/TeacherAbsenceTest.php` covering access permissions, affected session resolution, smart substitute discovery, absence status transitions, layout rendering, and PDF streams.
+      - Added 146 translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
+      - Full test suite: **470 passed tests, 21,093 assertions, 0 failures, 100% green**.
 
 
 

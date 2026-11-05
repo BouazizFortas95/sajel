@@ -60,4 +60,9 @@ enum DayOfWeek: string
             ->mapWithKeys(fn (self $case): array => [$case->value => $case->label()])
             ->all();
     }
+
+    public static function fromCarbon(CarbonInterface $date): self
+    {
+        return self::from(strtolower($date->format('l')));
+    }
 }

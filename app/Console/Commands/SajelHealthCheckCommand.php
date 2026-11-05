@@ -18,7 +18,7 @@ class SajelHealthCheckCommand extends Command
         'curriculum_domains', 'curriculum_sequences', 'curriculum_resources', 'labs',
         'lab_stations', 'lab_seating_plans', 'behavior_observations', 'active_learning_strategies',
         'pedagogical_remediations', 'pedagogical_meetings', 'school_holidays', 'school_settings',
-        'inspection_reports',
+        'inspection_reports', 'teacher_absences',
     ];
 
     public function handle(): int

@@ -13,6 +13,7 @@ use App\Http\Controllers\SchoolArchiveController;
 use App\Http\Controllers\StudentAwardController;
 use App\Http\Controllers\StudentReportCardController;
 use App\Http\Controllers\StudentStationController;
+use App\Http\Controllers\TeacherAbsenceController;
 use App\Http\Controllers\TeacherPortfolioController;
 use App\Http\Middleware\SetFilamentLocale;
 use App\Models\SchoolSetting;
@@ -262,6 +263,26 @@ Route::get('/{locale}/print/pedagogical-memos/{memo}', PrintPedagogicalMemoContr
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.pedagogical-memo');
+
+Route::get('/{locale}/print/teacher-absences/{absence}/mandates/{log}', [TeacherAbsenceController::class, 'printMandate'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-absence.mandate');
+
+Route::get('/{locale}/print/teacher-absences/{absence}/mandates/{log}/pdf', [TeacherAbsenceController::class, 'pdfMandate'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-absence.mandate.pdf');
+
+Route::get('/{locale}/print/teacher-absences/monthly-ledger', [TeacherAbsenceController::class, 'printMonthlyLedger'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-absence.monthly-ledger');
+
+Route::get('/{locale}/print/teacher-absences/monthly-ledger/pdf', [TeacherAbsenceController::class, 'pdfMonthlyLedger'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-absence.monthly-ledger.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

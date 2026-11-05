@@ -41,6 +41,7 @@ class SchoolBackupService
         'behavior_observations',
         'pedagogical_remediations',
         'inspection_reports',
+        'teacher_absences',
     ];
 
     /**
