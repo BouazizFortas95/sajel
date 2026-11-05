@@ -45,6 +45,7 @@ class SchoolBackupService
         'textbooks',
         'student_textbook_loans',
         'student_transfers',
+        'disciplinary_records',
     ];
 
     /**

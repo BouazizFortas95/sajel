@@ -1261,6 +1261,39 @@ Complete statutory student mobility and registration tracking system compliant w
       - Added 180+ translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
       - Full test suite: **487 passed tests, 21,192 assertions, 0 failures, 100% green**.
 
+## 32. School Disciplinary Council & Student Behavioral Sanctions Management (منظومة مجلس التأديب المدرسي ومتابعة العقوبات والتقويم السلوكي) (100%)
+
+Complete statutory disciplinary council proceeding engine compliant with Algerian Ministry of National Education Executive Decree 90-130 and Ministerial Order 778 regarding middle school disciplinary councils and internal regulations:
+
+- [x] **Database Schema & Eloquent Domain Models (`disciplinary_records`):**
+      - Migration `2026_10_30_010001_create_disciplinary_records_table.php` introducing the 31st core system table.
+      - Comprehensive fields: `student_id`, `academic_year`, `session_number`, `incident_date`, `session_date`, `infraction_degree`, `incident_description`, `reported_by_id`, `status`, `summons_sent_at`, `guardian_attended`, `student_statement`, `decision`, `exclusion_days`, `exclusion_start_date`, `exclusion_end_date`, `compensation_amount`, `deliberated_at`, `guardian_notified_at`, `attendees`, `notes`, `president_id`.
+      - Enums `InfractionDegree` (FirstDegree, SecondDegree, ThirdDegree), `DisciplinarySanction` (Warning, Reprimand, TemporaryExclusion, DefinitiveExclusion, CommunityService, FinancialCompensation, Acquittal), and `DisciplinaryStatus` (Scheduled, Deliberated, Executed, Appealed), all implementing Filament's `HasLabel` and `HasColor`.
+      - Model `DisciplinaryRecord` with casts, scopes (`scheduled`, `deliberated`, `forAcademicYear`), relationships (`Student`, `reportedBy`, `president`), and dual-property accessors ensuring smooth backward/forward compatibility across domain layers.
+      - Integrated into `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` (31 verified tables).
+- [x] **Domain Service (`DisciplinaryCouncilService`):**
+      - **Hearing Scheduling & Referral (`scheduleSession`):** Schedules hearings with automatic numbering (`CD-YYYY-###`), statutory default council attendance rolls, and summons tracking.
+      - **In-Camera Deliberation & Decision Recording (`recordDeliberation`):** Consigns hearing findings, student defense statements, sanction severity (1-8 days temporary exclusion limits per Algerian middle school law), financial compensation liability for property damage, and pedagogical notes.
+      - **Guardian Summons & Notification Toggles:** Tracks dispatched summons (`markGuardianSummoned`) and formal decision delivery (`markGuardianNotified`).
+      - **Behavioral KPIs & Analytics Engine (`getDisciplinaryKpis`):** Aggregates total referrals, deliberated sessions, exclusion decisions, warnings/reprimands, damage compensation amounts, guardian notification rate, and statistical breakdowns by degree and sanction.
+      - **Data Assemblers & Browsershot PDF Generators:** Generates official A4 portrait/landscape PDFs for summons, deliberation minutes, formal notifications, and annual registers.
+- [x] **Interactive Filament Cockpit (`DisciplinaryCouncilHub`):**
+      - Registered under `__('التشغيل اليومي')` (`Daily Operations`) with icon `heroicon-o-scale` and sort order 88.
+      - 3 primary tabs:
+        1. **الجلسات التأديبية والمحاضر (Hearings & Sessions):** Searchable and filterable case management table with infraction degree badges, guardian summons/notification toggles, and direct links to print summons, minutes, and notifications.
+        2. **سجل العقوبات والقرارات المعتمدة (Sanctions Ledger):** Dedicated categorization cards for exclusion orders (temporary/definitive), warnings/reprimands, and material restitution compensations in DZD.
+        3. **المؤشرات والتقويم السلوكي (Behavioral Analytics & KPIs):** Metric cards and statistical distribution progress bars by regulatory degree and approved sanction types.
+      - Header actions: "جدولة جلسة تأديب جديدة" modal and "سجل مجالس التأديب السنوي" ledger viewer.
+- [x] **Official Algerian A4 Printable Documents & PDFs (`DisciplinaryCouncilController`):**
+      - **Official Hearing Summons (`print.disciplinary.summons` + `.pdf`):** Formal A4 portrait summons for student and legal guardian with national republic header, session details, legal defense guarantees, and perforated return acknowledgment slip.
+      - **Official Council Deliberation Minutes (`print.disciplinary.minutes` + `.pdf`):** Formal A4 portrait PV with statutory council composition roll, statement of facts, student defense and apology, secret deliberation, voting, and authenticating signatures block.
+      - **Formal Sanction Notification (`print.disciplinary.notification` + `.pdf`):** Formal decision notice sent to the legal guardian with statutory notice of the 8-day legal right of appeal before the Wilaya Appeal Committee (لجنة الطعن الولائية) and tear-off return receipt slip.
+      - **Annual Disciplinary Register Ledger (`print.disciplinary.ledger` + `.pdf`):** Formal A4 landscape ministerial register logging all disciplinary proceedings, sanctions, and restitution across the academic year with administrative audit visas.
+- [x] **Comprehensive Testing & Complete Tri-Lingual Localization:**
+      - Added 11 feature tests in `tests/Feature/DisciplinaryCouncilTest.php` covering session scheduling, in-camera deliberation, guardian summons/notification, KPI calculation, permissions, and PDF streams.
+      - Added 210+ translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
+      - Full test suite: **498 passed tests, 21,247 assertions, 0 failures, 100% green**.
+
 
 
 

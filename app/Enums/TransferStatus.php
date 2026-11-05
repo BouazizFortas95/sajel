@@ -26,4 +26,3 @@ enum TransferStatus: string
         };
     }
 }
-

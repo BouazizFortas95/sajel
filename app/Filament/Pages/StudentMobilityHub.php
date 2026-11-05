@@ -279,4 +279,3 @@ class StudentMobilityHub extends Page
         ];
     }
 }
-

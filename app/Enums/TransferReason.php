@@ -23,4 +23,3 @@ enum TransferReason: string
         };
     }
 }
-

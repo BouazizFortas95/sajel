@@ -83,4 +83,3 @@ class StudentTransfer extends Model
         });
     }
 }
-

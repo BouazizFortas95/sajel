@@ -75,4 +75,3 @@ class StudentTransferFactory extends Factory
         ]);
     }
 }
-

@@ -191,4 +191,3 @@ class StudentMobilityController extends Controller
         }
     }
 }
-

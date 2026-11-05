@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ClassCouncilController;
+use App\Http\Controllers\DisciplinaryCouncilController;
 use App\Http\Controllers\DownloadPedagogicalMemoPdfController;
 use App\Http\Controllers\ExamTimetableController;
 use App\Http\Controllers\InspectionReportController;
@@ -345,6 +346,46 @@ Route::get('/{locale}/print/student-transfers/{transfer}/forwarding-slip/pdf', [
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.student-transfer.forwarding-slip.pdf');
+
+Route::get('/{locale}/print/disciplinary/{record}/summons', [DisciplinaryCouncilController::class, 'summons'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.disciplinary.summons');
+
+Route::get('/{locale}/print/disciplinary/{record}/summons/pdf', [DisciplinaryCouncilController::class, 'summonsPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.disciplinary.summons.pdf');
+
+Route::get('/{locale}/print/disciplinary/{record}/minutes', [DisciplinaryCouncilController::class, 'minutes'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.disciplinary.minutes');
+
+Route::get('/{locale}/print/disciplinary/{record}/minutes/pdf', [DisciplinaryCouncilController::class, 'minutesPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.disciplinary.minutes.pdf');
+
+Route::get('/{locale}/print/disciplinary/{record}/notification', [DisciplinaryCouncilController::class, 'notification'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.disciplinary.notification');
+
+Route::get('/{locale}/print/disciplinary/{record}/notification/pdf', [DisciplinaryCouncilController::class, 'notificationPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.disciplinary.notification.pdf');
+
+Route::get('/{locale}/print/disciplinary/annual-ledger', [DisciplinaryCouncilController::class, 'ledger'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.disciplinary.ledger');
+
+Route::get('/{locale}/print/disciplinary/annual-ledger/pdf', [DisciplinaryCouncilController::class, 'ledgerPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.disciplinary.ledger.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

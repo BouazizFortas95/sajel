@@ -108,4 +108,9 @@ class Student extends Model
     {
         return $this->hasOne(StudentTransfer::class)->latestOfMany('transfer_date');
     }
+
+    public function disciplinaryRecords(): HasMany
+    {
+        return $this->hasMany(DisciplinaryRecord::class)->orderByDesc('session_date');
+    }
 }

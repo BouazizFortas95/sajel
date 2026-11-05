@@ -39,4 +39,3 @@ enum TransferType: string
         };
     }
 }
-
