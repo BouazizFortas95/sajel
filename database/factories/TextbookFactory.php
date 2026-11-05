@@ -36,4 +36,3 @@ class TextbookFactory extends Factory
         ];
     }
 }
-

@@ -44,6 +44,7 @@ class SchoolBackupService
         'teacher_absences',
         'textbooks',
         'student_textbook_loans',
+        'student_transfers',
     ];
 
     /**

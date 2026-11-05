@@ -47,7 +47,13 @@ class StudentFactory extends Factory
             'first_name' => trim($isFemale ? $faker->firstNameFemale() : $faker->firstNameMale()),
             'last_name' => $faker->randomElement(self::FAMILY_NAMES),
             'registration_number' => $faker->unique()->numerify('2026-####'),
+            'matricule_number' => $faker->unique()->numerify('M-26-####'),
+            'national_id_number' => $faker->numerify('1100############'),
             'date_of_birth' => $faker->dateTimeBetween('-15 years', '-11 years')->format('Y-m-d'),
+            'place_of_birth' => $faker->randomElement(['الجزائر العاصمة', 'وهران', 'قسنطينة', 'سطيف', 'باتنة', 'الوادي', 'عنابة']),
+            'enrollment_date' => '2026-09-20',
+            'departure_date' => null,
+            'is_active' => true,
             'group_id' => Group::factory(),
         ];
     }

@@ -40,4 +40,3 @@ return new class extends Migration
         Schema::dropIfExists('student_textbook_loans');
     }
 };
-

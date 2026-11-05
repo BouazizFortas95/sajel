@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Student extends Model
 {
@@ -22,8 +23,14 @@ class Student extends Model
         'first_name',
         'last_name',
         'registration_number',
+        'matricule_number',
+        'national_id_number',
         'date_of_birth',
+        'place_of_birth',
         'group_id',
+        'enrollment_date',
+        'departure_date',
+        'is_active',
     ];
 
     /**
@@ -33,6 +40,9 @@ class Student extends Model
     {
         return [
             'date_of_birth' => 'date',
+            'enrollment_date' => 'date',
+            'departure_date' => 'date',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -87,5 +97,15 @@ class Student extends Model
     public function loans(): HasMany
     {
         return $this->hasMany(StudentTextbookLoan::class);
+    }
+
+    public function transfers(): HasMany
+    {
+        return $this->hasMany(StudentTransfer::class)->orderByDesc('transfer_date');
+    }
+
+    public function latestTransfer(): HasOne
+    {
+        return $this->hasOne(StudentTransfer::class)->latestOfMany('transfer_date');
     }
 }

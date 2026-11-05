@@ -194,4 +194,3 @@ class TextbookInventoryController extends Controller
         }
     }
 }
-

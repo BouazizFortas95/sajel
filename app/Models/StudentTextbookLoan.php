@@ -70,4 +70,3 @@ class StudentTextbookLoan extends Model
         return $query->where('clearance_granted', true);
     }
 }
-

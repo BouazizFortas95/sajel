@@ -36,4 +36,3 @@ enum TextbookReturnCondition: string
             ->all();
     }
 }
-

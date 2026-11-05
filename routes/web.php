@@ -11,6 +11,7 @@ use App\Http\Controllers\PrintDailyLogsController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
 use App\Http\Controllers\SchoolArchiveController;
 use App\Http\Controllers\StudentAwardController;
+use App\Http\Controllers\StudentMobilityController;
 use App\Http\Controllers\StudentReportCardController;
 use App\Http\Controllers\StudentStationController;
 use App\Http\Controllers\TeacherAbsenceController;
@@ -314,6 +315,36 @@ Route::get('/{locale}/print/textbooks/annual-inventory/pdf', [TextbookInventoryC
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.textbook.annual-inventory.pdf');
+
+Route::get('/{locale}/print/student-transfers/{transfer}/certificate', [StudentMobilityController::class, 'certificate'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.student-transfer.certificate');
+
+Route::get('/{locale}/print/student-transfers/{transfer}/certificate/pdf', [StudentMobilityController::class, 'certificatePdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.student-transfer.certificate.pdf');
+
+Route::get('/{locale}/print/student-transfers/ledger', [StudentMobilityController::class, 'ledger'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.student-transfer.ledger');
+
+Route::get('/{locale}/print/student-transfers/ledger/pdf', [StudentMobilityController::class, 'ledgerPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.student-transfer.ledger.pdf');
+
+Route::get('/{locale}/print/student-transfers/{transfer}/forwarding-slip', [StudentMobilityController::class, 'forwardingSlip'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.student-transfer.forwarding-slip');
+
+Route::get('/{locale}/print/student-transfers/{transfer}/forwarding-slip/pdf', [StudentMobilityController::class, 'forwardingSlipPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.student-transfer.forwarding-slip.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

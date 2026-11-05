@@ -69,4 +69,3 @@ class Textbook extends Model
         return $query->where('level_id', $levelId);
     }
 }
-

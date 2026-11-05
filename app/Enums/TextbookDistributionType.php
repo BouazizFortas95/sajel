@@ -36,4 +36,3 @@ enum TextbookDistributionType: string
             ->all();
     }
 }
-
