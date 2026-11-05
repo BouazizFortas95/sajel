@@ -5,6 +5,7 @@
     $year = $academicYear ?? ($school?->academic_year ?? '2026/2027');
     $teachersList = $teacher ? $teacher->name : ($stats['distinct_teachers']->isNotEmpty() ? $stats['distinct_teachers']->implode(' / ') : __('الأساتذة المشرفون'));
     $subjectsList = $subject ? $subject->name : ($stats['distinct_subjects']->isNotEmpty() ? $stats['distinct_subjects']->implode(' — ') : __('كافة المواد التعليمية'));
+    $allowedTags = '<p><br><strong><b><em><u><s><ul><ol><li><h2><h3><h4><h5><h6><blockquote><span>';
 @endphp
 
 <!DOCTYPE html>
@@ -123,6 +124,94 @@
             margin-bottom: 12px;
             background-color: #ffffff;
             page-break-inside: avoid;
+        }
+
+        .rich-text {
+            font-size: 11px;
+            line-height: 1.7;
+            color: #1e293b;
+        }
+
+        .rich-text > :first-child {
+            margin-top: 0;
+        }
+
+        .rich-text > :last-child {
+            margin-bottom: 0;
+        }
+
+        .rich-text p {
+            margin: 0 0 .35rem;
+        }
+
+        .rich-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        .rich-text h2,
+        .rich-text h3,
+        .rich-text h4 {
+            margin: .45rem 0 .25rem;
+            font-weight: 800;
+            line-height: 1.4;
+        }
+
+        .rich-text h2 {
+            color: #78350f;
+            font-size: 12px;
+        }
+
+        .rich-text h3 {
+            display: inline-block;
+            padding: .1rem .4rem;
+            border-inline-start: 3px solid #f59e0b;
+            border-radius: .35rem;
+            background: rgba(254, 243, 199, .6);
+            color: #92400e;
+            font-size: 11px;
+        }
+
+        .rich-text h4 {
+            color: #b45309;
+            font-size: 10.5px;
+        }
+
+        .rich-text ul,
+        .rich-text ol {
+            margin: .25rem 0 .45rem;
+            padding-inline-start: 1.25rem;
+        }
+
+        .rich-text ul {
+            list-style: disc;
+        }
+
+        .rich-text ol {
+            list-style: decimal;
+        }
+
+        .rich-text li {
+            margin-bottom: .2rem;
+            padding-inline-start: .1rem;
+        }
+
+        .rich-text li::marker {
+            color: #d97706;
+            font-weight: 700;
+        }
+
+        .rich-text strong {
+            color: #0f172a;
+            font-weight: 800;
+        }
+
+        .rich-text blockquote {
+            margin: .35rem 0;
+            padding: .3rem .5rem;
+            border-inline-start: 3px solid #fcd34d;
+            border-radius: .35rem;
+            background: rgba(255, 251, 235, .8);
+            color: #57534e;
         }
 
         @media print {
@@ -392,8 +481,12 @@
                                         {{-- Actual Content / Lesson Phases --}}
                                         <div class="text-xs text-slate-700 leading-relaxed bg-slate-50/60 p-2.5 rounded border border-slate-100 my-2">
                                             @if ($log->actual_content)
-                                                <div class="prose prose-xs max-w-none text-slate-800">
-                                                    {!! nl2br(e($log->actual_content)) !!}
+                                                <div class="rich-text text-slate-800">
+                                                    @if (\Illuminate\Support\Str::contains((string) $log->actual_content, ['<p', '<br', '<div', '<ul', '<ol', '<strong', '<h', '<span']))
+                                                        {!! strip_tags((string) $log->actual_content, $allowedTags) !!}
+                                                    @else
+                                                        {!! nl2br(e($log->actual_content)) !!}
+                                                    @endif
                                                 </div>
                                             @elseif (!empty($log->content_data))
                                                 <div class="space-y-1">

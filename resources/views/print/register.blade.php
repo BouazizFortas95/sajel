@@ -602,7 +602,11 @@
                                             <td class="border-b border-e border-amber-100 px-2.5 py-3">
                                                 @if (filled($log->actual_content))
                                                     <div class="rich-text text-slate-700">
-                                                        {!! strip_tags((string) $log->actual_content, $allowedTags) !!}
+                                                        @if (\Illuminate\Support\Str::contains((string) $log->actual_content, ['<p', '<br', '<div', '<ul', '<ol', '<strong', '<h', '<span']))
+                                                            {!! strip_tags((string) $log->actual_content, $allowedTags) !!}
+                                                        @else
+                                                            {!! nl2br(e($log->actual_content)) !!}
+                                                        @endif
                                                     </div>
                                                 @else
                                                     <span class="inline-flex rounded-md bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-400">—</span>

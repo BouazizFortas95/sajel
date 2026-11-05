@@ -260,7 +260,13 @@
                             <div class="mt-4 space-y-2">
                                 <h4 class="text-lg font-bold text-white">{{ $todayLog->title }}</h4>
                                 @if ($todayLog->actual_content)
-                                    <p class="text-sm text-slate-300 leading-relaxed">{{ $todayLog->actual_content }}</p>
+                                    <div class="text-sm text-slate-300 leading-relaxed">
+                                        @if (\Illuminate\Support\Str::contains((string) $todayLog->actual_content, ['<p', '<br', '<div', '<ul', '<ol', '<strong', '<span']))
+                                            {!! strip_tags((string) $todayLog->actual_content, '<p><br><strong><b><em><u><ul><ol><li><span>') !!}
+                                        @else
+                                            <p>{{ $todayLog->actual_content }}</p>
+                                        @endif
+                                    </div>
                                 @endif
                                 <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400 pt-2">
                                     @if ($todayLog->schedule?->user)
@@ -421,7 +427,13 @@
                                 <div>
                                     <h4 class="text-xl font-bold text-white">{{ $todayLog->title }}</h4>
                                     @if ($todayLog->actual_content)
-                                        <p class="text-sm text-slate-300 mt-1 leading-relaxed">{{ $todayLog->actual_content }}</p>
+                                        <div class="text-sm text-slate-300 mt-1 leading-relaxed">
+                                            @if (\Illuminate\Support\Str::contains((string) $todayLog->actual_content, ['<p', '<br', '<div', '<ul', '<ol', '<strong', '<span']))
+                                                {!! strip_tags((string) $todayLog->actual_content, '<p><br><strong><b><em><u><ul><ol><li><span>') !!}
+                                            @else
+                                                <p>{{ $todayLog->actual_content }}</p>
+                                            @endif
+                                        </div>
                                     @endif
                                 </div>
 

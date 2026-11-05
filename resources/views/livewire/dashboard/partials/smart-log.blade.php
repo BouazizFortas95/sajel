@@ -154,8 +154,12 @@
                     class="space-y-4"
                 >
                     @if (filled($dailyLog->actual_content))
-                        <div class="whitespace-pre-line rounded-xl bg-gray-50 px-4 py-4 text-sm leading-7 text-gray-700 dark:bg-gray-900 dark:text-gray-300">
-                            {{ $dailyLog->actual_content }}
+                        <div class="rounded-xl bg-gray-50 px-4 py-4 text-sm leading-7 text-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                            @if (\Illuminate\Support\Str::contains((string) $dailyLog->actual_content, ['<p', '<br', '<div', '<ul', '<ol', '<strong', '<h', '<span']))
+                                {!! strip_tags((string) $dailyLog->actual_content, '<p><br><strong><b><em><u><s><ul><ol><li><h2><h3><h4><blockquote><span>') !!}
+                            @else
+                                <p class="whitespace-pre-line">{{ $dailyLog->actual_content }}</p>
+                            @endif
                         </div>
                     @else
                         <p class="rounded-xl border border-dashed border-amber-200 bg-amber-50/50 px-4 py-5 text-sm leading-6 text-gray-600 dark:border-amber-700 dark:bg-amber-400/5 dark:text-gray-300">

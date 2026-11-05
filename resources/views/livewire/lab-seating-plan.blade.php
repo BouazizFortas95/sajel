@@ -908,7 +908,13 @@
                         @if ($activeDailyLog?->actual_content)
                             <div class="pt-2 border-t border-gray-200 dark:border-white/5 text-gray-700 dark:text-gray-300">
                                 <p class="font-bold mb-1">{{ __('سير الأنشطة والخطوات التجريبية:') }}</p>
-                                <p class="leading-relaxed whitespace-pre-line">{{ $activeDailyLog->actual_content }}</p>
+                                @if (\Illuminate\Support\Str::contains((string) $activeDailyLog->actual_content, ['<p', '<br', '<div', '<ul', '<ol', '<strong', '<span']))
+                                    <div class="leading-relaxed">
+                                        {!! strip_tags((string) $activeDailyLog->actual_content, '<p><br><strong><b><em><u><ul><ol><li><span>') !!}
+                                    </div>
+                                @else
+                                    <p class="leading-relaxed whitespace-pre-line">{{ $activeDailyLog->actual_content }}</p>
+                                @endif
                             </div>
                         @else
                             <div class="pt-2 border-t border-gray-200 dark:border-white/5 text-gray-500 dark:text-gray-400">

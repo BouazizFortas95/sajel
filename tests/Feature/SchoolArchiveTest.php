@@ -332,4 +332,44 @@ class SchoolArchiveTest extends TestCase
         ]))
             ->assertForbidden();
     }
+
+    public function test_annual_register_book_renders_rich_html_actual_content_without_escaping_tags(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin);
+
+        $phase = EducationPhase::factory()->create();
+        $level = Level::factory()->for($phase)->create();
+        $classroom = Classroom::factory()->for($level)->create(['name' => '1 م 1']);
+        $subject = Subject::factory()->create(['name' => 'اللغة العربية']);
+        $teacher = User::factory()->teacher()->create(['name' => 'عبد الحميد بن علي']);
+
+        $schedule = Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'classroom_id' => $classroom->id,
+            'subject_id' => $subject->id,
+            'day_of_week' => DayOfWeek::Sunday,
+        ]);
+
+        $richHtmlContent = '<p><strong>العنوان:</strong> نص: الأسرة والمدرسة</p><p><strong>الكفاءة المستهدفة:</strong> يتمكن المتعلم من فهم النص.</p><ul><li><strong>وضعية الانطلاق:</strong> طرح السؤال التوجيهي.</li></ul>';
+
+        DailyLog::factory()->create([
+            'schedule_id' => $schedule->id,
+            'date' => '2026-10-18',
+            'title' => 'درس: نص: الأسرة والمدرسة',
+            'status' => DailyLogStatus::Completed,
+            'actual_content' => $richHtmlContent,
+        ]);
+
+        $response = $this->get(route('print.school-archive.book', [
+            'locale' => 'ar',
+            'classroom' => $classroom,
+            'subject_id' => $subject->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('<p><strong>العنوان:</strong> نص: الأسرة والمدرسة</p>', false);
+        $response->assertSee('<li><strong>وضعية الانطلاق:</strong> طرح السؤال التوجيهي.</li>', false);
+        $response->assertDontSee('&lt;p&gt;&lt;strong&gt;العنوان:&lt;/strong&gt;', false);
+    }
 }
