@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-11-05
-> Verified by `php artisan test` (**435 passed**, 20,920 assertions, **0 failures**),
+> Verified by `php artisan test` (**444 passed**, 20,954 assertions, **0 failures**),
 > `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -1109,6 +1109,35 @@ Enables middle school science and informatics teachers to seamlessly link labora
       - Verified `LocalizationCompletenessTest` is 100% green with complete Arabic, English, and French translations.
       - Verified full test suite: **435 passed tests, 20,920 assertions, 0 failures, 100% green**.
       - Verified clean Pint formatting across all code files.
+
+## 26. Exam Timetable Hub, Conflict Guard & Official Algerian Middle School Schedule Print (رزنامة الفروض والامتحانات ومنع تضارب الاختبارات) (100%)
+
+Enforces Algerian Ministry of National Education scheduling regulations for midterms and exams, guards against student test overload and teacher double-booking, and provides a central interactive timetable hub and official printable A4/PDF schedules:
+
+- [x] **Algerian Ministerial Conflict Guard Service (`ExamConflictService`):**
+      - **Maximum 2 Major Tests Per Day Rule (`max_daily_assessments`):** Enforces Algerian middle school ministerial directive (`لا يجوز برمجة أكثر من فرضين محروسين في نفس اليوم للقسم الواحد`), strictly preventing any classroom from having more than two quizzes/midterms/exams on any calendar date.
+      - **Time-Slot Overlap Collision Guard (`time_overlap`):** Detects overlapping start and end times for scheduled assessments targeting the same classroom section or student group.
+      - **Teacher Double-Booking Collision Guard (`teacher_double_booking`):** Flags cross-classroom collisions when a teacher is assigned an assessment overlapping another of their scheduled assessments at the same time.
+      - **Trimester Date Range & Group Scoping:** Automatically determines the Algerian trimester calendar bounds (1st: Sep–Dec, 2nd: Jan–Mar, 3rd: Apr–Jun) and filters or aggregates assessments across class groups.
+- [x] **Reactive Assessment Form Validation & Conflict Callout (`AssessmentResource`):**
+      - Reactive scheduling fields (`schedule_id`, `type`, `date`) trigger live conflict analysis via `afterStateUpdated`.
+      - Dynamic visual callout banner (`Placeholder('conflict_status')`): displays a reassuring green badge when all conflict checks pass, or an amber/rose alert summary specifying collision reasons when conflicts occur.
+      - Form validation rule rejecting creation or modification if a classroom exceeds 2 major assessments on the target date.
+- [x] **Exam Timetable Hub (`ExamTimetableHub`):**
+      - Registered under `__('التشغيل اليومي')` (`Daily Operations`) with icon `heroicon-o-calendar-days` and URL binding for `classroom_id`, `trimester`, and `assessment_type`.
+      - Role-scoped classroom selector: teachers only view their assigned classes, while administrators and directors view all school classes.
+      - Responsive summary KPI cards: Total Scheduled Assessments, Midterms & Exams count, Distinct Subjects, and Active Conflicts.
+      - Active Conflict Alert banner with quick rescheduling shortcuts and conflict explanations.
+      - Chronological date-grouped calendar view featuring daily assessment load badges, subject color pills, time slots, teacher signatures, and direct gradebook links.
+- [x] **Official Algerian A4 Printable Timetable & PDF (`ExamTimetableController`):**
+      - Formatted strictly according to Algerian Ministry of National Education administrative layout: Republic header, Algerian coat of arms / school logo, academic year, classroom title, structured table columns (Date, Day, Time Slot, Subject, Assessment Type, Teacher, Notes).
+      - Prominent pedagogical regulation warning note citing the official limit of 2 assessments per day.
+      - Official tripartite approval block: Classroom Delegate (مندوب القسم), Director of Studies / Principal (مدير المؤسسة / ناظر الدروس), and Official Administrative Stamp (الختم الرسمي).
+      - Localized printable web view (`print.exam-timetable`) and streamed PDF download (`print.exam-timetable.pdf`) using Spatie Browsershot.
+- [x] **Comprehensive Testing & Localization:**
+      - Added 9 feature tests in `tests/Feature/ExamTimetableTest.php` covering access permissions, rule violation detection, form validation, page rendering, and printable/PDF routes.
+      - 100% complete Arabic, English, and French translation keys (61 keys added and verified green in `LocalizationCompletenessTest`).
+      - Full test suite: **444 passed tests, 20,954 assertions, 0 failures, 100% green**.
 
 
 

@@ -7,7 +7,9 @@ use App\Filament\Resources\AssessmentResource\Pages;
 use App\Filament\Resources\AssessmentResource\RelationManagers\GradesRelationManager;
 use App\Models\Assessment;
 use App\Models\Schedule;
+use App\Services\ExamConflictService;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -17,6 +19,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\HtmlString;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
 
@@ -153,6 +156,7 @@ class AssessmentResource extends Resource
                             ->searchable()
                             ->preload()
                             ->required()
+                            ->live()
                             ->disabledOn('edit')
                             ->rules([
                                 Rule::exists('schedules', 'id')->when(
@@ -177,12 +181,31 @@ class AssessmentResource extends Resource
                             ->label(__('النوع'))
                             ->options(AssessmentType::options())
                             ->default(AssessmentType::Quiz->value)
-                            ->required(),
+                            ->required()
+                            ->live(),
 
                         DatePicker::make('date')
                             ->label(__('التاريخ'))
                             ->required()
-                            ->default(today()),
+                            ->default(today())
+                            ->live()
+                            ->rules([
+                                function ($get, ?Assessment $record) {
+                                    return function (string $attribute, $value, \Closure $fail) use ($get, $record) {
+                                        $scheduleId = (int) $get('schedule_id');
+                                        $type = (string) ($get('type') ?? '');
+                                        if ($scheduleId && $value && in_array($type, [AssessmentType::Midterm->value, AssessmentType::Exam->value], true)) {
+                                            $service = app(ExamConflictService::class);
+                                            $conflicts = $service->checkConflicts($scheduleId, $value, $type, $record?->id);
+                                            foreach ($conflicts as $c) {
+                                                if ($c['type'] === 'daily_limit') {
+                                                    $fail($c['message']);
+                                                }
+                                            }
+                                        }
+                                    };
+                                },
+                            ]),
 
                         TextInput::make('max_score')
                             ->label(__('العلامة القصوى'))
@@ -192,6 +215,51 @@ class AssessmentResource extends Resource
                             ->maxValue(999.99)
                             ->step(0.01)
                             ->default(20),
+
+                        Placeholder::make('conflict_status')
+                            ->label(__('حالة التضارب والرزنامة'))
+                            ->visible(fn ($get) => filled($get('schedule_id')) && filled($get('date')))
+                            ->content(function ($get, ?Assessment $record, ExamConflictService $conflictService) {
+                                $scheduleId = (int) $get('schedule_id');
+                                $date = (string) $get('date');
+                                $type = (string) ($get('type') ?? AssessmentType::Midterm->value);
+
+                                if (! $scheduleId || ! $date) {
+                                    return null;
+                                }
+
+                                $conflicts = $conflictService->checkConflicts(
+                                    $scheduleId,
+                                    $date,
+                                    $type,
+                                    $record?->id
+                                );
+
+                                if (empty($conflicts)) {
+                                    return new HtmlString(
+                                        '<div class="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800">'
+                                        .'<span class="text-emerald-500 font-bold">✔</span>'
+                                        .'<span>'.__('الموعد سليم بيداغوجياً: لا يوجد أي تضارب زمني أو تجاوز للحد الأقصى اليومي.').'</span>'
+                                        .'</div>'
+                                    );
+                                }
+
+                                $html = '<div class="space-y-1.5">';
+                                foreach ($conflicts as $c) {
+                                    $isDanger = $c['severity'] === 'danger';
+                                    $bg = $isDanger
+                                        ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                                        : 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300';
+                                    $html .= '<div class="flex items-center gap-2 text-xs font-semibold p-2.5 rounded-xl border '.$bg.'">'
+                                        .'<span>⚠️</span>'
+                                        .'<span>'.e($c['message']).'</span>'
+                                        .'</div>';
+                                }
+                                $html .= '</div>';
+
+                                return new HtmlString($html);
+                            })
+                            ->columnSpanFull(),
                     ]),
             ]);
     }

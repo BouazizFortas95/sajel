@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ClassCouncilController;
 use App\Http\Controllers\DownloadPedagogicalMemoPdfController;
+use App\Http\Controllers\ExamTimetableController;
 use App\Http\Controllers\InspectionReportController;
 use App\Http\Controllers\OfficialReportController;
 use App\Http\Controllers\ParentPortalController;
@@ -131,6 +132,16 @@ Route::get('/{locale}/print/classrooms/{classroom}/class-council/pdf', [ClassCou
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.class-council.pdf');
+
+Route::get('/{locale}/print/classrooms/{classroom}/exam-timetable', [ExamTimetableController::class, 'print'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.exam-timetable');
+
+Route::get('/{locale}/print/classrooms/{classroom}/exam-timetable/pdf', [ExamTimetableController::class, 'pdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.exam-timetable.pdf');
 
 Route::get('/{locale}/print/teachers/{user}/portfolio', [TeacherPortfolioController::class, 'print'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
