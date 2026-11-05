@@ -9,6 +9,7 @@ use App\Http\Controllers\ParentPortalController;
 use App\Http\Controllers\PrintAssessmentController;
 use App\Http\Controllers\PrintDailyLogsController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
+use App\Http\Controllers\SchoolArchiveController;
 use App\Http\Controllers\StudentAwardController;
 use App\Http\Controllers\StudentReportCardController;
 use App\Http\Controllers\StudentStationController;
@@ -173,6 +174,16 @@ Route::get('/{locale}/print/classrooms/{classroom}/honor-roll/pdf', [StudentAwar
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.classroom-honor-roll.pdf');
+
+Route::get('/{locale}/print/classrooms/{classroom}/annual-register-book', [SchoolArchiveController::class, 'printBook'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-archive.book');
+
+Route::get('/{locale}/print/classrooms/{classroom}/annual-register-book/pdf', [SchoolArchiveController::class, 'pdfBook'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-archive.book.pdf');
 
 Route::get('/{locale}/print/teachers/{user}/portfolio', [TeacherPortfolioController::class, 'print'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))

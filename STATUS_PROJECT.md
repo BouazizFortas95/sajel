@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-11-05
-> Verified by `php artisan test` (**456 passed**, 21,009 assertions, **0 failures**),
+> Verified by `php artisan test` (**463 passed**, 21,044 assertions, **0 failures**),
 > `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -1168,6 +1168,32 @@ Automatically evaluates student assessment averages, conduct observations, and a
       - Added 12 feature tests in `tests/Feature/StudentAwardsTest.php` covering access permissions, average calculations, award eligibility rules, trimester scoping, layout rendering, and PDF streams.
       - Added 89 translation keys covering Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
       - Full test suite: **456 passed tests, 21,009 assertions, 0 failures, 100% green**.
+
+## 28. Digital School Archive & Bound Annual Register Book (أرشيف المؤسسة الرقمي وتصدير دفاتر النصوص السنوية المجلدة) (100%)
+
+Assembles, audits, and exports the complete class register (دفتر النصوص) as an official bound annual digital book for any classroom, subject, or academic trimester in compliance with Algerian Ministry of National Education pedagogical archival directives:
+
+- [x] **Annual Register Book Assembly & Pedagogical Engine (`SchoolArchiveService`):**
+      - **Official Commemorative Hardcover:** Automatically generates an authentic Algerian administrative cover page with the Republic header, Directorate of Education, school identity, academic year, classroom, subject, supervising teachers, and unique digital archive registration code (`ARCH-{year}-{classId}-{subjectId}`).
+      - **Curriculum Domain & Progress Index:** Formats an exhaustive table of all taught knowledge resources mapped to their parent learning sequences and domains, calculating the exact percentage of syllabus completion against the official ministerial curriculum.
+      - **Chronological Register Ledger:** Structures completed daily logs chronologically across trimesters and months with detailed pedagogical lesson phases, actual content delivered, homework assignments, and attendance tallies.
+      - **Administrative & Inspection Visa Ledger:** Compiles an official audit ledger of all administrative stamps and pedagogical inspection visas with inspection dates, reviewer credentials, and instructional directives.
+      - **Annual Statistical Balance Sheet:** Calculates total instructional sessions, delivered teaching hours, homework frequency, distinct subjects/teachers, and overall student attendance rate.
+      - **Official Archival Attestation & Closing Signatures:** Formats the legal Algerian closing minutes and tripartite/quadripartite sign-off block (Subject Teacher, Director of Studies, Middle School Inspector, Principal & Official Seal).
+- [x] **School Archive Hub Cockpit (`SchoolArchiveHub`):**
+      - Registered under `__('التشغيل اليومي')` (`Daily Operations`) with icon `heroicon-o-archive-box`.
+      - Live URL bindings for classroom, subject, trimester, and teacher selectors.
+      - 6 summary KPI cards: Total Completed Sessions, Delivered Teaching Hours, Covered Knowledge Resources, Syllabus Completion %, Administrative Visas Count, and General Attendance Rate.
+      - Comprehensive preview tabs for curriculum domain distribution, chronological lesson logs, and administrative inspection visas.
+      - 1-click header actions for viewing the bound A4 book, exporting the full PDF, and printing archival records.
+- [x] **Official Algerian A4 Book Print Layout & Streaming PDF (`SchoolArchiveController`):**
+      - Web print view (`print.school-archive.book`) and streamed PDF download (`print.school-archive.book.pdf`) utilizing Spatie Browsershot.
+      - Strict page-break rules separating the Hardcover, Curriculum Index, Chronological Register Logs, Visas Ledger, and Annual Balance & Closing Attestation.
+- [x] **Comprehensive Testing & Complete Tri-Lingual Localization:**
+      - Added 7 feature tests in `tests/Feature/SchoolArchiveTest.php` covering access permissions, curriculum completion calculations, trimester/teacher filtering, layout rendering, and PDF streams.
+      - Added 80 translation keys covering Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
+      - Full test suite: **463 passed tests, 21,044 assertions, 0 failures, 100% green**.
+
 
 
 
