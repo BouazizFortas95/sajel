@@ -22,6 +22,7 @@ class Student extends Model
     protected $fillable = [
         'first_name',
         'last_name',
+        'gender',
         'registration_number',
         'matricule_number',
         'national_id_number',
@@ -31,6 +32,10 @@ class Student extends Model
         'enrollment_date',
         'departure_date',
         'is_active',
+        'regime',
+        'guardian_name',
+        'guardian_phone',
+        'guardian_relation',
     ];
 
     /**
@@ -61,39 +66,6 @@ class Student extends Model
         return $this->hasMany(Grade::class);
     }
 
-    /**
-     * Students that belong to the roster targeted by a schedule.
-     *
-     * A schedule with a specific group targets only that group. Otherwise, it
-     * targets every group in the classroom. A schedule with neither targets
-     * nobody rather than accidentally returning the whole school.
-     */
-    public function scopeForSchedule(Builder $query, Schedule $schedule): Builder
-    {
-        if (filled($schedule->group_id)) {
-            return $query->where('group_id', $schedule->group_id);
-        }
-
-        if (filled($schedule->classroom_id)) {
-            return $query->whereHas(
-                'group',
-                fn (Builder $query): Builder => $query->where('classroom_id', $schedule->classroom_id),
-            );
-        }
-
-        return $query->whereRaw('1 = 0');
-    }
-
-    /**
-     * The student's full name, used by Filament tables and reports.
-     */
-    protected function fullName(): Attribute
-    {
-        return Attribute::get(
-            fn (): string => trim("{$this->first_name} {$this->last_name}"),
-        );
-    }
-
     public function loans(): HasMany
     {
         return $this->hasMany(StudentTextbookLoan::class);
@@ -112,5 +84,99 @@ class Student extends Model
     public function disciplinaryRecords(): HasMany
     {
         return $this->hasMany(DisciplinaryRecord::class)->orderByDesc('session_date');
+    }
+
+    /**
+     * The student's full name, used by Filament tables and reports.
+     */
+    protected function fullName(): Attribute
+    {
+        return Attribute::get(
+            fn (): string => trim("{$this->first_name} {$this->last_name}"),
+        );
+    }
+
+    /*
+     * -------------------------------------------------------------
+     * Aliases & Accessors for Cross-System and Ministry Compatibility
+     * -------------------------------------------------------------
+     */
+
+    public function getNationalIdAttribute(): ?string
+    {
+        return $this->national_id_number;
+    }
+
+    public function setNationalIdAttribute($value): void
+    {
+        $this->attributes['national_id_number'] = $value;
+    }
+
+    public function getBirthDateAttribute()
+    {
+        return $this->date_of_birth;
+    }
+
+    public function getBirthPlaceAttribute(): ?string
+    {
+        return $this->place_of_birth;
+    }
+
+    public function isMale(): bool
+    {
+        return in_array(strtolower((string) $this->gender), ['male', 'm', 'ذكر', '1'], true);
+    }
+
+    public function isFemale(): bool
+    {
+        return in_array(strtolower((string) $this->gender), ['female', 'f', 'أنثى', '2'], true);
+    }
+
+    public function regimeLabel(): string
+    {
+        return match (strtolower((string) $this->regime)) {
+            'half_board', 'نصف داخلي' => __('نصف داخلي'),
+            'boarder', 'داخلي' => __('داخلي'),
+            default => __('خارجي'),
+        };
+    }
+
+    /*
+     * -------------------------------------------------------------
+     * Query Scopes
+     * -------------------------------------------------------------
+     */
+
+    public function scopeForSchedule(Builder $query, Schedule $schedule): Builder
+    {
+        if (filled($schedule->group_id)) {
+            return $query->where('group_id', $schedule->group_id);
+        }
+
+        if (filled($schedule->classroom_id)) {
+            return $query->whereHas(
+                'group',
+                fn (Builder $query): Builder => $query->where('classroom_id', $schedule->classroom_id),
+            );
+        }
+
+        return $query->whereRaw('1 = 0');
+    }
+
+    public function scopeWithNin(Builder $query): Builder
+    {
+        return $query->whereNotNull('national_id_number')->where('national_id_number', '!=', '');
+    }
+
+    public function scopeWithoutNin(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q) {
+            $q->whereNull('national_id_number')->orWhere('national_id_number', '');
+        });
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
     }
 }

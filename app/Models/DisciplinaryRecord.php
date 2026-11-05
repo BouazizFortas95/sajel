@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\DisciplinarySanction;
 use App\Enums\DisciplinaryStatus;
 use App\Enums\InfractionDegree;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

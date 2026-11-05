@@ -10,6 +10,7 @@ use App\Http\Controllers\ParentPortalController;
 use App\Http\Controllers\PrintAssessmentController;
 use App\Http\Controllers\PrintDailyLogsController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
+use App\Http\Controllers\RakmanaSyncController;
 use App\Http\Controllers\SchoolArchiveController;
 use App\Http\Controllers\StudentAwardController;
 use App\Http\Controllers\StudentMobilityController;
@@ -386,6 +387,16 @@ Route::get('/{locale}/print/disciplinary/annual-ledger/pdf', [DisciplinaryCounci
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.disciplinary.ledger.pdf');
+
+Route::get('/{locale}/rakmana/grades/{classroom}/{subject}/export-csv', [RakmanaSyncController::class, 'exportGradeCsv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('rakmana.grades.export-csv');
+
+Route::get('/{locale}/rakmana/sample-roster', [RakmanaSyncController::class, 'downloadSampleRoster'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('rakmana.sample-roster');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

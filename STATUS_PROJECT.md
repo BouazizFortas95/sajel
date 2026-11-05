@@ -1294,6 +1294,33 @@ Complete statutory disciplinary council proceeding engine compliant with Algeria
       - Added 210+ translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
       - Full test suite: **498 passed tests, 21,247 assertions, 0 failures, 100% green**.
 
+## 33. Ministry "Rakmana" Digital Platform Integration & Data Synchronization Hub (منظومة التكامل ومزامنة منصة الرقمنة الوزارية) (100%)
+
+Bidirectional ministerial data integration hub compliant with the official Algerian Ministry of National Education digital portal (الرقمنة):
+
+- [x] **Database Enhancement (`students` Table):**
+      - Migration `2026_11_06_010001_add_rakmana_fields_to_students_table.php` adding ministerial profile fields: `gender` (male/female), `regime` (external, half-board, boarder), `guardian_name`, `guardian_phone`, `guardian_relation`.
+      - Model `Student` extended with `isMale()`, `isFemale()`, `regimeLabel()`, `national_id` accessor/mutator, and query scopes `withNin()`, `withoutNin()`, `active()`.
+- [x] **Domain Service (`RakmanaSyncService`):**
+      - **Official Ministry Roster Parser (`parseRosterFile` & `previewImport`):** Auto-detects delimiters (comma, semicolon, tab, pipe), handles UTF-8 BOM, Windows-1256, and ministerial HTML table exports. Intelligently maps Arabic/French headers (NIN, Matricule, Nom, Prénom, Sexe, Date/Lieu de naissance, Classe/Division, Régime, Tuteur, Téléphone).
+      - **Transactional Importer (`executeImport`):** Creates new students, assigns or auto-creates educational groups, and updates existing records matching on NIN, registration number, or identity without duplicating data.
+      - **Ministerial Trimester Grade Matrix (`generateGradeExportMatrix`):** Assembles Continuous Assessment (تقويم مستمر), Midterm (فرض), and Exam (اختبار) for any classroom and subject, computing the official Algerian middle school weighted average (`(continuous + midterm + (exam * 2)) / 4`) and pedagogical appreciation.
+      - **Ministerial Format Grade Exporter (`generateRakmanaGradeCsv`):** Generates UTF-8 BOM CSV files matching the Ministry portal's import template format, ready for direct 1-click batch upload.
+      - **Data Reconciliation & Audit Engine (`auditReconciliation`):** Computes institution digital readiness rate (NIN coverage %), detects missing birth details or guardian phones, and generates actionable lists of students needing NIN regularization.
+- [x] **Interactive Filament Cockpit (`RakmanaSyncHub`):**
+      - Registered under `__('التشغيل اليومي')` (`Daily Operations`) with icon `heroicon-o-arrow-path-rounded-square` and sort order 89.
+      - 3 interactive tabs:
+        1. **استيراد قوائم الرقمنة (Ministry Roster Importer):** File upload / raw paste zone, live pre-import preview cards (new vs updated vs skipped), detected groups badges, and 1-click execution.
+        2. **تصدير كشوف رصد النقاط الوزارية (Rakmana Grade Exporter):** Classroom, Subject, and Trimester selectors with live preview table and 1-click CSV export button.
+        3. **مدقق المطابقة والفروقات (Audit Dashboard):** Executive metric cards, digital readiness rate %, and actionable student list with inline NIN quick-edit and instant saving.
+- [x] **Web Controller & Routes (`RakmanaSyncController`):**
+      - `rakmana.grades.export-csv`: downloads ministerial grade matrix as UTF-8 BOM CSV with proper attachment headers.
+      - `rakmana.sample-roster`: downloads official sample roster CSV template.
+- [x] **Comprehensive Testing & Complete Tri-Lingual Localization:**
+      - Added 9 feature tests in `tests/Feature/RakmanaSyncTest.php` covering roster parsing, student creation/updates, Algerian grade calculation, CSV formatting with BOM, download routes, audit reconciliation, and Livewire hub rendering.
+      - Added 65+ translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
+      - Full test suite: **507 passed tests, 21,292 assertions, 0 failures, 100% green**.
+
 
 
 
