@@ -189,3 +189,4 @@ class DisciplinaryCouncilController extends Controller
         );
     }
 }
+

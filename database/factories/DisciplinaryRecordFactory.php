@@ -85,3 +85,4 @@ class DisciplinaryRecordFactory extends Factory
         ]);
     }
 }
+
