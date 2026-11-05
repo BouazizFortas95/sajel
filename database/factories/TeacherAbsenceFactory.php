@@ -51,4 +51,3 @@ class TeacherAbsenceFactory extends Factory
         ]);
     }
 }
-

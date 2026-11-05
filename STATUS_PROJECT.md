@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-11-05
-> Verified by `php artisan test` (**463 passed**, 21,044 assertions, **0 failures**),
+> Verified by `php artisan test` (**478 passed**, 21,141 assertions, **0 failures**),
 > `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -1194,7 +1194,39 @@ Assembles, audits, and exports the complete class register (دفتر النصو�
       - Added 80 translation keys covering Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
       - Full test suite: **464 passed tests, 21,048 assertions, 0 failures, 100% green**.
 
-## 29. Teacher Absence Radar & Quick Pedagogical Replacement Management (رادار غيابات الأساتذة وإدارة الاستخلاف البيداغوجي السريع) (100%)
+## 30. School Textbook Inventory, Solidarity Scheme & Student Clearance Certificate (منظومة إدارة الكتاب المدرسي وحصص التضامن وبراءة الذمة) (100%)
+
+Comprehensive institutional management system compliant with Algerian Ministry of National Education and ONPS (الديوان الوطني للمطبوعات المدرسية) / CRDDP regulations, empowering middle school administrations, bursars (المقتصد), and textbook store managers to oversee book stocks, solidarity allowances (منحة 5000 دج), loan packages, and official end-of-year clearance certificates (Quitus):
+
+- [x] **Database Schema & Eloquent Domain Models (`textbooks`, `student_textbook_loans`):**
+      - Migrations `2026_10_28_010001_create_textbooks_table.php` and `2026_10_28_010002_create_student_textbook_loans_table.php` introducing the 28th and 29th core domain tables.
+      - Enums `TextbookDistributionType` (Solidarity, Purchased, Loan) and `TextbookReturnCondition` (Good, Damaged, Lost).
+      - Model `Textbook` with computed stock helpers (`distributedCount`, `availableStock`, `returnedCount`), active scopes, and relationships to `Level` and `Subject`.
+      - Model `StudentTextbookLoan` with casts, scopes (`forAcademicYear`, `pendingReturn`), condition tracking, and relationships to `Student`, `Textbook`, and `User` (distributed by).
+      - `Student` model updated with `loans(): HasMany`.
+      - Integrated into `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` (29 verified tables).
+- [x] **Domain Service (`TextbookInventoryService`):**
+      - **National ONPS Curriculum Catalog Generator (`seedStandardAlgerianCatalog`):** Automatically generates and matches official prescribed textbook titles and prices for levels 1AM through 4AM with standard Algerian National Education guidelines.
+      - **Classroom Pack Batch Distribution (`batchDistributeToClassroom` & `distributeToStudent`):** Distributes book packs across entire classrooms or individual students with automatic stock deduction and category tagging (Free Solidarity vs Loan vs Purchased).
+      - **Condition Evaluation & Returns Processing (`processReturn`):** Consigns returned books, evaluates condition (Good, Damaged, Lost), records inspection notes, and sets individual clearance status.
+      - **Clearance Engine (`checkStudentClearance` & `grantStudentClearance`):** Automatically computes student clearance eligibility based on return status and allows official clearance certification.
+      - **KPI Aggregator & Data Assembly:** Computes warehouse stock, circulation rate, solidarity consumption %, and compiles data for printable documents.
+- [x] **Interactive Filament Cockpit (`TextbookInventoryHub`):**
+      - Registered under `__('التشغيل اليومي')` (`Daily Operations`) with icon `heroicon-o-book-open`.
+      - 4 dedicated tabs:
+        1. **دليل ورصيد الكتب (Catalog & Stock):** Displays all textbooks with level filters, stock availability bars, received quantities, and 1-click batch stock adjustment.
+        2. **توزيع الكتب والتضامن (Distribution & Solidarity):** Classroom-by-classroom distribution tracker, filtering by beneficiary category (5000 DZD solidarity, free quotas, loan).
+        3. **استرجاع الكتب وبراءة الذمة (Returns & Clearance):** Student clearance table, inspection return modal with Good/Damaged/Lost radios and compensation notes, and 1-click clearance granting.
+        4. **الجرد السنوي (ONPS Annual Inventory):** Comprehensive balance ledger with received, distributed, remaining stock, unit prices, and financial value in DZD.
+      - Header actions for seeding the national catalog, batch-distributing classroom packs, printing sheets, and exporting PDFs.
+- [x] **Official Algerian A4 Printable Documents & PDFs (`TextbookInventoryController`):**
+      - **Student Clearance Certificate (`print.textbook.clearance` + `.pdf`):** Formal A4 portrait certificate (Quitus) with official Algerian header, student bio & classroom, itemized loaned and returned book table with condition badges, legal clearance attestation, and signature boxes for the Store Manager and School Administration.
+      - **Classroom Distribution Sheet (`print.textbook.classroom` + `.pdf`):** A4 tracking sheet for tracking distribution and return signatures per student for a given class section.
+      - **Annual ONPS Inventory & Movement Ledger (`print.textbook.annual-inventory` + `.pdf`):** Formal A4 landscape financial and physical inventory statement for official transmission to ONPS / CRDDP and the Directorate of Education.
+- [x] **Comprehensive Testing & Complete Tri-Lingual Localization:**
+      - Added 8 feature tests in `tests/Feature/TextbookInventoryTest.php` covering catalog seeding, classroom pack distribution, condition evaluation, clearance calculation, access permissions, and PDF streams.
+      - Added 150 translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
+      - Full test suite: **478 passed tests, 21,141 assertions, 0 failures, 100% green**.
 
 Equips middle school principals, education advisors (مستشار التربية), and directors of studies (ناظر الدروس) with a proactive real-time dashboard to track teacher absences, instantly identify affected classes, smart-match available substitute teachers without timetable collisions, and generate official Algerian ministerial mandates and monthly replacement audit ledgers:
 

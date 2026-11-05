@@ -15,6 +15,7 @@ use App\Http\Controllers\StudentReportCardController;
 use App\Http\Controllers\StudentStationController;
 use App\Http\Controllers\TeacherAbsenceController;
 use App\Http\Controllers\TeacherPortfolioController;
+use App\Http\Controllers\TextbookInventoryController;
 use App\Http\Middleware\SetFilamentLocale;
 use App\Models\SchoolSetting;
 use App\Models\Student;
@@ -283,6 +284,36 @@ Route::get('/{locale}/print/teacher-absences/monthly-ledger/pdf', [TeacherAbsenc
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.teacher-absence.monthly-ledger.pdf');
+
+Route::get('/{locale}/print/students/{student}/textbook-clearance', [TextbookInventoryController::class, 'clearance'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.textbook.clearance');
+
+Route::get('/{locale}/print/students/{student}/textbook-clearance/pdf', [TextbookInventoryController::class, 'clearancePdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.textbook.clearance.pdf');
+
+Route::get('/{locale}/print/classrooms/{classroom}/textbooks', [TextbookInventoryController::class, 'classroomSheet'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.textbook.classroom');
+
+Route::get('/{locale}/print/classrooms/{classroom}/textbooks/pdf', [TextbookInventoryController::class, 'classroomSheetPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.textbook.classroom.pdf');
+
+Route::get('/{locale}/print/textbooks/annual-inventory', [TextbookInventoryController::class, 'annualInventory'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.textbook.annual-inventory');
+
+Route::get('/{locale}/print/textbooks/annual-inventory/pdf', [TextbookInventoryController::class, 'annualInventoryPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.textbook.annual-inventory.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

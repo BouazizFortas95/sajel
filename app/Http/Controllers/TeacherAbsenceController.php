@@ -148,4 +148,3 @@ class TeacherAbsenceController extends Controller
         }
     }
 }
-

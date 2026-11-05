@@ -42,4 +42,3 @@ enum TeacherAbsenceStatus: string
             ->all();
     }
 }
-

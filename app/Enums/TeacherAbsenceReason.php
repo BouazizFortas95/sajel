@@ -45,4 +45,3 @@ enum TeacherAbsenceReason: string
             ->all();
     }
 }
-

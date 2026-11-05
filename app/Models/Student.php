@@ -83,4 +83,9 @@ class Student extends Model
             fn (): string => trim("{$this->first_name} {$this->last_name}"),
         );
     }
+
+    public function loans(): HasMany
+    {
+        return $this->hasMany(StudentTextbookLoan::class);
+    }
 }

@@ -42,6 +42,8 @@ class SchoolBackupService
         'pedagogical_remediations',
         'inspection_reports',
         'teacher_absences',
+        'textbooks',
+        'student_textbook_loans',
     ];
 
     /**

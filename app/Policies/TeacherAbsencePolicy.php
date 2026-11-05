@@ -46,4 +46,3 @@ class TeacherAbsencePolicy
         return $absence->teacher_id === $user->id;
     }
 }
-
