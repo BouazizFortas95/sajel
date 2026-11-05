@@ -300,18 +300,18 @@
         @else
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-gray-200 text-start dark:border-white/10">
-                            <th class="px-3 py-3 text-start font-semibold text-gray-950 dark:text-white">{{ __('المادة') }}</th>
-                            <th class="px-3 py-3 text-start font-semibold text-gray-950 dark:text-white">{{ __('القسم') }}</th>
-                            <th class="px-3 py-3 text-start font-semibold text-gray-950 dark:text-white">{{ __('الحالة') }}</th>
-                            <th class="px-3 py-3 text-start font-semibold text-gray-950 dark:text-white">{{ __('المقاطع المكتملة') }}</th>
-                            <th class="px-3 py-3 text-start font-semibold text-gray-950 dark:text-white">{{ __('الموارد المنجزة') }}</th>
-                            <th class="min-w-52 px-3 py-3 text-start font-semibold text-gray-950 dark:text-white">{{ __('نسبة التقدم') }}</th>
-                            <th class="px-3 py-3 text-end font-semibold text-gray-950 dark:text-white">{{ __('عرض') }}</th>
+                    <thead class="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+                        <tr class="text-start">
+                            <th class="px-3 py-3 text-start font-bold text-gray-800 dark:text-gray-200">{{ __('المادة') }}</th>
+                            <th class="px-3 py-3 text-start font-bold text-gray-800 dark:text-gray-200">{{ __('القسم') }}</th>
+                            <th class="px-3 py-3 text-start font-bold text-gray-800 dark:text-gray-200">{{ __('الحالة') }}</th>
+                            <th class="px-3 py-3 text-start font-bold text-gray-800 dark:text-gray-200">{{ __('المقاطع المكتملة') }}</th>
+                            <th class="px-3 py-3 text-start font-bold text-gray-800 dark:text-gray-200">{{ __('الموارد المنجزة') }}</th>
+                            <th class="min-w-52 px-3 py-3 text-start font-bold text-gray-800 dark:text-gray-200">{{ __('نسبة التقدم') }}</th>
+                            <th class="px-3 py-3 text-end font-bold text-gray-800 dark:text-gray-200">{{ __('عرض') }}</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-white/10">
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                         @foreach ($paginator as $row)
                             @php
                                 $status = $this->rowStatus($row);

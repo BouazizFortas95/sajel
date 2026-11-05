@@ -207,9 +207,9 @@
                                 $isOverLimit = $majorDayCount > \App\Services\ExamConflictService::MAX_MAJOR_ASSESSMENTS_PER_DAY;
                             @endphp
 
-                            <div class="rounded-2xl border {{ $isOverLimit ? 'border-rose-400 dark:border-rose-700 bg-rose-50/20' : 'border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900' }} p-4 shadow-xs transition">
+                            <div class="rounded-2xl border {{ $isOverLimit ? 'border-rose-400 dark:border-rose-700 bg-rose-50/20 dark:bg-rose-950/30' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900' }} p-4 shadow-xs transition">
                                 {{-- Date Header --}}
-                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-100 dark:border-white/5">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-100 dark:border-gray-700">
                                     <div class="flex items-center gap-2.5">
                                         <div class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-xs text-gray-800 dark:text-gray-200 font-mono">
                                             {{ $dayCarbon->format('d') }}
@@ -249,7 +249,7 @@
                                             $hasClash = ! empty($conflicts[$assessment->id]);
                                             $subjectColor = $assessment->schedule?->subject?->color ?? '#64748b';
                                         @endphp
-                                        <div class="p-3.5 rounded-xl border {{ $hasClash ? 'border-rose-400 bg-rose-50/40 dark:bg-rose-950/20' : 'border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-gray-800/40' }} flex flex-col justify-between gap-3">
+                                        <div class="p-3.5 rounded-xl border {{ $hasClash ? 'border-rose-400 dark:border-rose-700 bg-rose-50/40 dark:bg-rose-950/40' : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800' }} flex flex-col justify-between gap-3">
                                             <div class="space-y-1.5">
                                                 <div class="flex items-center justify-between gap-2">
                                                     <span

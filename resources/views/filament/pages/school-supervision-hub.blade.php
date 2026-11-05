@@ -121,7 +121,7 @@
             <div x-cloak x-show="activeTab === 'sessions'" role="tabpanel" class="overflow-x-auto p-4">
                 @if (count($data['overdueSessions']))
                     <table class="w-full min-w-[760px] text-start text-sm">
-                        <thead class="text-xs uppercase text-gray-500 dark:text-gray-400">
+                        <thead class="text-xs uppercase bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
                             <tr>
                                 <th class="px-3 py-2">{{ __('الأستاذ(ة)') }}</th>
                                 <th class="px-3 py-2">{{ __('المادة') }}</th>

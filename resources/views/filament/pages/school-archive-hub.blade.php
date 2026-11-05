@@ -263,7 +263,7 @@
                 @if (!empty($curriculumIndex['domains']))
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         @foreach ($curriculumIndex['domains'] as $domain)
-                            <div class="p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-gray-800/30">
+                            <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                                 <h4 class="text-sm font-extrabold text-amber-900 dark:text-amber-300 mb-1">
                                     {{ $domain['name'] }}
                                 </h4>

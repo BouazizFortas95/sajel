@@ -124,7 +124,7 @@
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-right text-xs">
-                        <thead class="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-white/10">
+                        <thead class="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
                             <tr>
                                 <th class="p-3 font-bold w-12 text-center">#</th>
                                 <th class="p-3 font-bold">{{ __('التلميذ / القسم') }}</th>
@@ -136,13 +136,13 @@
                                 <th class="p-3 font-bold text-center">{{ __('الإجراءات والمستندات') }}</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                             @forelse($records as $record)
                                 @php
                                     $student = $record->student;
                                     $classroom = $student?->group?->classroom;
                                 @endphp
-                                <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/30 transition">
+                                <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/50 transition">
                                     <td class="p-3 text-center font-mono font-bold text-gray-500">
                                         {{ $record->session_number ?? 'CD-'.$record->id }}
                                     </td>
@@ -284,68 +284,68 @@
                     @endphp
 
                     {{-- Exclusions Card --}}
-                    <div class="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 rounded-xl p-4">
-                        <div class="flex items-center justify-between pb-2 border-b border-rose-200 dark:border-rose-900/30">
-                            <span class="font-bold text-xs text-rose-900 dark:text-rose-300">🛑 {{ __('قرارات الإقصاء (المؤقت والنهائي)') }}</span>
-                            <span class="font-mono font-black text-rose-700 text-sm">{{ $exclusions->count() }}</span>
+                    <div class="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl p-4">
+                        <div class="flex items-center justify-between pb-2 border-b border-rose-200 dark:border-rose-800">
+                            <span class="font-bold text-xs text-rose-900 dark:text-rose-200">🛑 {{ __('قرارات الإقصاء (المؤقت والنهائي)') }}</span>
+                            <span class="font-mono font-black text-rose-700 dark:text-rose-300 text-sm">{{ $exclusions->count() }}</span>
                         </div>
                         <div class="mt-3 space-y-2 max-h-80 overflow-y-auto text-xs">
                             @forelse($exclusions as $ex)
-                                <div class="bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-rose-100 dark:border-rose-900/20 flex justify-between items-center">
+                                <div class="bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-rose-200 dark:border-rose-900/40 flex justify-between items-center">
                                     <div>
                                         <div class="font-bold text-gray-900 dark:text-white">{{ $ex->student?->full_name }}</div>
-                                        <div class="text-[10px] text-gray-500 font-mono">{{ $ex->sanction->getLabel() }} ({{ $ex->exclusion_days }} {{ __('أيام') }})</div>
+                                        <div class="text-[10px] text-gray-500 dark:text-gray-400 font-mono">{{ $ex->sanction->getLabel() }} ({{ $ex->exclusion_days }} {{ __('أيام') }})</div>
                                     </div>
-                                    <a href="{{ route('print.disciplinary.notification', ['locale' => app()->getLocale(), 'record' => $ex->id]) }}" target="_blank" class="text-rose-700 hover:underline text-[10px] font-bold">
+                                    <a href="{{ route('print.disciplinary.notification', ['locale' => app()->getLocale(), 'record' => $ex->id]) }}" target="_blank" class="text-rose-700 dark:text-rose-400 hover:underline text-[10px] font-bold">
                                         {{ __('الإشعار') }} ↗
                                     </a>
                                 </div>
                             @empty
-                                <p class="text-[11px] text-gray-400 italic text-center py-4">{{ __('لا توجد قرارات إقصاء مسجلة') }}</p>
+                                <p class="text-[11px] text-gray-400 dark:text-gray-500 italic text-center py-4">{{ __('لا توجد قرارات إقصاء مسجلة') }}</p>
                             @endforelse
                         </div>
                     </div>
 
                     {{-- Warnings Card --}}
-                    <div class="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-xl p-4">
-                        <div class="flex items-center justify-between pb-2 border-b border-blue-200 dark:border-blue-900/30">
-                            <span class="font-bold text-xs text-blue-900 dark:text-blue-300">⚠️ {{ __('عقوبات الإنذار والتوبيخ') }}</span>
-                            <span class="font-mono font-black text-blue-700 text-sm">{{ $warnings->count() }}</span>
+                    <div class="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                        <div class="flex items-center justify-between pb-2 border-b border-blue-200 dark:border-blue-800">
+                            <span class="font-bold text-xs text-blue-900 dark:text-blue-200">⚠️ {{ __('عقوبات الإنذار والتوبيخ') }}</span>
+                            <span class="font-mono font-black text-blue-700 dark:text-blue-300 text-sm">{{ $warnings->count() }}</span>
                         </div>
                         <div class="mt-3 space-y-2 max-h-80 overflow-y-auto text-xs">
                             @forelse($warnings as $w)
-                                <div class="bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-blue-100 dark:border-blue-900/20 flex justify-between items-center">
+                                <div class="bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-blue-200 dark:border-blue-900/40 flex justify-between items-center">
                                     <div>
                                         <div class="font-bold text-gray-900 dark:text-white">{{ $w->student?->full_name }}</div>
-                                        <div class="text-[10px] text-blue-600 font-semibold">{{ $w->sanction->getLabel() }}</div>
+                                        <div class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">{{ $w->sanction->getLabel() }}</div>
                                     </div>
-                                    <a href="{{ route('print.disciplinary.minutes', ['locale' => app()->getLocale(), 'record' => $w->id]) }}" target="_blank" class="text-blue-700 hover:underline text-[10px] font-bold">
+                                    <a href="{{ route('print.disciplinary.minutes', ['locale' => app()->getLocale(), 'record' => $w->id]) }}" target="_blank" class="text-blue-700 dark:text-blue-400 hover:underline text-[10px] font-bold">
                                         {{ __('المحضر') }} ↗
                                     </a>
                                 </div>
                             @empty
-                                <p class="text-[11px] text-gray-400 italic text-center py-4">{{ __('لا توجد إنذارات أو توبيخات') }}</p>
+                                <p class="text-[11px] text-gray-400 dark:text-gray-500 italic text-center py-4">{{ __('لا توجد إنذارات أو توبيخات') }}</p>
                             @endforelse
                         </div>
                     </div>
 
                     {{-- Restitutions Card --}}
-                    <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl p-4">
-                        <div class="flex items-center justify-between pb-2 border-b border-amber-200 dark:border-amber-900/30">
-                            <span class="font-bold text-xs text-amber-900 dark:text-amber-300">💰 {{ __('التعويضات المادية عن الإتلاف') }}</span>
-                            <span class="font-mono font-black text-amber-700 text-sm">{{ number_format($restitutions->sum('restitution_amount'), 0) }} {{ __('د.ج') }}</span>
+                    <div class="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+                        <div class="flex items-center justify-between pb-2 border-b border-amber-200 dark:border-amber-800">
+                            <span class="font-bold text-xs text-amber-900 dark:text-amber-200">💰 {{ __('التعويضات المادية عن الإتلاف') }}</span>
+                            <span class="font-mono font-black text-amber-700 dark:text-amber-300 text-sm">{{ number_format($restitutions->sum('restitution_amount'), 0) }} {{ __('د.ج') }}</span>
                         </div>
                         <div class="mt-3 space-y-2 max-h-80 overflow-y-auto text-xs">
                             @forelse($restitutions as $r)
-                                <div class="bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/20 flex justify-between items-center">
+                                <div class="bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-amber-200 dark:border-amber-900/40 flex justify-between items-center">
                                     <div>
                                         <div class="font-bold text-gray-900 dark:text-white">{{ $r->student?->full_name }}</div>
-                                        <div class="text-[10px] text-amber-700 font-mono font-bold">{{ number_format($r->restitution_amount, 2) }} DZD</div>
+                                        <div class="text-[10px] text-amber-700 dark:text-amber-400 font-mono font-bold">{{ number_format($r->restitution_amount, 2) }} DZD</div>
                                     </div>
-                                    <span class="text-[10px] text-gray-500 font-mono">{{ $formatDate($r->deliberated_at) }}</span>
+                                    <span class="text-[10px] text-gray-500 dark:text-gray-400 font-mono">{{ $formatDate($r->deliberated_at) }}</span>
                                 </div>
                             @empty
-                                <p class="text-[11px] text-gray-400 italic text-center py-4">{{ __('لا توجد تعويضات مالية مقررة') }}</p>
+                                <p class="text-[11px] text-gray-400 dark:text-gray-500 italic text-center py-4">{{ __('لا توجد تعويضات مالية مقررة') }}</p>
                             @endforelse
                         </div>
                     </div>
@@ -358,34 +358,34 @@
             <div class="space-y-6">
                 {{-- KPI Numbers Grid --}}
                 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm text-center">
-                        <span class="text-[11px] text-gray-500 block">{{ __('إجمالي الإحالات') }}</span>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <span class="text-[11px] text-gray-500 dark:text-gray-400 block">{{ __('إجمالي الإحالات') }}</span>
                         <span class="text-2xl font-black text-gray-900 dark:text-white font-mono">{{ $kpis['total_records'] }}</span>
                     </div>
 
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm text-center">
-                        <span class="text-[11px] text-emerald-600 block">{{ __('جلسات مفصول فيها') }}</span>
-                        <span class="text-2xl font-black text-emerald-700 font-mono">{{ $kpis['deliberated_count'] }}</span>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <span class="text-[11px] text-emerald-600 dark:text-emerald-400 block">{{ __('جلسات مفصول فيها') }}</span>
+                        <span class="text-2xl font-black text-emerald-700 dark:text-emerald-400 font-mono">{{ $kpis['deliberated_count'] }}</span>
                     </div>
 
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm text-center">
-                        <span class="text-[11px] text-amber-600 block">{{ __('جلسات قيد النظر') }}</span>
-                        <span class="text-2xl font-black text-amber-700 font-mono">{{ $kpis['scheduled_count'] }}</span>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <span class="text-[11px] text-amber-600 dark:text-amber-400 block">{{ __('جلسات قيد النظر') }}</span>
+                        <span class="text-2xl font-black text-amber-700 dark:text-amber-400 font-mono">{{ $kpis['scheduled_count'] }}</span>
                     </div>
 
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm text-center">
-                        <span class="text-[11px] text-rose-600 block">{{ __('قرارات الإقصاء') }}</span>
-                        <span class="text-2xl font-black text-rose-700 font-mono">{{ $kpis['temporary_exclusion_count'] + $kpis['definitive_exclusion_count'] }}</span>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <span class="text-[11px] text-rose-600 dark:text-rose-400 block">{{ __('قرارات الإقصاء') }}</span>
+                        <span class="text-2xl font-black text-rose-700 dark:text-rose-400 font-mono">{{ $kpis['temporary_exclusion_count'] + $kpis['definitive_exclusion_count'] }}</span>
                     </div>
 
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm text-center">
-                        <span class="text-[11px] text-blue-600 block">{{ __('الإنذارات والتوبيخ') }}</span>
-                        <span class="text-2xl font-black text-blue-700 font-mono">{{ $kpis['warning_count'] + $kpis['reprimand_count'] }}</span>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <span class="text-[11px] text-blue-600 dark:text-blue-400 block">{{ __('الإنذارات والتوبيخ') }}</span>
+                        <span class="text-2xl font-black text-blue-700 dark:text-blue-400 font-mono">{{ $kpis['warning_count'] + $kpis['reprimand_count'] }}</span>
                     </div>
 
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm text-center">
-                        <span class="text-[11px] text-indigo-600 block">{{ __('نسبة إشعار الأولياء') }}</span>
-                        <span class="text-2xl font-black text-indigo-700 font-mono">{{ $kpis['guardian_notified_rate'] }}%</span>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                        <span class="text-[11px] text-indigo-600 dark:text-indigo-400 block">{{ __('نسبة إشعار الأولياء') }}</span>
+                        <span class="text-2xl font-black text-indigo-700 dark:text-indigo-400 font-mono">{{ $kpis['guardian_notified_rate'] }}%</span>
                     </div>
                 </div>
 
@@ -400,30 +400,30 @@
                         <div class="space-y-3">
                             <div>
                                 <div class="flex justify-between text-xs mb-1">
-                                    <span class="text-blue-700 font-semibold">{{ __('مخالفات الدرجة الأولى') }}</span>
-                                    <span class="font-mono font-bold">{{ $kpis['by_degree']['first_degree'] ?? 0 }}</span>
+                                    <span class="text-blue-700 dark:text-blue-400 font-semibold">{{ __('مخالفات الدرجة الأولى') }}</span>
+                                    <span class="font-mono font-bold text-gray-800 dark:text-gray-200">{{ $kpis['by_degree']['first_degree'] ?? 0 }}</span>
                                 </div>
-                                <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                                     <div class="bg-blue-500 h-2 rounded-full" style="width: {{ $kpis['total_records'] > 0 ? (($kpis['by_degree']['first_degree'] ?? 0) / $kpis['total_records']) * 100 : 0 }}%"></div>
                                 </div>
                             </div>
 
                             <div>
                                 <div class="flex justify-between text-xs mb-1">
-                                    <span class="text-amber-700 font-semibold">{{ __('مخالفات الدرجة الثانية') }}</span>
-                                    <span class="font-mono font-bold">{{ $kpis['by_degree']['second_degree'] ?? 0 }}</span>
+                                    <span class="text-amber-700 dark:text-amber-400 font-semibold">{{ __('مخالفات الدرجة الثانية') }}</span>
+                                    <span class="font-mono font-bold text-gray-800 dark:text-gray-200">{{ $kpis['by_degree']['second_degree'] ?? 0 }}</span>
                                 </div>
-                                <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                                     <div class="bg-amber-500 h-2 rounded-full" style="width: {{ $kpis['total_records'] > 0 ? (($kpis['by_degree']['second_degree'] ?? 0) / $kpis['total_records']) * 100 : 0 }}%"></div>
                                 </div>
                             </div>
 
                             <div>
                                 <div class="flex justify-between text-xs mb-1">
-                                    <span class="text-rose-700 font-semibold">{{ __('مخالفات الدرجة الثالثة (الجسيمة)') }}</span>
-                                    <span class="font-mono font-bold">{{ $kpis['by_degree']['third_degree'] ?? 0 }}</span>
+                                    <span class="text-rose-700 dark:text-rose-400 font-semibold">{{ __('مخالفات الدرجة الثالثة (الجسيمة)') }}</span>
+                                    <span class="font-mono font-bold text-gray-800 dark:text-gray-200">{{ $kpis['by_degree']['third_degree'] ?? 0 }}</span>
                                 </div>
-                                <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                                     <div class="bg-rose-600 h-2 rounded-full" style="width: {{ $kpis['total_records'] > 0 ? (($kpis['by_degree']['third_degree'] ?? 0) / $kpis['total_records']) * 100 : 0 }}%"></div>
                                 </div>
                             </div>
@@ -431,35 +431,35 @@
                     </div>
 
                     {{-- By Sanction --}}
-                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm">
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                         <h3 class="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                             <span>📜</span>
                             {{ __('توزيع القرارات والعقوبات المصادق عليها') }}
                         </h3>
                         <div class="grid grid-cols-2 gap-3 text-xs">
-                            <div class="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 flex justify-between">
-                                <span class="text-gray-600">{{ __('إنذار كتابي') }}:</span>
-                                <strong class="font-mono">{{ $kpis['by_sanction']['warning'] ?? 0 }}</strong>
+                            <div class="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 flex justify-between">
+                                <span class="text-gray-700 dark:text-gray-300">{{ __('إنذار كتابي') }}:</span>
+                                <strong class="font-mono text-gray-900 dark:text-white">{{ $kpis['by_sanction']['warning'] ?? 0 }}</strong>
                             </div>
-                            <div class="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 flex justify-between">
-                                <span class="text-gray-600">{{ __('توبيخ رسمي') }}:</span>
-                                <strong class="font-mono">{{ $kpis['by_sanction']['reprimand'] ?? 0 }}</strong>
+                            <div class="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 flex justify-between">
+                                <span class="text-gray-700 dark:text-gray-300">{{ __('توبيخ رسمي') }}:</span>
+                                <strong class="font-mono text-gray-900 dark:text-white">{{ $kpis['by_sanction']['reprimand'] ?? 0 }}</strong>
                             </div>
-                            <div class="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 flex justify-between">
-                                <span class="text-gray-600">{{ __('إقصاء مؤقت (1-8 أيام)') }}:</span>
-                                <strong class="font-mono text-rose-700">{{ $kpis['by_sanction']['temporary_exclusion'] ?? 0 }}</strong>
+                            <div class="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 flex justify-between">
+                                <span class="text-gray-700 dark:text-gray-300">{{ __('إقصاء مؤقت (1-8 أيام)') }}:</span>
+                                <strong class="font-mono text-rose-600 dark:text-rose-400">{{ $kpis['by_sanction']['temporary_exclusion'] ?? 0 }}</strong>
                             </div>
-                            <div class="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 flex justify-between">
-                                <span class="text-gray-600">{{ __('إقصاء نهائي / تحويل') }}:</span>
-                                <strong class="font-mono text-rose-800">{{ $kpis['by_sanction']['definitive_exclusion'] ?? 0 }}</strong>
+                            <div class="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 flex justify-between">
+                                <span class="text-gray-700 dark:text-gray-300">{{ __('إقصاء نهائي / تحويل') }}:</span>
+                                <strong class="font-mono text-rose-700 dark:text-rose-400">{{ $kpis['by_sanction']['definitive_exclusion'] ?? 0 }}</strong>
                             </div>
-                            <div class="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 flex justify-between">
-                                <span class="text-gray-600">{{ __('أنشطة ذات نفع مدرسي') }}:</span>
-                                <strong class="font-mono">{{ $kpis['by_sanction']['community_service'] ?? 0 }}</strong>
+                            <div class="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 flex justify-between">
+                                <span class="text-gray-700 dark:text-gray-300">{{ __('أنشطة ذات نفع مدرسي') }}:</span>
+                                <strong class="font-mono text-gray-900 dark:text-white">{{ $kpis['by_sanction']['community_service'] ?? 0 }}</strong>
                             </div>
-                            <div class="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 flex justify-between">
-                                <span class="text-gray-600">{{ __('تبرئة / حفظ الملف') }}:</span>
-                                <strong class="font-mono text-emerald-700">{{ $kpis['by_sanction']['acquittal'] ?? 0 }}</strong>
+                            <div class="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 flex justify-between">
+                                <span class="text-gray-700 dark:text-gray-300">{{ __('تبرئة / حفظ الملف') }}:</span>
+                                <strong class="font-mono text-emerald-600 dark:text-emerald-400">{{ $kpis['by_sanction']['acquittal'] ?? 0 }}</strong>
                             </div>
                         </div>
                     </div>

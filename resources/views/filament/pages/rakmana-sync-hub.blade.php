@@ -151,23 +151,23 @@
 
                         {{-- Metric Badges --}}
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                            <div class="bg-slate-50 dark:bg-slate-900/40 p-3 rounded-lg border border-slate-200 dark:border-white/5">
-                                <span class="text-xs text-gray-500 block">{{ __('إجمالي السجلات المقروءة') }}</span>
+                            <div class="bg-slate-50 dark:bg-slate-900/40 p-3 rounded-lg border border-slate-200 dark:border-gray-700">
+                                <span class="text-xs text-gray-500 dark:text-gray-400 block">{{ __('إجمالي السجلات المقروءة') }}</span>
                                 <span class="text-xl font-black text-slate-800 dark:text-white font-mono">{{ $previewData['total_count'] }}</span>
                             </div>
 
-                            <div class="bg-emerald-50 dark:bg-emerald-950/20 p-3 rounded-lg border border-emerald-200 dark:border-emerald-800/30">
-                                <span class="text-xs text-emerald-700 block">{{ __('تلاميذ جدد سيتم إضافتهم') }}</span>
+                            <div class="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                <span class="text-xs text-emerald-700 dark:text-emerald-300 block">{{ __('تلاميذ جدد سيتم إضافتهم') }}</span>
                                 <span class="text-xl font-black text-emerald-800 dark:text-emerald-300 font-mono">+{{ $previewData['new_count'] }}</span>
                             </div>
 
-                            <div class="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800/30">
-                                <span class="text-xs text-blue-700 block">{{ __('تلاميذ سيتم تحديث بياناتهم') }}</span>
+                            <div class="bg-blue-50 dark:bg-blue-950/40 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <span class="text-xs text-blue-700 dark:text-blue-300 block">{{ __('تلاميذ سيتم تحديث بياناتهم') }}</span>
                                 <span class="text-xl font-black text-blue-800 dark:text-blue-300 font-mono">{{ $previewData['update_count'] }}</span>
                             </div>
 
-                            <div class="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800/30">
-                                <span class="text-xs text-amber-700 block">{{ __('سجلات غير مكتملة / مستبعدة') }}</span>
+                            <div class="bg-amber-50 dark:bg-amber-950/40 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                                <span class="text-xs text-amber-700 dark:text-amber-300 block">{{ __('سجلات غير مكتملة / مستبعدة') }}</span>
                                 <span class="text-xl font-black text-amber-800 dark:text-amber-300 font-mono">{{ $previewData['invalid_count'] }}</span>
                             </div>
                         </div>
@@ -190,7 +190,7 @@
                         {{-- Sample Table (First 15 rows) --}}
                         <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-white/10">
                             <table class="w-full text-right text-xs">
-                                <thead class="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-300">
+                                <thead class="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
                                     <tr>
                                         <th class="p-2.5 font-bold">#</th>
                                         <th class="p-2.5 font-bold">{{ __('رقم التعريف الوطني (NIN)') }}</th>
@@ -201,9 +201,9 @@
                                         <th class="p-2.5 font-bold text-center">{{ __('الإجراء المتوقع') }}</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                     @foreach($previewData['sample_rows'] as $idx => $row)
-                                        <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-700/20">
+                                        <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-700/50">
                                             <td class="p-2.5 font-mono text-gray-500">{{ $idx + 1 }}</td>
                                             <td class="p-2.5 font-mono font-bold text-slate-800 dark:text-slate-200">{{ $row['national_id_number'] ?: '—' }}</td>
                                             <td class="p-2.5 font-bold text-gray-900 dark:text-white">{{ $row['last_name'] }} {{ $row['first_name'] }}</td>
@@ -228,7 +228,7 @@
                                 <button
                                     wire:click="clearPreview"
                                     type="button"
-                                    class="px-4 py-2 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition"
+                                    class="px-4 py-2 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition"
                                 >
                                     {{ __('إلغاء') }}
                                 </button>
@@ -317,20 +317,20 @@
                 </div>
 
                 {{-- Live Grade Matrix Table --}}
-                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden">
-                    <div class="p-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-white/10 flex justify-between items-center text-xs">
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                    <div class="p-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center text-xs">
                         <span class="font-bold text-gray-800 dark:text-gray-200">
                             {{ __('جدول رصد النقاط الوزاري المطابق لقالب الرقمنة') }}
                             ({{ count($gradeMatrix['rows'] ?? []) }} {{ __('تلميذ') }})
                         </span>
-                        <span class="font-mono text-gray-500 text-[11px]">
+                        <span class="font-mono text-gray-500 dark:text-gray-400 text-[11px]">
                             {{ $academicYear }} — {{ __('الفصل') }} {{ $selectedTrimester }}
                         </span>
                     </div>
 
                     <div class="overflow-x-auto">
                         <table class="w-full text-right text-xs">
-                            <thead class="bg-gray-100/70 dark:bg-gray-900/40 text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-white/10">
+                            <thead class="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
                                 <tr>
                                     <th class="p-2.5 font-bold w-10 text-center">#</th>
                                     <th class="p-2.5 font-bold">{{ __('رقم التعريف الوطني (NIN)') }}</th>
@@ -343,9 +343,9 @@
                                     <th class="p-2.5 font-bold text-center w-28">{{ __('الملاحظة') }}</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @forelse($gradeMatrix['rows'] ?? [] as $row)
-                                    <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/20">
+                                    <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/50">
                                         <td class="p-2.5 text-center font-mono text-gray-500">{{ $row['order'] }}</td>
                                         <td class="p-2.5 font-mono font-bold text-slate-800 dark:text-slate-200">{{ $row['national_id_number'] }}</td>
                                         <td class="p-2.5 font-bold text-gray-900 dark:text-white">{{ $row['full_name'] }}</td>
@@ -355,7 +355,7 @@
                                         <td class="p-2.5 text-center font-mono font-semibold">{{ $row['exam'] ?: '—' }}</td>
                                         <td class="p-2.5 text-center font-mono font-black">
                                             @if($row['average'] !== '')
-                                                <span class="inline-block px-2 py-0.5 rounded text-[11px] {{ (float) $row['average'] >= 10 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' }}">
+                                                <span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold {{ (float) $row['average'] >= 10 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' }}">
                                                     {{ $row['average'] }}
                                                 </span>
                                             @else
@@ -391,37 +391,37 @@
                         <span class="text-2xl font-black text-gray-900 dark:text-white font-mono">{{ $audit['total_students'] }}</span>
                     </div>
 
-                    <div class="bg-emerald-50 dark:bg-emerald-950/20 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/30">
-                        <span class="text-xs text-emerald-700 block">{{ __('نسبة جاهزية الرقمنة (بحوزتهم NIN)') }}</span>
+                    <div class="bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                        <span class="text-xs text-emerald-700 dark:text-emerald-300 block">{{ __('نسبة جاهزية الرقمنة (بحوزتهم NIN)') }}</span>
                         <span class="text-2xl font-black text-emerald-800 dark:text-emerald-300 font-mono">{{ $audit['nin_completeness_rate'] }}%</span>
-                        <span class="text-[10px] text-emerald-600 font-mono block mt-0.5">({{ $audit['with_nin_count'] }} {{ __('تلميذ') }})</span>
+                        <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono block mt-0.5">({{ $audit['with_nin_count'] }} {{ __('تلميذ') }})</span>
                     </div>
 
-                    <div class="bg-rose-50 dark:bg-rose-950/20 p-4 rounded-xl border border-rose-200 dark:border-rose-800/30">
-                        <span class="text-xs text-rose-700 block">{{ __('تلاميذ بدون رقم تعريف وطني (NIN)') }}</span>
+                    <div class="bg-rose-50 dark:bg-rose-950/40 p-4 rounded-xl border border-rose-200 dark:border-rose-800">
+                        <span class="text-xs text-rose-700 dark:text-rose-300 block">{{ __('تلاميذ بدون رقم تعريف وطني (NIN)') }}</span>
                         <span class="text-2xl font-black text-rose-800 dark:text-rose-300 font-mono">{{ $audit['missing_nin_count'] }}</span>
-                        <span class="text-[10px] text-rose-600 block mt-0.5">{{ __('يتطلب استدراك فوري') }}</span>
+                        <span class="text-[10px] text-rose-600 dark:text-rose-400 block mt-0.5">{{ __('يتطلب استدراك فوري') }}</span>
                     </div>
 
-                    <div class="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800/30">
-                        <span class="text-xs text-amber-700 block">{{ __('نقص بيانات الميلاد أو الولي') }}</span>
+                    <div class="bg-amber-50 dark:bg-amber-950/40 p-4 rounded-xl border border-amber-200 dark:border-amber-800">
+                        <span class="text-xs text-amber-700 dark:text-amber-300 block">{{ __('نقص بيانات الميلاد أو الولي') }}</span>
                         <span class="text-2xl font-black text-amber-800 dark:text-amber-300 font-mono">{{ $audit['missing_birth_count'] + $audit['missing_guardian_count'] }}</span>
                     </div>
                 </div>
 
                 {{-- Actionable Deficiency Table --}}
-                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden">
-                    <div class="p-3.5 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-white/10 flex justify-between items-center text-xs">
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                    <div class="p-3.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center text-xs">
                         <span class="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                             <span>⚠️</span>
                             {{ __('قائمة التلاميذ المطلوب استدراك أرقام التعريف الوطنية NIN الخاصة بهم') }}
                         </span>
-                        <span class="text-slate-500 text-[11px]">{{ __('انقر على الزر لتسجيل رقم الـ NIN مباشرة') }}</span>
+                        <span class="text-slate-500 dark:text-gray-400 text-[11px]">{{ __('انقر على الزر لتسجيل رقم الـ NIN مباشرة') }}</span>
                     </div>
 
                     <div class="overflow-x-auto">
                         <table class="w-full text-right text-xs">
-                            <thead class="bg-gray-100/70 dark:bg-gray-900/40 text-gray-700 dark:text-gray-300">
+                            <thead class="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
                                 <tr>
                                     <th class="p-2.5 font-bold w-12 text-center">#</th>
                                     <th class="p-2.5 font-bold">{{ __('اسم ولقب التلميذ') }}</th>
@@ -431,9 +431,9 @@
                                     <th class="p-2.5 font-bold text-center">{{ __('إدخال رقم التعريف الوطني (NIN)') }}</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @forelse($audit['deficient_students'] as $idx => $st)
-                                    <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/20">
+                                    <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/50">
                                         <td class="p-2.5 text-center font-mono text-gray-500">{{ $idx + 1 }}</td>
                                         <td class="p-2.5 font-bold text-gray-900 dark:text-white">{{ $st['full_name'] }}</td>
                                         <td class="p-2.5 font-semibold text-gray-700 dark:text-gray-300">{{ $st['classroom'] }}</td>

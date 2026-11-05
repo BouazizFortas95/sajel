@@ -238,14 +238,14 @@
 
                             {{-- Left: Date & Time Info --}}
                             <div class="flex items-center gap-3">
-                                <div class="bg-gray-50 dark:bg-gray-700/60 p-2.5 rounded-lg text-center min-w-[70px]">
+                                <div class="bg-gray-100 dark:bg-gray-800 p-2.5 rounded-lg text-center min-w-[70px]">
                                     <span class="text-xs font-black text-gray-900 dark:text-white block">{{ $session['day_name'] }}</span>
                                     <span class="text-[10px] text-gray-500 font-mono">{{ \Carbon\Carbon::parse($session['date'])->format('d/m') }}</span>
                                 </div>
 
                                 <div>
                                     <div class="flex items-center gap-2">
-                                        <span class="text-xs font-extrabold text-gray-900 dark:text-white bg-amber-50 dark:bg-amber-900/30 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-700">
+                                        <span class="text-xs font-extrabold bg-amber-50 dark:bg-amber-900/40 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-700">
                                             {{ $session['classroom']?->name }} @if ($session['group']) ({{ $session['group']->name }}) @endif
                                         </span>
                                         <span class="text-xs font-bold text-gray-800 dark:text-gray-200">
@@ -369,7 +369,7 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-xs text-right border-collapse">
                             <thead>
-                                <tr class="bg-gray-50 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 font-bold border-b border-gray-200 dark:border-gray-700">
+                                <tr class="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-bold border-b border-gray-200 dark:border-gray-700">
                                     <th class="p-2.5">#</th>
                                     <th class="p-2.5">{{ __('الأستاذ المتغيب') }}</th>
                                     <th class="p-2.5">{{ __('المادة') }}</th>
@@ -384,7 +384,7 @@
                             </thead>
                             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                                 @foreach ($ledgerData['records'] as $idx => $r)
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                         <td class="p-2.5 font-bold">{{ $idx + 1 }}</td>
                                         <td class="p-2.5 font-bold text-gray-900 dark:text-white">{{ $r['teacher']?->name }}</td>
                                         <td class="p-2.5 text-gray-600 dark:text-gray-400">{{ $r['subject'] }}</td>
@@ -493,7 +493,7 @@
                                                 ⭐ {{ __('تخصص ثانوي') }}
                                             </span>
                                         @else
-                                            <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
                                                 {{ __('مداومة تربوية') }}
                                             </span>
                                         @endif
@@ -526,7 +526,7 @@
                     <button
                         type="button"
                         wire:click="closeAssignModal"
-                        class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                        class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition"
                     >
                         {{ __('إلغاء') }}
                     </button>

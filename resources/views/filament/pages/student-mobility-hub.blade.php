@@ -321,8 +321,8 @@
                 </div>
 
                 <div class="overflow-x-auto max-h-[600px]">
-                    <table class="w-full text-start text-xs text-gray-700 divide-y divide-gray-200">
-                        <thead class="bg-gray-100 text-[11px] font-bold text-gray-600 sticky top-0">
+                    <table class="w-full text-start text-xs text-gray-700 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-100 dark:bg-gray-900 text-[11px] font-bold text-gray-700 dark:text-gray-200 sticky top-0 border-b border-gray-200 dark:border-gray-700">
                             <tr>
                                 <th class="p-2.5 text-center w-12">#</th>
                                 <th class="p-2.5 text-start w-28">{{ __('رقم القيد (Matricule)') }}</th>
@@ -334,38 +334,38 @@
                                 <th class="p-2.5 text-center">{{ __('الوضعية الحالية') }}</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                             @forelse ($matriculeData['students'] as $idx => $student)
-                                <tr class="hover:bg-gray-50 {{ ! $student->is_active ? 'bg-rose-50/30' : '' }}">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 {{ ! $student->is_active ? 'bg-rose-50/30 dark:bg-rose-950/20' : '' }}">
                                     <td class="p-2 text-center font-mono text-gray-400">{{ $idx + 1 }}</td>
-                                    <td class="p-2 font-mono font-bold text-slate-900">
+                                    <td class="p-2 font-mono font-bold text-slate-900 dark:text-white">
                                         {{ $student->matricule_number ?? $student->registration_number ?? '—' }}
                                     </td>
-                                    <td class="p-2 font-bold text-gray-900">
+                                    <td class="p-2 font-bold text-gray-900 dark:text-white">
                                         {{ $student->full_name }}
                                     </td>
-                                    <td class="p-2 text-gray-600">
+                                    <td class="p-2 text-gray-600 dark:text-gray-300">
                                         {{ $formatDate($student->date_of_birth) }}
                                         @if ($student->place_of_birth)
-                                            <span class="text-gray-400">({{ $student->place_of_birth }})</span>
+                                            <span class="text-gray-400 dark:text-gray-500">({{ $student->place_of_birth }})</span>
                                         @endif
                                     </td>
-                                    <td class="p-2 text-center font-bold text-amber-900">
+                                    <td class="p-2 text-center font-bold text-amber-900 dark:text-amber-300">
                                         {{ $student->group?->classroom?->name ?? '—' }}
                                     </td>
-                                    <td class="p-2 text-center font-mono text-gray-600">
+                                    <td class="p-2 text-center font-mono text-gray-600 dark:text-gray-300">
                                         {{ $formatDate($student->enrollment_date) }}
                                     </td>
-                                    <td class="p-2 text-center font-mono {{ $student->departure_date ? 'text-rose-700 font-bold' : 'text-gray-400' }}">
+                                    <td class="p-2 text-center font-mono {{ $student->departure_date ? 'text-rose-700 dark:text-rose-400 font-bold' : 'text-gray-400 dark:text-gray-500' }}">
                                         {{ $formatDate($student->departure_date) }}
                                     </td>
                                     <td class="p-2 text-center">
                                         @if ($student->is_active)
-                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                                                 ✓ {{ __('متمدرس نظامي') }}
                                             </span>
                                         @else
-                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
                                                 🚪 {{ __('مغادر / محول') }}
                                             </span>
                                         @endif
@@ -387,46 +387,46 @@
         {{-- TAB 3: KPIS & ANALYTICS --}}
         @if ($activeTab === 'kpis')
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
                     <h3 class="text-sm font-extrabold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                         <span>📈</span> {{ __('تحليل تدفق التلاميذ والتوازن الإداري') }}
                     </h3>
                     <div class="space-y-4">
                         <div class="flex items-center justify-between text-xs">
-                            <span class="text-gray-600">{{ __('التلاميذ المتمدرسون حالياً') }}:</span>
-                            <strong class="text-sm font-black">{{ $kpis['total_active_students'] }}</strong>
+                            <span class="text-gray-600 dark:text-gray-300">{{ __('التلاميذ المتمدرسون حالياً') }}:</span>
+                            <strong class="text-sm font-black text-gray-900 dark:text-white">{{ $kpis['total_active_students'] }}</strong>
                         </div>
                         <div class="flex items-center justify-between text-xs">
-                            <span class="text-gray-600">{{ __('الوافدون الجدد إلى المؤسسة') }}:</span>
-                            <strong class="text-sm font-black text-emerald-700">+{{ $kpis['inward_count'] }}</strong>
+                            <span class="text-gray-600 dark:text-gray-300">{{ __('الوافدون الجدد إلى المؤسسة') }}:</span>
+                            <strong class="text-sm font-black text-emerald-600 dark:text-emerald-400">+{{ $kpis['inward_count'] }}</strong>
                         </div>
                         <div class="flex items-center justify-between text-xs">
-                            <span class="text-gray-600">{{ __('المغادرون إلى مؤسسات أخرى') }}:</span>
-                            <strong class="text-sm font-black text-rose-700">-{{ $kpis['outward_count'] }}</strong>
+                            <span class="text-gray-600 dark:text-gray-300">{{ __('المغادرون إلى مؤسسات أخرى') }}:</span>
+                            <strong class="text-sm font-black text-rose-600 dark:text-rose-400">-{{ $kpis['outward_count'] }}</strong>
                         </div>
-                        <div class="flex items-center justify-between text-xs pt-3 border-t border-gray-100">
-                            <span class="text-gray-800 font-bold">{{ __('صافي الأثر على التعداد الإجمالي') }}:</span>
-                            <span class="px-2.5 py-1 rounded font-black text-xs {{ $kpis['net_flow'] >= 0 ? 'bg-blue-50 text-blue-900' : 'bg-rose-50 text-rose-900' }}">
+                        <div class="flex items-center justify-between text-xs pt-3 border-t border-gray-100 dark:border-gray-700">
+                            <span class="text-gray-800 dark:text-gray-200 font-bold">{{ __('صافي الأثر على التعداد الإجمالي') }}:</span>
+                            <span class="px-2.5 py-1 rounded font-black text-xs {{ $kpis['net_flow'] >= 0 ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-900 dark:text-blue-200' : 'bg-rose-50 dark:bg-rose-900/40 text-rose-900 dark:text-rose-200' }}">
                                 {{ $kpis['net_flow'] > 0 ? '+'.$kpis['net_flow'] : $kpis['net_flow'] }} {{ __('تلميذ') }}
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
                     <h3 class="text-sm font-extrabold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                         <span>📬</span> {{ __('متابعة إرسال واستلام الملفات المدرسية الأصلية') }}
                     </h3>
                     <div class="space-y-4">
                         <div class="flex items-center justify-between text-xs">
-                            <span class="text-gray-600">{{ __('الملفات التي تم توثيق إرسالها رسمياً') }}:</span>
-                            <strong class="text-sm font-black text-emerald-700">{{ $kpis['files_forwarded_count'] }}</strong>
+                            <span class="text-gray-600 dark:text-gray-300">{{ __('الملفات التي تم توثيق إرسالها رسمياً') }}:</span>
+                            <strong class="text-sm font-black text-emerald-600 dark:text-emerald-400">{{ $kpis['files_forwarded_count'] }}</strong>
                         </div>
                         <div class="flex items-center justify-between text-xs">
-                            <span class="text-gray-600">{{ __('حركات تحويل قيد الإجراء والانتظار') }}:</span>
-                            <strong class="text-sm font-black text-amber-700">{{ $kpis['pending_count'] }}</strong>
+                            <span class="text-gray-600 dark:text-gray-300">{{ __('حركات تحويل قيد الإجراء والانتظار') }}:</span>
+                            <strong class="text-sm font-black text-amber-600 dark:text-amber-400">{{ $kpis['pending_count'] }}</strong>
                         </div>
-                        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 leading-relaxed">
+                        <div class="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-300 leading-relaxed">
                             💡 {{ __('توصية إدارية: يتعين إرسال الملف المدرسي الأصلي مصحوباً بجدول الإرسال وشهادة براءة الذمة خلال مهلة أقصاها 15 يوماً من استلام رخصة التحويل.') }}
                         </div>
                     </div>

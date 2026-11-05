@@ -137,7 +137,27 @@
     border-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Dark mode safety net for custom tables, cards, and headers */
+.dark table:not(.fi-ta-table) thead tr {
+    background-color: #111827;
+    color: #e5e7eb;
+}
+
+.dark table:not(.fi-ta-table) thead th {
+    border-color: #374151;
+}
+
+.dark table:not(.fi-ta-table) tfoot tr {
+    background-color: #111827;
+    color: #f9fafb;
+}
+
+.dark table:not(.fi-ta-table) tfoot td {
+    border-color: #374151;
+}
+
 @media (prefers-reduced-motion: no-preference) {
+
     .fi-dashboard-page .fi-section,
     .fi-dashboard-page .fi-wi {
         transition:

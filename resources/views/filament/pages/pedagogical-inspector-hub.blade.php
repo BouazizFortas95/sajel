@@ -202,7 +202,7 @@
 
                 <div class="overflow-x-auto">
                     <table class="w-full text-start text-xs border-collapse">
-                        <thead class="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                        <thead class="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
                             <tr>
                                 <th class="p-3 text-start">{{ __('الأستاذ(ة)') }}</th>
                                 <th class="p-3 text-start">{{ __('المادة') }}</th>
@@ -216,7 +216,7 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             @forelse ($teacherScorecards as $sc)
-                                <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-750 transition">
+                                <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition">
                                     <td class="p-3 font-semibold text-gray-900 dark:text-white">{{ $sc['teacher']->name }}</td>
                                     <td class="p-3 text-gray-600 dark:text-gray-300">{{ $sc['teacher']->primarySubject?->name ?? '—' }}</td>
                                     <td class="p-3 text-center font-bold text-gray-800 dark:text-gray-200">{{ $sc['completed_logs_count'] }}</td>

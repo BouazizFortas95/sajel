@@ -236,7 +236,7 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-xs text-right border-collapse">
                             <thead>
-                                <tr class="bg-gray-50 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 font-bold border-b border-gray-200 dark:border-gray-700">
+                                <tr class="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-bold border-b border-gray-200 dark:border-gray-700">
                                     <th class="p-2.5">#</th>
                                     <th class="p-2.5">{{ __('اسم ولقب التلميذ') }}</th>
                                     <th class="p-2.5">{{ __('رقم التسجيل') }}</th>
@@ -448,7 +448,7 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-xs text-right border-collapse">
                             <thead>
-                                <tr class="bg-gray-50 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 font-bold border-b border-gray-200 dark:border-gray-700">
+                                <tr class="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-bold border-b border-gray-200 dark:border-gray-700">
                                     <th class="p-2">#</th>
                                     <th class="p-2">{{ __('الكتاب المقرر') }}</th>
                                     <th class="p-2">{{ __('المستوى') }}</th>
@@ -554,7 +554,7 @@
                     <button
                         type="button"
                         wire:click="closeReturnModal"
-                        class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                        class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition"
                     >
                         {{ __('إلغاء') }}
                     </button>

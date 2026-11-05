@@ -225,7 +225,7 @@
 
                 <div class="overflow-x-auto">
                     <table class="w-full min-w-[1100px] text-right text-sm">
-                        <thead class="bg-gray-50 text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:bg-white/5 dark:text-gray-300">
+                        <thead class="bg-gray-100 text-[11px] font-bold uppercase tracking-wide text-gray-700 dark:bg-gray-900 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
                             <tr>
                                 <th class="px-4 py-3">#</th>
                                 <th class="px-4 py-3">{{ __('التلميذ(ة)') }}</th>
@@ -236,26 +236,26 @@
                                 <th class="px-4 py-3">{{ __('التوصية') }}</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-white/10">
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             @forelse ($deliberations as $del)
                                 @php
                                     $average = $del['generalAverage'];
                                     $averageClasses = $average === null
-                                        ? 'bg-gray-100 text-gray-500 ring-gray-300 dark:bg-white/5 dark:text-gray-400 dark:ring-white/10'
+                                        ? 'bg-gray-100 text-gray-500 ring-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700'
                                         : ($average >= 10
-                                            ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20'
-                                            : 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-500/20');
+                                            ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-800'
+                                            : 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:ring-rose-800');
 
                                     $recommendationClasses = match ($del['recommendation_color'] ?? 'gray') {
-                                        'success' => 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20',
-                                        'info' => 'bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/20',
-                                        'primary' => 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20',
-                                        'danger' => 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-500/20',
-                                        default => 'bg-gray-100 text-gray-600 ring-gray-200 dark:bg-white/5 dark:text-gray-300 dark:ring-white/10',
+                                        'success' => 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-800',
+                                        'info' => 'bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-950/60 dark:text-sky-300 dark:ring-sky-800',
+                                        'primary' => 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-800',
+                                        'danger' => 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:ring-rose-800',
+                                        default => 'bg-gray-100 text-gray-600 ring-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700',
                                     };
                                 @endphp
 
-                                <tr class="align-top transition hover:bg-amber-50/40 dark:hover:bg-white/[0.03]">
+                                <tr class="align-top transition hover:bg-amber-50/40 dark:hover:bg-gray-800/60">
                                     <td class="px-4 py-3 text-xs font-bold text-gray-400">{{ $loop->iteration }}</td>
                                     <td class="px-4 py-3">
                                         <p class="font-bold text-gray-950 dark:text-white">{{ $del['full_name'] }}</p>

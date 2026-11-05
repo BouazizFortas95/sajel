@@ -194,7 +194,7 @@
                 </div>
 
                 {{-- 2. Excellence --}}
-                <div class="bg-white dark:bg-gray-900 border border-amber-300 dark:border-amber-500/30 rounded-2xl p-4 shadow-sm bg-amber-50/20 dark:bg-amber-950/10">
+                <div class="bg-amber-50/60 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-2xl p-4 shadow-sm">
                     <div class="flex items-center justify-between text-amber-700 dark:text-amber-400 mb-2">
                         <span class="text-xs font-bold">{{ __('شهادة امتياز') }}</span>
                         <span>🥇</span>
@@ -208,7 +208,7 @@
                 </div>
 
                 {{-- 3. Encouragement --}}
-                <div class="bg-white dark:bg-gray-900 border border-sky-300 dark:border-sky-500/30 rounded-2xl p-4 shadow-sm bg-sky-50/20 dark:bg-sky-950/10">
+                <div class="bg-sky-50/60 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 rounded-2xl p-4 shadow-sm">
                     <div class="flex items-center justify-between text-sky-700 dark:text-sky-400 mb-2">
                         <span class="text-xs font-bold">{{ __('شهادة تشجيع') }}</span>
                         <span>🥈</span>
@@ -222,7 +222,7 @@
                 </div>
 
                 {{-- 4. Honor Roll --}}
-                <div class="bg-white dark:bg-gray-900 border border-indigo-300 dark:border-indigo-500/30 rounded-2xl p-4 shadow-sm bg-indigo-50/20 dark:bg-indigo-950/10">
+                <div class="bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-300 dark:border-indigo-800 rounded-2xl p-4 shadow-sm">
                     <div class="flex items-center justify-between text-indigo-700 dark:text-indigo-400 mb-2">
                         <span class="text-xs font-bold">{{ __('لوحة شرف') }}</span>
                         <span>🥉</span>
@@ -236,7 +236,7 @@
                 </div>
 
                 {{-- 5. Good Conduct --}}
-                <div class="bg-white dark:bg-gray-900 border border-emerald-300 dark:border-emerald-500/30 rounded-2xl p-4 shadow-sm bg-emerald-50/20 dark:bg-emerald-950/10">
+                <div class="bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 rounded-2xl p-4 shadow-sm">
                     <div class="flex items-center justify-between text-emerald-700 dark:text-emerald-400 mb-2">
                         <span class="text-xs font-bold">{{ __('حسن السيرة والسلوك') }}</span>
                         <span>🏅</span>
@@ -265,8 +265,8 @@
             </div>
 
             {{-- Students Honor Roster --}}
-            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
-                <div class="p-5 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                     <div>
                         <h3 class="text-base font-bold text-gray-950 dark:text-white">
                             {{ __('قائمة التلاميذ المتفوقين والمكرمين') }}
@@ -281,7 +281,7 @@
                 </div>
 
                 @if ($students->isNotEmpty())
-                    <div class="divide-y divide-gray-200 dark:divide-white/5">
+                    <div class="divide-y divide-gray-200 dark:divide-gray-700">
                         @foreach ($students as $row)
                             @php
                                 $student = $row['student'];
