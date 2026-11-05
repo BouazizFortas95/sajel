@@ -48,6 +48,8 @@ class SchoolBackupService
         'disciplinary_records',
         'school_census_records',
         'student_orientations',
+        'student_counseling_profiles',
+        'counseling_sessions',
     ];
 
     /**

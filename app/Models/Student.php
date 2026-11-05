@@ -97,6 +97,21 @@ class Student extends Model
             ->where('academic_year', SchoolSetting::currentAcademicYear());
     }
 
+    public function counselingProfile(): HasOne
+    {
+        return $this->hasOne(StudentCounselingProfile::class);
+    }
+
+    public function counselingSessions(): HasMany
+    {
+        return $this->hasMany(CounselingSession::class)->orderByDesc('session_date');
+    }
+
+    public function latestCounselingSession(): HasOne
+    {
+        return $this->hasOne(CounselingSession::class)->latestOfMany('session_date');
+    }
+
     /**
      * The student's full name, used by Filament tables and reports.
      */

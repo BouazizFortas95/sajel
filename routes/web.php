@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ClassCouncilController;
+use App\Http\Controllers\CounselingController;
 use App\Http\Controllers\DisciplinaryCouncilController;
 use App\Http\Controllers\DownloadPedagogicalMemoPdfController;
 use App\Http\Controllers\ExamTimetableController;
@@ -439,6 +440,36 @@ Route::get('/{locale}/print/orientation/pv/pdf', [OrientationController::class, 
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.orientation.pv.pdf');
+
+Route::get('/{locale}/print/counseling/dossier/{student}', [CounselingController::class, 'printDossier'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.counseling.dossier');
+
+Route::get('/{locale}/print/counseling/dossier/{student}/pdf', [CounselingController::class, 'downloadDossierPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.counseling.dossier.pdf');
+
+Route::get('/{locale}/print/counseling/session/{session}', [CounselingController::class, 'printSession'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.counseling.session');
+
+Route::get('/{locale}/print/counseling/session/{session}/pdf', [CounselingController::class, 'downloadSessionPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.counseling.session.pdf');
+
+Route::get('/{locale}/print/counseling/ledger', [CounselingController::class, 'printLedger'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.counseling.ledger');
+
+Route::get('/{locale}/print/counseling/ledger/pdf', [CounselingController::class, 'downloadLedgerPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.counseling.ledger.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link
