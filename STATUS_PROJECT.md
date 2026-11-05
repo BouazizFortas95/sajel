@@ -1359,6 +1359,44 @@ Statutory 4th Year Middle School (4AM) guidance, wishes card management, pedagog
       - Added 100+ translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
       - Full test suite: **527 passed tests, 21,413 assertions, 0 failures, 100% green**.
 
+## 36. Student Psycho-Pedagogical Record & Guidance Counseling Hub (بطاقة المتابعة النفسية والتربوية للتلميذ وجلسات الاستماع والإرشاد) (100%)
+
+Statutory Middle School Guidance and Orientation Counselor (مستشار التوجيه والإرشاد المدرسي والمهني) tracking hub, student psycho-pedagogical record (Le Dossier Psycho-Pédagogique de l'Élève), individual interview logs, and career counseling sessions:
+
+- [x] **Database Schema & Eloquent Domain Models (`student_counseling_profiles`, `counseling_sessions`):**
+      - Migrations `2026_11_09_010001_create_student_counseling_profiles_table.php` and `2026_11_09_010002_create_counseling_sessions_table.php` bringing Sajel core database tables from 33 to 35.
+      - Profile Attributes: `student_id`, `family_status`, `parents_divorced`, `father_occupation`, `mother_occupation`, `siblings_count`, `birth_rank`, `chronic_illnesses`, `physical_disabilities`, `psychological_followup`, `pe_exempt`, `blood_group`, `repeated_grades`, `learning_difficulties`, `special_talents`, `career_aspirations`, `general_behavior`, `notes`.
+      - Counseling Session Attributes: `student_id`, `counselor_id`, `session_date`, `session_number`, `reason`, `initiator`, `status`, `interview_notes`, `guidance_recommendations`, `action_plan`, `parent_notified`, `follow_up_date`.
+      - Models `StudentCounselingProfile` and `CounselingSession` with scopes, relationships, and helper methods.
+      - Updated `Student` model with `counselingProfile()`, `counselingSessions()`, and `latestCounselingSession()`.
+      - Registered in `SajelHealthCheckCommand` (verifying 35 core tables), `SchoolBackupService`, and `SchoolRestoreService`.
+- [x] **Domain Enums:**
+      - `FamilyStatus`: `BothParents` (يعيش مع الوالدين معاً), `OrphanFather` (يتيم الأب), `OrphanMother` (يتيم الأم), `OrphanBoth` (يتيم الوالدين معاً), `DivorcedSeparated` (الوالدان منفصلان), `ParentsAbroad` (الوالدان بالخارج) with localized labels and colors.
+      - `CounselingSessionReason`: `AcademicDifficulty` (صعوبات وبطء التعلم), `BehavioralIssue` (سلوك وانضباط مدرسي), `FamilyCrisis` (ظروف ومشاكل عائلية), `CareerGuidance` (توجيه دراسي ومهني), `Absenteeism` (الغياب المتكرر والتسرب), `PsychologicalSupport` (دعم نفسي وانفعالي), `Other` (أخرى) with labels and colors.
+      - `CounselingSessionStatus`: `Open` (مفتوحة للمتابعة), `InProgress` (قيد التكفل والمرافقة), `Resolved` (تمت المعالجة والإغلاق).
+- [x] **Domain Service (`StudentCounselingService`):**
+      - Profile CRUD (`getOrCreateProfile`, `updateProfile`).
+      - Counseling session logging and status transitions (`recordSession`, `updateSessionStatus`).
+      - KPI computations (`computeKpis`).
+      - Dossier assembler (`assembleStudentDossierData`).
+      - Browsershot PDF generators for individual counseling reports, annual register ledgers, and comprehensive psycho-pedagogical dossiers.
+- [x] **Interactive Filament Cockpit (`StudentCounselingHub`):**
+      - Registered under `__('التشغيل اليومي')` (`Daily Operations`) with icon `heroicon-o-academic-cap` and sort order 93.
+      - High-contrast, strictly styled for light and dark modes with dedicated tables safety net.
+      - 3 interactive tabs:
+        1. **سجلات المتابعة والملفات النفسية-التربوية (Profiles Ledger):** Dossier management with family status, health indicators, academic repetitions, learning difficulty badges, and profile edit modal.
+        2. **جلسات الاستماع والمقابلات الإرشادية (Counseling Sessions):** Session ledger with motives, interviewers, action plans, status badges, and new session creation modal.
+        3. **مؤشرات المتابعة والتحليل الوقائي (KPIs & Prevention):** Metric summary cards, difficulty prevalence charts, and counseling workload analytics.
+- [x] **Official Algerian A4 Printable Documents & PDFs (`CounselingController`):**
+      - **Official Student Psycho-Pedagogical Dossier (`print.counseling.dossier` + `.pdf`):** A4 portrait card strictly complying with ministerial middle school counseling dossier template.
+      - **Individual Interview & Counseling Report (`print.counseling.session` + `.pdf`):** Formal A4 portrait individual session minutes with recommendations and parent notification slip.
+      - **Annual Guidance Counseling Ledger (`print.counseling.ledger` + `.pdf`):** Formal A4 landscape ministerial ledger of all guidance sessions conducted during the school year.
+- [x] **Comprehensive Testing, Dark Mode Contrast & Full Tri-Lingual Localization:**
+      - Added 10 feature tests in `tests/Feature/StudentCounselingTest.php`.
+      - Enhanced global dark mode CSS across `resources/css/filament.css` and `resources/views/filament/theme.blade.php`, enforcing native `color-scheme: dark`, high contrast table headers, footer cells, and dark backgrounds for custom cards.
+      - Added 172+ translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
+      - Full test suite: **537 passed tests, 21,496 assertions, 0 failures, 100% green**.
+
 
 
 

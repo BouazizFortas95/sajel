@@ -85,11 +85,11 @@
                         <label class="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1">{{ __('درجة المخالفة') }}</label>
                         <select
                             wire:model.live="selectedDegree"
-                            class="w-full text-xs rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:ring-primary-500 focus:border-primary-500"
+                            class="w-full text-xs rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 focus:ring-primary-500 focus:border-primary-500"
                         >
-                            <option value="">{{ __('جميع الدرجات') }}</option>
+                            <option value="" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('جميع الدرجات') }}</option>
                             @foreach(\App\Enums\InfractionDegree::cases() as $degree)
-                                <option value="{{ $degree->value }}">{{ $degree->getLabel() }}</option>
+                                <option value="{{ $degree->value }}" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ $degree->getLabel() }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -98,11 +98,11 @@
                         <label class="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1">{{ __('حالة الجلسة') }}</label>
                         <select
                             wire:model.live="selectedStatus"
-                            class="w-full text-xs rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:ring-primary-500 focus:border-primary-500"
+                            class="w-full text-xs rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 focus:ring-primary-500 focus:border-primary-500"
                         >
-                            <option value="">{{ __('جميع الحالات') }}</option>
+                            <option value="" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('جميع الحالات') }}</option>
                             @foreach(\App\Enums\DisciplinaryStatus::cases() as $status)
-                                <option value="{{ $status->value }}">{{ $status->getLabel() }}</option>
+                                <option value="{{ $status->value }}" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ $status->getLabel() }}</option>
                             @endforeach
                         </select>
                     </div>

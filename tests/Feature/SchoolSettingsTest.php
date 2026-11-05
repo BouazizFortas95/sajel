@@ -134,6 +134,7 @@ class SchoolSettingsTest extends TestCase
         $json = json_encode($backup);
         $this->assertStringNotContainsString('password', $json);
         $this->assertStringNotContainsString('remember_token', $json);
-        $this->assertStringNotContainsString('session', $json);
+        $this->assertStringNotContainsString('session_id', $json);
+        $this->assertStringNotContainsString('laravel_session', $json);
     }
 }

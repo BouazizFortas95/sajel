@@ -137,28 +137,117 @@
     border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Dark mode safety net for custom tables, cards, and headers */
-.dark table:not(.fi-ta-table) {
-    background-color: #1f2937;
-    color: #f9fafb;
+/* Dark mode native controls and UI fix */
+html.dark,
+.dark {
+    color-scheme: dark !important;
 }
 
+.dark select,
+.dark select:focus {
+    background-color: #111827 !important;
+    color: #f9fafb !important;
+    border-color: #374151 !important;
+}
+
+.dark select option,
+.dark select optgroup {
+    background-color: #111827 !important;
+    color: #f9fafb !important;
+}
+
+.dark input[type="text"],
+.dark input[type="search"],
+.dark input[type="number"],
+.dark input[type="date"],
+.dark textarea {
+    background-color: #111827 !important;
+    color: #f9fafb !important;
+    border-color: #374151 !important;
+}
+
+/* Card & Container Dark Mode Contrast Assurance */
+.dark .bg-white:not([class*="dark:bg-white"]) {
+    background-color: #1f2937 !important;
+}
+
+.dark .bg-gray-50:not([class*="dark:bg-white"]),
+.dark .bg-gray-50\/50,
+.dark .bg-gray-50\/60,
+.dark .bg-gray-50\/70,
+.dark .bg-gray-50\/80 {
+    background-color: #111827 !important;
+}
+
+.dark .bg-gray-100:not([class*="dark:bg-white"]),
+.dark .bg-gray-100\/80 {
+    background-color: #111827 !important;
+}
+
+.dark .border-gray-200:not([class*="dark:border-white"]),
+.dark .border-gray-300:not([class*="dark:border-white"]) {
+    border-color: #374151 !important;
+}
+
+/* Dark mode safety net for custom tables, cards, and headers */
+.dark table:not(.fi-ta-table) {
+    background-color: #1f2937 !important;
+    color: #f9fafb !important;
+}
+
+.dark table:not(.fi-ta-table) thead,
 .dark table:not(.fi-ta-table) thead tr {
     background-color: #111827 !important;
     color: #e5e7eb !important;
 }
 
 .dark table:not(.fi-ta-table) thead th {
-    border-color: #374151;
+    background-color: #111827 !important;
+    color: #e5e7eb !important;
+    border-color: #374151 !important;
 }
 
+.dark table:not(.fi-ta-table) tbody tr:hover {
+    background-color: rgba(55, 65, 81, 0.45) !important;
+}
+
+.dark table:not(.fi-ta-table) tfoot,
 .dark table:not(.fi-ta-table) tfoot tr {
     background-color: #111827 !important;
     color: #f9fafb !important;
 }
 
 .dark table:not(.fi-ta-table) tfoot td {
-    border-color: #374151;
+    background-color: #111827 !important;
+    color: #f9fafb !important;
+    border-color: #374151 !important;
+}
+
+/* High contrast for primary highlight columns in dark mode */
+.dark .bg-primary-100,
+.dark .bg-primary-200 {
+    background-color: rgba(245, 158, 11, 0.22) !important;
+    color: #fef3c7 !important;
+}
+
+.dark .bg-primary-50,
+.dark .bg-primary-50\/50 {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+}
+
+/* Contrast for muted text in dark mode */
+.dark .text-gray-500:not([class*="dark:text-"]) {
+    color: #9ca3af !important;
+}
+
+.dark .text-gray-600:not([class*="dark:text-"]),
+.dark .text-gray-700:not([class*="dark:text-"]) {
+    color: #d1d5db !important;
+}
+
+.dark .text-gray-800:not([class*="dark:text-"]),
+.dark .text-gray-900:not([class*="dark:text-"]) {
+    color: #f9fafb !important;
 }
 
 @media (prefers-reduced-motion: no-preference) {

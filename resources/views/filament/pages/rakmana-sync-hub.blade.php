@@ -253,16 +253,16 @@
         @if($activeTab === 'grades')
             <div class="space-y-4">
                 {{-- Selector Toolbar --}}
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm">
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                         <div>
                             <label class="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1">{{ __('القسم / الفوج') }}</label>
                             <select
                                 wire:model.live="selectedClassroomId"
-                                class="w-full text-xs rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:ring-primary-500"
+                                class="w-full text-xs rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 focus:ring-primary-500"
                             >
                                 @foreach($classrooms as $cls)
-                                    <option value="{{ $cls->id }}">{{ $cls->name }}</option>
+                                    <option value="{{ $cls->id }}" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ $cls->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -271,10 +271,10 @@
                             <label class="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1">{{ __('المادة التعليمية') }}</label>
                             <select
                                 wire:model.live="selectedSubjectId"
-                                class="w-full text-xs rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:ring-primary-500"
+                                class="w-full text-xs rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 focus:ring-primary-500"
                             >
                                 @foreach($subjects as $subj)
-                                    <option value="{{ $subj->id }}">{{ $subj->name }}</option>
+                                    <option value="{{ $subj->id }}" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ $subj->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -283,11 +283,11 @@
                             <label class="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1">{{ __('الفصل الدراسي') }}</label>
                             <select
                                 wire:model.live="selectedTrimester"
-                                class="w-full text-xs rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:ring-primary-500"
+                                class="w-full text-xs rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 focus:ring-primary-500"
                             >
-                                <option value="1">{{ __('الفصل الأول') }}</option>
-                                <option value="2">{{ __('الفصل الثاني') }}</option>
-                                <option value="3">{{ __('الفصل الثالث') }}</option>
+                                <option value="1" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('الفصل الأول') }}</option>
+                                <option value="2" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('الفصل الثاني') }}</option>
+                                <option value="3" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('الفصل الثالث') }}</option>
                             </select>
                         </div>
 

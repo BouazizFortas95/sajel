@@ -113,29 +113,29 @@
 
         {{-- TAB 1: TRANSFERS LEDGER --}}
         @if ($activeTab === 'transfers')
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
                 {{-- Filter Bar --}}
-                <div class="p-4 border-b border-gray-200 dark:border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gray-50/50 dark:bg-gray-900/20">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gray-50/50 dark:bg-gray-900/60">
                     <div class="flex flex-wrap items-center gap-2 flex-1">
                         <div class="relative w-full sm:w-64">
                             <input
                                 wire:model.live.debounce.300ms="searchQuery"
                                 type="text"
                                 placeholder="{{ __('بحث بالاسم، رقم القيد، المؤسسة...') }}"
-                                class="w-full text-xs rounded-xl border-gray-300 dark:border-gray-700 dark:bg-gray-900 px-3 py-1.5 focus:ring-primary-500"
+                                class="w-full text-xs rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-1.5 focus:ring-primary-500"
                             />
                         </div>
 
-                        <select wire:model.live="selectedType" class="text-xs rounded-xl border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-1.5">
-                            <option value="">{{ __('جميع الأنواع (وافد + مغادر)') }}</option>
-                            <option value="inward">{{ __('الوافدون فقط (Inward)') }}</option>
-                            <option value="outward">{{ __('المغادرون فقط (Outward)') }}</option>
+                        <select wire:model.live="selectedType" class="text-xs rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-1.5">
+                            <option value="" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('جميع الأنواع (وافد + مغادر)') }}</option>
+                            <option value="inward" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('الوافدون فقط (Inward)') }}</option>
+                            <option value="outward" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('المغادرون فقط (Outward)') }}</option>
                         </select>
 
-                        <select wire:model.live="selectedStatus" class="text-xs rounded-xl border-gray-300 dark:border-gray-700 dark:bg-gray-900 py-1.5">
-                            <option value="">{{ __('جميع الوضعيات') }}</option>
-                            <option value="approved">{{ __('مصادق عليه') }}</option>
-                            <option value="pending">{{ __('قيد الإجراء') }}</option>
+                        <select wire:model.live="selectedStatus" class="text-xs rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-1.5">
+                            <option value="" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('جميع الوضعيات') }}</option>
+                            <option value="approved" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('مصادق عليه') }}</option>
+                            <option value="pending" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('قيد الإجراء') }}</option>
                         </select>
                     </div>
 
@@ -292,29 +292,29 @@
 
         {{-- TAB 2: GENERAL MATRICULATION REGISTER (سجل القيد العام) --}}
         @if ($activeTab === 'matricule')
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
-                <div class="p-4 border-b border-gray-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 bg-gray-50/50">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3 bg-gray-50/50 dark:bg-gray-900/60">
                     <div>
                         <h3 class="text-sm font-bold text-gray-900 dark:text-white">
                             📜 {{ __('سجل القيد العام للتلاميذ (Registre Matricule)') }}
                         </h3>
-                        <p class="text-xs text-gray-500">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
                             {{ __('السجل القانوني الدائم لتسجيل التلاميذ وتواريخ الدخول والمغادرة') }}
                         </p>
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <select wire:model.live="selectedLevelId" class="text-xs rounded-xl border-gray-300 py-1.5">
-                            <option value="">{{ __('جميع المستويات') }}</option>
+                        <select wire:model.live="selectedLevelId" class="text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 py-1.5 px-3 focus:ring-primary-500 focus:border-primary-500">
+                            <option value="" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('جميع المستويات') }}</option>
                             @foreach ($levels as $lvl)
-                                <option value="{{ $lvl->id }}">{{ $lvl->name }}</option>
+                                <option value="{{ $lvl->id }}" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ $lvl->name }}</option>
                             @endforeach
                         </select>
 
-                        <select wire:model.live="selectedClassroomId" class="text-xs rounded-xl border-gray-300 py-1.5">
-                            <option value="">{{ __('جميع الأقسام') }}</option>
+                        <select wire:model.live="selectedClassroomId" class="text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 py-1.5 px-3 focus:ring-primary-500 focus:border-primary-500">
+                            <option value="" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('جميع الأقسام') }}</option>
                             @foreach ($classrooms as $cls)
-                                <option value="{{ $cls->id }}">{{ $cls->name }}</option>
+                                <option value="{{ $cls->id }}" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ $cls->name }}</option>
                             @endforeach
                         </select>
                     </div>

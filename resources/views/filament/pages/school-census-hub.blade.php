@@ -165,12 +165,12 @@
 
                 {{-- Table by Levels --}}
                 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-between">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/80 flex items-center justify-between">
                         <div class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
                             <span>📋</span>
                             <span>{{ __('جدول توزيع التلاميذ والأفواج التربوية حسب المستوى والنظام') }}</span>
                         </div>
-                        <span class="text-xs text-gray-500 dark:text-gray-400">
+                        <span class="text-xs text-gray-500 dark:text-gray-400 font-semibold">
                             {{ __('المطابقة الوزارية لاستمارة 15 أكتوبر') }}
                         </span>
                     </div>
@@ -179,16 +179,16 @@
                         <table class="w-full text-xs text-right border-collapse">
                             <thead>
                                 <tr class="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-bold border-b border-gray-200 dark:border-gray-700">
-                                    <th class="p-3 text-right">{{ __('المستوى التعليمي') }}</th>
-                                    <th class="p-3 text-center">{{ __('الأفواج التربوية') }}</th>
-                                    <th class="p-3 text-center text-blue-700 dark:text-blue-400">{{ __('الذكور') }}</th>
-                                    <th class="p-3 text-center text-pink-700 dark:text-pink-400">{{ __('الإناث') }}</th>
-                                    <th class="p-3 text-center font-black bg-primary-200 dark:bg-primary-900 text-primary-950 dark:text-primary-100">{{ __('المجموع العام') }}</th>
-                                    <th class="p-3 text-center">{{ __('نسبة الإناث') }}</th>
-                                    <th class="p-3 text-center">{{ __('خارجي') }}</th>
-                                    <th class="p-3 text-center text-emerald-700 dark:text-emerald-400">{{ __('نصف داخلي') }}</th>
-                                    <th class="p-3 text-center">{{ __('داخلي') }}</th>
-                                    <th class="p-3 text-center font-bold text-amber-700 dark:text-amber-400">{{ __('معدل الفوج') }}</th>
+                                    <th class="p-3 text-right bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100">{{ __('المستوى التعليمي') }}</th>
+                                    <th class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100">{{ __('الأفواج التربوية') }}</th>
+                                    <th class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-blue-700 dark:text-blue-400">{{ __('الذكور') }}</th>
+                                    <th class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-pink-700 dark:text-pink-400">{{ __('الإناث') }}</th>
+                                    <th class="p-3 text-center font-black bg-amber-100 dark:bg-amber-950/60 text-amber-950 dark:text-amber-200">{{ __('المجموع العام') }}</th>
+                                    <th class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300">{{ __('نسبة الإناث') }}</th>
+                                    <th class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300">{{ __('خارجي') }}</th>
+                                    <th class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-emerald-700 dark:text-emerald-400">{{ __('نصف داخلي') }}</th>
+                                    <th class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-gray-400 dark:text-gray-500">{{ __('داخلي') }}</th>
+                                    <th class="p-3 text-center font-bold bg-gray-100 dark:bg-gray-900 text-amber-700 dark:text-amber-400">{{ __('معدل الفوج') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 dark:divide-gray-700 font-medium text-gray-900 dark:text-gray-100">
@@ -198,7 +198,7 @@
                                         <td class="p-3 text-center font-bold text-gray-800 dark:text-gray-200">{{ $row['divisions_count'] }}</td>
                                         <td class="p-3 text-center text-blue-600 dark:text-blue-400 font-semibold">{{ $row['boys_count'] }}</td>
                                         <td class="p-3 text-center text-pink-600 dark:text-pink-400 font-semibold">{{ $row['girls_count'] }}</td>
-                                        <td class="p-3 text-center font-black bg-primary-100 dark:bg-primary-900 text-primary-950 dark:text-primary-100">{{ $row['total_students'] }}</td>
+                                        <td class="p-3 text-center font-black bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200">{{ $row['total_students'] }}</td>
                                         <td class="p-3 text-center text-gray-600 dark:text-gray-300">{{ $row['girls_percentage'] }}%</td>
                                         <td class="p-3 text-center text-gray-700 dark:text-gray-300">{{ $row['externes_count'] }}</td>
                                         <td class="p-3 text-center text-emerald-600 dark:text-emerald-400 font-bold">{{ $row['demi_internes_count'] }}</td>
@@ -215,16 +215,16 @@
                             </tbody>
                             <tfoot>
                                 <tr class="bg-gray-100 dark:bg-gray-900 font-black text-gray-900 dark:text-white border-t-2 border-gray-300 dark:border-gray-700">
-                                    <td class="p-3">{{ __('المجموع الإجمالي للمؤسسة') }}</td>
-                                    <td class="p-3 text-center text-primary-700 dark:text-primary-300">{{ $demographics['total_divisions'] }}</td>
-                                    <td class="p-3 text-center text-blue-700 dark:text-blue-400">{{ $demographics['total_boys'] }}</td>
-                                    <td class="p-3 text-center text-pink-700 dark:text-pink-400">{{ $demographics['total_girls'] }}</td>
-                                    <td class="p-3 text-center text-lg bg-primary-200 dark:bg-primary-900 text-primary-950 dark:text-primary-100 font-black">{{ $demographics['total_students'] }}</td>
-                                    <td class="p-3 text-center text-gray-700 dark:text-gray-300">{{ $demographics['girls_percentage'] }}%</td>
-                                    <td class="p-3 text-center text-gray-700 dark:text-gray-300">{{ $demographics['total_externes'] }}</td>
-                                    <td class="p-3 text-center text-emerald-700 dark:text-emerald-400">{{ $demographics['total_demi_internes'] }}</td>
-                                    <td class="p-3 text-center text-gray-500 dark:text-gray-400">{{ $demographics['total_internes'] }}</td>
-                                    <td class="p-3 text-center text-amber-700 dark:text-amber-400">{{ $demographics['average_per_division'] }}</td>
+                                    <td class="p-3 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white">{{ __('المجموع الإجمالي للمؤسسة') }}</td>
+                                    <td class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-primary-700 dark:text-primary-300">{{ $demographics['total_divisions'] }}</td>
+                                    <td class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-blue-700 dark:text-blue-400">{{ $demographics['total_boys'] }}</td>
+                                    <td class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-pink-700 dark:text-pink-400">{{ $demographics['total_girls'] }}</td>
+                                    <td class="p-3 text-center text-lg bg-amber-100 dark:bg-amber-950/70 text-amber-950 dark:text-amber-200 font-black">{{ $demographics['total_students'] }}</td>
+                                    <td class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300">{{ $demographics['girls_percentage'] }}%</td>
+                                    <td class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300">{{ $demographics['total_externes'] }}</td>
+                                    <td class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-emerald-700 dark:text-emerald-400">{{ $demographics['total_demi_internes'] }}</td>
+                                    <td class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-gray-500 dark:text-gray-400">{{ $demographics['total_internes'] }}</td>
+                                    <td class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-amber-700 dark:text-amber-400">{{ $demographics['average_per_division'] }}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -240,12 +240,12 @@
 
                 {{-- Age Pyramid Section --}}
                 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-between">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/80 flex items-center justify-between">
                         <div class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
                             <span>🎂</span>
                             <span>{{ __('الهرم العمري للتلاميذ: التوزيع المتقاطع حسب سنة الميلاد والطور الدراسي') }}</span>
                         </div>
-                        <span class="text-xs text-gray-500 dark:text-gray-400">
+                        <span class="text-xs text-gray-500 dark:text-gray-400 font-semibold">
                             {{ __('المعايير الديموغرافية لوزارة التربية الوطنية') }}
                         </span>
                     </div>
@@ -254,18 +254,18 @@
                         <table class="w-full text-xs text-right border-collapse">
                             <thead>
                                 <tr class="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-bold border-b border-gray-200 dark:border-gray-700">
-                                    <th class="p-3 text-center" rowspan="2">{{ __('سنة الميلاد') }}</th>
-                                    <th class="p-3 text-center" rowspan="2">{{ __('السن (سنة)') }}</th>
+                                    <th class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100" rowspan="2">{{ __('سنة الميلاد') }}</th>
+                                    <th class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100" rowspan="2">{{ __('السن (سنة)') }}</th>
                                     @foreach($agePyramid['levels'] as $lvl)
-                                        <th class="p-2 text-center border-x border-gray-200 dark:border-gray-700" colspan="3">{{ $lvl->name }}</th>
+                                        <th class="p-2 text-center border-x border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100" colspan="3">{{ $lvl->name }}</th>
                                     @endforeach
                                     <th class="p-3 text-center bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white" colspan="3">{{ __('المجموع العام') }}</th>
                                 </tr>
                                 <tr class="bg-gray-50 dark:bg-gray-800 text-[10px] text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
                                     @foreach($agePyramid['levels'] as $lvl)
-                                        <th class="p-1.5 text-center text-blue-600 dark:text-blue-400">{{ __('ذ') }}</th>
-                                        <th class="p-1.5 text-center text-pink-600 dark:text-pink-400">{{ __('إ') }}</th>
-                                        <th class="p-1.5 text-center font-bold text-gray-700 dark:text-gray-200">{{ __('م') }}</th>
+                                        <th class="p-1.5 text-center text-blue-600 dark:text-blue-400 bg-gray-50 dark:bg-gray-800">{{ __('ذ') }}</th>
+                                        <th class="p-1.5 text-center text-pink-600 dark:text-pink-400 bg-gray-50 dark:bg-gray-800">{{ __('إ') }}</th>
+                                        <th class="p-1.5 text-center font-bold text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800">{{ __('م') }}</th>
                                     @endforeach
                                     <th class="p-1.5 text-center text-blue-700 dark:text-blue-300 bg-gray-100 dark:bg-gray-800">{{ __('ذكور') }}</th>
                                     <th class="p-1.5 text-center text-pink-700 dark:text-pink-300 bg-gray-100 dark:bg-gray-800">{{ __('إناث') }}</th>
@@ -295,7 +295,7 @@
 
                 {{-- Teacher Staffing and Weekly Hours Breakdown --}}
                 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-between">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/80 flex items-center justify-between">
                         <div class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
                             <span>👨‍🏫</span>
                             <span>{{ __('التأطير البيداغوجي وتوزيع الأساتذة والحصص الأسبوعية حسب المادة التعليمية') }}</span>
@@ -309,10 +309,10 @@
                         <table class="w-full text-xs text-right border-collapse">
                             <thead>
                                 <tr class="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-bold border-b border-gray-200 dark:border-gray-700">
-                                    <th class="p-3 text-right">{{ __('المادة التعليمية') }}</th>
-                                    <th class="p-3 text-center">{{ __('تعداد الأساتذة') }}</th>
-                                    <th class="p-3 text-center">{{ __('الحجم الساعي الأسبوعي (ساعة)') }}</th>
-                                    <th class="p-3 text-center">{{ __('معدل التأطير (تلميذ / أستاذ)') }}</th>
+                                    <th class="p-3 text-right bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100">{{ __('المادة التعليمية') }}</th>
+                                    <th class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100">{{ __('تعداد الأساتذة') }}</th>
+                                    <th class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100">{{ __('الحجم الساعي الأسبوعي (ساعة)') }}</th>
+                                    <th class="p-3 text-center bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100">{{ __('معدل التأطير (تلميذ / أستاذ)') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 dark:divide-gray-700 font-medium text-gray-900 dark:text-gray-100">
