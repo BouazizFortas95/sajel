@@ -12,8 +12,8 @@ use App\Models\StudentTextbookLoan;
 use App\Models\Subject;
 use App\Models\Textbook;
 use App\Models\User;
+use App\Support\BrowsershotFactory;
 use Illuminate\Support\Collection;
-use Spatie\Browsershot\Browsershot;
 
 class TextbookInventoryService
 {
@@ -401,7 +401,7 @@ class TextbookInventoryService
 
         $html = view('print.textbook-clearance', $data)->render();
 
-        return Browsershot::html($html)
+        return BrowsershotFactory::html($html)
             ->format('A4')
             ->landscape(false)
             ->margins(10, 10, 10, 10)
@@ -419,7 +419,7 @@ class TextbookInventoryService
 
         $html = view('print.classroom-textbook-sheet', $data)->render();
 
-        return Browsershot::html($html)
+        return BrowsershotFactory::html($html)
             ->format('A4')
             ->landscape(true)
             ->margins(8, 8, 8, 8)
@@ -437,7 +437,7 @@ class TextbookInventoryService
 
         $html = view('print.annual-textbook-inventory', $data)->render();
 
-        return Browsershot::html($html)
+        return BrowsershotFactory::html($html)
             ->format('A4')
             ->landscape(true)
             ->margins(8, 8, 8, 8)

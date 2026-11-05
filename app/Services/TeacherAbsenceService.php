@@ -13,10 +13,10 @@ use App\Models\SchoolHoliday;
 use App\Models\SchoolSetting;
 use App\Models\TeacherAbsence;
 use App\Models\User;
+use App\Support\BrowsershotFactory;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
-use Spatie\Browsershot\Browsershot;
 
 class TeacherAbsenceService
 {
@@ -434,7 +434,7 @@ class TeacherAbsenceService
             'inlineCss' => true,
         ])->render();
 
-        return Browsershot::html($html)
+        return BrowsershotFactory::html($html)
             ->format('A4')
             ->landscape(false)
             ->margins(10, 10, 10, 10)
@@ -452,7 +452,7 @@ class TeacherAbsenceService
 
         $html = view('print.monthly-absence-ledger', $data)->render();
 
-        return Browsershot::html($html)
+        return BrowsershotFactory::html($html)
             ->format('A4')
             ->landscape(true)
             ->margins(10, 10, 10, 10)

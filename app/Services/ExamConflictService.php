@@ -7,6 +7,7 @@ use App\Models\Assessment;
 use App\Models\Classroom;
 use App\Models\Schedule;
 use App\Models\SchoolSetting;
+use App\Support\BrowsershotFactory;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -304,10 +305,9 @@ class ExamConflictService
             'inlineCss' => true,
         ]);
 
-        return Browsershot::html((string) $view)
+        return BrowsershotFactory::html((string) $view)
             ->format('A4')
             ->portrait()
-            ->setOption('args', ['--no-sandbox'])
             ->pdf();
     }
 }

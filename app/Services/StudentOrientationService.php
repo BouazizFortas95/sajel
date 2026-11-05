@@ -10,8 +10,8 @@ use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\StudentOrientation;
 use App\Models\Subject;
+use App\Support\BrowsershotFactory;
 use Illuminate\Database\Eloquent\Builder;
-use Spatie\Browsershot\Browsershot;
 
 class StudentOrientationService
 {
@@ -459,7 +459,7 @@ class StudentOrientationService
     {
         $html = $this->renderWishesHtml($student);
 
-        return Browsershot::html($html)
+        return BrowsershotFactory::html($html)
             ->format('A4')
             ->showBackground()
             ->margins(10, 10, 10, 10)
@@ -473,7 +473,7 @@ class StudentOrientationService
     {
         $html = $this->renderNotificationHtml($student);
 
-        return Browsershot::html($html)
+        return BrowsershotFactory::html($html)
             ->format('A4')
             ->showBackground()
             ->margins(10, 10, 10, 10)
@@ -487,7 +487,7 @@ class StudentOrientationService
     {
         $html = $this->renderMinutesHtml($classroomId);
 
-        return Browsershot::html($html)
+        return BrowsershotFactory::html($html)
             ->format('A4')
             ->landscape()
             ->showBackground()

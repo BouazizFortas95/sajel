@@ -126,17 +126,25 @@
                             />
                         </div>
 
-                        <select wire:model.live="selectedType" class="text-xs rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-1.5">
-                            <option value="" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('جميع الأنواع (وافد + مغادر)') }}</option>
-                            <option value="inward" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('الوافدون فقط (Inward)') }}</option>
-                            <option value="outward" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('المغادرون فقط (Outward)') }}</option>
-                        </select>
+                        <div class="w-full sm:w-52">
+                            <x-filament::input.wrapper>
+                                <x-filament::input.select wire:model.live="selectedType">
+                                    <option value="">{{ __('جميع الأنواع (وافد + مغادر)') }}</option>
+                                    <option value="inward">{{ __('الوافدون فقط (Inward)') }}</option>
+                                    <option value="outward">{{ __('المغادرون فقط (Outward)') }}</option>
+                                </x-filament::input.select>
+                            </x-filament::input.wrapper>
+                        </div>
 
-                        <select wire:model.live="selectedStatus" class="text-xs rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-1.5">
-                            <option value="" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('جميع الوضعيات') }}</option>
-                            <option value="approved" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('مصادق عليه') }}</option>
-                            <option value="pending" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('قيد الإجراء') }}</option>
-                        </select>
+                        <div class="w-full sm:w-44">
+                            <x-filament::input.wrapper>
+                                <x-filament::input.select wire:model.live="selectedStatus">
+                                    <option value="">{{ __('جميع الوضعيات') }}</option>
+                                    <option value="approved">{{ __('مصادق عليه') }}</option>
+                                    <option value="pending">{{ __('قيد الإجراء') }}</option>
+                                </x-filament::input.select>
+                            </x-filament::input.wrapper>
+                        </div>
                     </div>
 
                     <div class="flex items-center gap-2">
@@ -304,19 +312,27 @@
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <select wire:model.live="selectedLevelId" class="text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 py-1.5 px-3 focus:ring-primary-500 focus:border-primary-500">
-                            <option value="" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('جميع المستويات') }}</option>
-                            @foreach ($levels as $lvl)
-                                <option value="{{ $lvl->id }}" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ $lvl->name }}</option>
-                            @endforeach
-                        </select>
+                        <div class="w-40">
+                            <x-filament::input.wrapper>
+                                <x-filament::input.select wire:model.live="selectedLevelId">
+                                    <option value="">{{ __('جميع المستويات') }}</option>
+                                    @foreach ($levels as $lvl)
+                                        <option value="{{ $lvl->id }}">{{ $lvl->name }}</option>
+                                    @endforeach
+                                </x-filament::input.select>
+                            </x-filament::input.wrapper>
+                        </div>
 
-                        <select wire:model.live="selectedClassroomId" class="text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 py-1.5 px-3 focus:ring-primary-500 focus:border-primary-500">
-                            <option value="" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ __('جميع الأقسام') }}</option>
-                            @foreach ($classrooms as $cls)
-                                <option value="{{ $cls->id }}" class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">{{ $cls->name }}</option>
-                            @endforeach
-                        </select>
+                        <div class="w-40">
+                            <x-filament::input.wrapper>
+                                <x-filament::input.select wire:model.live="selectedClassroomId">
+                                    <option value="">{{ __('جميع الأقسام') }}</option>
+                                    @foreach ($classrooms as $cls)
+                                        <option value="{{ $cls->id }}">{{ $cls->name }}</option>
+                                    @endforeach
+                                </x-filament::input.select>
+                            </x-filament::input.wrapper>
+                        </div>
                     </div>
                 </div>
 

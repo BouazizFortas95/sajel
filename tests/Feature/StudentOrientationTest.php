@@ -23,7 +23,6 @@ use App\Services\SchoolRestoreService;
 use App\Services\StudentOrientationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use Spatie\Browsershot\Browsershot;
 use Tests\TestCase;
 
 class StudentOrientationTest extends TestCase
@@ -270,11 +269,19 @@ class StudentOrientationTest extends TestCase
 
     public function test_pdf_download_routes_stream_when_mocked(): void
     {
-        $mock = \Mockery::mock('overload:'.Browsershot::class);
-        $mock->shouldReceive('html->format->showBackground->margins->pdf')
-            ->andReturn('%PDF-1.4 Mocked Wishes PDF');
-        $mock->shouldReceive('html->format->landscape->showBackground->margins->pdf')
-            ->andReturn('%PDF-1.4 Mocked PV PDF');
+        $this->mock(StudentOrientationService::class, function ($mock): void {
+            $mock->shouldReceive('generateWishesPdf')
+                ->once()
+                ->andReturn('%PDF-1.4 Mocked Wishes PDF');
+
+            $mock->shouldReceive('generateNotificationPdf')
+                ->once()
+                ->andReturn('%PDF-1.4 Mocked Notification PDF');
+
+            $mock->shouldReceive('generateMinutesPdf')
+                ->once()
+                ->andReturn('%PDF-1.4 Mocked PV PDF');
+        });
 
         $this->actingAs($this->admin)
             ->get(route('print.orientation.wishes.pdf', ['locale' => 'ar', 'student' => $this->student->id]))

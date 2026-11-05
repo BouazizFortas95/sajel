@@ -9,6 +9,7 @@ use App\Models\DisciplinaryRecord;
 use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\User;
+use App\Support\BrowsershotFactory;
 use Carbon\Carbon;
 use Spatie\Browsershot\Browsershot;
 
@@ -351,12 +352,9 @@ class DisciplinaryCouncilService
         $data = $this->assembleSummonsLetter($record);
         $html = view('print.disciplinary-summons', array_merge($data, ['inlineCss' => true]))->render();
 
-        return Browsershot::html($html)
-            ->format('A4')
+        return BrowsershotFactory::html($html)
             ->portrait()
             ->margins(10, 10, 10, 10)
-            ->showBackground()
-            ->waitUntilNetworkIdle()
             ->pdf();
     }
 
@@ -368,12 +366,9 @@ class DisciplinaryCouncilService
         $data = $this->assembleCouncilMinutes($record);
         $html = view('print.disciplinary-council-minutes', array_merge($data, ['inlineCss' => true]))->render();
 
-        return Browsershot::html($html)
-            ->format('A4')
+        return BrowsershotFactory::html($html)
             ->portrait()
             ->margins(10, 10, 10, 10)
-            ->showBackground()
-            ->waitUntilNetworkIdle()
             ->pdf();
     }
 
@@ -385,12 +380,9 @@ class DisciplinaryCouncilService
         $data = $this->assembleSanctionNotification($record);
         $html = view('print.disciplinary-sanction-notification', array_merge($data, ['inlineCss' => true]))->render();
 
-        return Browsershot::html($html)
-            ->format('A4')
+        return BrowsershotFactory::html($html)
             ->portrait()
             ->margins(10, 10, 10, 10)
-            ->showBackground()
-            ->waitUntilNetworkIdle()
             ->pdf();
     }
 
@@ -402,12 +394,9 @@ class DisciplinaryCouncilService
         $data = $this->assembleAnnualDisciplinaryLedger($academicYear);
         $html = view('print.annual-disciplinary-ledger', array_merge($data, ['inlineCss' => true]))->render();
 
-        return Browsershot::html($html)
-            ->format('A4')
+        return BrowsershotFactory::html($html)
             ->landscape()
             ->margins(8, 8, 8, 8)
-            ->showBackground()
-            ->waitUntilNetworkIdle()
             ->pdf();
     }
 }

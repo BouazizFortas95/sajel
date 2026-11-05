@@ -11,6 +11,7 @@ use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\StudentTransfer;
 use App\Models\User;
+use App\Support\BrowsershotFactory;
 use Carbon\Carbon;
 use Spatie\Browsershot\Browsershot;
 
@@ -288,7 +289,7 @@ class StudentMobilityService
         $data = $this->assembleTransferCertificate($transfer);
         $html = view('print.student-transfer-certificate', array_merge($data, ['inlineCss' => true]))->render();
 
-        return Browsershot::html($html)
+        return BrowsershotFactory::html($html)
             ->format('A4')
             ->portrait()
             ->margins(10, 10, 10, 10)
@@ -305,7 +306,7 @@ class StudentMobilityService
         $data = $this->assembleMobilityLedger($academicYear, $type);
         $html = view('print.student-mobility-ledger', array_merge($data, ['inlineCss' => true]))->render();
 
-        return Browsershot::html($html)
+        return BrowsershotFactory::html($html)
             ->format('A4')
             ->landscape()
             ->margins(8, 8, 8, 8)
@@ -322,7 +323,7 @@ class StudentMobilityService
         $data = $this->assembleForwardingSlip($transfer);
         $html = view('print.school-file-forwarding-slip', array_merge($data, ['inlineCss' => true]))->render();
 
-        return Browsershot::html($html)
+        return BrowsershotFactory::html($html)
             ->format('A4')
             ->portrait()
             ->margins(10, 10, 10, 10)

@@ -11,6 +11,7 @@ use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
+use App\Support\BrowsershotFactory;
 use Carbon\Carbon;
 use Spatie\Browsershot\Browsershot;
 
@@ -364,12 +365,9 @@ class SchoolCensusService
         $data = $this->assembleCensusReport($academicYear);
         $html = view('print.annual-school-census', array_merge($data, ['inlineCss' => true]))->render();
 
-        return Browsershot::html($html)
-            ->format('A4')
+        return BrowsershotFactory::html($html)
             ->landscape()
             ->margins(8, 8, 8, 8)
-            ->showBackground()
-            ->waitUntilNetworkIdle()
             ->pdf();
     }
 }
