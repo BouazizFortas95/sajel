@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-11-05
-> Verified by `php artisan test` (**444 passed**, 20,954 assertions, **0 failures**),
+> Verified by `php artisan test` (**456 passed**, 21,009 assertions, **0 failures**),
 > `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -1138,6 +1138,37 @@ Enforces Algerian Ministry of National Education scheduling regulations for midt
       - Added 9 feature tests in `tests/Feature/ExamTimetableTest.php` covering access permissions, rule violation detection, form validation, page rendering, and printable/PDF routes.
       - 100% complete Arabic, English, and French translation keys (61 keys added and verified green in `LocalizationCompletenessTest`).
       - Full test suite: **444 passed tests, 20,954 assertions, 0 failures, 100% green**.
+
+## 27. Student Awards & Merits Hub, Official Algerian Certificates & Bulletin Board Honor Roll (نظام التكريم والشهادات المدرسية ولوحة الشرف) (100%)
+
+Automatically evaluates student assessment averages, conduct observations, and attendance streaks at the end of each trimester or the whole academic year, allocating official honors and rendering ornate A4 landscape certificates and bulletin-board honor roll sheets:
+
+- [x] **Pedagogical Award Categorization (`StudentAwardType`):**
+      - **Excellence (شهادة امتياز):** Awarded for general average $\ge 16.0/20$ and 0 negative conduct observations.
+      - **Encouragement (شهادة تشجيع):** Awarded for general average $\ge 14.0/20$ and $< 16.0$ (or $\ge 16.0$ with minor behavioral remarks).
+      - **Honor Roll (لوحة شرف):** Awarded for general average $\ge 12.0/20$ and $< 14.0$.
+      - **Good Conduct (شهادة حسن سيرة وسلوك):** Awarded for 0 unexcused absences, 0 negative conduct observations, and high discipline/positive participation.
+- [x] **Automated Deliberation & Merit Engine (`StudentAwardService`):**
+      - Evaluates all students in the classroom or group by trimester (1st: Sep–Dec, 2nd: Jan–Mar, 3rd: Apr–Jun, or full academic year).
+      - Computes weighted subject averages (/20 scale) and overall classroom general average.
+      - Ranks students in descending average order with tie-breakers (positive behavior count, attendance rate, alphabetical).
+      - Computes classroom KPIs: total students, graded count, total honored students, excellence count, encouragement count, honor roll count, good conduct count, and highest classroom average.
+      - Generates official Algerian pedagogical commendation citations customized to student rank, trimester, and award type.
+- [x] **Interactive Filament Cockpit (`StudentAwardsHub`):**
+      - Registered under `__('التشغيل اليومي')` (`Daily Operations`) with icon `heroicon-o-academic-cap`.
+      - Live URL bindings for classroom, trimester, group, and award type filter.
+      - 6 summary KPI cards with distinction counts and class averages.
+      - Ranked roster display featuring gold (1st), silver (2nd), and bronze (3rd) rank badges, student demographics, averages, honor pills, and 1-click print and PDF export actions.
+      - Header actions for bulk printing all certificates, bulk PDF export, and printing the notice board honor roll sheet.
+- [x] **Official Algerian A4 Landscape Certificates & Notice Board Sheet:**
+      - **`print.student-award.single` & `print.student-awards.batch`:** Landscape A4 ornate Islamic geometric double-bordered certificates featuring the Algerian Republic header, Directorate of Education, school name, academic year, bold student dedication, tailored pedagogical citation, academic average and rank badges, and tripartite approval block (Head Teacher, Education Advisor / Director of Studies, Principal & Official Seal).
+      - **`print.classroom-honor-roll`:** Official Algerian school notice-board honor roll sheet for classroom bulletin display, summarizing class performance and listing honored students in order of merit.
+      - Localized streaming PDF downloads (`.pdf` routes) powered by Spatie Browsershot.
+- [x] **Comprehensive Testing & Complete Tri-Lingual Localization:**
+      - Added 12 feature tests in `tests/Feature/StudentAwardsTest.php` covering access permissions, average calculations, award eligibility rules, trimester scoping, layout rendering, and PDF streams.
+      - Added 89 translation keys covering Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
+      - Full test suite: **456 passed tests, 21,009 assertions, 0 failures, 100% green**.
+
 
 
 

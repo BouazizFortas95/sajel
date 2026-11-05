@@ -9,6 +9,7 @@ use App\Http\Controllers\ParentPortalController;
 use App\Http\Controllers\PrintAssessmentController;
 use App\Http\Controllers\PrintDailyLogsController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
+use App\Http\Controllers\StudentAwardController;
 use App\Http\Controllers\StudentReportCardController;
 use App\Http\Controllers\StudentStationController;
 use App\Http\Controllers\TeacherPortfolioController;
@@ -142,6 +143,36 @@ Route::get('/{locale}/print/classrooms/{classroom}/exam-timetable/pdf', [ExamTim
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.exam-timetable.pdf');
+
+Route::get('/{locale}/print/students/{student}/awards/{awardType}', [StudentAwardController::class, 'printSingle'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.student-award.single');
+
+Route::get('/{locale}/print/students/{student}/awards/{awardType}/pdf', [StudentAwardController::class, 'pdfSingle'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.student-award.single.pdf');
+
+Route::get('/{locale}/print/classrooms/{classroom}/awards', [StudentAwardController::class, 'printBatch'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.student-awards.batch');
+
+Route::get('/{locale}/print/classrooms/{classroom}/awards/pdf', [StudentAwardController::class, 'pdfBatch'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.student-awards.batch.pdf');
+
+Route::get('/{locale}/print/classrooms/{classroom}/honor-roll', [StudentAwardController::class, 'printHonorRollSheet'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.classroom-honor-roll');
+
+Route::get('/{locale}/print/classrooms/{classroom}/honor-roll/pdf', [StudentAwardController::class, 'pdfHonorRollSheet'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.classroom-honor-roll.pdf');
 
 Route::get('/{locale}/print/teachers/{user}/portfolio', [TeacherPortfolioController::class, 'print'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
