@@ -76,3 +76,4 @@ class SchoolArchiveController extends Controller
         }
     }
 }
+

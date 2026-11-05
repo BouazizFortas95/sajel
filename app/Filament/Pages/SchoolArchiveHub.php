@@ -197,3 +197,4 @@ class SchoolArchiveHub extends Page
         );
     }
 }
+
