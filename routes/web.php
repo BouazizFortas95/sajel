@@ -12,6 +12,7 @@ use App\Http\Controllers\PrintDailyLogsController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
 use App\Http\Controllers\RakmanaSyncController;
 use App\Http\Controllers\SchoolArchiveController;
+use App\Http\Controllers\SchoolCensusController;
 use App\Http\Controllers\StudentAwardController;
 use App\Http\Controllers\StudentMobilityController;
 use App\Http\Controllers\StudentReportCardController;
@@ -397,6 +398,16 @@ Route::get('/{locale}/rakmana/sample-roster', [RakmanaSyncController::class, 'do
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('rakmana.sample-roster');
+
+Route::get('/{locale}/print/school-census', [SchoolCensusController::class, 'print'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-census');
+
+Route::get('/{locale}/print/school-census/pdf', [SchoolCensusController::class, 'pdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-census.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

@@ -134,11 +134,17 @@ class Student extends Model
 
     public function regimeLabel(): string
     {
-        return match (strtolower((string) $this->regime)) {
-            'half_board', 'نصف داخلي' => __('نصف داخلي'),
-            'boarder', 'داخلي' => __('داخلي'),
-            default => __('خارجي'),
-        };
+        $regime = strtolower((string) $this->regime);
+
+        if (in_array($regime, ['half_board', 'نصف داخلي', 'نصف-داخلي', 'demi-pensionnaire', 'demi_pensionnaire', 'demi'])) {
+            return __('نصف داخلي');
+        }
+
+        if (in_array($regime, ['boarder', 'داخلي', 'interne'])) {
+            return __('داخلي');
+        }
+
+        return __('خارجي');
     }
 
     /*

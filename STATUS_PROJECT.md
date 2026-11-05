@@ -1294,32 +1294,34 @@ Complete statutory disciplinary council proceeding engine compliant with Algeria
       - Added 210+ translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
       - Full test suite: **498 passed tests, 21,247 assertions, 0 failures, 100% green**.
 
-## 33. Ministry "Rakmana" Digital Platform Integration & Data Synchronization Hub (منظومة التكامل ومزامنة منصة الرقمنة الوزارية) (100%)
+## 34. Official Algerian School Year Opening Comprehensive Statistical Statement & October 15th Survey for the Directorate of Education (الكشف الإحصائي الشامل للدخول المدرسي إلى غاية 15 أكتوبر لمديرية التربية) (100%)
 
-Bidirectional ministerial data integration hub compliant with the official Algerian Ministry of National Education digital portal (الرقمنة):
+Statutory annual census return and comprehensive school opening survey submitted to the Directorate of Education (مديرية الدراسات والإعلام الآلي ونظم المعلومات) as of October 15th:
 
-- [x] **Database Enhancement (`students` Table):**
-      - Migration `2026_11_06_010001_add_rakmana_fields_to_students_table.php` adding ministerial profile fields: `gender` (male/female), `regime` (external, half-board, boarder), `guardian_name`, `guardian_phone`, `guardian_relation`.
-      - Model `Student` extended with `isMale()`, `isFemale()`, `regimeLabel()`, `national_id` accessor/mutator, and query scopes `withNin()`, `withoutNin()`, `active()`.
-- [x] **Domain Service (`RakmanaSyncService`):**
-      - **Official Ministry Roster Parser (`parseRosterFile` & `previewImport`):** Auto-detects delimiters (comma, semicolon, tab, pipe), handles UTF-8 BOM, Windows-1256, and ministerial HTML table exports. Intelligently maps Arabic/French headers (NIN, Matricule, Nom, Prénom, Sexe, Date/Lieu de naissance, Classe/Division, Régime, Tuteur, Téléphone).
-      - **Transactional Importer (`executeImport`):** Creates new students, assigns or auto-creates educational groups, and updates existing records matching on NIN, registration number, or identity without duplicating data.
-      - **Ministerial Trimester Grade Matrix (`generateGradeExportMatrix`):** Assembles Continuous Assessment (تقويم مستمر), Midterm (فرض), and Exam (اختبار) for any classroom and subject, computing the official Algerian middle school weighted average (`(continuous + midterm + (exam * 2)) / 4`) and pedagogical appreciation.
-      - **Ministerial Format Grade Exporter (`generateRakmanaGradeCsv`):** Generates UTF-8 BOM CSV files matching the Ministry portal's import template format, ready for direct 1-click batch upload.
-      - **Data Reconciliation & Audit Engine (`auditReconciliation`):** Computes institution digital readiness rate (NIN coverage %), detects missing birth details or guardian phones, and generates actionable lists of students needing NIN regularization.
-- [x] **Interactive Filament Cockpit (`RakmanaSyncHub`):**
-      - Registered under `__('التشغيل اليومي')` (`Daily Operations`) with icon `heroicon-o-arrow-path-rounded-square` and sort order 89.
+- [x] **Database Schema & Eloquent Domain Models (`school_census_records`):**
+      - Migration `2026_11_07_010001_create_school_census_records_table.php` bringing Sajel core database tables from 31 to 32.
+      - Attributes: `academic_year`, `census_date`, `reference_number`, `status` (`draft`, `certified`), `certified_at`, `certified_by_id`, `ordinary_classrooms_count`, `specialized_rooms_count`, `science_labs_count`, `computer_labs_count`, `library_capacity`, `canteen_capacity`, `administrative_staff_count`, `education_supervisors_count`, `service_workers_count`, `snapshot_data` (frozen JSON snapshot), `observations`.
+      - Model `SchoolCensusRecord` with casts, scopes (`forAcademicYear`), relationships (`certifiedBy`), and `isCertified()` helper.
+      - Registered in `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` (32 verified tables).
+- [x] **Domain Service (`SchoolCensusService`):**
+      - **Demographic & Divisions Matrix (`computeDemographics`):** Computes level-by-level pedagogical divisions, total students, boys, girls, gender percentages, schooling regimes (خارجي, نصف داخلي, داخلي), and average students per division.
+      - **Age Pyramid Cross-Tabulation (`computeAgePyramid`):** Computes Algerian national demographic age pyramid matching student birth year and exact age against educational levels with boys/girls breakdown.
+      - **Pedagogical Supervision & Teacher Staffing (`computeStaffingAndSupervision`):** Analyzes subject assignments, assigned teacher headcount, weekly allocated hours, and calculates institutional student-to-teacher staffing ratios.
+      - **Official Certification & Historical Snapshot Freezing (`certifyCensus`):** Freezes an immutable historical snapshot (`snapshot_data`) upon certification by the Principal, guaranteeing that subsequent mid-year student transfers or departures never distort the legal October 15th return.
+      - **Report Assembler & Browsershot PDF Generator:** Supports live dynamic draft returns and archived frozen reports with A4 landscape PDF generation.
+- [x] **Interactive Filament Cockpit (`SchoolCensusHub`):**
+      - Registered under `__('التشغيل اليومي')` (`Daily Operations`) with icon `heroicon-o-chart-bar` and sort order 90.
       - 3 interactive tabs:
-        1. **استيراد قوائم الرقمنة (Ministry Roster Importer):** File upload / raw paste zone, live pre-import preview cards (new vs updated vs skipped), detected groups badges, and 1-click execution.
-        2. **تصدير كشوف رصد النقاط الوزارية (Rakmana Grade Exporter):** Classroom, Subject, and Trimester selectors with live preview table and 1-click CSV export button.
-        3. **مدقق المطابقة والفروقات (Audit Dashboard):** Executive metric cards, digital readiness rate %, and actionable student list with inline NIN quick-edit and instant saving.
-- [x] **Web Controller & Routes (`RakmanaSyncController`):**
-      - `rakmana.grades.export-csv`: downloads ministerial grade matrix as UTF-8 BOM CSV with proper attachment headers.
-      - `rakmana.sample-roster`: downloads official sample roster CSV template.
+        1. **الكشف الإحصائي للتلاميذ والأفواج التربوية (Demographics & Divisions):** Real-time summary KPI cards and level-by-level demographic table with gender and regime distribution.
+        2. **الهرم العمري والتأطير البيداغوجي (Age Pyramid & Teacher Staffing):** Cross-tabulated demographic age pyramid by birth year and subject-by-subject teacher supervision breakdown with staffing ratios.
+        3. **المرافق والهياكل القاعدية والمصادقة (Facilities & Official Certification):** Physical facilities management (ordinary rooms, specialized rooms, physics/science labs, computer lab, canteen, library capacity) and official Principal certification modal to freeze October 15 census data.
+      - Header actions: "معاينة وطباعة الكشف (A4)" and "تحميل PDF".
+- [x] **Official Algerian A4 Landscape Printable Documents & PDFs (`SchoolCensusController`):**
+      - **Official School Census Statement (`print.school-census` + `.pdf`):** Standard A4 landscape format strictly adhering to Algerian Ministry of National Education guidelines with Democratic and Popular Republic header, institutional details, demographic table, age pyramid, teacher staffing, physical facilities inventory, and tripartite audit signatures (School Principal, Studies Counselor, District Inspector & Directorate Planning Visa).
 - [x] **Comprehensive Testing & Complete Tri-Lingual Localization:**
-      - Added 9 feature tests in `tests/Feature/RakmanaSyncTest.php` covering roster parsing, student creation/updates, Algerian grade calculation, CSV formatting with BOM, download routes, audit reconciliation, and Livewire hub rendering.
-      - Added 65+ translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
-      - Full test suite: **507 passed tests, 21,292 assertions, 0 failures, 100% green**.
+      - Added 10 feature tests in `tests/Feature/SchoolCensusTest.php` covering demographic calculation, age pyramid cross-tabulation, teacher staffing ratios, official certification freezing, print/PDF routes, Livewire cockpit actions, and backup/restore table integration.
+      - Added 121 translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
+      - Full test suite: **517 passed tests, 21,349 assertions, 0 failures, 100% green**.
 
 
 

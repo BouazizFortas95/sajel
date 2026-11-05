@@ -251,4 +251,3 @@ class RakmanaSyncHub extends Page
         return app(RakmanaSyncService::class)->auditReconciliation($this->academicYear);
     }
 }
-
