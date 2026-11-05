@@ -86,6 +86,17 @@ class Student extends Model
         return $this->hasMany(DisciplinaryRecord::class)->orderByDesc('session_date');
     }
 
+    public function orientations(): HasMany
+    {
+        return $this->hasMany(StudentOrientation::class);
+    }
+
+    public function currentOrientation(): HasOne
+    {
+        return $this->hasOne(StudentOrientation::class)
+            ->where('academic_year', SchoolSetting::currentAcademicYear());
+    }
+
     /**
      * The student's full name, used by Filament tables and reports.
      */

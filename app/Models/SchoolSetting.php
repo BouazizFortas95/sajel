@@ -56,6 +56,11 @@ class SchoolSetting extends Model
         return $setting;
     }
 
+    public static function currentAcademicYear(): string
+    {
+        return static::current()?->academic_year ?? '2026/2027';
+    }
+
     public static function flushCache(): void
     {
         try {

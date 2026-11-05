@@ -20,6 +20,7 @@ class SajelHealthCheckCommand extends Command
         'pedagogical_remediations', 'pedagogical_meetings', 'school_holidays', 'school_settings',
         'inspection_reports', 'teacher_absences', 'textbooks', 'student_textbook_loans',
         'student_transfers', 'disciplinary_records', 'school_census_records',
+        'student_orientations',
     ];
 
     public function handle(): int

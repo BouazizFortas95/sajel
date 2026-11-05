@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-11-05
-> Verified by `php artisan test` (**487 passed**, 21,192 assertions, **0 failures**),
+> Verified by `php artisan test` (**527 passed**, 21,413 assertions, **0 failures**),
 > `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -1322,6 +1322,43 @@ Statutory annual census return and comprehensive school opening survey submitted
       - Added 10 feature tests in `tests/Feature/SchoolCensusTest.php` covering demographic calculation, age pyramid cross-tabulation, teacher staffing ratios, official certification freezing, print/PDF routes, Livewire cockpit actions, and backup/restore table integration.
       - Added 121 translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
       - Full test suite: **517 passed tests, 21,349 assertions, 0 failures, 100% green**.
+
+## 35. 4AM School Guidance, Wishes Card & Lycée Transition Orientation Hub (منظومة التوجيه والقبول إلى السنة الأولى ثانوي لتلاميذ 4AM) (100%)
+
+Statutory 4th Year Middle School (4AM) guidance, wishes card management, pedagogical profile calculation, admissions council deliberations, and Wilaya appeals management for transition to 1st Year Secondary (Lycée):
+
+- [x] **Database Schema & Eloquent Domain Models (`student_orientations`):**
+      - Migration `2026_11_08_010001_create_student_orientations_table.php` bringing Sajel core database tables from 32 to 33.
+      - Attributes: `student_id`, `academic_year`, `first_wish`, `second_wish`, `third_wish`, `guardian_approval` (boolean), `wishes_signed_at`, `scientific_score` (decimal 4,2), `literary_score` (decimal 4,2), `general_average` (decimal 4,2), `pre_orientation_stream`, `pre_orientation_notes`, `council_decision`, `council_notes`, `bem_score`, `rescue_average`, `appeal_status`, `appeal_stream`, `appeal_date`, `appeal_result_notes`, `appeal_decided_at`.
+      - Model `StudentOrientation` with scopes (`forAcademicYear`, `admitted`, `pendingDeliberation`, `appealed`), relationships (`student`), and helper methods (`recommendedStream()`, `profileGap()`, `effectiveDecision()`, `hasSatisfiedWish()`).
+      - Updated `Student` model with `orientations()` and `currentOrientation()` relationships.
+      - Registered in `SajelHealthCheckCommand` (verifying 33 core tables), `SchoolBackupService`, and `SchoolRestoreService`.
+- [x] **Domain Enums:**
+      - `OrientationStream`: `ScienceTech` (جذع مشترك علوم وتكنولوجيا), `ArtsHumanities` (جذع مشترك آداب), `VocationalTraining` (تكوين مهني), `RepeatYear` (إعادة السنة), with localized labels, theme colors, icons, and short codes.
+      - `OrientationAppealStatus`: `None` (بدون طعن), `Submitted` (مقدم للدراسة), `Accepted` (مقبول), `Rejected` (مرفوض) with labels and colors.
+- [x] **Domain Service (`StudentOrientationService`):**
+      - **Pedagogical Profile Computation (`computeStudentProfile`):** Computes scientific profile score (معدل المواد العلمية: رياضيات + فيزياء + علوم طبيعية), literary profile score (معدل المواد الأدبية: لغة عربية + لغة فرنسية + لغة إنجليزية + تاريخ وجغرافيا), annual general average, profile gap, and recommended stream.
+      - **Wishes Management (`updateWishes`):** Records student stream choices (رغبة 1، رغبة 2، رغبة 3), legal guardian signature timestamp, and guardian approval status.
+      - **Council Deliberations & Admissions Rules (`deliberateCouncil`):** Implements statutory Algerian admission criteria (`BEM >= 10.00` OR rescue average `(Annual Average + BEM) / 2 >= 10.00`), assigning final streams based on student wishes, pedagogical profile compatibility, and council consensus.
+      - **Wilaya Appeal Management (`submitAppeal`, `decideAppeal`):** Manages appeals submitted to the Wilaya Orientation Appeals Commission (لجنة الطعن الولائية للتوجيه والقبول) with decision logging and audit trail.
+      - **Browsershot PDF Generators:** Generates official A4 portrait Wishes Card, Parent Notification Letter with perforated return slip, and A4 landscape Official Council Minutes (محضر مداولات مجلس القبول والتوجيه).
+- [x] **Interactive Filament Cockpit (`OrientationHub`):**
+      - Registered under `__('التشغيل اليومي')` (`Daily Operations`) with icon `heroicon-o-arrow-trending-up` and sort order 92.
+      - High-contrast, strictly styled for light and dark modes with dedicated tables safety net.
+      - 3 interactive tabs:
+        1. **بطاقات الرغبات والملمح البيداغوجي (Wishes & Profiles):** Candidate list with scientific vs literary score meters, recommended stream, wish compliance status, and wish editing modal.
+        2. **مداولات مجلس القبول والتوجيه (Council Deliberations):** Deliberation ledger with annual averages, BEM scores, rescue averages, admission criteria badges, stream assignments, and deliberation modal.
+        3. **الطعون الولائية وتوزيع الشعب (Appeals & Stream Distribution):** Appeals management workflow, decision resolutions, and visual stream allocation distribution progress bars.
+      - Header actions: "معاينة وطباعة محضر المجلس (A4)" and "تحميل المحضر (PDF)".
+- [x] **Official Algerian A4 Printable Documents & PDFs (`OrientationController`):**
+      - **Official Wishes Card (`print.orientation.wishes` + `.pdf`):** A4 portrait card with student identity, subject breakdown, student choices, and parent commitment undertaking.
+      - **Individual Guardian Notification Letter (`print.orientation.notification` + `.pdf`):** A4 portrait formal notification of 1st year secondary admission stream with perforated return acknowledgment slip.
+      - **Official Council Deliberations Minutes (`print.orientation.pv` + `.pdf`):** Formal A4 landscape ministerial PV with full council composition, class candidates ledger, BEM scores, admissions decisions, and authentication signatures block.
+- [x] **Comprehensive Testing & Complete Tri-Lingual Localization:**
+      - Added 10 feature tests in `tests/Feature/StudentOrientationTest.php` covering profile score computation, wishes workflow, admission and rescue deliberation rules, appeals cycle, KPIs computation, print/PDF routes, Livewire cockpit actions, and backup/restore table integration.
+      - Added 100+ translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
+      - Full test suite: **527 passed tests, 21,413 assertions, 0 failures, 100% green**.
+
 
 
 

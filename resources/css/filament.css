@@ -138,9 +138,14 @@
 }
 
 /* Dark mode safety net for custom tables, cards, and headers */
+.dark table:not(.fi-ta-table) {
+    background-color: #1f2937;
+    color: #f9fafb;
+}
+
 .dark table:not(.fi-ta-table) thead tr {
-    background-color: #111827;
-    color: #e5e7eb;
+    background-color: #111827 !important;
+    color: #e5e7eb !important;
 }
 
 .dark table:not(.fi-ta-table) thead th {
@@ -148,8 +153,8 @@
 }
 
 .dark table:not(.fi-ta-table) tfoot tr {
-    background-color: #111827;
-    color: #f9fafb;
+    background-color: #111827 !important;
+    color: #f9fafb !important;
 }
 
 .dark table:not(.fi-ta-table) tfoot td {

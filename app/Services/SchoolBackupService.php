@@ -47,6 +47,7 @@ class SchoolBackupService
         'student_transfers',
         'disciplinary_records',
         'school_census_records',
+        'student_orientations',
     ];
 
     /**

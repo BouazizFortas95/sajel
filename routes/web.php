@@ -6,6 +6,7 @@ use App\Http\Controllers\DownloadPedagogicalMemoPdfController;
 use App\Http\Controllers\ExamTimetableController;
 use App\Http\Controllers\InspectionReportController;
 use App\Http\Controllers\OfficialReportController;
+use App\Http\Controllers\OrientationController;
 use App\Http\Controllers\ParentPortalController;
 use App\Http\Controllers\PrintAssessmentController;
 use App\Http\Controllers\PrintDailyLogsController;
@@ -408,6 +409,36 @@ Route::get('/{locale}/print/school-census/pdf', [SchoolCensusController::class, 
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.school-census.pdf');
+
+Route::get('/{locale}/print/orientation/wishes/{student}', [OrientationController::class, 'wishes'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.orientation.wishes');
+
+Route::get('/{locale}/print/orientation/wishes/{student}/pdf', [OrientationController::class, 'wishesPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.orientation.wishes.pdf');
+
+Route::get('/{locale}/print/orientation/notification/{student}', [OrientationController::class, 'notification'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.orientation.notification');
+
+Route::get('/{locale}/print/orientation/notification/{student}/pdf', [OrientationController::class, 'notificationPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.orientation.notification.pdf');
+
+Route::get('/{locale}/print/orientation/pv', [OrientationController::class, 'pv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.orientation.pv');
+
+Route::get('/{locale}/print/orientation/pv/pdf', [OrientationController::class, 'pvPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.orientation.pv.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link
