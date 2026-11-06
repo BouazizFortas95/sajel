@@ -53,3 +53,4 @@ class CanteenDailySheetFactory extends Factory
         ]);
     }
 }
+

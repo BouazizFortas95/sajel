@@ -38,3 +38,4 @@ class CanteenWeeklyMenu extends Model
         return $query->where('academic_year', $year);
     }
 }
+
