@@ -1650,6 +1650,52 @@ Full statutory alignment and bidirectional file interoperability with the offici
       - 22 comprehensive feature tests in `tests/Feature/RakmanaSyncTest.php` passing with 100% green status (135 assertions).
       - Code style verified with `vendor/bin/pint`.
 
+## 45. Staff & Teacher Career Management, Annual Administrative & Pedagogical Evaluation, and Step Advancement Grids (منظومة تسيير المسار المهني وحركات الموظفين والأساتذة، التنقيط الإداري والتربوي السنوي، وجداول الترقية في الدرجات - Notation Administrative & Avancements d'Échelons) (100%)
+
+Full statutory alignment with Algerian Public Civil Service Law (Ordinance 06-03) and Special Status of National Education Personnel (Executive Decree 08-315, amended by Decree 12-240):
+- [x] **Database Schema & Extended Staff Profile:**
+      - Migration `2026_11_16_010001_add_career_profile_fields_to_users_table.php` adding civil service identity to `users`: `registration_number` (رقم التعريف المالي/الوظيفي Matricule), `national_id_number` (NIN), `birth_date`, `birth_place`, `gender`, `phone`, `recruitment_date` (تاريخ أول تعيين), `grade_appointment_date` (تاريخ التعيين في الرتبة), `current_step` (الدرجة الحالية 0-12), `current_step_date` (تاريخ مفعول الدرجة), `statutory_grade` (الرتبة القانونية), and `diploma` (المؤهل العلمي).
+      - Migration `2026_11_16_010002_create_staff_career_and_evaluation_tables.php` creating 3 core civil service tables:
+        - `staff_evaluations`: annual administrative evaluation (/20) with 4 statutory sub-criteria (punctuality /5, performance /5, conduct /5, initiative /5), pedagogical inspection score (/20), composite promotion score, appreciation, and staff signature/contestation status.
+        - `career_advancements`: step advancements (steps 0 to 12) with computed statutory eligibility dates across Algerian rhythms (Minimum 2.5 yrs, Medium 3 yrs, Maximum 3.5 yrs), CAP approval status, and financial effective dates.
+        - `staff_movements`: tracking transfers (حركات نقل), secondments (انتداب), availability leaves (استيداع), retirements (تقاعد), and reinstatements (إعادة إدماج).
+      - Database health check expanded to 51 required tables: `[PASS] schema: All required tables present (51)`.
+- [x] **Domain Enums & Models:**
+      - Enums: `AdvancementRhythm` (Minimum, Medium, Maximum), `StaffMovementType` (Transfer, Secondment, Availability, Retirement, Integration, NewHire), `StaffEvaluationAppreciation` (Excellent, VeryGood, Good, Acceptable, Poor).
+      - Models: `StaffEvaluation`, `CareerAdvancement`, `StaffMovement`.
+      - User model enhancements: `evaluations()`, `latestEvaluation()`, `careerAdvancements()`, `latestAdvancement()`, `movements()`, and seniority calculators (`getGeneralSeniority`, `getGradeSeniority`, `getStepSeniority`), and permission gate `canManageStaffCareer(): bool`.
+- [x] **Domain Service Layer (`StaffCareerService`):**
+      - Seniority breakdowns: `calculateSeniority(User $user, ?Carbon $targetDate)`.
+      - Step projection engine: `projectAdvancementEligibility(User $user, ?Carbon $asOfDate)` calculating statutory eligibility for Minimum (30 months), Medium (36 months), and Maximum (42 months).
+      - Annual sync engine: `syncAdvancementProjections(int $targetYear)` automatically compiling advancement proposals for the Joint Administrative Committee (CAP).
+      - Evaluation manager: `saveEvaluation(array $data)` computing sub-scores, composite mark, and appreciation.
+      - Promotion executor: `promoteStaff(CareerAdvancement $advancement, Carbon $effectiveDate)` updating user step and recording financial effect.
+      - Official CAP CSV export: `generateAdvancementLedgerCsv(int $year)` with UTF-8 BOM.
+      - High-fidelity PDF generation via `BrowsershotFactory`: `generateEvaluationSheetPdf()` and `generateAdvancementLedgerPdf()`.
+- [x] **Controller Actions & Secure Routing (`StaffCareerController`, `routes/web.php`):**
+      - 5 secure routes for official previews, CSV exports, and streamed PDFs:
+        - `print.staff-career.evaluation-sheet` (`/{locale}/print/staff-career/evaluation/{evaluation}`)
+        - `print.staff-career.evaluation-sheet.pdf` (`/{locale}/print/staff-career/evaluation/{evaluation}/pdf`)
+        - `print.staff-career.advancement-ledger` (`/{locale}/print/staff-career/advancements/ledger`)
+        - `print.staff-career.advancement-ledger.pdf` (`/{locale}/print/staff-career/advancements/ledger/pdf`)
+        - `staff-career.advancements.export-csv` (`/{locale}/staff-career/advancements/export-csv`)
+- [x] **Official Algerian Printable Templates:**
+      - `resources/views/print/staff-evaluation-sheet.blade.php`: Official Annual Administrative Evaluation Bulletin (استمارة وبطاقة التنقيط والتقييم الإداري السنوي - A4 Portrait) with official ministerial header, civil identity strip, 4-tier score breakdown, inspection marks, and dual employee-principal signature visas.
+      - `resources/views/print/career-advancement-ledger.blade.php`: Official Step Advancement Ledger for Joint Administrative Committee (جدول الترقية في الدرجات السنوي - اللجنة الإدارية المتساوية الأعضاء - A4 Landscape) with full staff identification, matricule, current step & effect date, seniority metrics, administrative & inspection scores, dates of eligibility for Minimum (سنتان ونصف), Medium (3 سنوات), Maximum (3.5 سنة), and Joint Committee visa block.
+- [x] **Interactive Filament Livewire Cockpit (`StaffCareerHub`):**
+      - Grouped under `__('الإدارة المدرسية والرقمنة والأرشيف')` with icon `heroicon-o-identification`.
+      - 4 reactive tabs:
+        1. **Evaluations (التنقيط والتقييم السنوي):** Academic session filter, live KPI cards (evaluated count, average score, high performers), interactive scoring modal (4 subscores, auto-sum, pedagogical score, appreciation, notes), and official printable sheet shortcuts.
+        2. **Advancements (جدول الترقية في الدرجات - CAP):** Year filter, one-click eligibility sync action, comprehensive candidate table, CAP approval action, CSV export, and official landscape print/PDF shortcuts.
+        3. **Movements (حركات الموظفين والاستيداع):** Ledger of transfers, secondments, availability leaves, retirements, with decision numbers and dates.
+        4. **Profiles (السجلات والبطاقات المهنية):** Complete civil service directory with registration numbers, NIN, recruitment dates, step dates, and general seniority metrics.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - 224 translation keys populated in `lang/en.json` and `lang/fr.json` verified by `LocalizationCompletenessTest`.
+      - 10 comprehensive feature tests in `tests/Feature/StaffCareerTest.php` passing with 100% green status (58 assertions).
+      - Strict role navigation tailoring verified in `tests/Feature/RoleNavigationTailoringTest.php`.
+      - Code style verified with `vendor/bin/pint`.
+
+
 
 
 

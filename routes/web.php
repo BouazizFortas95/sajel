@@ -20,6 +20,7 @@ use App\Http\Controllers\SchoolCanteenController;
 use App\Http\Controllers\SchoolCensusController;
 use App\Http\Controllers\SchoolHealthController;
 use App\Http\Controllers\SchoolLifeController;
+use App\Http\Controllers\StaffCareerController;
 use App\Http\Controllers\StudentAwardController;
 use App\Http\Controllers\StudentMobilityController;
 use App\Http\Controllers\StudentReportCardController;
@@ -668,6 +669,31 @@ Route::get('/{locale}/print/canteen/periodic-bilan/pdf', [SchoolCanteenControlle
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.canteen.periodic-bilan.pdf');
+
+Route::get('/{locale}/print/staff-career/evaluation/{evaluation}', [StaffCareerController::class, 'evaluationSheet'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.staff-career.evaluation-sheet');
+
+Route::get('/{locale}/print/staff-career/evaluation/{evaluation}/pdf', [StaffCareerController::class, 'evaluationSheetPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.staff-career.evaluation-sheet.pdf');
+
+Route::get('/{locale}/print/staff-career/advancements/ledger', [StaffCareerController::class, 'advancementLedger'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.staff-career.advancement-ledger');
+
+Route::get('/{locale}/print/staff-career/advancements/ledger/pdf', [StaffCareerController::class, 'advancementLedgerPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.staff-career.advancement-ledger.pdf');
+
+Route::get('/{locale}/staff-career/advancements/export-csv', [StaffCareerController::class, 'exportAdvancementCsv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('staff-career.advancements.export-csv');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

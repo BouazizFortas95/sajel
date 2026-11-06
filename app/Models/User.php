@@ -4,12 +4,14 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\Role;
+use Carbon\Carbon;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -31,6 +33,18 @@ class User extends Authenticatable implements FilamentUser
         'primary_subject_id',
         'secondary_subject_id',
         'weekly_hours_limit',
+        'registration_number',
+        'national_id_number',
+        'birth_date',
+        'birth_place',
+        'gender',
+        'phone',
+        'recruitment_date',
+        'grade_appointment_date',
+        'current_step',
+        'current_step_date',
+        'statutory_grade',
+        'diploma',
     ];
 
     /**
@@ -64,6 +78,11 @@ class User extends Authenticatable implements FilamentUser
             'password' => 'hashed',
             'role' => Role::class,
             'weekly_hours_limit' => 'integer',
+            'birth_date' => 'date',
+            'recruitment_date' => 'date',
+            'grade_appointment_date' => 'date',
+            'current_step' => 'integer',
+            'current_step_date' => 'date',
         ];
     }
 
@@ -85,6 +104,93 @@ class User extends Authenticatable implements FilamentUser
     public function dailyLogs(): HasMany
     {
         return $this->hasMany(DailyLog::class);
+    }
+
+    public function evaluations(): HasMany
+    {
+        return $this->hasMany(StaffEvaluation::class)->orderByDesc('academic_year');
+    }
+
+    public function latestEvaluation(): HasOne
+    {
+        return $this->hasOne(StaffEvaluation::class)->latestOfMany();
+    }
+
+    public function careerAdvancements(): HasMany
+    {
+        return $this->hasMany(CareerAdvancement::class)->orderByDesc('created_at');
+    }
+
+    public function latestAdvancement(): HasOne
+    {
+        return $this->hasOne(CareerAdvancement::class)->latestOfMany();
+    }
+
+    public function movements(): HasMany
+    {
+        return $this->hasMany(StaffMovement::class)->orderByDesc('effective_date');
+    }
+
+    /**
+     * Compute General Seniority (الأقدمية العامة في الوظيفة العمومية)
+     */
+    public function getGeneralSeniority(?Carbon $asOf = null): array
+    {
+        if (! $this->recruitment_date) {
+            return ['years' => 0, 'months' => 0, 'days' => 0, 'formatted' => '0 سنة'];
+        }
+
+        $asOf = $asOf ?? now();
+        $diff = $this->recruitment_date->diff($asOf);
+
+        return [
+            'years' => $diff->y,
+            'months' => $diff->m,
+            'days' => $diff->d,
+            'formatted' => "{$diff->y} سنة و {$diff->m} شهر",
+        ];
+    }
+
+    /**
+     * Compute Grade Seniority (الأقدمية في الرتبة الحالية)
+     */
+    public function getGradeSeniority(?Carbon $asOf = null): array
+    {
+        $date = $this->grade_appointment_date ?? $this->recruitment_date;
+        if (! $date) {
+            return ['years' => 0, 'months' => 0, 'days' => 0, 'formatted' => '0 سنة'];
+        }
+
+        $asOf = $asOf ?? now();
+        $diff = $date->diff($asOf);
+
+        return [
+            'years' => $diff->y,
+            'months' => $diff->m,
+            'days' => $diff->d,
+            'formatted' => "{$diff->y} سنة و {$diff->m} شهر",
+        ];
+    }
+
+    /**
+     * Compute Step Seniority (الأقدمية في الدرجة الحالية)
+     */
+    public function getStepSeniority(?Carbon $asOf = null): array
+    {
+        $date = $this->current_step_date ?? $this->recruitment_date;
+        if (! $date) {
+            return ['years' => 0, 'months' => 0, 'days' => 0, 'formatted' => '0 سنة'];
+        }
+
+        $asOf = $asOf ?? now();
+        $diff = $date->diff($asOf);
+
+        return [
+            'years' => $diff->y,
+            'months' => $diff->m,
+            'days' => $diff->d,
+            'formatted' => "{$diff->y} سنة و {$diff->m} شهر",
+        ];
     }
 
     public function isAdmin(): bool
@@ -223,6 +329,11 @@ class User extends Authenticatable implements FilamentUser
     public function canManageRakmana(): bool
     {
         return $this->isDeveloper() || $this->isPrincipal() || $this->isCensor() || $this->isGeneralSupervisor() || $this->isAdmin();
+    }
+
+    public function canManageStaffCareer(): bool
+    {
+        return $this->isDeveloper() || $this->isPrincipal() || $this->isCensor() || $this->isAdmin();
     }
 
     /**

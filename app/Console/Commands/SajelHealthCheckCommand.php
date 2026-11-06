@@ -25,6 +25,7 @@ class SajelHealthCheckCommand extends Command
         'student_medical_records', 'pedagogical_councils', 'pedagogical_council_attendances',
         'pedagogical_seminars', 'pedagogical_seminar_attendances',
         'canteen_food_items', 'canteen_daily_sheets', 'canteen_consumption_entries', 'canteen_weekly_menus',
+        'staff_evaluations', 'career_advancements', 'staff_movements',
     ];
 
     public function handle(): int

@@ -65,6 +65,9 @@ class SchoolRestoreService
         'canteen_daily_sheets',
         'canteen_consumption_entries',
         'canteen_weekly_menus',
+        'staff_evaluations',
+        'career_advancements',
+        'staff_movements',
     ];
 
     /**

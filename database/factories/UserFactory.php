@@ -31,6 +31,17 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'role' => Role::Teacher->value,
+            'registration_number' => 'M'.fake()->numerify('#####'),
+            'national_id_number' => '10'.fake()->numerify('##########'),
+            'birth_date' => '1985-05-15',
+            'birth_place' => 'الجزائر العاصمة',
+            'gender' => 'ذكر',
+            'recruitment_date' => '2015-09-01',
+            'grade_appointment_date' => '2015-09-01',
+            'current_step' => 3,
+            'current_step_date' => '2023-01-01',
+            'statutory_grade' => 'أستاذ التعليم المتوسط',
+            'diploma' => 'شهادة الليسانس في التعليم',
             'remember_token' => Str::random(10),
         ];
     }
