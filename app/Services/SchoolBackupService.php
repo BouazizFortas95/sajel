@@ -50,6 +50,7 @@ class SchoolBackupService
         'student_orientations',
         'student_counseling_profiles',
         'counseling_sessions',
+        'quarterly_institutional_reports',
     ];
 
     /**

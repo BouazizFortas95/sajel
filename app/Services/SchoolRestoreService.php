@@ -52,7 +52,16 @@ class SchoolRestoreService
         'student_orientations',
         'student_counseling_profiles',
         'counseling_sessions',
+        'quarterly_institutional_reports',
     ];
+
+    /**
+     * @return list<string>
+     */
+    public function getTables(): array
+    {
+        return $this->tables;
+    }
 
     /**
      * Inspect a backup payload and return a validation report.

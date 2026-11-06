@@ -12,9 +12,9 @@ use App\Models\Grade;
 use App\Models\Group;
 use App\Models\SchoolSetting;
 use App\Models\Student;
+use App\Models\Subject;
 use App\Services\Concerns\ConfiguresBrowsershot;
 use App\Support\BrowsershotFactory;
-use App\Models\Subject;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Foundation\ViteException;
@@ -25,6 +25,7 @@ use Spatie\Browsershot\Browsershot;
 class StudentAwardService
 {
     use ConfiguresBrowsershot;
+
     /**
      * Resolve date boundaries for Algerian academic trimesters.
      *

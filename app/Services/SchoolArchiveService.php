@@ -21,6 +21,7 @@ use Spatie\Browsershot\Browsershot;
 class SchoolArchiveService
 {
     use ConfiguresBrowsershot;
+
     /**
      * Resolve date boundaries for Algerian academic trimesters.
      *

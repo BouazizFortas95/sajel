@@ -6,6 +6,7 @@ use App\Http\Controllers\DisciplinaryCouncilController;
 use App\Http\Controllers\DownloadPedagogicalMemoPdfController;
 use App\Http\Controllers\ExamTimetableController;
 use App\Http\Controllers\InspectionReportController;
+use App\Http\Controllers\InstitutionalBilanController;
 use App\Http\Controllers\OfficialReportController;
 use App\Http\Controllers\OrientationController;
 use App\Http\Controllers\ParentPortalController;
@@ -26,9 +27,9 @@ use App\Http\Middleware\SetFilamentLocale;
 use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Services\StudentMotivationService;
+use App\Support\BrowsershotFactory;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
-use App\Support\BrowsershotFactory;
 
 Route::get('/', function () {
     return view('welcome');
@@ -468,6 +469,16 @@ Route::get('/{locale}/print/counseling/ledger/pdf', [CounselingController::class
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.counseling.ledger.pdf');
+
+Route::get('/{locale}/print/institutional-bilans/{report?}', [InstitutionalBilanController::class, 'print'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.institutional-bilan');
+
+Route::get('/{locale}/print/institutional-bilans/{report?}/pdf', [InstitutionalBilanController::class, 'pdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.institutional-bilan.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

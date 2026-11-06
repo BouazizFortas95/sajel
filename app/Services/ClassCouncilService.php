@@ -11,9 +11,9 @@ use App\Models\Group;
 use App\Models\PedagogicalRemediation;
 use App\Models\Student;
 use App\Models\Subject;
-use Illuminate\Database\Eloquent\Builder;
 use App\Services\Concerns\ConfiguresBrowsershot;
 use App\Support\BrowsershotFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\ViteException;
 use Illuminate\Support\Collection as SupportCollection;
@@ -23,6 +23,7 @@ use Spatie\Browsershot\Browsershot;
 class ClassCouncilService
 {
     use ConfiguresBrowsershot;
+
     /**
      * Compute and prepare the full class council deliberation data.
      *

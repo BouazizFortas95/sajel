@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class DailyLogRegisterService
 {
     use ConfiguresBrowsershot;
+
     /**
      * Return only completed logs visible to the given user.
      *
@@ -280,7 +281,6 @@ class DailyLogRegisterService
 
         return array_values($normalized);
     }
-
 
     private function inlineCss(string $html, string $css): string
     {

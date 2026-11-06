@@ -1397,6 +1397,53 @@ Statutory Middle School Guidance and Orientation Counselor (مستشار الت�
       - Added 172+ translation keys across Arabic, English, and French, verified 100% green by `LocalizationCompletenessTest`.
       - Full test suite: **537 passed tests, 21,496 assertions, 0 failures, 100% green**.
 
+## 37. Executive Principal Analytics Cockpit & Official Quarterly Institutional Report (الحصيلة البيداغوجية والتربوية الفصلية الشاملة - Bilan Trimestriel Global) (100%)
+
+Comprehensive executive intelligence cockpit for Algerian Middle School Principals (مدراء المتوسطات) and Directors of Studies (نظار ومستشاري التربية) synthesizing institutional performance at the end of each academic trimester:
+
+- [x] **Database Schema & Eloquent Domain Models (`quarterly_institutional_reports`):**
+      - Migration `2026_11_10_010001_create_quarterly_institutional_reports_table.php` bringing Sajel core database tables from 35 to 36.
+      - Attributes: `academic_year`, `trimester`, `status` (`draft`, `validated`, `archived`), `general_success_rate`, `evaluated_students_count`, `passed_students_count`, `excellence_count`, `encouragement_count`, `honor_count`, `passing_count`, `failing_count`, `total_due_sessions`, `completed_sessions`, `teacher_absence_hours`, `teacher_substitution_hours`, `student_absence_records`, `disciplinary_councils_count`, `counseling_sessions_count`, `level_breakdown`, `subject_breakdown`, `executive_summary`, `pedagogical_recommendations`, `validated_by`, `validated_at`.
+      - Model `QuarterlyInstitutionalReport` with scopes, relationships (`validator`), and helper calculations.
+      - Registered in `SajelHealthCheckCommand` (verifying 36 core tables), `SchoolBackupService`, and `SchoolRestoreService`.
+- [x] **Domain Enums:**
+      - `InstitutionalReportStatus`: `Draft` (مسودة ديناميكية), `Validated` (مصادق عليها ومجمدة), `Archived` (مؤرشفة).
+- [x] **Domain Service (`InstitutionalBilanService`):**
+      - Computes live trimester performance and attendance analytics across all 35 existing tables.
+      - Supports live computation, draft snapshot saving, frozen report validation, and unfreezing.
+      - High-fidelity A4 landscape PDF generation via `BrowsershotFactory`.
+- [x] **Interactive Filament Cockpit (`InstitutionalBilanHub`):**
+      - Registered under `__('الإشراف والمراقبة الإدارية')` with icon `heroicon-o-presentation-chart-line` and sort order 5.
+      - High contrast and dark-mode safe.
+      - 4 tabs: Academic Performance, Attendance & Regularity, School Climate & Guidance, and Executive Summary & Validation.
+- [x] **Official Algerian A4 Landscape Printable Documents & PDFs (`InstitutionalBilanController`):**
+      - Official ministerial report template (`print.institutional-bilan` + `.pdf`).
+- [x] **Comprehensive Testing & Full Tri-Lingual Localization:**
+      - 9 feature tests in `tests/Feature/InstitutionalBilanTest.php`.
+      - 110+ translation keys across Arabic, English, and French verified by `LocalizationCompletenessTest`.
+      - System health check passing with 36 core tables verified.
+
+## 38. Ministry Rakmana Integration Hub (منظومة التكامل والمزامنة مع الرقمنة الوزارية) (Planned)
+
+Official ministerial synchronization engine for Algerian national education platforms (فضاء الرقمنة لوزارة التربية الوطنية):
+- [ ] Import/Export student registries via official ministerial templates (`.xlsx`, `.csv`).
+- [ ] National Identification Number (NIN / رقم التعريف الوطني) tracking and discrepancy resolution.
+- [ ] Official Grade Import Matrix generation (ملف حجز النقاط بصيغة الرقمنة الوزارية).
+
+## 39. Administrative Resumption of Work Protocols & Teacher Replacement Mandates (محاضر استئناف العمل والتسخيرات الإدارية لغيابات الأساتذة) (Planned)
+
+Administrative legal workflow for teacher absences, statutory leaves, and replacements:
+- [ ] Official Resumption of Work Minutes (محضر استئناف العمل الرسمي - PV de reprise de travail après congé ou absence).
+- [ ] Administrative Requisition Mandate (تسخير إداري رسمي لتغطية الساعات الشاغرة).
+- [ ] Salary deduction notification slips (إشعارات الخصم من الراتب للغيابات غير المبررة).
+
+## 40. School Life & Extra-curricular Clubs System (منظومة الحياة المدرسية والنوادي والأنشطة اللاصفية) (Planned)
+
+Comprehensive management of student extracurricular life and school clubs:
+- [ ] Scientific, Environmental (Green), Cultural/Theater, and Sports School Clubs.
+- [ ] Teacher advisors allocation, student enrollments, activity logbook, and annual showcase certificates.
+
+
 
 
 
