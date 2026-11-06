@@ -26,9 +26,9 @@ use App\Http\Middleware\SetFilamentLocale;
 use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Services\StudentMotivationService;
+use App\Support\BrowsershotFactory;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
-use Spatie\Browsershot\Browsershot;
 
 Route::get('/', function () {
     return view('welcome');
@@ -123,10 +123,8 @@ Route::get('/{locale}/print/students/{student}/certificate/pdf', function (strin
         'schoolSetting' => SchoolSetting::first(),
     ]);
 
-    return Browsershot::html((string) $view)
-        ->format('A4')
+    return BrowsershotFactory::html((string) $view)
         ->landscape()
-        ->setOption('args', ['--no-sandbox'])
         ->download('certificat-'.$student->full_name.'.pdf');
 })
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))

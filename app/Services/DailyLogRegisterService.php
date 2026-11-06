@@ -7,6 +7,7 @@ use App\Models\Classroom;
 use App\Models\DailyLog;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\Concerns\ConfiguresBrowsershot;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\ViteException;
@@ -21,6 +22,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class DailyLogRegisterService
 {
+    use ConfiguresBrowsershot;
+
     /**
      * Return only completed logs visible to the given user.
      *
@@ -277,35 +280,6 @@ class DailyLogRegisterService
         }
 
         return array_values($normalized);
-    }
-
-    private function browsershot(string $html): Browsershot
-    {
-        $browsershot = Browsershot::html($html)
-            ->format('A4')
-            ->showBackground()
-            ->margins(10, 10, 10, 10)
-            ->setOption('preferCSSPageSize', true)
-            ->waitUntilNetworkIdle()
-            ->timeout(120);
-
-        if (is_dir(base_path('node_modules'))) {
-            $browsershot->setNodeModulePath(base_path('node_modules'));
-        }
-
-        foreach ([
-            'node_binary' => 'setNodeBinary',
-            'npm_binary' => 'setNpmBinary',
-            'chrome_path' => 'setChromePath',
-        ] as $configKey => $method) {
-            $value = config("services.browsershot.{$configKey}");
-
-            if (filled($value)) {
-                $browsershot->{$method}($value);
-            }
-        }
-
-        return $browsershot;
     }
 
     private function inlineCss(string $html, string $css): string

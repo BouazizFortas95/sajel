@@ -15,6 +15,7 @@ use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
+use App\Support\BrowsershotFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\ViteException;
 use Illuminate\Support\Carbon;
@@ -640,32 +641,11 @@ class OfficialReportService
 
     private function browsershot(string $html, bool $landscape): Browsershot
     {
-        $browsershot = Browsershot::html($html)
-            ->format('A4')
-            ->showBackground()
-            ->margins(8, 8, 8, 8)
-            ->setOption('preferCSSPageSize', true)
-            ->waitUntilNetworkIdle()
-            ->timeout(120);
+        $browsershot = BrowsershotFactory::html($html)
+            ->margins(8, 8, 8, 8);
 
         if ($landscape) {
             $browsershot->landscape();
-        }
-
-        if (is_dir(base_path('node_modules'))) {
-            $browsershot->setNodeModulePath(base_path('node_modules'));
-        }
-
-        foreach ([
-            'node_binary' => 'setNodeBinary',
-            'npm_binary' => 'setNpmBinary',
-            'chrome_path' => 'setChromePath',
-        ] as $configKey => $method) {
-            $value = config("services.browsershot.{$configKey}");
-
-            if (filled($value)) {
-                $browsershot->{$method}($value);
-            }
         }
 
         return $browsershot;

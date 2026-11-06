@@ -12,11 +12,13 @@ use App\Models\Schedule;
 use App\Models\SchoolSetting;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\Concerns\ConfiguresBrowsershot;
 use Illuminate\Support\Facades\DB;
-use Spatie\Browsershot\Browsershot;
 
 class PedagogicalInspectionService
 {
+    use ConfiguresBrowsershot;
+
     /**
      * Compute curriculum velocity and parallel section pacing.
      *
@@ -221,31 +223,5 @@ class PedagogicalInspectionService
         $html = $this->renderHtml($report);
 
         return $this->browsershot($html)->pdf();
-    }
-
-    private function browsershot(string $html): Browsershot
-    {
-        $browsershot = Browsershot::html($html)
-            ->format('A4')
-            ->margins(10, 10, 10, 10)
-            ->showBackground()
-            ->waitUntilNetworkIdle();
-
-        if (is_dir(base_path('node_modules'))) {
-            $browsershot->setNodeModulePath(base_path('node_modules'));
-        }
-
-        foreach ([
-            'node_binary' => 'setNodeBinary',
-            'npm_binary' => 'setNpmBinary',
-            'chrome_path' => 'setChromePath',
-        ] as $configKey => $method) {
-            $value = config("services.browsershot.{$configKey}");
-            if (! empty($value)) {
-                $browsershot->{$method}($value);
-            }
-        }
-
-        return $browsershot;
     }
 }

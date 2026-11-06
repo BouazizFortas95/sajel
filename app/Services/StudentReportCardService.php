@@ -11,16 +11,18 @@ use App\Models\PedagogicalRemediation;
 use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\Concerns\ConfiguresBrowsershot;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\ViteException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
-use Spatie\Browsershot\Browsershot;
 
 class StudentReportCardService
 {
+    use ConfiguresBrowsershot;
+
     /**
      * Prepare report data after policy authorization.
      *
@@ -188,35 +190,6 @@ class StudentReportCardService
         }
 
         return $this->browsershot($html)->pdf();
-    }
-
-    private function browsershot(string $html): Browsershot
-    {
-        $browsershot = Browsershot::html($html)
-            ->format('A4')
-            ->showBackground()
-            ->margins(10, 10, 10, 10)
-            ->setOption('preferCSSPageSize', true)
-            ->waitUntilNetworkIdle()
-            ->timeout(120);
-
-        if (is_dir(base_path('node_modules'))) {
-            $browsershot->setNodeModulePath(base_path('node_modules'));
-        }
-
-        foreach ([
-            'node_binary' => 'setNodeBinary',
-            'npm_binary' => 'setNpmBinary',
-            'chrome_path' => 'setChromePath',
-        ] as $configKey => $method) {
-            $value = config("services.browsershot.{$configKey}");
-
-            if (filled($value)) {
-                $browsershot->{$method}($value);
-            }
-        }
-
-        return $browsershot;
     }
 
     private function inlineCss(string $html, string $css): string

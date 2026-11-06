@@ -32,6 +32,7 @@ class BrowsershotFactory
             ->showBackground()
             ->margins(10, 10, 10, 10)
             ->setOption('preferCSSPageSize', true)
+            ->newHeadless()
             ->waitUntilNetworkIdle()
             ->timeout(120);
 
@@ -41,20 +42,29 @@ class BrowsershotFactory
 
         // 1. Node Binary
         $node = config('services.browsershot.node_binary') ?: static::detectNodeBinary();
-        if ($node && file_exists($node)) {
-            $browsershot->setNodeBinary($node);
+        if ($node) {
+            $normalizedNode = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $node);
+            if (file_exists($normalizedNode)) {
+                $browsershot->setNodeBinary($normalizedNode);
+            }
         }
 
         // 2. NPM Binary
         $npm = config('services.browsershot.npm_binary') ?: static::detectNpmBinary();
-        if ($npm && file_exists($npm)) {
-            $browsershot->setNpmBinary($npm);
+        if ($npm) {
+            $normalizedNpm = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $npm);
+            if (file_exists($normalizedNpm)) {
+                $browsershot->setNpmBinary($normalizedNpm);
+            }
         }
 
         // 3. Chrome / Edge Binary
         $chrome = config('services.browsershot.chrome_path') ?: static::detectChromePath();
-        if ($chrome && file_exists($chrome)) {
-            $browsershot->setChromePath($chrome);
+        if ($chrome) {
+            $normalizedChrome = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $chrome);
+            if (file_exists($normalizedChrome)) {
+                $browsershot->setChromePath($normalizedChrome);
+            }
         }
 
         // Essential Chromium sandbox arguments for Windows, IIS, Apache, and container environments

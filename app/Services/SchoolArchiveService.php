@@ -10,6 +10,8 @@ use App\Models\DailyLog;
 use App\Models\SchoolSetting;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\Concerns\ConfiguresBrowsershot;
+use App\Support\BrowsershotFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\ViteException;
 use Illuminate\Support\Collection;
@@ -18,6 +20,8 @@ use Spatie\Browsershot\Browsershot;
 
 class SchoolArchiveService
 {
+    use ConfiguresBrowsershot;
+
     /**
      * Resolve date boundaries for Algerian academic trimesters.
      *
@@ -397,34 +401,11 @@ class SchoolArchiveService
         return $this->browsershot($html)->pdf();
     }
 
-    private function browsershot(string $html): Browsershot
+    protected function browsershot(string $html): Browsershot
     {
-        $browsershot = Browsershot::html($html)
-            ->format('A4')
+        return BrowsershotFactory::html($html)
             ->portrait()
-            ->showBackground()
-            ->margins(10, 10, 10, 10)
-            ->setOption('preferCSSPageSize', true)
-            ->waitUntilNetworkIdle()
             ->timeout(240);
-
-        if (is_dir(base_path('node_modules'))) {
-            $browsershot->setNodeModulePath(base_path('node_modules'));
-        }
-
-        foreach ([
-            'node_binary' => 'setNodeBinary',
-            'npm_binary' => 'setNpmBinary',
-            'chrome_path' => 'setChromePath',
-        ] as $configKey => $method) {
-            $value = config("services.browsershot.{$configKey}");
-
-            if (filled($value)) {
-                $browsershot->{$method}($value);
-            }
-        }
-
-        return $browsershot;
     }
 
     private function inlineCss(string $html, string $css): string
