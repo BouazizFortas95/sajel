@@ -1614,6 +1614,42 @@ Comprehensive statutory catering and half-board (نصف داخلي) management u
       - 9 comprehensive feature tests in `tests/Feature/SchoolCanteenTest.php` passing with 100% green status (66 assertions).
       - Tailored navigation verified for all roles in `tests/Feature/RoleNavigationTailoringTest.php`.
 
+## 44. Comprehensive Ministerial Digitation & File Integration Ecosystem (منظومة التكامل مع الرقمنة الوزارية: استيراد وتصدير قوائم التلاميذ وملفات حجز النقاط ومحاضر مجالس الأقسام والمداولات الوزارية - amatti.education.gov.dz) (100%)
+
+Full statutory alignment and bidirectional file interoperability with the official digital platform of the Algerian Ministry of National Education (`amatti.education.gov.dz`):
+- [x] **Database Schema & Extended Student Model:**
+      - Migration `2026_11_15_010001_add_ministerial_rakmana_fields_to_students_table.php` adding `first_name_latin`, `last_name_latin`, `is_repeater` (معيد / مكرر السنة), and `address` (عنوان الإقامة).
+      - Eloquent model enhancements on `Student`: `isRepeater(): bool`, `fullNameLatin` accessor, and inclusion in fillables/casts and factories.
+      - User role capabilities: `User::canManageRakmana(): bool` granting authorized management to Developer, Principal, Censor, General Supervisor, and Admins.
+- [x] **Domain Service Layer (`RakmanaSyncService`):**
+      - Ministerial Header Mapping (`mapHeaderColumns`): auto-detects Arabic, French, and Latin header labels (`nom_latin`, `prenom_latin`, `redoublant`, `adresse`).
+      - Normalization & Transactional Roster Ingestion (`sanitizeStudentRow`, `executeImport`): handles NIN normalization, repeater flags, Latin names, and address persistence.
+      - 19-Column Official Ministerial Student Roster Export (`generateRakmanaStudentRosterCsv`): emits full official Algerian Ministry specification CSV with UTF-8 BOM.
+      - Intelligent Subject Coefficient Calculator (`getSubjectCoefficient`): automatically calculates statutory coefficients (معاملات المواد) across levels according to Algerian middle school curricula.
+      - Comprehensive Class Council Deliberation Engine (`generateClassCouncilDeliberationMatrix`): compiles student x subject grades, total weighted points, total coefficients, general averages, rankings, and statutory council decisions (تهنئة، تشجيع، لوحة شرف، تنبيه، توبيخ).
+      - Deliberation CSV Export (`generateMinisterialDeliberationCsv`): outputs the full deliberation matrix compatible with ministerial archiving spreadsheets.
+      - High-Fidelity PDF Generation via `BrowsershotFactory`: `generateGradeSheetPdf()` and `generateClassCouncilDeliberationPdf()`.
+- [x] **Controller Actions & Secure Routing (`RakmanaSyncController`, `routes/web.php`):**
+      - 5 new routes supporting official previews and PDF/CSV downloads:
+        - `print.rakmana.grade-sheet` (+ `.pdf`)
+        - `rakmana.deliberations.export-csv`
+        - `print.rakmana.deliberation-sheet` (+ `.pdf`)
+- [x] **Official Algerian Printable Templates:**
+      - `resources/views/print/rakmana-grade-sheet.blade.php`: Official Subject Grade Booking Sheet (بطاقة حجز النقاط الرسمية الموحدة للمادة - A4 Portrait) with ministerial header, KPI strip, marks breakdown, and dual teacher-principal visas.
+      - `resources/views/print/rakmana-class-deliberation.blade.php`: Official Class Council Deliberation Minutes (محضر مداولات مجلس القسم الفصلي الرسمي - A4 Landscape) with comprehensive subject matrix, honor brackets, and quadruple council signatures.
+- [x] **Interactive Filament Livewire Cockpit (`RakmanaSyncHub`):**
+      - Grouped under `__('الإدارة المدرسية والرقمنة والأرشيف')` with icon `heroicon-o-arrow-path-rounded-square`.
+      - 5 reactive tabs:
+        1. **Rosters (قوائم التلاميذ):** Import wizard with group auto-resolution, live preview, NIN match indicator, and 19-column ministerial CSV export.
+        2. **Grades Export (تصدير كشوف حجز النقاط):** Class/subject selector, live score matrix, CSV export, blank booking template, and official printable grade sheet shortcuts.
+        3. **Grades Import (استيراد ملفات حجز النقاط):** Score parser (0-20), absent tracking, projected average preview, and atomic grade persistence.
+        4. **Deliberations & Class Councils (محاضر مجالس الأقسام والمداولات):** Comprehensive deliberation matrix, automatic rankings, council honor awards, deliberation CSV export, and official printable A4 minutes.
+        5. **Audit & Reconciliation (مدقق المطابقة والفروقات):** Institutional completeness checks for NIN, Latin names, birth records, and residential addresses.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - 49 new translation keys populated in `lang/en.json` and `lang/fr.json` verified by `LocalizationCompletenessTest`.
+      - 22 comprehensive feature tests in `tests/Feature/RakmanaSyncTest.php` passing with 100% green status (135 assertions).
+      - Code style verified with `vendor/bin/pint`.
+
 
 
 

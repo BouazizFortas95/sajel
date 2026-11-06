@@ -29,4 +29,3 @@ class CanteenWeeklyMenuFactory extends Factory
         ];
     }
 }
-

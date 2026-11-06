@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\RakmanaSyncService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class RakmanaSyncController extends Controller
 {
@@ -153,5 +154,164 @@ class RakmanaSyncController extends Controller
                 'Content-Disposition' => "attachment; filename=\"{$filename}\"",
             ]
         );
+    }
+
+    /**
+     * Preview printable official Subject Grade Sheet.
+     */
+    public function printGradeSheet(
+        Request $request,
+        string $locale,
+        Classroom $classroom,
+        Subject $subject,
+        RakmanaSyncService $service
+    ) {
+        $user = $request->user();
+        abort_unless(
+            $user instanceof User && ($user->isAdmin() || $classroom->schedules()->where('user_id', $user->id)->exists()),
+            403
+        );
+
+        $trimester = (int) $request->query('trimester', 1);
+        $academicYear = $request->query('academic_year');
+
+        $data = $service->assembleGradeSheetData($classroom, $subject, $trimester, $academicYear);
+        $data['autoPrint'] = $request->boolean('autoprint', true);
+
+        return view('print.rakmana-grade-sheet', $data);
+    }
+
+    /**
+     * Download Subject Grade Sheet as PDF.
+     */
+    public function downloadGradeSheetPdf(
+        Request $request,
+        string $locale,
+        Classroom $classroom,
+        Subject $subject,
+        RakmanaSyncService $service
+    ) {
+        $user = $request->user();
+        abort_unless(
+            $user instanceof User && ($user->isAdmin() || $classroom->schedules()->where('user_id', $user->id)->exists()),
+            403
+        );
+
+        $trimester = (int) $request->query('trimester', 1);
+        $academicYear = $request->query('academic_year');
+        $filename = 'fiche-notes-rakmana-'.$classroom->name.'-'.$subject->name.'-T'.$trimester.'.pdf';
+
+        try {
+            $pdf = $service->generateGradeSheetPdf($classroom, $subject, $trimester, $academicYear);
+
+            return response($pdf, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            ]);
+        } catch (Throwable) {
+            $data = $service->assembleGradeSheetData($classroom, $subject, $trimester, $academicYear);
+            $data['autoPrint'] = false;
+            $html = view('print.rakmana-grade-sheet', $data)->render();
+
+            return response()->streamDownload(
+                fn () => print ($html),
+                str_replace('.pdf', '.html', $filename),
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
+        }
+    }
+
+    /**
+     * Export Class Council Deliberation Matrix as official ministerial CSV.
+     */
+    public function exportDeliberationCsv(
+        Request $request,
+        string $locale,
+        Classroom $classroom,
+        RakmanaSyncService $service
+    ): StreamedResponse {
+        $user = $request->user();
+        abort_unless(
+            $user instanceof User && ($user->isAdmin() || $user->isEducationStaff() || $classroom->schedules()->where('user_id', $user->id)->exists()),
+            403
+        );
+
+        $trimester = (int) $request->query('trimester', 1);
+        $academicYear = $request->query('academic_year');
+
+        $csv = $service->generateMinisterialDeliberationCsv($classroom, $trimester, $academicYear);
+        $filename = 'deliberations-conseil-classe-'.$classroom->name.'-T'.$trimester.'.csv';
+
+        return response()->streamDownload(
+            fn () => print ($csv),
+            $filename,
+            [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            ]
+        );
+    }
+
+    /**
+     * Preview printable official Class Council Deliberation Minutes (PV).
+     */
+    public function printDeliberation(
+        Request $request,
+        string $locale,
+        Classroom $classroom,
+        RakmanaSyncService $service
+    ) {
+        $user = $request->user();
+        abort_unless(
+            $user instanceof User && ($user->isAdmin() || $user->isEducationStaff() || $classroom->schedules()->where('user_id', $user->id)->exists()),
+            403
+        );
+
+        $trimester = (int) $request->query('trimester', 1);
+        $academicYear = $request->query('academic_year');
+
+        $data = $service->assembleDeliberationData($classroom, $trimester, $academicYear);
+        $data['autoPrint'] = $request->boolean('autoprint', true);
+
+        return view('print.rakmana-class-deliberation', $data);
+    }
+
+    /**
+     * Download Class Council Deliberation Minutes as PDF.
+     */
+    public function downloadDeliberationPdf(
+        Request $request,
+        string $locale,
+        Classroom $classroom,
+        RakmanaSyncService $service
+    ) {
+        $user = $request->user();
+        abort_unless(
+            $user instanceof User && ($user->isAdmin() || $user->isEducationStaff() || $classroom->schedules()->where('user_id', $user->id)->exists()),
+            403
+        );
+
+        $trimester = (int) $request->query('trimester', 1);
+        $academicYear = $request->query('academic_year');
+        $filename = 'pv-deliberations-rakmana-'.$classroom->name.'-T'.$trimester.'.pdf';
+
+        try {
+            $pdf = $service->generateClassCouncilDeliberationPdf($classroom, $trimester, $academicYear);
+
+            return response($pdf, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            ]);
+        } catch (Throwable) {
+            $data = $service->assembleDeliberationData($classroom, $trimester, $academicYear);
+            $data['autoPrint'] = false;
+            $html = view('print.rakmana-class-deliberation', $data)->render();
+
+            return response()->streamDownload(
+                fn () => print ($html),
+                str_replace('.pdf', '.html', $filename),
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
+        }
     }
 }

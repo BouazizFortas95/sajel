@@ -13,6 +13,7 @@ use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
+use App\Support\BrowsershotFactory;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -165,6 +166,14 @@ class RakmanaSyncService
                 $map[$index] = 'guardian_phone';
             } elseif (str_contains($header, 'ولي') || str_contains($header, 'tuteur')) {
                 $map[$index] = 'guardian_name';
+            } elseif (str_contains($header, 'لقب') && (str_contains($header, 'لاتين') || str_contains($header, 'فرنس') || str_contains($header, 'latin') || str_contains($header, 'fr'))) {
+                $map[$index] = 'last_name_latin';
+            } elseif (str_contains($header, 'اسم') && (str_contains($header, 'لاتين') || str_contains($header, 'فرنس') || str_contains($header, 'latin') || str_contains($header, 'fr'))) {
+                $map[$index] = 'first_name_latin';
+            } elseif (str_contains($header, 'nom') && (str_contains($header, 'latin') || str_contains($header, 'fr'))) {
+                $map[$index] = 'last_name_latin';
+            } elseif (str_contains($header, 'prenom') && (str_contains($header, 'latin') || str_contains($header, 'fr'))) {
+                $map[$index] = 'first_name_latin';
             } elseif (str_contains($header, 'لقب') || str_contains($header, 'nom')) {
                 $map[$index] = 'last_name';
             } elseif (str_contains($header, 'اسم') || str_contains($header, 'prenom')) {
@@ -179,6 +188,10 @@ class RakmanaSyncService
                 $map[$index] = 'group_name';
             } elseif (str_contains($header, 'صفة') || str_contains($header, 'نظام') || str_contains($header, 'regime')) {
                 $map[$index] = 'regime';
+            } elseif (str_contains($header, 'معيد') || str_contains($header, 'اعادة') || str_contains($header, 'مكرر') || str_contains($header, 'redoublant')) {
+                $map[$index] = 'is_repeater';
+            } elseif (str_contains($header, 'عنوان') || str_contains($header, 'اقامة') || str_contains($header, 'adresse')) {
+                $map[$index] = 'address';
             }
         }
 
@@ -227,6 +240,23 @@ class RakmanaSyncService
             } else {
                 $row['regime'] = 'external';
             }
+        }
+
+        // Repeater status normalization
+        if (isset($row['is_repeater'])) {
+            $rep = mb_strtolower(trim((string) $row['is_repeater']), 'UTF-8');
+            $row['is_repeater'] = in_array($rep, ['نعم', 'معيد', 'مكرر', 'oui', '1', 'true', 'yes'], true);
+        }
+
+        // Latin names and address trimming
+        if (! empty($row['first_name_latin'])) {
+            $row['first_name_latin'] = trim($row['first_name_latin']);
+        }
+        if (! empty($row['last_name_latin'])) {
+            $row['last_name_latin'] = trim($row['last_name_latin']);
+        }
+        if (! empty($row['address'])) {
+            $row['address'] = trim($row['address']);
         }
 
         return $row;
@@ -373,6 +403,18 @@ class RakmanaSyncService
                         if (! empty($row['guardian_phone'])) {
                             $updateData['guardian_phone'] = $row['guardian_phone'];
                         }
+                        if (! empty($row['first_name_latin'])) {
+                            $updateData['first_name_latin'] = $row['first_name_latin'];
+                        }
+                        if (! empty($row['last_name_latin'])) {
+                            $updateData['last_name_latin'] = $row['last_name_latin'];
+                        }
+                        if (isset($row['is_repeater'])) {
+                            $updateData['is_repeater'] = (bool) $row['is_repeater'];
+                        }
+                        if (! empty($row['address'])) {
+                            $updateData['address'] = $row['address'];
+                        }
                         if ($groupId && ! $match->group_id) {
                             $updateData['group_id'] = $groupId;
                         }
@@ -391,6 +433,8 @@ class RakmanaSyncService
                     Student::create([
                         'first_name' => trim($row['first_name']),
                         'last_name' => trim($row['last_name']),
+                        'first_name_latin' => ! empty($row['first_name_latin']) ? trim($row['first_name_latin']) : null,
+                        'last_name_latin' => ! empty($row['last_name_latin']) ? trim($row['last_name_latin']) : null,
                         'registration_number' => ! empty($row['registration_number']) ? trim($row['registration_number']) : null,
                         'matricule_number' => ! empty($row['registration_number']) ? trim($row['registration_number']) : null,
                         'national_id_number' => ! empty($row['national_id_number']) ? trim($row['national_id_number']) : null,
@@ -398,8 +442,10 @@ class RakmanaSyncService
                         'place_of_birth' => ! empty($row['place_of_birth']) ? $row['place_of_birth'] : null,
                         'gender' => $row['gender'] ?? null,
                         'regime' => $row['regime'] ?? 'external',
+                        'is_repeater' => ! empty($row['is_repeater']),
                         'guardian_name' => $row['guardian_name'] ?? null,
                         'guardian_phone' => $row['guardian_phone'] ?? null,
+                        'address' => ! empty($row['address']) ? trim($row['address']) : null,
                         'group_id' => $groupId ?? Group::first()?->id ?? 1,
                         'is_active' => true,
                         'enrollment_date' => now()->toDateString(),
@@ -659,6 +705,8 @@ class RakmanaSyncService
         $missingBirth = $allStudents->filter(fn ($s) => empty($s->date_of_birth))->count();
         $missingBirthPlace = $allStudents->filter(fn ($s) => empty($s->place_of_birth))->count();
         $missingGuardian = $allStudents->filter(fn ($s) => empty($s->guardian_name) && empty($s->guardian_phone))->count();
+        $missingLatin = $allStudents->filter(fn ($s) => empty($s->first_name_latin) || empty($s->last_name_latin))->count();
+        $missingAddress = $allStudents->filter(fn ($s) => empty($s->address))->count();
 
         // Students with missing NIN for actionable list
         $ninDeficientList = $allStudents->filter(fn ($s) => empty($s->national_id_number))
@@ -679,6 +727,8 @@ class RakmanaSyncService
             'missing_birth_count' => $missingBirth,
             'missing_birth_place_count' => $missingBirthPlace,
             'missing_guardian_count' => $missingGuardian,
+            'missing_latin_count' => $missingLatin,
+            'missing_address_count' => $missingAddress,
             'deficient_students' => $ninDeficientList,
         ];
     }
@@ -744,6 +794,8 @@ class RakmanaSyncService
             'رقم التسجيل',
             'اللقب بالعربية',
             'الاسم بالعربية',
+            'اللقب باللاتينية',
+            'الاسم باللاتينية',
             'الجنس',
             'تاريخ الميلاد',
             'مكان الميلاد',
@@ -751,9 +803,11 @@ class RakmanaSyncService
             'القسم التربوي',
             'الفوج',
             'صفة التمدرس',
+            'معيد',
             'اسم ولقب الولي',
             'صلة القرابة',
             'رقم هاتف الولي',
+            'عنوان الإقامة',
         ]);
 
         foreach ($students as $index => $student) {
@@ -774,6 +828,8 @@ class RakmanaSyncService
                 $regNum,
                 $student->last_name,
                 $student->first_name,
+                $student->last_name_latin ?? '',
+                $student->first_name_latin ?? '',
                 $genderLabel,
                 $dob,
                 $student->place_of_birth ?? '—',
@@ -781,9 +837,11 @@ class RakmanaSyncService
                 $student->group?->classroom?->name ?? '—',
                 $student->group?->name ?? '—',
                 $regimeLabel,
+                $student->isRepeater() ? 'نعم' : 'لا',
                 $student->guardian_name ?? '—',
                 $student->guardian_relation ?? 'أب/ولي أمر',
                 $student->guardian_phone ?? '—',
+                $student->address ?? '—',
             ]);
         }
 
@@ -1245,5 +1303,474 @@ class RakmanaSyncService
                 'error' => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Resolve statutory subject coefficient in Algerian Middle School curriculum.
+     */
+    public function getSubjectCoefficient(Subject $subject, ?Classroom $classroom = null): int
+    {
+        $name = mb_strtolower($subject->name, 'UTF-8');
+        $levelName = $classroom?->level?->name ?? $classroom?->name ?? '';
+        $isFourthYear = str_contains($levelName, '4') || str_contains($levelName, 'رابع');
+
+        if (str_contains($name, 'عرب') || str_contains($name, 'arab')) {
+            return $isFourthYear ? 3 : 2;
+        }
+
+        if (str_contains($name, 'رياض') || str_contains($name, 'math')) {
+            return 3;
+        }
+
+        if (str_contains($name, 'فرنس') || str_contains($name, 'francais') || str_contains($name, 'français')) {
+            return 2;
+        }
+
+        if (str_contains($name, 'تاريخ') || str_contains($name, 'جغراف') || str_contains($name, 'histoire') || str_contains($name, 'geo')) {
+            return 2;
+        }
+
+        if (str_contains($name, 'طبيع') || str_contains($name, 'حياة') || str_contains($name, 'science')) {
+            return $isFourthYear ? 2 : 1;
+        }
+
+        if (str_contains($name, 'فيزياء') || str_contains($name, 'physique') || str_contains($name, 'تكنولوج')) {
+            return $isFourthYear ? 2 : 1;
+        }
+
+        if (str_contains($name, 'إنجليز') || str_contains($name, 'انجليز') || str_contains($name, 'anglais')) {
+            return 1;
+        }
+
+        if (str_contains($name, 'إسلام') || str_contains($name, 'اسلام') || str_contains($name, 'islam')) {
+            return 1;
+        }
+
+        if (str_contains($name, 'مدني') || str_contains($name, 'civique')) {
+            return 1;
+        }
+
+        if (str_contains($name, 'بدني') || str_contains($name, 'رياضة') || str_contains($name, 'eps') || str_contains($name, 'sport')) {
+            return 1;
+        }
+
+        if (str_contains($name, 'موسيق') || str_contains($name, 'تشكيل') || str_contains($name, 'رسم') || str_contains($name, 'art')) {
+            return 1;
+        }
+
+        if (str_contains($name, 'أمازيغ') || str_contains($name, 'امازيغ') || str_contains($name, 'tamazi')) {
+            return 1;
+        }
+
+        if (str_contains($name, 'إعلام') || str_contains($name, 'اعلام') || str_contains($name, 'informatique')) {
+            return 1;
+        }
+
+        return 1;
+    }
+
+    /**
+     * Generate complete ministerial class council deliberation matrix for a classroom.
+     *
+     * @return array<string, mixed>
+     */
+    public function generateClassCouncilDeliberationMatrix(
+        Classroom $classroom,
+        int $trimester = 1,
+        ?string $academicYear = null
+    ): array {
+        $school = SchoolSetting::current();
+        $year = $academicYear ?? ($school?->academic_year ?? '2026/2027');
+
+        // Fetch subjects scheduled for this classroom, or fallback to all subjects
+        $subjects = Subject::whereHas('schedules', fn ($q) => $q->where('classroom_id', $classroom->id))
+            ->orderBy('id')
+            ->get();
+
+        if ($subjects->isEmpty()) {
+            $subjects = Subject::orderBy('id')->get();
+        }
+
+        $subjectList = [];
+        foreach ($subjects as $s) {
+            $coeff = $this->getSubjectCoefficient($s, $classroom);
+            $subjectList[$s->id] = [
+                'id' => $s->id,
+                'name' => $s->name,
+                'coefficient' => $coeff,
+            ];
+        }
+
+        // Fetch active students in this classroom
+        $students = Student::whereHas('group', fn ($q) => $q->where('classroom_id', $classroom->id))
+            ->where('is_active', true)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
+
+        // Fetch assessments for this classroom and period
+        $period = $this->getTrimesterPeriod($trimester, $year);
+        $assessments = Assessment::whereHas('schedule', fn ($q) => $q->where('classroom_id', $classroom->id))
+            ->whereBetween('date', [$period['start']->toDateString(), $period['end']->toDateString()])
+            ->with(['grades', 'schedule'])
+            ->get();
+
+        if ($assessments->isEmpty()) {
+            $assessments = Assessment::whereHas('schedule', fn ($q) => $q->where('classroom_id', $classroom->id))
+                ->with(['grades', 'schedule'])
+                ->get();
+        }
+
+        $rawRows = [];
+
+        foreach ($students as $student) {
+            $studentSubjectGrades = [];
+            $totalWeighted = 0.0;
+            $totalCoeff = 0;
+            $hasAnyGrade = false;
+
+            foreach ($subjects as $subj) {
+                $coeff = $subjectList[$subj->id]['coefficient'];
+                $subjAssessments = $assessments->filter(fn ($a) => $a->schedule?->subject_id === $subj->id);
+
+                $grades = Grade::where('student_id', $student->id)
+                    ->whereIn('assessment_id', $subjAssessments->pluck('id'))
+                    ->with('assessment')
+                    ->get();
+
+                $continuous = $grades->first(fn ($g) => in_array($g->assessment?->type, [
+                    AssessmentType::ContinuousAssessment,
+                    AssessmentType::Quiz,
+                ]))?->score;
+
+                $midterm = $grades->first(fn ($g) => $g->assessment?->type === AssessmentType::Midterm)?->score;
+                $exam = $grades->first(fn ($g) => $g->assessment?->type === AssessmentType::Exam)?->score;
+
+                $subjAvg = null;
+                if ($continuous !== null && $midterm !== null && $exam !== null) {
+                    $subjAvg = round(($continuous + $midterm + ($exam * 2)) / 4, 2);
+                } elseif ($continuous !== null && $exam !== null) {
+                    $subjAvg = round(($continuous + ($exam * 2)) / 3, 2);
+                } elseif ($midterm !== null && $exam !== null) {
+                    $subjAvg = round(($midterm + ($exam * 2)) / 3, 2);
+                } elseif ($exam !== null) {
+                    $subjAvg = round((float) $exam, 2);
+                }
+
+                if ($subjAvg !== null) {
+                    $hasAnyGrade = true;
+                    $totalWeighted += ($subjAvg * $coeff);
+                    $totalCoeff += $coeff;
+                }
+
+                $studentSubjectGrades[$subj->id] = [
+                    'score' => $subjAvg,
+                    'coefficient' => $coeff,
+                    'weighted' => $subjAvg !== null ? round($subjAvg * $coeff, 2) : null,
+                ];
+            }
+
+            $genAvg = ($totalCoeff > 0 && $hasAnyGrade) ? round($totalWeighted / $totalCoeff, 2) : null;
+
+            $decision = 'غير مرصود';
+            $decisionClass = 'pending';
+            if ($genAvg !== null) {
+                if ($genAvg >= 16) {
+                    $decision = 'لوحة شرف مع تهنئة';
+                    $decisionClass = 'excellence';
+                } elseif ($genAvg >= 14) {
+                    $decision = 'لوحة شرف مع تشجيع';
+                    $decisionClass = 'encouragement';
+                } elseif ($genAvg >= 12) {
+                    $decision = 'لوحة شرف';
+                    $decisionClass = 'honor_roll';
+                } elseif ($genAvg >= 10) {
+                    $decision = 'تشجيع';
+                    $decisionClass = 'passed';
+                } elseif ($genAvg >= 8) {
+                    $decision = 'تنبيه لمضاعفة الجهد';
+                    $decisionClass = 'warning';
+                } else {
+                    $decision = 'توبيخ لضعف النتائج';
+                    $decisionClass = 'blame';
+                }
+            }
+
+            $rawRows[] = [
+                'student_id' => $student->id,
+                'national_id_number' => $student->national_id_number ?? '—',
+                'registration_number' => $student->registration_number ?? '—',
+                'full_name' => $student->full_name,
+                'last_name' => $student->last_name,
+                'first_name' => $student->first_name,
+                'date_of_birth' => $student->date_of_birth ? Carbon::parse($student->date_of_birth)->format('d/m/Y') : '—',
+                'regime' => $student->regimeLabel(),
+                'is_repeater' => $student->isRepeater(),
+                'subject_grades' => $studentSubjectGrades,
+                'total_points' => $hasAnyGrade ? round($totalWeighted, 2) : null,
+                'total_coefficients' => $totalCoeff,
+                'general_average' => $genAvg,
+                'decision' => $decision,
+                'decision_class' => $decisionClass,
+            ];
+        }
+
+        // Rank calculation: sorted by general_average descending, nulls last
+        usort($rawRows, function ($a, $b) {
+            if ($a['general_average'] === $b['general_average']) {
+                return strcmp($a['last_name'], $b['last_name']);
+            }
+            if ($a['general_average'] === null) {
+                return 1;
+            }
+            if ($b['general_average'] === null) {
+                return -1;
+            }
+
+            return ($a['general_average'] < $b['general_average']) ? 1 : -1;
+        });
+
+        $finalRows = [];
+        $currentRank = 1;
+        $gradedCount = 0;
+        $passCount = 0;
+        $sumAverages = 0.0;
+        $highestAvg = null;
+        $lowestAvg = null;
+        $honorCount = 0;
+
+        $brackets = [
+            'excellence' => 0,
+            'encouragement' => 0,
+            'honor_roll' => 0,
+            'average' => 0,
+            'warning' => 0,
+            'blame' => 0,
+        ];
+
+        foreach ($rawRows as $index => $row) {
+            $avg = $row['general_average'];
+            if ($avg !== null) {
+                $gradedCount++;
+                $sumAverages += $avg;
+                if ($highestAvg === null || $avg > $highestAvg) {
+                    $highestAvg = $avg;
+                }
+                if ($lowestAvg === null || $avg < $lowestAvg) {
+                    $lowestAvg = $avg;
+                }
+                if ($avg >= 10.0) {
+                    $passCount++;
+                }
+                if ($avg >= 12.0) {
+                    $honorCount++;
+                }
+
+                if ($avg >= 16.0) {
+                    $brackets['excellence']++;
+                } elseif ($avg >= 14.0) {
+                    $brackets['encouragement']++;
+                } elseif ($avg >= 12.0) {
+                    $brackets['honor_roll']++;
+                } elseif ($avg >= 10.0) {
+                    $brackets['average']++;
+                } elseif ($avg >= 8.0) {
+                    $brackets['warning']++;
+                } else {
+                    $brackets['blame']++;
+                }
+
+                $rank = $currentRank;
+                $currentRank++;
+            } else {
+                $rank = '—';
+            }
+
+            $row['order'] = $index + 1;
+            $row['rank'] = $rank;
+            $finalRows[] = $row;
+        }
+
+        $passRate = $gradedCount > 0 ? round(($passCount / $gradedCount) * 100, 1) : 0.0;
+        $classGeneralAvg = $gradedCount > 0 ? round($sumAverages / $gradedCount, 2) : null;
+
+        return [
+            'school' => $school,
+            'academic_year' => $year,
+            'trimester' => $trimester,
+            'classroom' => $classroom,
+            'subjects' => array_values($subjectList),
+            'rows' => $finalRows,
+            'students_count' => count($finalRows),
+            'graded_count' => $gradedCount,
+            'pass_count' => $passCount,
+            'pass_rate' => $passRate,
+            'highest_average' => $highestAvg,
+            'lowest_average' => $lowestAvg,
+            'class_general_average' => $classGeneralAvg,
+            'honor_count' => $honorCount,
+            'brackets' => $brackets,
+        ];
+    }
+
+    /**
+     * Generate ministerial deliberation CSV according to official Algerian format.
+     */
+    public function generateMinisterialDeliberationCsv(
+        Classroom $classroom,
+        int $trimester = 1,
+        ?string $academicYear = null
+    ): string {
+        $matrix = $this->generateClassCouncilDeliberationMatrix($classroom, $trimester, $academicYear);
+        $output = fopen('php://temp', 'r+');
+
+        $header = [
+            'الرتبة',
+            'الرقم',
+            'رقم التعريف الوطني',
+            'رقم التسجيل',
+            'اللقب',
+            'الاسم',
+            'تاريخ الميلاد',
+            'الصفة',
+            'معيد',
+        ];
+
+        foreach ($matrix['subjects'] as $subj) {
+            $header[] = $subj['name'].' (معامل '.$subj['coefficient'].')';
+        }
+
+        $header[] = 'مجموع النقاط';
+        $header[] = 'مجموع المعاملات';
+        $header[] = 'المعدل العام';
+        $header[] = 'قرار مجلس القسم';
+
+        fputcsv($output, $header);
+
+        foreach ($matrix['rows'] as $row) {
+            $data = [
+                $row['rank'] ?? '—',
+                $row['order'],
+                $row['national_id_number'],
+                $row['registration_number'],
+                $row['last_name'],
+                $row['first_name'],
+                $row['date_of_birth'],
+                $row['regime'],
+                $row['is_repeater'] ? 'نعم' : 'لا',
+            ];
+
+            foreach ($matrix['subjects'] as $subj) {
+                $score = $row['subject_grades'][$subj['id']]['score'] ?? null;
+                $data[] = $score !== null ? number_format((float) $score, 2) : '—';
+            }
+
+            $data[] = $row['total_points'] !== null ? number_format((float) $row['total_points'], 2) : '—';
+            $data[] = $row['total_coefficients'] ?: '—';
+            $data[] = $row['general_average'] !== null ? number_format((float) $row['general_average'], 2) : '—';
+            $data[] = $row['decision'];
+
+            fputcsv($output, $data);
+        }
+
+        rewind($output);
+        $csv = stream_get_contents($output);
+        fclose($output);
+
+        return "\xEF\xBB\xBF".$csv;
+    }
+
+    /**
+     * Assemble data for printable official subject grade sheet.
+     *
+     * @return array<string, mixed>
+     */
+    public function assembleGradeSheetData(
+        Classroom $classroom,
+        Subject $subject,
+        int $trimester = 1,
+        ?string $academicYear = null
+    ): array {
+        $matrix = $this->generateGradeExportMatrix($classroom, $subject, $trimester, $academicYear);
+        $school = SchoolSetting::current();
+        $teacher = User::where('role', 'teacher')
+            ->whereHas('schedules', fn ($q) => $q->where('classroom_id', $classroom->id)->where('subject_id', $subject->id))
+            ->first();
+
+        return [
+            'school' => $school,
+            'classroom' => $classroom,
+            'subject' => $subject,
+            'teacher' => $teacher,
+            'trimester' => $trimester,
+            'academicYear' => $academicYear ?? ($school?->academic_year ?? '2026/2027'),
+            'rows' => $matrix['rows'],
+            'students_count' => $matrix['students_count'],
+            'generatedAt' => now(),
+        ];
+    }
+
+    /**
+     * Generate printable A4 Portrait PDF for Subject Grade Sheet.
+     */
+    public function generateGradeSheetPdf(
+        Classroom $classroom,
+        Subject $subject,
+        int $trimester = 1,
+        ?string $academicYear = null
+    ): string {
+        $data = $this->assembleGradeSheetData($classroom, $subject, $trimester, $academicYear);
+        $data['inlineCss'] = true;
+        $html = view('print.rakmana-grade-sheet', $data)->render();
+
+        return BrowsershotFactory::html($html)
+            ->format('A4')
+            ->landscape(false)
+            ->margins(8, 8, 8, 8)
+            ->showBackground()
+            ->pdf();
+    }
+
+    /**
+     * Assemble data for printable official class council deliberation minutes.
+     *
+     * @return array<string, mixed>
+     */
+    public function assembleDeliberationData(
+        Classroom $classroom,
+        int $trimester = 1,
+        ?string $academicYear = null
+    ): array {
+        $matrix = $this->generateClassCouncilDeliberationMatrix($classroom, $trimester, $academicYear);
+        $school = SchoolSetting::current();
+
+        return [
+            'school' => $school,
+            'classroom' => $classroom,
+            'trimester' => $trimester,
+            'academicYear' => $academicYear ?? ($school?->academic_year ?? '2026/2027'),
+            'matrix' => $matrix,
+            'generatedAt' => now(),
+        ];
+    }
+
+    /**
+     * Generate printable A4 Landscape PDF for Class Council Deliberation Minutes.
+     */
+    public function generateClassCouncilDeliberationPdf(
+        Classroom $classroom,
+        int $trimester = 1,
+        ?string $academicYear = null
+    ): string {
+        $data = $this->assembleDeliberationData($classroom, $trimester, $academicYear);
+        $data['inlineCss'] = true;
+        $html = view('print.rakmana-class-deliberation', $data)->render();
+
+        return BrowsershotFactory::html($html)
+            ->format('A4')
+            ->landscape(true)
+            ->margins(6, 6, 6, 6)
+            ->showBackground()
+            ->pdf();
     }
 }

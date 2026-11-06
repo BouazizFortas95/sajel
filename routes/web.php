@@ -444,6 +444,31 @@ Route::get('/{locale}/rakmana/sample-roster', [RakmanaSyncController::class, 'do
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('rakmana.sample-roster');
 
+Route::get('/{locale}/print/rakmana/grades/{classroom}/{subject}', [RakmanaSyncController::class, 'printGradeSheet'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.rakmana.grade-sheet');
+
+Route::get('/{locale}/print/rakmana/grades/{classroom}/{subject}/pdf', [RakmanaSyncController::class, 'downloadGradeSheetPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.rakmana.grade-sheet.pdf');
+
+Route::get('/{locale}/rakmana/deliberations/{classroom}/export-csv', [RakmanaSyncController::class, 'exportDeliberationCsv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('rakmana.deliberations.export-csv');
+
+Route::get('/{locale}/print/rakmana/deliberations/{classroom}', [RakmanaSyncController::class, 'printDeliberation'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.rakmana.deliberation-sheet');
+
+Route::get('/{locale}/print/rakmana/deliberations/{classroom}/pdf', [RakmanaSyncController::class, 'downloadDeliberationPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.rakmana.deliberation-sheet.pdf');
+
 Route::get('/{locale}/print/school-census', [SchoolCensusController::class, 'print'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])

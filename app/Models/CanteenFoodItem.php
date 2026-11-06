@@ -52,4 +52,3 @@ class CanteenFoodItem extends Model
         return $query->whereColumn('current_stock', '<=', 'safety_threshold');
     }
 }
-

@@ -34,4 +34,3 @@ class CanteenConsumptionEntry extends Model
         return $this->belongsTo(CanteenFoodItem::class, 'canteen_food_item_id');
     }
 }
-

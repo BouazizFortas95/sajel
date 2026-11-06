@@ -548,4 +548,288 @@ CSV;
             'remarks' => 'Excellent',
         ]);
     }
+
+    public function test_parse_and_preview_ministry_roster_with_latin_names_repeater_and_address(): void
+    {
+        $csv = <<<'CSV'
+"رقم التعريف الوطني","رقم التسجيل","اللقب بالعربية","الاسم بالعربية","اللقب باللاتينية","الاسم باللاتينية","الجنس","تاريخ الميلاد","مكان الميلاد","القسم","صفة التمدرس","معيد","العنوان"
+"201116001234567890","2026-0001","بن علي","أمين","Benali","Amine","ذكر","15/05/2011","الجزائر","1م1","نصف داخلي","نعم","حي السلام، الجزائر العاصمة"
+CSV;
+
+        $service = app(RakmanaSyncService::class);
+        $preview = $service->previewImport($csv);
+
+        $this->assertSame(1, $preview['total_count']);
+        $row = $preview['sample_rows'][0];
+        $this->assertSame('بن علي', $row['last_name']);
+        $this->assertSame('أمين', $row['first_name']);
+        $this->assertSame('Benali', $row['last_name_latin']);
+        $this->assertSame('Amine', $row['first_name_latin']);
+        $this->assertTrue($row['is_repeater']);
+        $this->assertSame('حي السلام، الجزائر العاصمة', $row['address']);
+    }
+
+    public function test_execute_import_persists_latin_names_repeater_and_address(): void
+    {
+        $phase = EducationPhase::factory()->create();
+        $level = Level::factory()->create(['education_phase_id' => $phase->id]);
+        $classroom = Classroom::factory()->create(['level_id' => $level->id, 'name' => '1م2']);
+
+        $rows = [
+            [
+                'national_id_number' => '201116008888777766',
+                'registration_number' => '2026-201',
+                'last_name' => 'سعيدي',
+                'first_name' => 'فاطمة',
+                'last_name_latin' => 'SAIDI',
+                'first_name_latin' => 'Fatima',
+                'gender' => 'female',
+                'date_of_birth' => '2011-06-18',
+                'place_of_birth' => 'وهران',
+                'group_name' => '1م2',
+                'regime' => 'external',
+                'is_repeater' => true,
+                'address' => 'نهج الأمير عبد القادر، وهران',
+            ],
+        ];
+
+        $service = app(RakmanaSyncService::class);
+        $result = $service->executeImport($rows);
+
+        $this->assertTrue($result['success']);
+        $this->assertDatabaseHas('students', [
+            'national_id_number' => '201116008888777766',
+            'last_name' => 'سعيدي',
+            'first_name' => 'فاطمة',
+            'last_name_latin' => 'SAIDI',
+            'first_name_latin' => 'Fatima',
+            'is_repeater' => true,
+            'address' => 'نهج الأمير عبد القادر، وهران',
+        ]);
+
+        $student = Student::where('national_id_number', '201116008888777766')->first();
+        $this->assertTrue($student->isRepeater());
+        $this->assertSame('SAIDI Fatima', $student->fullNameLatin);
+    }
+
+    public function test_generate_class_council_deliberation_matrix_calculates_points_coeffs_and_ranks(): void
+    {
+        $classroom = Classroom::factory()->create(['name' => '4م1']);
+        $group = Group::factory()->create(['classroom_id' => $classroom->id]);
+
+        $student1 = Student::factory()->create([
+            'group_id' => $group->id,
+            'first_name' => 'زينب',
+            'last_name' => 'علوي',
+            'is_active' => true,
+        ]);
+
+        $student2 = Student::factory()->create([
+            'group_id' => $group->id,
+            'first_name' => 'حمزة',
+            'last_name' => 'عاشور',
+            'is_active' => true,
+        ]);
+
+        $subjectArabic = Subject::factory()->create(['name' => 'اللغة العربية']);
+        $subjectMath = Subject::factory()->create(['name' => 'الرياضيات']);
+
+        $teacher = User::factory()->teacher()->create();
+
+        $scheduleArabic = Schedule::create([
+            'user_id' => $teacher->id,
+            'classroom_id' => $classroom->id,
+            'group_id' => $group->id,
+            'subject_id' => $subjectArabic->id,
+            'day_of_week' => 'sunday',
+            'start_time' => '08:00:00',
+            'end_time' => '09:00:00',
+        ]);
+
+        $scheduleMath = Schedule::create([
+            'user_id' => $teacher->id,
+            'classroom_id' => $classroom->id,
+            'group_id' => $group->id,
+            'subject_id' => $subjectMath->id,
+            'day_of_week' => 'monday',
+            'start_time' => '08:00:00',
+            'end_time' => '09:00:00',
+        ]);
+
+        // Arabic assessment (Exam)
+        $assessmentArabic = Assessment::create([
+            'schedule_id' => $scheduleArabic->id,
+            'title' => 'اختبار العربية - ف1',
+            'type' => AssessmentType::Exam,
+            'date' => '2026-11-20',
+            'max_score' => 20,
+        ]);
+
+        // Math assessment (Exam)
+        $assessmentMath = Assessment::create([
+            'schedule_id' => $scheduleMath->id,
+            'title' => 'اختبار الرياضيات - ف1',
+            'type' => AssessmentType::Exam,
+            'date' => '2026-11-25',
+            'max_score' => 20,
+        ]);
+
+        // Student 1 grades: Arabic = 16.0, Math = 14.0
+        Grade::create(['assessment_id' => $assessmentArabic->id, 'student_id' => $student1->id, 'score' => 16.0]);
+        Grade::create(['assessment_id' => $assessmentMath->id, 'student_id' => $student1->id, 'score' => 14.0]);
+
+        // Student 2 grades: Arabic = 8.0, Math = 7.0
+        Grade::create(['assessment_id' => $assessmentArabic->id, 'student_id' => $student2->id, 'score' => 8.0]);
+        Grade::create(['assessment_id' => $assessmentMath->id, 'student_id' => $student2->id, 'score' => 7.0]);
+
+        $service = app(RakmanaSyncService::class);
+        $matrix = $service->generateClassCouncilDeliberationMatrix($classroom, 1, '2026/2027');
+
+        $this->assertSame(2, $matrix['students_count']);
+        $this->assertSame(2, $matrix['graded_count']);
+        $this->assertSame(1, $matrix['pass_count']);
+        $this->assertSame(50.0, $matrix['pass_rate']);
+
+        // Student 1 should be ranked 1st with average >= 14
+        $row1 = $matrix['rows'][0];
+        $this->assertSame($student1->id, $row1['student_id']);
+        $this->assertSame(1, $row1['rank']);
+        $this->assertTrue($row1['general_average'] >= 14.0);
+        $this->assertStringContainsString('شرف', $row1['decision']);
+
+        // Student 2 should be ranked 2nd
+        $row2 = $matrix['rows'][1];
+        $this->assertSame($student2->id, $row2['student_id']);
+        $this->assertSame(2, $row2['rank']);
+        $this->assertTrue($row2['general_average'] < 10.0);
+    }
+
+    public function test_generate_ministerial_deliberation_csv_contains_all_subjects_and_utf8_bom(): void
+    {
+        $classroom = Classroom::factory()->create(['name' => '3م2']);
+        $group = Group::factory()->create(['classroom_id' => $classroom->id]);
+
+        $student = Student::factory()->create([
+            'group_id' => $group->id,
+            'national_id_number' => '201116003322110099',
+            'first_name' => 'سامي',
+            'last_name' => 'بوعزيز',
+            'is_active' => true,
+        ]);
+
+        $subject = Subject::factory()->create(['name' => 'العلوم الفيزيائية']);
+        $teacher = User::factory()->teacher()->create();
+
+        $schedule = Schedule::create([
+            'user_id' => $teacher->id,
+            'classroom_id' => $classroom->id,
+            'group_id' => $group->id,
+            'subject_id' => $subject->id,
+            'day_of_week' => 'tuesday',
+            'start_time' => '10:00:00',
+            'end_time' => '11:00:00',
+        ]);
+
+        $assessment = Assessment::create([
+            'schedule_id' => $schedule->id,
+            'title' => 'اختبار الفيزياء',
+            'type' => AssessmentType::Exam,
+            'date' => '2026-11-20',
+            'max_score' => 20,
+        ]);
+
+        Grade::create(['assessment_id' => $assessment->id, 'student_id' => $student->id, 'score' => 15.5]);
+
+        $service = app(RakmanaSyncService::class);
+        $csv = $service->generateMinisterialDeliberationCsv($classroom, 1, '2026/2027');
+
+        $this->assertStringStartsWith("\xEF\xBB\xBF", $csv);
+        $this->assertStringContainsString('الرتبة', $csv);
+        $this->assertStringContainsString('رقم التعريف الوطني', $csv);
+        $this->assertStringContainsString('العلوم الفيزيائية', $csv);
+        $this->assertStringContainsString('المعدل العام', $csv);
+        $this->assertStringContainsString('قرار مجلس القسم', $csv);
+        $this->assertStringContainsString('201116003322110099', $csv);
+        $this->assertStringContainsString('بوعزيز', $csv);
+    }
+
+    public function test_print_and_pdf_routes_for_grade_sheets_and_deliberations(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin);
+
+        $classroom = Classroom::factory()->create(['name' => '1م4']);
+        $subject = Subject::factory()->create(['name' => 'اللغة العربية']);
+
+        // 1. Grade sheet print route
+        $respGradePrint = $this->get(route('print.rakmana.grade-sheet', [
+            'locale' => 'ar',
+            'classroom' => $classroom->id,
+            'subject' => $subject->id,
+            'trimester' => 1,
+        ]));
+        $respGradePrint->assertOk();
+        $respGradePrint->assertSee('بطاقة حجز النقاط الرسمية الموحدة للمادة');
+
+        // 2. Grade sheet PDF download route (streaming fallback testable)
+        $respGradePdf = $this->get(route('print.rakmana.grade-sheet.pdf', [
+            'locale' => 'ar',
+            'classroom' => $classroom->id,
+            'subject' => $subject->id,
+            'trimester' => 1,
+        ]));
+        $respGradePdf->assertOk();
+
+        // 3. Deliberation export CSV route
+        $respDelibCsv = $this->get(route('rakmana.deliberations.export-csv', [
+            'locale' => 'ar',
+            'classroom' => $classroom->id,
+            'trimester' => 1,
+        ]));
+        $respDelibCsv->assertOk();
+
+        // 4. Deliberation print route
+        $respDelibPrint = $this->get(route('print.rakmana.deliberation-sheet', [
+            'locale' => 'ar',
+            'classroom' => $classroom->id,
+            'trimester' => 1,
+        ]));
+        $respDelibPrint->assertOk();
+        $respDelibPrint->assertSee('محضر مداولات مجلس القسم الفصلي الرسمي');
+
+        // 5. Deliberation PDF download route
+        $respDelibPdf = $this->get(route('print.rakmana.deliberation-sheet.pdf', [
+            'locale' => 'ar',
+            'classroom' => $classroom->id,
+            'trimester' => 1,
+        ]));
+        $respDelibPdf->assertOk();
+    }
+
+    public function test_filament_rakmana_hub_deliberations_tab_and_latin_audit(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin);
+
+        $classroom = Classroom::factory()->create(['name' => '1م1']);
+        $group = Group::factory()->create(['classroom_id' => $classroom->id]);
+
+        Student::factory()->create([
+            'group_id' => $group->id,
+            'national_id_number' => null,
+            'first_name_latin' => null,
+            'last_name_latin' => null,
+            'address' => null,
+        ]);
+
+        Livewire::test(RakmanaSyncHub::class)
+            ->assertSuccessful()
+            ->set('activeTab', 'deliberations')
+            ->set('deliberationClassroomId', $classroom->id)
+            ->set('deliberationTrimester', 1)
+            ->assertSee(__('محاضر مجالس الأقسام والمداولات'))
+            ->set('activeTab', 'audit')
+            ->assertSee(__('نقص الأسماء اللاتينية'))
+            ->assertSee(__('نقص عناوين الإقامة'));
+    }
 }

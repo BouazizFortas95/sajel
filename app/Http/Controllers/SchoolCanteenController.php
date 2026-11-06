@@ -179,4 +179,3 @@ class SchoolCanteenController extends Controller
         }
     }
 }
-

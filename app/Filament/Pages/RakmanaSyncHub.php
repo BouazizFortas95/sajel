@@ -26,7 +26,7 @@ class RakmanaSyncHub extends Page
     protected static string $view = 'filament.pages.rakmana-sync-hub';
 
     #[Url(as: 'tab')]
-    public string $activeTab = 'import'; // 'import', 'grades', 'grade_import', 'audit'
+    public string $activeTab = 'import'; // 'import', 'grades', 'grade_import', 'deliberations', 'audit'
 
     #[Url(as: 'year')]
     public string $academicYear = '2026/2027';
@@ -66,10 +66,19 @@ class RakmanaSyncHub extends Page
 
     public ?array $gradePreviewData = null;
 
+    // Deliberation state (NEW)
+    public ?int $deliberationClassroomId = null;
+
+    public int $deliberationTrimester = 1;
+
     // Quick edit modal
     public ?int $editingStudentId = null;
 
     public ?string $editNin = '';
+
+    public ?string $editFirstNameLatin = '';
+
+    public ?string $editLastNameLatin = '';
 
     public function mount(): void
     {
@@ -82,6 +91,7 @@ class RakmanaSyncHub extends Page
         if ($firstClassroom) {
             $this->selectedClassroomId = $firstClassroom->id;
             $this->importClassroomId = $firstClassroom->id;
+            $this->deliberationClassroomId = $firstClassroom->id;
         }
 
         $firstSubject = Subject::first();
@@ -95,7 +105,7 @@ class RakmanaSyncHub extends Page
     {
         $user = Auth::user();
 
-        return $user?->isAdmin() || $user?->isTeacher();
+        return $user?->isAdmin() || $user?->isTeacher() || $user?->isEducationStaff();
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -346,21 +356,31 @@ class RakmanaSyncHub extends Page
 
         $student = Student::findOrFail($this->editingStudentId);
         $student->national_id_number = trim((string) $this->editNin);
+        if ($this->editFirstNameLatin !== null) {
+            $student->first_name_latin = trim((string) $this->editFirstNameLatin);
+        }
+        if ($this->editLastNameLatin !== null) {
+            $student->last_name_latin = trim((string) $this->editLastNameLatin);
+        }
         $student->save();
 
         $this->editingStudentId = null;
         $this->editNin = '';
+        $this->editFirstNameLatin = '';
+        $this->editLastNameLatin = '';
 
         Notification::make()
-            ->title(__('تم تحديث رقم التعريف الوطني بنجاح'))
+            ->title(__('تم تحديث بيانات التلميذ الوزارية بنجاح'))
             ->success()
             ->send();
     }
 
-    public function openEditNinModal(int $studentId, ?string $currentNin = null): void
+    public function openEditNinModal(int $studentId, ?string $currentNin = null, ?string $firstLatin = null, ?string $lastLatin = null): void
     {
         $this->editingStudentId = $studentId;
         $this->editNin = $currentNin;
+        $this->editFirstNameLatin = $firstLatin;
+        $this->editLastNameLatin = $lastLatin;
     }
 
     public function getGradeMatrixProperty(): array
@@ -380,6 +400,24 @@ class RakmanaSyncHub extends Page
             classroom: $classroom,
             subject: $subject,
             trimester: $this->selectedTrimester,
+            academicYear: $this->academicYear
+        );
+    }
+
+    public function getDeliberationMatrixProperty(): array
+    {
+        if (! $this->deliberationClassroomId) {
+            return ['rows' => [], 'subjects' => []];
+        }
+
+        $classroom = Classroom::find($this->deliberationClassroomId);
+        if (! $classroom) {
+            return ['rows' => [], 'subjects' => []];
+        }
+
+        return app(RakmanaSyncService::class)->generateClassCouncilDeliberationMatrix(
+            classroom: $classroom,
+            trimester: $this->deliberationTrimester,
             academicYear: $this->academicYear
         );
     }

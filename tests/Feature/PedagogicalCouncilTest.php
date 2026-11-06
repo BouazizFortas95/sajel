@@ -13,10 +13,8 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Services\PedagogicalCouncilService;
 use App\Services\SchoolBackupService;
-use App\Support\BrowsershotFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use Mockery;
 use Tests\TestCase;
 
 class PedagogicalCouncilTest extends TestCase

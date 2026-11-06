@@ -26,4 +26,3 @@ class CanteenFoodItemFactory extends Factory
         ];
     }
 }
-

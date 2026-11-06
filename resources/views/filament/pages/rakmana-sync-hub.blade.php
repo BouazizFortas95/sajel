@@ -1,6 +1,7 @@
 <x-filament-panels::page>
     @php
         $gradeMatrix = $this->gradeMatrix;
+        $deliberationMatrix = $this->deliberationMatrix;
         $audit = $this->audit;
         $classrooms = \App\Models\Classroom::orderBy('name')->get();
         $subjects = \App\Models\Subject::orderBy('name')->get();
@@ -37,6 +38,15 @@
                 >
                     <span>📝</span>
                     {{ __('استيراد ملفات حجز النقاط') }}
+                </button>
+
+                <button
+                    wire:click="$set('activeTab', 'deliberations')"
+                    type="button"
+                    class="px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer {{ $activeTab === 'deliberations' ? 'bg-primary-600 text-white shadow-sm' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 border border-gray-200 dark:border-white/10' }}"
+                >
+                    <span>🏛️</span>
+                    {{ __('محاضر مجالس الأقسام والمداولات') }}
                 </button>
 
                 <button
@@ -393,14 +403,45 @@
 
                 {{-- Live Grade Matrix Table --}}
                 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                    <div class="p-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center text-xs">
+                    <div class="p-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex flex-wrap justify-between items-center gap-2 text-xs">
                         <span class="font-bold text-gray-800 dark:text-gray-200">
                             {{ __('جدول رصد النقاط الوزاري المطابق لقالب الرقمنة') }}
                             ({{ count($gradeMatrix['rows'] ?? []) }} {{ __('تلميذ') }})
                         </span>
-                        <span class="font-mono text-gray-500 dark:text-gray-400 text-[11px]">
-                            {{ $academicYear }} — {{ __('الفصل') }} {{ $selectedTrimester }}
-                        </span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono text-gray-500 dark:text-gray-400 text-[11px] hidden sm:inline">
+                                {{ $academicYear }} — {{ __('الفصل') }} {{ $selectedTrimester }}
+                            </span>
+                            @if($selectedClassroomId && $selectedSubjectId)
+                                <a
+                                    href="{{ route('print.rakmana.grade-sheet', [
+                                        'locale' => app()->getLocale(),
+                                        'classroom' => $selectedClassroomId,
+                                        'subject' => $selectedSubjectId,
+                                        'trimester' => $selectedTrimester,
+                                        'academic_year' => $academicYear,
+                                    ]) }}"
+                                    target="_blank"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 transition shadow-sm"
+                                >
+                                    <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                    <span>{{ __('طباعة البطاقة الرسمية') }}</span>
+                                </a>
+                                <a
+                                    href="{{ route('print.rakmana.grade-sheet.pdf', [
+                                        'locale' => app()->getLocale(),
+                                        'classroom' => $selectedClassroomId,
+                                        'subject' => $selectedSubjectId,
+                                        'trimester' => $selectedTrimester,
+                                        'academic_year' => $academicYear,
+                                    ]) }}"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition shadow-sm"
+                                >
+                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    <span>PDF</span>
+                                </a>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -680,32 +721,255 @@
             </div>
         @endif
 
-        {{-- TAB 4: DATA RECONCILIATION & AUDIT --}}
+        {{-- TAB 4: DELIBERATIONS & CLASS COUNCILS (NEW) --}}
+        @if($activeTab === 'deliberations')
+            <div class="space-y-4">
+                {{-- Toolbar --}}
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 max-w-xl">
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1">{{ __('القسم التربوي للمداولات') }}</label>
+                                <select
+                                    wire:model.live="deliberationClassroomId"
+                                    class="w-full text-xs rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 focus:ring-primary-500"
+                                >
+                                    @foreach($classrooms as $cls)
+                                        <option value="{{ $cls->id }}">{{ $cls->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1">{{ __('الفصل الدراسي') }}</label>
+                                <select
+                                    wire:model.live="deliberationTrimester"
+                                    class="w-full text-xs rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 focus:ring-primary-500"
+                                >
+                                    <option value="1">{{ __('الفصل الأول') }}</option>
+                                    <option value="2">{{ __('الفصل الثاني') }}</option>
+                                    <option value="3">{{ __('الفصل الثالث') }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            @if($deliberationClassroomId)
+                                <a
+                                    href="{{ route('rakmana.deliberations.export-csv', [
+                                        'locale' => app()->getLocale(),
+                                        'classroom' => $deliberationClassroomId,
+                                        'trimester' => $deliberationTrimester,
+                                        'academic_year' => $academicYear,
+                                    ]) }}"
+                                    class="px-3.5 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 transition"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    <span>{{ __('تصدير ملف المداولات (CSV)') }}</span>
+                                </a>
+
+                                <a
+                                    href="{{ route('print.rakmana.deliberation-sheet', [
+                                        'locale' => app()->getLocale(),
+                                        'classroom' => $deliberationClassroomId,
+                                        'trimester' => $deliberationTrimester,
+                                        'academic_year' => $academicYear,
+                                    ]) }}"
+                                    target="_blank"
+                                    class="px-3.5 py-2 text-xs font-bold rounded-lg bg-slate-800 hover:bg-slate-900 text-white dark:bg-gray-700 dark:hover:bg-gray-600 shadow-sm flex items-center gap-1.5 transition"
+                                >
+                                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                    <span>{{ __('معاينة وطباعة المحضر الرسمي (A4)') }}</span>
+                                </a>
+
+                                <a
+                                    href="{{ route('print.rakmana.deliberation-sheet.pdf', [
+                                        'locale' => app()->getLocale(),
+                                        'classroom' => $deliberationClassroomId,
+                                        'trimester' => $deliberationTrimester,
+                                        'academic_year' => $academicYear,
+                                    ]) }}"
+                                    class="px-3.5 py-2 text-xs font-bold rounded-lg bg-primary-600 hover:bg-primary-700 text-white shadow-sm flex items-center gap-1.5 transition"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    <span>{{ __('تحميل المحضر PDF') }}</span>
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Deliberation KPI Strip --}}
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 text-center">
+                    <div class="p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                        <span class="text-[10px] text-gray-500 block">{{ __('إجمالي التلاميذ') }}</span>
+                        <span class="text-lg font-bold font-mono text-gray-800 dark:text-gray-200">{{ $deliberationMatrix['students_count'] ?? 0 }}</span>
+                    </div>
+                    <div class="p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                        <span class="text-[10px] text-gray-500 block">{{ __('المرصودون') }}</span>
+                        <span class="text-lg font-bold font-mono text-gray-800 dark:text-gray-200">{{ $deliberationMatrix['graded_count'] ?? 0 }}</span>
+                    </div>
+                    <div class="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                        <span class="text-[10px] text-emerald-700 dark:text-emerald-300 block">{{ __('الناجحون (>=10)') }}</span>
+                        <span class="text-lg font-bold font-mono text-emerald-700 dark:text-emerald-300">{{ $deliberationMatrix['pass_count'] ?? 0 }}</span>
+                    </div>
+                    <div class="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                        <span class="text-[10px] text-emerald-700 dark:text-emerald-300 block">{{ __('نسبة النجاح') }}</span>
+                        <span class="text-lg font-bold font-mono text-emerald-700 dark:text-emerald-300">{{ number_format($deliberationMatrix['pass_rate'] ?? 0, 1) }}%</span>
+                    </div>
+                    <div class="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
+                        <span class="text-[10px] text-blue-700 dark:text-blue-300 block">{{ __('المعدل العام للقسم') }}</span>
+                        <span class="text-lg font-bold font-mono text-blue-700 dark:text-blue-300">{{ $deliberationMatrix['class_general_average'] !== null ? number_format($deliberationMatrix['class_general_average'], 2) : '—' }}</span>
+                    </div>
+                    <div class="p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                        <span class="text-[10px] text-gray-500 block">{{ __('أعلى معدل') }}</span>
+                        <span class="text-lg font-bold font-mono text-emerald-600">{{ $deliberationMatrix['highest_average'] !== null ? number_format($deliberationMatrix['highest_average'], 2) : '—' }}</span>
+                    </div>
+                    <div class="p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                        <span class="text-[10px] text-gray-500 block">{{ __('أدنى معدل') }}</span>
+                        <span class="text-lg font-bold font-mono text-rose-600">{{ $deliberationMatrix['lowest_average'] !== null ? number_format($deliberationMatrix['lowest_average'], 2) : '—' }}</span>
+                    </div>
+                    <div class="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
+                        <span class="text-[10px] text-amber-700 dark:text-amber-300 block">{{ __('لوحة الشرف') }}</span>
+                        <span class="text-lg font-bold font-mono text-amber-700 dark:text-amber-300">{{ $deliberationMatrix['honor_count'] ?? 0 }}</span>
+                    </div>
+                </div>
+
+                {{-- Deliberation Matrix Table --}}
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                    <div class="p-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center text-xs">
+                        <span class="font-bold text-gray-800 dark:text-gray-200">
+                            {{ __('جدول مداولات مجلس القسم الفصلي الوزاري') }}
+                            ({{ count($deliberationMatrix['rows'] ?? []) }} {{ __('تلميذ') }})
+                        </span>
+                        <span class="font-mono text-gray-500 text-[11px]">
+                            {{ $academicYear }} — {{ __('الفصل') }} {{ $deliberationTrimester }}
+                        </span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-xs">
+                            <thead class="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                                <tr>
+                                    <th class="p-2 text-center w-10">{{ __('الرتبة') }}</th>
+                                    <th class="p-2 text-center w-8">#</th>
+                                    <th class="p-2">{{ __('رقم التعريف (NIN)') }}</th>
+                                    <th class="p-2">{{ __('اسم ولقب التلميذ') }}</th>
+                                    <th class="p-2">{{ __('تاريخ الميلاد') }}</th>
+                                    <th class="p-2">{{ __('الصفة') }}</th>
+                                    @foreach($deliberationMatrix['subjects'] ?? [] as $subj)
+                                        <th class="p-1.5 text-center" title="{{ $subj['name'] }}">
+                                            <div class="truncate max-w-[55px] mx-auto">{{ $subj['name'] }}</div>
+                                            <div class="text-[9px] text-gray-500 font-mono font-normal">({{ $subj['coefficient'] }})</div>
+                                        </th>
+                                    @endforeach
+                                    <th class="p-2 text-center">{{ __('المجموع') }}</th>
+                                    <th class="p-2 text-center bg-gray-200 dark:bg-gray-800">{{ __('المعدل') }}</th>
+                                    <th class="p-2 text-center">{{ __('قرار المجلس') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                @forelse($deliberationMatrix['rows'] ?? [] as $row)
+                                    <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/50">
+                                        <td class="p-2 text-center font-mono font-black {{ $row['rank'] !== '—' && $row['rank'] <= 3 ? 'text-amber-600' : 'text-gray-700 dark:text-gray-300' }}">
+                                            {{ $row['rank'] }}
+                                        </td>
+                                        <td class="p-2 text-center font-mono text-gray-500">{{ $row['order'] }}</td>
+                                        <td class="p-2 font-mono font-bold">{{ $row['national_id_number'] }}</td>
+                                        <td class="p-2 font-bold text-gray-900 dark:text-white">
+                                            {{ $row['full_name'] }}
+                                            @if($row['is_repeater'])
+                                                <span class="text-[10px] font-bold text-rose-600">({{ __('معيد') }})</span>
+                                            @endif
+                                        </td>
+                                        <td class="p-2 font-mono text-gray-600 dark:text-gray-400">{{ $row['date_of_birth'] }}</td>
+                                        <td class="p-2 text-gray-600 dark:text-gray-400">{{ $row['regime'] }}</td>
+
+                                        @foreach($deliberationMatrix['subjects'] ?? [] as $subj)
+                                            @php
+                                                $sc = $row['subject_grades'][$subj['id']]['score'] ?? null;
+                                            @endphp
+                                            <td class="p-1.5 text-center font-mono {{ $sc !== null ? ($sc < 10 ? 'text-rose-600' : 'font-semibold') : 'text-gray-400' }}">
+                                                {{ $sc !== null ? number_format((float) $sc, 2) : '—' }}
+                                            </td>
+                                        @endforeach
+
+                                        <td class="p-2 text-center font-mono font-bold">
+                                            {{ $row['total_points'] !== null ? number_format((float) $row['total_points'], 2) : '—' }}
+                                        </td>
+                                        <td class="p-2 text-center font-mono font-black bg-gray-50 dark:bg-gray-900/50">
+                                            @if($row['general_average'] !== null)
+                                                <span class="inline-block px-1.5 py-0.5 rounded text-[11px] font-bold {{ $row['general_average'] >= 10 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' }}">
+                                                    {{ number_format((float) $row['general_average'], 2) }}
+                                                </span>
+                                            @else
+                                                <span class="text-gray-400">—</span>
+                                            @endif
+                                        </td>
+                                        <td class="p-2 text-center">
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ match($row['decision_class']) {
+                                                'excellence' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300',
+                                                'encouragement' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300',
+                                                'honor_roll' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300',
+                                                'passed' => 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+                                                'warning' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/60 dark:text-orange-300',
+                                                'blame' => 'bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-300',
+                                                default => 'bg-gray-100 text-gray-600',
+                                            } }}">
+                                                {{ $row['decision'] }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="{{ 9 + count($deliberationMatrix['subjects'] ?? []) }}" class="p-8 text-center text-gray-400">
+                                            {{ __('لا يوجد تلاميذ مسجلين في هذا القسم أو لم تُرصد التقييمات بعد.') }}
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- TAB 5: DATA RECONCILIATION & AUDIT --}}
         @if($activeTab === 'audit')
             <div class="space-y-6">
 
                 {{-- Executive KPI Metrics --}}
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm">
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
+                    <div class="bg-white dark:bg-gray-800 p-3.5 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm">
                         <span class="text-xs text-gray-500 block">{{ __('إجمالي التلاميذ النشطين') }}</span>
                         <span class="text-2xl font-black text-gray-900 dark:text-white font-mono">{{ $audit['total_students'] }}</span>
                     </div>
 
-                    <div class="bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                        <span class="text-xs text-emerald-700 dark:text-emerald-300 block">{{ __('نسبة جاهزية الرقمنة (بحوزتهم NIN)') }}</span>
+                    <div class="bg-emerald-50 dark:bg-emerald-950/40 p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                        <span class="text-xs text-emerald-700 dark:text-emerald-300 block">{{ __('نسبة جاهزية الرقمنة (NIN)') }}</span>
                         <span class="text-2xl font-black text-emerald-800 dark:text-emerald-300 font-mono">{{ $audit['nin_completeness_rate'] }}%</span>
                         <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono block mt-0.5">({{ $audit['with_nin_count'] }} {{ __('تلميذ') }})</span>
                     </div>
 
-                    <div class="bg-rose-50 dark:bg-rose-950/40 p-4 rounded-xl border border-rose-200 dark:border-rose-800">
-                        <span class="text-xs text-rose-700 dark:text-rose-300 block">{{ __('تلاميذ بدون رقم تعريف وطني (NIN)') }}</span>
+                    <div class="bg-rose-50 dark:bg-rose-950/40 p-3.5 rounded-xl border border-rose-200 dark:border-rose-800">
+                        <span class="text-xs text-rose-700 dark:text-rose-300 block">{{ __('تلاميذ بدون NIN') }}</span>
                         <span class="text-2xl font-black text-rose-800 dark:text-rose-300 font-mono">{{ $audit['missing_nin_count'] }}</span>
-                        <span class="text-[10px] text-rose-600 dark:text-rose-400 block mt-0.5">{{ __('يتطلب استدراك فوري') }}</span>
+                        <span class="text-[10px] text-rose-600 dark:text-rose-400 block mt-0.5">{{ __('استدراك فوري') }}</span>
                     </div>
 
-                    <div class="bg-amber-50 dark:bg-amber-950/40 p-4 rounded-xl border border-amber-200 dark:border-amber-800">
-                        <span class="text-xs text-amber-700 dark:text-amber-300 block">{{ __('نقص بيانات الميلاد أو الولي') }}</span>
+                    <div class="bg-amber-50 dark:bg-amber-950/40 p-3.5 rounded-xl border border-amber-200 dark:border-amber-800">
+                        <span class="text-xs text-amber-700 dark:text-amber-300 block">{{ __('نقص الميلاد أو الولي') }}</span>
                         <span class="text-2xl font-black text-amber-800 dark:text-amber-300 font-mono">{{ $audit['missing_birth_count'] + $audit['missing_guardian_count'] }}</span>
+                    </div>
+
+                    <div class="bg-indigo-50 dark:bg-indigo-950/40 p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                        <span class="text-xs text-indigo-700 dark:text-indigo-300 block">{{ __('نقص الأسماء اللاتينية') }}</span>
+                        <span class="text-2xl font-black text-indigo-800 dark:text-indigo-300 font-mono">{{ $audit['missing_latin_count'] ?? 0 }}</span>
+                    </div>
+
+                    <div class="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <span class="text-xs text-slate-700 dark:text-slate-300 block">{{ __('نقص عناوين الإقامة') }}</span>
+                        <span class="text-2xl font-black text-slate-800 dark:text-slate-200 font-mono">{{ $audit['missing_address_count'] ?? 0 }}</span>
                     </div>
                 </div>
 

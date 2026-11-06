@@ -46,6 +46,8 @@ class StudentFactory extends Factory
         return [
             'first_name' => trim($isFemale ? $faker->firstNameFemale() : $faker->firstNameMale()),
             'last_name' => $faker->randomElement(self::FAMILY_NAMES),
+            'first_name_latin' => $isFemale ? 'Amina' : 'Amine',
+            'last_name_latin' => 'Benali',
             'registration_number' => $faker->unique()->numerify('2026-####'),
             'matricule_number' => $faker->unique()->numerify('M-26-####'),
             'national_id_number' => $faker->numerify('1100############'),
@@ -54,6 +56,8 @@ class StudentFactory extends Factory
             'enrollment_date' => '2026-09-20',
             'departure_date' => null,
             'is_active' => true,
+            'is_repeater' => false,
+            'address' => 'حي الشهداء، الجزائر العاصمة',
             'group_id' => Group::factory(),
         ];
     }

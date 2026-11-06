@@ -22,6 +22,8 @@ class Student extends Model
     protected $fillable = [
         'first_name',
         'last_name',
+        'first_name_latin',
+        'last_name_latin',
         'gender',
         'registration_number',
         'matricule_number',
@@ -32,10 +34,12 @@ class Student extends Model
         'enrollment_date',
         'departure_date',
         'is_active',
+        'is_repeater',
         'regime',
         'guardian_name',
         'guardian_phone',
         'guardian_relation',
+        'address',
     ];
 
     /**
@@ -48,6 +52,7 @@ class Student extends Model
             'enrollment_date' => 'date',
             'departure_date' => 'date',
             'is_active' => 'boolean',
+            'is_repeater' => 'boolean',
         ];
     }
 
@@ -143,6 +148,23 @@ class Student extends Model
         return Attribute::get(
             fn (): string => trim("{$this->first_name} {$this->last_name}"),
         );
+    }
+
+    /**
+     * The student's full name in Latin / French script.
+     */
+    protected function fullNameLatin(): Attribute
+    {
+        return Attribute::get(
+            fn (): ?string => ($this->first_name_latin || $this->last_name_latin)
+                ? trim("{$this->last_name_latin} {$this->first_name_latin}")
+                : null,
+        );
+    }
+
+    public function isRepeater(): bool
+    {
+        return (bool) $this->is_repeater;
     }
 
     /*
