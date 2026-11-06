@@ -16,6 +16,7 @@ use App\Http\Controllers\PrintPedagogicalMemoController;
 use App\Http\Controllers\RakmanaSyncController;
 use App\Http\Controllers\SchoolArchiveController;
 use App\Http\Controllers\SchoolCensusController;
+use App\Http\Controllers\SchoolLifeController;
 use App\Http\Controllers\StudentAwardController;
 use App\Http\Controllers\StudentMobilityController;
 use App\Http\Controllers\StudentReportCardController;
@@ -509,6 +510,36 @@ Route::get('/{locale}/print/institutional-bilans/{report?}/pdf', [InstitutionalB
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.institutional-bilan.pdf');
+
+Route::get('/{locale}/print/school-clubs/{club}/technical-sheet', [SchoolLifeController::class, 'printClubSheet'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-life.club-sheet');
+
+Route::get('/{locale}/print/school-clubs/{club}/technical-sheet/pdf', [SchoolLifeController::class, 'pdfClubSheet'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-life.club-sheet.pdf');
+
+Route::get('/{locale}/print/club-memberships/{membership}/certificate', [SchoolLifeController::class, 'printMemberCertificate'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-life.member-certificate');
+
+Route::get('/{locale}/print/club-memberships/{membership}/certificate/pdf', [SchoolLifeController::class, 'pdfMemberCertificate'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-life.member-certificate.pdf');
+
+Route::get('/{locale}/print/school-life/annual-bilan', [SchoolLifeController::class, 'printAnnualBilan'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-life.annual-bilan');
+
+Route::get('/{locale}/print/school-life/annual-bilan/pdf', [SchoolLifeController::class, 'pdfAnnualBilan'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-life.annual-bilan.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

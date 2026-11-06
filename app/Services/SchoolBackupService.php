@@ -51,6 +51,9 @@ class SchoolBackupService
         'student_counseling_profiles',
         'counseling_sessions',
         'quarterly_institutional_reports',
+        'school_clubs',
+        'club_memberships',
+        'club_activities',
     ];
 
     /**

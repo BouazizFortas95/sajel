@@ -1461,11 +1461,47 @@ Complete statutory Algerian administrative and legal workflow for managing teach
       - 114 translation keys across Arabic, English, and French verified by `LocalizationCompletenessTest`.
       - 7 feature tests passing in `tests/Feature/TeacherAbsenceProtocolsTest.php` with 56 assertions.
 
-## 40. School Life & Extra-curricular Clubs System (منظومة الحياة المدرسية والنوادي والأنشطة اللاصفية) (Planned)
+## 40. School Life & Extra-curricular Clubs System (منظومة الحياة المدرسية والنوادي والأنشطة اللاصفية) (100%)
 
-Comprehensive management of student extracurricular life and school clubs:
-- [ ] Scientific, Environmental (Green), Cultural/Theater, and Sports School Clubs.
-- [ ] Teacher advisors allocation, student enrollments, activity logbook, and annual showcase certificates.
+Comprehensive management of student extracurricular life, school clubs, activities, and merit recognitions under Algerian educational directives for school projects (مشروع المؤسسة):
+- [x] **Database Schema & Eloquent Models (`school_clubs`, `club_memberships`, `club_activities`):**
+      - Migration `2026_11_11_010001_create_school_clubs_and_activities_tables.php` bringing Sajel core database tables from 36 to 39.
+      - Models: `SchoolClub`, `ClubMembership`, `ClubActivity` with relationships, scopes, and helper methods.
+      - Registered in `SajelHealthCheckCommand` (verifying 39 core tables), `SchoolBackupService`, and `SchoolRestoreService`.
+- [x] **Domain Enums (`app/Enums`):**
+      - `ClubType`: `Scientific`, `Environmental`, `Cultural`, `Reading`, `Sports`, `Citizenship`, `Other`.
+      - `ClubStatus`: `Active`, `Frozen`, `Archived`.
+      - `ClubMemberRole`: `President`, `VicePresident`, `Secretary`, `ActiveMember`, `HonoraryMember`.
+      - `ClubMemberStatus`: `Active`, `Withdrawn`, `Graduated`.
+      - `ClubActivityType`: `Workshop`, `Exhibition`, `Competition`, `FieldTrip`, `Commemoration`, `AwarenessCampaign`.
+      - `ClubActivityStatus`: `Planned`, `Completed`, `Postponed`, `Cancelled`.
+- [x] **Domain Service (`SchoolLifeService`):**
+      - `getClubsOverview()`: computes institutional clubs overview, membership numbers, bureau counts, activity completion, and grade-level distribution.
+      - `createClub()`, `updateClub()`, `enrollStudent()`, `recordActivity()`.
+      - High-fidelity PDF generation methods: `generateClubTechnicalSheetPdf()`, `generateMembershipCertificatePdf()`, `generateAnnualLifeBilanPdf()`.
+- [x] **Controller Actions & Secure Routing (`SchoolLifeController`, `routes/web.php`):**
+      - Web routes with role authorization (Admin and Supervising Teachers):
+        - `print.school-life.club-sheet` (+ `.pdf`)
+        - `print.school-life.member-certificate` (+ `.pdf`)
+        - `print.school-life.annual-bilan` (+ `.pdf`)
+- [x] **Self-Contained Official Algerian Printable Templates:**
+      - `resources/views/print/club-technical-sheet.blade.php`: Club Technical Sheet & Executive Board (البطاقة الفنية والتنظيمية للنادي المدرسي - A4 Portrait).
+      - `resources/views/print/club-member-certificate.blade.php`: Official Certificate of Merit & Engagement (شهادة تقدير ومشاركة في النادي المدرسي - A4 Landscape with ornate national borders).
+      - `resources/views/print/annual-school-life-bilan.blade.php`: Official Annual School Life & Clubs Bilan (الحصيلة السنوية الرسمية للحياة المدرسية - A4 Landscape).
+- [x] **Interactive Filament Livewire Cockpit (`SchoolLifeHub`):**
+      - Registered under `__('الحياة المدرسية وشؤون التلاميذ')` with icon `heroicon-o-sparkles` and sort order 4.
+      - 4 tabs: `clubs` (cards with capacity bars and quick actions), `members` (board roles, student filters, certificate print/PDF), `activities` (agenda of completed and planned events), `bilan` (domain distribution and official report download).
+      - 3 Livewire modals: Create/Edit Club, Enroll Student, Record Activity.
+- [x] **Tri-Lingual Localization & Automated Testing:**
+      - 188 translation keys across Arabic, English, and French verified by `LocalizationCompletenessTest`.
+      - 7 feature tests passing in `tests/Feature/SchoolLifeTest.php` with 58 assertions.
+
+## 41. School Health & Medical Screening Unit (منظومة الصحة المدرسية ووحدة الكشف والمتابعة الصحية - UDS) (Planned)
+
+Comprehensive school healthcare management under Algerian public health and national education inter-ministerial decrees:
+- [ ] Student medical dossiers, screening visits (فحوصات وحدة الكشف والمتابعة UDS), and biometric checkups.
+- [ ] Vaccination tracking, chronic illness protocols (الربو، السكري، الحساسية), and emergency contact flags.
+- [ ] Official medical dispensations from physical education (الإعفاء من التربية البدنية والرياضية) and dietary canteen arrangements.
 
 
 
