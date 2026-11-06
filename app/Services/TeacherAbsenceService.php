@@ -140,7 +140,7 @@ class TeacherAbsenceService
         $dayOfWeek = $schedule->day_of_week;
 
         // 1. All other teachers
-        $teachers = User::where('role', Role::Teacher)
+        $teachers = User::whereIn('role', [Role::Teacher, Role::HeadTeacher])
             ->where('id', '!=', $schedule->user_id)
             ->with(['primarySubject', 'secondarySubject'])
             ->get();

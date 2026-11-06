@@ -119,7 +119,7 @@ class TeacherAbsenceHub extends Page
     {
         $actions = [];
 
-        if (Auth::user()?->isAdmin()) {
+        if (Auth::user()?->canManageTeacherAbsences()) {
             $actions[] = Action::make('recordAbsence')
                 ->label(__('تسجيل غياب أستاذ جديد'))
                 ->icon('heroicon-o-plus-circle')
@@ -130,7 +130,7 @@ class TeacherAbsenceHub extends Page
                     Grid::make(2)->schema([
                         Select::make('teacher_id')
                             ->label(__('الأستاذ(ة) المتغيب(ة)'))
-                            ->options(fn () => User::where('role', Role::Teacher)->orderBy('name')->pluck('name', 'id'))
+                            ->options(fn () => User::whereIn('role', [Role::Teacher, Role::HeadTeacher])->orderBy('name')->pluck('name', 'id'))
                             ->searchable()
                             ->required(),
 
@@ -458,14 +458,14 @@ class TeacherAbsenceHub extends Page
 
         $kpis = $service->getRadarKpis($this->year, $this->month);
 
-        $teacherOptions = User::where('role', Role::Teacher)->orderBy('name')->pluck('name', 'id');
+        $teacherOptions = User::whereIn('role', [Role::Teacher, Role::HeadTeacher])->orderBy('name')->pluck('name', 'id');
 
         return [
             'absences' => $absences,
             'affectedSessions' => $affectedSessions,
             'kpis' => $kpis,
             'teacherOptions' => $teacherOptions,
-            'isAdmin' => $user?->isAdmin() ?? false,
+            'isAdmin' => (bool) $user?->canManageTeacherAbsences(),
         ];
     }
 }

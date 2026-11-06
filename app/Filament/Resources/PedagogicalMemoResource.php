@@ -149,7 +149,7 @@ class PedagogicalMemoResource extends Resource
                         Select::make('user_id')
                             ->label(__('المعلم'))
                             ->options(fn (): array => User::query()
-                                ->where('role', Role::Teacher->value)
+                                ->whereIn('role', [Role::Teacher->value, Role::HeadTeacher->value])
                                 ->orderBy('name')
                                 ->pluck('name', 'id')
                                 ->all())

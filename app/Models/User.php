@@ -89,12 +89,125 @@ class User extends Authenticatable implements FilamentUser
 
     public function isAdmin(): bool
     {
-        return $this->role === Role::Admin;
+        return in_array($this->role, [
+            Role::Admin,
+            Role::Developer,
+            Role::Principal,
+            Role::Censor,
+        ], true);
+    }
+
+    public function isDeveloper(): bool
+    {
+        return $this->role === Role::Developer;
+    }
+
+    public function isPrincipal(): bool
+    {
+        return in_array($this->role, [Role::Principal, Role::Admin], true);
+    }
+
+    public function isCensor(): bool
+    {
+        return $this->role === Role::Censor;
+    }
+
+    public function isLeadership(): bool
+    {
+        return in_array($this->role, [
+            Role::Developer,
+            Role::Principal,
+            Role::Censor,
+            Role::Admin,
+        ], true);
+    }
+
+    public function isGeneralSupervisor(): bool
+    {
+        return $this->role === Role::GeneralSupervisor;
+    }
+
+    public function isEducationSupervisor(): bool
+    {
+        return $this->role === Role::EducationSupervisor;
+    }
+
+    public function isCounselor(): bool
+    {
+        return $this->role === Role::Counselor;
+    }
+
+    public function isFinanceOfficer(): bool
+    {
+        return $this->role === Role::FinanceOfficer;
+    }
+
+    public function isEducationStaff(): bool
+    {
+        return in_array($this->role, [
+            Role::GeneralSupervisor,
+            Role::EducationSupervisor,
+            Role::Counselor,
+            Role::FinanceOfficer,
+        ], true);
+    }
+
+    public function isHeadTeacher(): bool
+    {
+        return $this->role === Role::HeadTeacher;
     }
 
     public function isTeacher(): bool
     {
-        return $this->role === Role::Teacher;
+        return in_array($this->role, [Role::Teacher, Role::HeadTeacher], true);
+    }
+
+    public function isTeachingStaff(): bool
+    {
+        return in_array($this->role, [Role::Teacher, Role::HeadTeacher], true);
+    }
+
+    /**
+     * Specialized Role-Based Capability Checks
+     */
+    public function canManageUsers(): bool
+    {
+        return $this->isDeveloper() || $this->isPrincipal();
+    }
+
+    public function canManageSchoolSettings(): bool
+    {
+        return $this->isDeveloper() || $this->isPrincipal();
+    }
+
+    public function canValidateOfficialReports(): bool
+    {
+        return $this->isDeveloper() || $this->isPrincipal();
+    }
+
+    public function canManageDiscipline(): bool
+    {
+        return $this->isDeveloper() || $this->isPrincipal() || $this->isCensor() || $this->isGeneralSupervisor() || $this->isEducationSupervisor();
+    }
+
+    public function canManageCounseling(): bool
+    {
+        return $this->isDeveloper() || $this->isPrincipal() || $this->isCounselor();
+    }
+
+    public function canManageTextbooks(): bool
+    {
+        return $this->isDeveloper() || $this->isPrincipal() || $this->isFinanceOfficer();
+    }
+
+    public function canManageTeacherAbsences(): bool
+    {
+        return $this->isDeveloper() || $this->isPrincipal() || $this->isCensor() || $this->isGeneralSupervisor();
+    }
+
+    public function canSuperviseSchoolLife(): bool
+    {
+        return $this->isDeveloper() || $this->isPrincipal() || $this->isCensor() || $this->isGeneralSupervisor();
     }
 
     /**

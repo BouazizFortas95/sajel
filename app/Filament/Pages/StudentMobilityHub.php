@@ -64,7 +64,7 @@ class StudentMobilityHub extends Page
     {
         $user = Auth::user();
 
-        return $user?->isAdmin() || $user?->isTeacher();
+        return $user?->isAdmin() || $user?->isEducationStaff() || $user?->isTeacher();
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -91,7 +91,7 @@ class StudentMobilityHub extends Page
     {
         $actions = [];
 
-        if (Auth::user()?->isAdmin()) {
+        if (Auth::user()?->isAdmin() || Auth::user()?->isEducationStaff()) {
             $actions[] = Action::make('registerTransfer')
                 ->label(__('تسجيل تحويل تلميذ جديد'))
                 ->icon('heroicon-o-user-plus')

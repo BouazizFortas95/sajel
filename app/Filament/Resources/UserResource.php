@@ -75,7 +75,7 @@ class UserResource extends Resource
 
                         Select::make('role')
                             ->label(__('الدور'))
-                            ->options(Role::options())
+                            ->options(Role::groupedOptions())
                             ->default(Role::Teacher->value)
                             ->native(false)
                             ->required()
@@ -99,7 +99,12 @@ class UserResource extends Resource
                     ->columns(2)
                     ->visible(fn (Get $get): bool => in_array(
                         $get('role'),
-                        [Role::Teacher, Role::Teacher->value],
+                        [
+                            Role::Teacher,
+                            Role::Teacher->value,
+                            Role::HeadTeacher,
+                            Role::HeadTeacher->value,
+                        ],
                         true,
                     ))
                     ->schema([
@@ -152,8 +157,9 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('role')
                     ->label(__('الدور'))
                     ->badge()
-                    ->formatStateUsing(fn (Role $state): string => $state->label())
-                    ->color(fn (Role $state): string => $state->color())
+                    ->formatStateUsing(fn ($state): string => $state instanceof Role ? $state->label() : (Role::tryFrom((string) $state)?->label() ?? (string) $state))
+                    ->color(fn ($state): string => $state instanceof Role ? $state->color() : (Role::tryFrom((string) $state)?->color() ?? 'gray'))
+                    ->icon(fn ($state): ?string => $state instanceof Role ? $state->icon() : (Role::tryFrom((string) $state)?->icon() ?? null))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('primarySubject.name')
@@ -191,7 +197,7 @@ class UserResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('role')
                     ->label(__('الدور'))
-                    ->options(Role::options()),
+                    ->options(Role::groupedOptions()),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

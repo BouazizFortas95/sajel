@@ -78,7 +78,7 @@ class ScheduleResource extends Resource
                                 'user',
                                 'name',
                                 modifyQueryUsing: fn (Builder $query): Builder => $query
-                                    ->where('role', Role::Teacher->value),
+                                    ->whereIn('role', [Role::Teacher->value, Role::HeadTeacher->value]),
                             )
                             ->searchable()
                             ->preload()

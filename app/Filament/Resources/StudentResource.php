@@ -49,7 +49,9 @@ class StudentResource extends Resource
      */
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        $user = auth()->user();
+
+        return $user?->isAdmin() || ($user?->isEducationStaff() ?? false);
     }
 
     /**

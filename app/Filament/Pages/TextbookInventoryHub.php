@@ -67,7 +67,7 @@ class TextbookInventoryHub extends Page
     {
         $user = Auth::user();
 
-        return $user?->isAdmin() || $user?->isTeacher();
+        return $user?->isAdmin() || $user?->canManageTextbooks() || $user?->isTeacher();
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -94,7 +94,7 @@ class TextbookInventoryHub extends Page
     {
         $actions = [];
 
-        if (Auth::user()?->isAdmin()) {
+        if (Auth::user()?->canManageTextbooks()) {
             $actions[] = Action::make('seedCatalog')
                 ->label(__('توليد دليل الكتب الوطني (ONPS)'))
                 ->icon('heroicon-o-sparkles')
@@ -199,7 +199,7 @@ class TextbookInventoryHub extends Page
 
     public function confirmReturn(TextbookInventoryService $service): void
     {
-        if (! Auth::user()?->isAdmin()) {
+        if (! Auth::user()?->canManageTextbooks()) {
             abort(403);
         }
 
@@ -231,7 +231,7 @@ class TextbookInventoryHub extends Page
 
     public function grantClearance(int $studentId, TextbookInventoryService $service): void
     {
-        if (! Auth::user()?->isAdmin()) {
+        if (! Auth::user()?->canManageTextbooks()) {
             abort(403);
         }
 
@@ -249,7 +249,7 @@ class TextbookInventoryHub extends Page
 
     public function addReceivedStock(int $textbookId, int $additionalQuantity): void
     {
-        if (! Auth::user()?->isAdmin()) {
+        if (! Auth::user()?->canManageTextbooks()) {
             abort(403);
         }
 
@@ -309,7 +309,7 @@ class TextbookInventoryHub extends Page
             'students' => $students,
             'kpis' => $kpis,
             'levels' => Level::orderBy('grade_number')->get(),
-            'isAdmin' => $user?->isAdmin() ?? false,
+            'isAdmin' => (bool) $user?->canManageTextbooks(),
         ];
     }
 }

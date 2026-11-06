@@ -174,7 +174,7 @@ class OfficialReports extends Page
         }
 
         return User::query()
-            ->where('role', Role::Teacher->value)
+            ->whereIn('role', [Role::Teacher->value, Role::HeadTeacher->value])
             ->orderBy('name')
             ->pluck('name', 'id')
             ->all();

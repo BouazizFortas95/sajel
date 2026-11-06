@@ -124,7 +124,7 @@ class SchoolLifeHub extends Page
     {
         $user = Auth::user();
 
-        return $user?->isAdmin() || $user?->isTeacher();
+        return $user?->isAdmin() || $user?->isEducationStaff() || $user?->isTeacher();
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -165,7 +165,7 @@ class SchoolLifeHub extends Page
 
     public function openNewClubModal(): void
     {
-        if (! Auth::user()?->isAdmin()) {
+        if (! Auth::user()?->canSuperviseSchoolLife()) {
             abort(403);
         }
 
@@ -459,7 +459,7 @@ class SchoolLifeHub extends Page
             'teachers' => $teachers,
             'memberships' => $memberships,
             'activities' => $activities,
-            'isAdmin' => (bool) Auth::user()?->isAdmin(),
+            'isAdmin' => (bool) Auth::user()?->canSuperviseSchoolLife(),
         ]);
     }
 }
