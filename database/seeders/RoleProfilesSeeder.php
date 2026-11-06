@@ -82,3 +82,4 @@ class RoleProfilesSeeder extends Seeder
         }
     }
 }
+
