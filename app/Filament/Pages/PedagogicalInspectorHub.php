@@ -57,7 +57,7 @@ class PedagogicalInspectorHub extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التخطيط والمناهج والتفتيش');
+        return __('الإشراف والمراقبة الإدارية');
     }
 
     public function getTitle(): string

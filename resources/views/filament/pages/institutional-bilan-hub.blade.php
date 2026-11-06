@@ -286,9 +286,9 @@
                         <span class="text-[10px] text-emerald-600 dark:text-emerald-400">{{ __('تلميذ في لوحة الشرف') }}</span>
                     </div>
 
-                    <div class="p-4 rounded-xl bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-900/40 text-center">
+                    <div class="p-4 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/50 text-center">
                         <span class="text-xs font-bold text-teal-800 dark:text-teal-300">{{ __('مقبول (10 - 11.99)') }}</span>
-                        <div class="text-xl font-black text-teal-700 dark:text-teal-400 mt-1">{{ $report?->passing_count ?? 0 }}</div>
+                        <div class="text-xl font-black text-teal-700 dark:text-teal-300 mt-1">{{ $report?->passing_count ?? 0 }}</div>
                         <span class="text-[10px] text-teal-600 dark:text-teal-400">{{ __('تلميذ فوق المعدل') }}</span>
                     </div>
 

@@ -22,7 +22,7 @@ class SchoolLifeHub extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-sparkles';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 3;
 
     protected static string $view = 'filament.pages.school-life-hub';
 

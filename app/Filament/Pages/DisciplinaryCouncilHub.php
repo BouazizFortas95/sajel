@@ -26,7 +26,7 @@ class DisciplinaryCouncilHub extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-scale';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 2;
 
     protected static string $view = 'filament.pages.disciplinary-council-hub';
 
@@ -59,12 +59,12 @@ class DisciplinaryCouncilHub extends Page
     {
         $user = Auth::user();
 
-        return $user?->isAdmin() || $user?->isTeacher();
+        return $user?->isAdmin() || $user?->canManageDiscipline() || $user?->isTeacher();
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::canAccess();
+        return Auth::user()?->canManageDiscipline() ?? false;
     }
 
     public static function getNavigationGroup(): ?string

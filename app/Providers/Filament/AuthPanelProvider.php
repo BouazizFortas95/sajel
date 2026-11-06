@@ -36,6 +36,9 @@ class AuthPanelProvider extends PanelProvider
                     ->label(fn () => __('التعليم والتدريس اليومي'))
                     ->icon('heroicon-o-academic-cap'),
                 NavigationGroup::make()
+                    ->label(fn () => __('التخطيط والمناهج والتفتيش'))
+                    ->icon('heroicon-o-document-chart-bar'),
+                NavigationGroup::make()
                     ->label(fn () => __('التقويمات والامتحانات والمجالس'))
                     ->icon('heroicon-o-clipboard-document-check'),
                 NavigationGroup::make()
@@ -45,8 +48,11 @@ class AuthPanelProvider extends PanelProvider
                     ->label(fn () => __('الحياة المدرسية وشؤون التلاميذ'))
                     ->icon('heroicon-o-user-group'),
                 NavigationGroup::make()
-                    ->label(fn () => __('التخطيط والمناهج والتفتيش'))
-                    ->icon('heroicon-o-document-chart-bar'),
+                    ->label(fn () => __('المصالح المالية والكتاب المدرسي'))
+                    ->icon('heroicon-o-banknotes'),
+                NavigationGroup::make()
+                    ->label(fn () => __('الإشراف والمراقبة الإدارية'))
+                    ->icon('heroicon-o-presentation-chart-line'),
                 NavigationGroup::make()
                     ->label(fn () => __('الإدارة المدرسية والرقمنة والأرشيف'))
                     ->icon('heroicon-o-building-office-2'),

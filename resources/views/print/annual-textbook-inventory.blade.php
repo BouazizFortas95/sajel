@@ -27,7 +27,7 @@
 
         @page {
             size: A4 landscape;
-            margin: 5mm 6mm 5mm 6mm;
+            margin: 4mm 6mm 4mm 6mm;
         }
 
         html, body {
@@ -36,21 +36,21 @@
             background: #ffffff;
             color: #0f172a;
             font-family: 'Cairo', ui-sans-serif, system-ui, -apple-system, sans-serif;
-            font-size: 9px;
-            line-height: 1.25;
+            font-size: 8.5px;
+            line-height: 1.2;
             -webkit-font-smoothing: antialiased;
         }
 
         .no-print {
             max-width: 285mm;
-            margin: 6px auto;
+            margin: 4px auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
             background: #0f172a;
             color: #ffffff;
-            padding: 8px 14px;
-            border-radius: 8px;
+            padding: 6px 12px;
+            border-radius: 6px;
             font-size: 11px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
@@ -71,15 +71,14 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            padding: 5px 12px;
-            font-size: 10.5px;
+            padding: 4px 10px;
+            font-size: 10px;
             font-weight: 700;
-            border-radius: 6px;
+            border-radius: 4px;
             text-decoration: none;
             cursor: pointer;
             border: none;
             font-family: inherit;
-            transition: all 0.15s ease;
         }
         .btn-amber { background: #f59e0b; color: #0f172a; }
         .btn-amber:hover { background: #d97706; }
@@ -88,158 +87,177 @@
 
         .sheet-container {
             width: 100%;
-            max-width: 285mm;
+            max-width: 287mm;
             margin: 0 auto;
-            padding: 2mm 3mm;
+            padding: 1.5mm 2.5mm;
             background: #ffffff;
+            box-sizing: border-box;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
         }
 
         /* Traditional Algerian Republic Header */
         .traditional-header {
             font-family: 'Amiri', serif;
             text-align: center;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
+            line-height: 1.15;
         }
         .traditional-header .country {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
             color: #1e293b;
         }
         .traditional-header .ministry {
-            font-size: 10.5px;
+            font-size: 9.5px;
             font-weight: 600;
             color: #334155;
         }
 
-        /* 3-Column Metadata Header Grid */
-        .header-meta-grid {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* 3-Column Metadata Header Table */
+        .header-meta-table {
+            display: table !important;
+            width: 100% !important;
+            table-layout: fixed !important;
             border-bottom: 1.5px solid #0f172a;
-            padding-bottom: 4px;
-            margin-bottom: 5px;
-            font-size: 9.5px;
+            padding-bottom: 2.5px;
+            margin-bottom: 3px;
+            font-size: 8.5px;
         }
-        .header-meta-grid .col-school {
+        .header-meta-col-school {
+            display: table-cell !important;
+            width: 33% !important;
             text-align: start;
-            flex: 1;
-            line-height: 1.3;
+            vertical-align: middle;
+            line-height: 1.25;
         }
-        .header-meta-grid .col-school .school-name {
+        .header-meta-col-school .school-name {
             font-weight: 800;
             color: #0f172a;
-            font-size: 10px;
+            font-size: 9.5px;
         }
-        .header-meta-grid .col-school .crddp {
-            font-size: 8.5px;
+        .header-meta-col-school .crddp {
+            font-size: 8px;
             color: #64748b;
         }
 
-        .header-meta-grid .col-title {
+        .header-meta-col-title {
+            display: table-cell !important;
+            width: 42% !important;
             text-align: center;
+            vertical-align: middle;
             background: #f8fafc;
             border: 1px solid #cbd5e1;
-            border-radius: 5px;
-            padding: 4px 12px;
-            flex: 1.3;
+            border-radius: 4px;
+            padding: 3px 10px;
         }
-        .header-meta-grid .col-title .main-title {
-            font-size: 12px;
+        .header-meta-col-title .main-title {
+            font-size: 11px;
             font-weight: 900;
             color: #0f172a;
             text-transform: uppercase;
+            line-height: 1.15;
         }
-        .header-meta-grid .col-title .sub-title {
-            font-size: 10px;
+        .header-meta-col-title .sub-title {
+            font-size: 9px;
             font-weight: 700;
             color: #92400e;
             margin-top: 1px;
+            line-height: 1.15;
         }
 
-        .header-meta-grid .col-date {
+        .header-meta-col-date {
+            display: table-cell !important;
+            width: 25% !important;
             text-align: end;
-            flex: 1;
-            font-size: 9px;
-            line-height: 1.3;
+            vertical-align: middle;
+            font-size: 8.5px;
+            line-height: 1.25;
         }
-        .header-meta-grid .col-date .date-val {
+        .header-meta-col-date .date-val {
             font-weight: 800;
             font-family: monospace;
-            font-size: 9.5px;
+            font-size: 9px;
         }
-        .header-meta-grid .col-date .code-val {
+        .header-meta-col-date .code-val {
             font-family: monospace;
-            font-size: 8.5px;
+            font-size: 8px;
             color: #64748b;
         }
 
-        /* 4 KPI Cards Grid */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 5px;
-            margin-bottom: 5px;
+        /* 4 KPI Cards Table strictly in 1 Row */
+        .kpi-table {
+            display: table !important;
+            width: 100% !important;
+            table-layout: fixed !important;
+            border-spacing: 3.5px 0 !important;
+            margin-bottom: 3px !important;
         }
-        .kpi-card {
+        .kpi-cell {
+            display: table-cell !important;
+            width: 25% !important;
+            vertical-align: middle !important;
             border: 1px solid #cbd5e1;
             border-radius: 4px;
-            padding: 4px 6px;
+            padding: 3px 5px;
             text-align: center;
             background: #f8fafc;
+            box-sizing: border-box;
         }
-        .kpi-card.emerald { background: #ecfdf5; border-color: #a7f3d0; }
-        .kpi-card.amber { background: #fffbeb; border-color: #fde68a; }
-        .kpi-card.blue { background: #eff6ff; border-color: #bfdbfe; }
+        .kpi-cell.emerald { background: #ecfdf5; border-color: #a7f3d0; }
+        .kpi-cell.amber { background: #fffbeb; border-color: #fde68a; }
+        .kpi-cell.blue { background: #eff6ff; border-color: #bfdbfe; }
 
         .kpi-label {
-            font-size: 8px;
+            font-size: 7.5px;
             font-weight: 700;
             color: #64748b;
             margin-bottom: 1px;
+            line-height: 1.1;
         }
-        .kpi-card.emerald .kpi-label { color: #047857; }
-        .kpi-card.amber .kpi-label { color: #b45309; }
-        .kpi-card.blue .kpi-label { color: #1d4ed8; }
+        .kpi-cell.emerald .kpi-label { color: #047857; }
+        .kpi-cell.amber .kpi-label { color: #b45309; }
+        .kpi-cell.blue .kpi-label { color: #1d4ed8; }
 
         .kpi-value {
-            font-size: 11px;
+            font-size: 11.5px;
             font-weight: 900;
             font-family: monospace;
             color: #0f172a;
+            line-height: 1.1;
         }
-        .kpi-card.emerald .kpi-value { color: #065f46; }
-        .kpi-card.amber .kpi-value { color: #78350f; }
-        .kpi-card.blue .kpi-value { color: #1e3a8a; }
+        .kpi-cell.emerald .kpi-value { color: #065f46; }
+        .kpi-cell.amber .kpi-value { color: #78350f; }
+        .kpi-cell.blue .kpi-value { color: #1e3a8a; }
 
         /* Inventory Table */
         .inv-table-wrap {
             width: 100%;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
         .inv-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 8.5px;
+            font-size: 8px;
             table-layout: auto;
         }
         .inv-table th,
         .inv-table td {
             border: 1px solid #94a3b8;
-            padding: 2.5px 4px;
-            line-height: 1.2;
+            padding: 1.8px 3px;
+            line-height: 1.15;
         }
         .inv-table thead th {
             background-color: #f1f5f9;
             font-weight: 800;
             color: #1e293b;
             text-align: center;
-            font-size: 8.5px;
+            font-size: 8px;
         }
         .inv-table td.center { text-align: center; }
-        .inv-table td.mono { font-family: monospace; font-size: 9px; }
+        .inv-table td.mono { font-family: monospace; font-size: 8.5px; }
         .inv-table tbody tr:nth-child(even) { background-color: #fcfdfe; }
 
         .inv-table tfoot tr {
@@ -248,35 +266,42 @@
             border-top: 1.5px solid #0f172a;
         }
         .inv-table tfoot td {
-            padding: 3px 4px;
-            font-size: 8.5px;
+            padding: 2.2px 3px;
+            font-size: 8px;
         }
 
-        /* 3 Official Signatures Block */
-        .signatures-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            border-top: 1.5px solid #0f172a;
-            padding-top: 4px;
-            margin-top: 4px;
-            text-align: center;
+        /* 3 Official Signatures Table */
+        .signatures-table {
+            display: table !important;
+            width: 100% !important;
+            table-layout: fixed !important;
+            border-top: 1.2px solid #0f172a !important;
+            padding-top: 2.5px !important;
+            margin-top: 2.5px !important;
+            text-align: center !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
         }
         .sig-col {
-            padding: 2px 6px;
+            display: table-cell !important;
+            width: 33.333% !important;
+            vertical-align: top !important;
+            padding: 1px 5px !important;
         }
         .sig-title {
-            font-size: 9.5px;
+            font-size: 8.5px;
             font-weight: 800;
             color: #0f172a;
+            line-height: 1.15;
         }
         .sig-sub {
-            font-size: 8px;
+            font-size: 7.5px;
             color: #64748b;
             margin-top: 0.5px;
+            line-height: 1.1;
         }
         .sig-box {
-            height: 38px;
+            height: 28px;
             border-bottom: 1px dashed #94a3b8;
             margin-top: 2px;
             display: flex;
@@ -284,25 +309,28 @@
             justify-content: center;
         }
         .sig-stamp-hint {
-            font-size: 8px;
+            font-size: 7.5px;
             color: #94a3b8;
             border: 1px dashed #cbd5e1;
-            border-radius: 12px;
-            padding: 1px 8px;
+            border-radius: 10px;
+            padding: 0.5px 6px;
         }
 
         .footer-note {
             text-align: center;
-            font-size: 7.5px;
+            font-size: 7px;
             color: #94a3b8;
             font-family: monospace;
-            margin-top: 3px;
+            margin-top: 2px;
         }
 
         @media print {
             body {
                 background: #ffffff !important;
                 padding: 0 !important;
+                height: 100% !important;
+                max-height: 202mm !important;
+                overflow: hidden !important;
             }
             .no-print {
                 display: none !important;
@@ -310,31 +338,37 @@
             .sheet-container {
                 max-width: 100% !important;
                 padding: 0 !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
             }
         }
     </style>
 </head>
 <body>
 
-    {{-- Screen Preview Floating Action Bar --}}
-    <div class="no-print">
-        <div class="title-group">
-            <span style="font-size: 16px;">📚</span>
-            <div>
-                <strong>{{ __('الحصيلة السنوية الشاملة لتسيير وحركة الكتاب المدرسي (ONPS / CRDDP)') }}</strong>
-                <div style="font-size: 9.5px; color: #94a3b8;">{{ $school?->school_name }} — {{ $yearStr }} ({{ $inventoryCode }})</div>
+    @if (! ($inlineCss ?? false))
+        {{-- Screen Preview Floating Action Bar --}}
+        <div class="no-print">
+            <div class="title-group">
+                <span style="font-size: 16px;">📚</span>
+                <div>
+                    <strong>{{ __('الحصيلة السنوية الشاملة لتسيير وحركة الكتاب المدرسي (ONPS / CRDDP)') }}</strong>
+                    <div style="font-size: 9.5px; color: #94a3b8;">{{ $school?->school_name }} — {{ $yearStr }} ({{ $inventoryCode }})</div>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button onclick="window.print()" class="btn btn-amber">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    {{ __('طباعة الحصيلة كاملة') }}
+                </button>
+                <button onclick="window.history.back()" class="btn btn-slate">
+                    {{ __('رجوع') }}
+                </button>
             </div>
         </div>
-        <div class="btn-group">
-            <button onclick="window.print()" class="btn btn-amber">
-                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                {{ __('طباعة الحصيلة كاملة') }}
-            </button>
-            <button onclick="window.history.back()" class="btn btn-slate">
-                {{ __('رجوع') }}
-            </button>
-        </div>
-    </div>
+    @endif
 
     <div class="sheet-container">
 
@@ -344,38 +378,38 @@
             <div class="ministry">{{ __('وزارة التربية الوطنية') }} — {{ __('الديوان الوطني للمطبوعات المدرسية (ONPS)') }}</div>
         </div>
 
-        {{-- 2. 3-Column Metadata Strip --}}
-        <div class="header-meta-grid">
-            <div class="col-school">
+        {{-- 2. 3-Column Metadata Strip (Table Layout) --}}
+        <div class="header-meta-table">
+            <div class="header-meta-col-school">
                 <div>{{ $school?->directorate_name ?? __('مديرية التربية لولاية الوادي') }}</div>
                 <div class="school-name">{{ $school?->school_name ?? __('متوسطة الشهيد العربي بن مهيدي') }}</div>
                 <div class="crddp">{{ __('مركز التوزيع والتوثيق البيداغوجي (CRDDP)') }}</div>
             </div>
-            <div class="col-title">
+            <div class="header-meta-col-title">
                 <div class="main-title">{{ __('الحصيلة السنوية الشاملة وجرد حركة الكتاب المدرسي') }}</div>
                 <div class="sub-title">{{ __('الموسم الدراسي') }}: {{ $yearStr }}</div>
             </div>
-            <div class="col-date">
+            <div class="header-meta-col-date">
                 <div>{{ __('حرر بتاريخ') }}: <span class="date-val">{{ now()->format('d/m/Y') }}</span></div>
                 <div class="code-val">{{ $inventoryCode }}</div>
             </div>
         </div>
 
-        {{-- 3. 4 KPI Cards Strip --}}
-        <div class="kpi-grid">
-            <div class="kpi-card">
+        {{-- 3. 4 KPI Cards Strip (Table Layout) --}}
+        <div class="kpi-table">
+            <div class="kpi-cell">
                 <div class="kpi-label">{{ __('إجمالي النسخ المستلمة') }}</div>
                 <div class="kpi-value">{{ number_format($totalReceived) }} {{ __('نسخة') }}</div>
             </div>
-            <div class="kpi-card emerald">
+            <div class="kpi-cell emerald">
                 <div class="kpi-label">{{ __('الموزعة (تضامن + بيع)') }}</div>
                 <div class="kpi-value">{{ number_format($totalDistributed) }} ({{ number_format($totalSolidarity) }} {{ __('مجاني') }})</div>
             </div>
-            <div class="kpi-card amber">
+            <div class="kpi-cell amber">
                 <div class="kpi-label">{{ __('الرصيد المتبقي بالمخزن') }}</div>
                 <div class="kpi-value">{{ number_format($totalInStock) }} {{ __('نسخة') }}</div>
             </div>
-            <div class="kpi-card blue">
+            <div class="kpi-cell blue">
                 <div class="kpi-label">{{ __('القيمة المالية الإجمالية') }}</div>
                 <div class="kpi-value">{{ number_format($totalFinancialValue, 2) }} {{ __('دج') }}</div>
             </div>
@@ -435,13 +469,13 @@
                 </table>
             </div>
         @else
-            <div style="padding: 20px; text-align: center; color: #64748b; font-weight: 600; border: 1px dashed #cbd5e1; border-radius: 6px; margin: 8px 0;">
+            <div style="padding: 12px; text-align: center; color: #64748b; font-weight: 600; border: 1px dashed #cbd5e1; border-radius: 6px; margin: 6px 0;">
                 {{ __('لم يتم تسجيل أية كتب في المخزن بعد.') }}
             </div>
         @endif
 
-        {{-- 5. Official Tripartite Signatures Block --}}
-        <div class="signatures-grid">
+        {{-- 5. Official Tripartite Signatures Table --}}
+        <div class="signatures-table">
             <div class="sig-col">
                 <div class="sig-title">{{ __('المسؤول عن مخزن الكتب (المسير)') }}</div>
                 <div class="sig-sub">{{ __('الجرد الفعلي والمطابقة العينية') }}</div>

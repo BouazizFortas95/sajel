@@ -49,7 +49,9 @@ class SchoolArchiveHub extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::canAccess();
+        $user = Auth::user();
+
+        return $user?->isAdmin() || ($user?->isFinanceOfficer() ?? false);
     }
 
     public static function getNavigationGroup(): ?string

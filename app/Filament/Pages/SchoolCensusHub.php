@@ -93,7 +93,7 @@ class SchoolCensusHub extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::canAccess();
+        return Auth::user()?->isAdmin() ?? false;
     }
 
     public static function getNavigationGroup(): ?string

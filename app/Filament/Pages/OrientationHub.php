@@ -18,7 +18,7 @@ class OrientationHub extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-up';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 2;
 
     protected static string $view = 'filament.pages.orientation-hub';
 
@@ -78,7 +78,7 @@ class OrientationHub extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::canAccess();
+        return Auth::user()?->canManageCounseling() ?? false;
     }
 
     public static function getNavigationGroup(): ?string

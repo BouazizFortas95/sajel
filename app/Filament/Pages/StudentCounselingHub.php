@@ -23,7 +23,7 @@ class StudentCounselingHub extends Page
 
     protected static string $view = 'filament.pages.student-counseling-hub';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 1;
 
     public string $activeTab = 'profiles';
 
@@ -101,12 +101,12 @@ class StudentCounselingHub extends Page
     {
         $user = Auth::user();
 
-        return $user !== null;
+        return $user?->canManageCounseling() || $user?->isAdmin() || $user?->isTeacher();
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::canAccess();
+        return Auth::user()?->canManageCounseling() ?? false;
     }
 
     public static function getNavigationGroup(): ?string

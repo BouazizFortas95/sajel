@@ -14,13 +14,18 @@
   .dark table:not(.fi-ta-table) thead th { background-color: #111827 !important; color: #e5e7eb !important; border-color: #374151 !important; }
   .dark table:not(.fi-ta-table) tfoot tr, .dark table:not(.fi-ta-table) tfoot td { background-color: #111827 !important; color: #f9fafb !important; border-color: #374151 !important; }
   .dark .bg-primary-100, .dark .bg-primary-200, .dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.22) !important; color: #fef3c7 !important; }
-  .dark .bg-amber-50, .dark .bg-primary-50 { background-color: rgba(245, 158, 11, 0.15) !important; color: #fef3c7 !important; }
-  .dark .bg-teal-50:not([class*="dark:bg-"]) { background-color: rgba(13, 148, 136, 0.15) !important; color: #5eead4 !important; }
-  .dark .bg-purple-50:not([class*="dark:bg-"]) { background-color: rgba(147, 51, 234, 0.15) !important; color: #d8b4fe !important; }
-  .dark .bg-blue-50:not([class*="dark:bg-"]) { background-color: rgba(37, 99, 235, 0.15) !important; color: #93c5fd !important; }
-  .dark .bg-emerald-50:not([class*="dark:bg-"]) { background-color: rgba(5, 150, 105, 0.15) !important; color: #6ee7b7 !important; }
-  .dark .bg-rose-50:not([class*="dark:bg-"]) { background-color: rgba(225, 29, 72, 0.15) !important; color: #fda4af !important; }
-  .dark .text-amber-950, .dark .text-amber-900, .dark .text-amber-800 { color: #fef3c7 !important; }
+  .dark .bg-amber-50, .dark .bg-primary-50, .dark [class*="bg-amber-50"] { background-color: rgba(245, 158, 11, 0.18) !important; color: #fde68a !important; border-color: rgba(245, 158, 11, 0.35) !important; }
+  .dark .bg-teal-50, .dark [class*="bg-teal-50"] { background-color: rgba(13, 148, 136, 0.18) !important; color: #5eead4 !important; border-color: rgba(13, 148, 136, 0.35) !important; }
+  .dark .bg-purple-50, .dark [class*="bg-purple-50"] { background-color: rgba(147, 51, 234, 0.18) !important; color: #d8b4fe !important; border-color: rgba(147, 51, 234, 0.35) !important; }
+  .dark .bg-blue-50, .dark [class*="bg-blue-50"] { background-color: rgba(37, 99, 235, 0.18) !important; color: #93c5fd !important; border-color: rgba(37, 99, 235, 0.35) !important; }
+  .dark .bg-emerald-50, .dark [class*="bg-emerald-50"] { background-color: rgba(5, 150, 105, 0.18) !important; color: #6ee7b7 !important; border-color: rgba(5, 150, 105, 0.35) !important; }
+  .dark .bg-rose-50, .dark [class*="bg-rose-50"] { background-color: rgba(225, 29, 72, 0.18) !important; color: #fda4af !important; border-color: rgba(225, 29, 72, 0.35) !important; }
+  .dark .text-teal-800, .dark .text-teal-700, .dark .text-teal-900, .dark .text-teal-600 { color: #5eead4 !important; }
+  .dark .text-purple-800, .dark .text-purple-700, .dark .text-purple-900, .dark .text-purple-600 { color: #d8b4fe !important; }
+  .dark .text-blue-800, .dark .text-blue-700, .dark .text-blue-900, .dark .text-blue-600 { color: #93c5fd !important; }
+  .dark .text-emerald-800, .dark .text-emerald-700, .dark .text-emerald-900, .dark .text-emerald-600 { color: #6ee7b7 !important; }
+  .dark .text-rose-800, .dark .text-rose-700, .dark .text-rose-900, .dark .text-rose-600 { color: #fda4af !important; }
+  .dark .text-amber-950, .dark .text-amber-900, .dark .text-amber-800, .dark .text-amber-700, .dark .text-amber-600 { color: #fde68a !important; }
   .dark .text-gray-500:not([class*="dark:text-"]) { color: #9ca3af !important; }
   .dark .text-gray-600:not([class*="dark:text-"]), .dark .text-gray-700:not([class*="dark:text-"]) { color: #d1d5db !important; }
   .dark .text-gray-800:not([class*="dark:text-"]), .dark .text-gray-900:not([class*="dark:text-"]) { color: #f9fafb !important; }

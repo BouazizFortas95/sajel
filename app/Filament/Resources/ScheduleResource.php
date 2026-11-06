@@ -47,10 +47,15 @@ class ScheduleResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('التعليم والتدريس اليومي');
+        return __('الهياكل والتنظيم التربوي');
     }
 
-    protected static ?int $navigationSort = 8;
+    protected static ?int $navigationSort = 10;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
 
     /**
      * Teachers see only their own schedules; admins see everything.

@@ -27,7 +27,7 @@ class StudentMobilityHub extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-arrows-right-left';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 4;
 
     protected static string $view = 'filament.pages.student-mobility-hub';
 

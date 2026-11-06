@@ -97,7 +97,7 @@ class TeacherAbsenceHub extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::canAccess();
+        return Auth::user()?->canManageTeacherAbsences() ?? false;
     }
 
     public static function getNavigationGroup(): ?string

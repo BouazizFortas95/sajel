@@ -19,7 +19,7 @@ class SchoolSupervisionHub extends Page
 
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 5;
 
     protected static string $view = 'filament.pages.school-supervision-hub';
 
@@ -34,7 +34,7 @@ class SchoolSupervisionHub extends Page
 
     public static function canAccess(): bool
     {
-        return Auth::user()?->isAdmin() ?? false;
+        return Auth::user()?->canSuperviseSchoolLife() ?? false;
     }
 
     public static function getNavigationLabel(): string
@@ -166,6 +166,6 @@ class SchoolSupervisionHub extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()?->isAdmin() ?? false;
+        return Auth::user()?->canSuperviseSchoolLife() ?? false;
     }
 }

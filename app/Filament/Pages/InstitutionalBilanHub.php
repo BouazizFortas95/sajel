@@ -14,7 +14,7 @@ class InstitutionalBilanHub extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 1;
 
     protected static string $view = 'filament.pages.institutional-bilan-hub';
 
@@ -42,6 +42,11 @@ class InstitutionalBilanHub extends Page
     public static function canAccess(): bool
     {
         return Auth::user()?->isAdmin() ?? false;
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
     }
 
     public static function getNavigationLabel(): string

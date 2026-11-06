@@ -63,7 +63,7 @@ class PedagogicalMemoResource extends Resource
         return __('التخطيط والمناهج والتفتيش');
     }
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 2;
 
     /**
      * Teachers see only their own memo bank; admins see every memo.
