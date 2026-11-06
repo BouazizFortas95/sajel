@@ -35,4 +35,3 @@ class PedagogicalSeminarFactory extends Factory
         ];
     }
 }
-

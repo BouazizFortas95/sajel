@@ -196,6 +196,20 @@ class Student extends Model
         return __('خارجي');
     }
 
+    public function isHalfBoard(): bool
+    {
+        $regime = strtolower((string) $this->regime);
+
+        return in_array($regime, ['half_board', 'نصف داخلي', 'نصف-داخلي', 'demi-pensionnaire', 'demi_pensionnaire', 'demi'], true);
+    }
+
+    public function isBoarder(): bool
+    {
+        $regime = strtolower((string) $this->regime);
+
+        return in_array($regime, ['boarder', 'داخلي', 'interne'], true);
+    }
+
     /*
      * -------------------------------------------------------------
      * Query Scopes

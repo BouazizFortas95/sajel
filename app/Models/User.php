@@ -215,6 +215,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->isDeveloper() || $this->isPrincipal() || $this->isCensor() || $this->isGeneralSupervisor() || $this->isTeacher();
     }
 
+    public function canManageCanteen(): bool
+    {
+        return $this->isDeveloper() || $this->isPrincipal() || $this->isGeneralSupervisor() || $this->isFinanceOfficer();
+    }
+
     /**
      * Both panel roles (admin, teacher) may access the Sajel panel;
      * fine-grained abilities are enforced by the model policies.

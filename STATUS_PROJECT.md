@@ -1574,6 +1574,46 @@ Statutory pedagogical management under Algerian Executive Decree 08-315 and Mini
       - 8 comprehensive feature tests in `tests/Feature/PedagogicalCouncilTest.php` passing with 100% green status.
       - Navigation role assertions passing in `tests/Feature/RoleNavigationTailoringTest.php`.
 
+## 43. School Canteen, Half-Board Regime & Daily Catering Consumption System (منظومة الإطعام المدرسي وتسيير نصف الداخلي وورقة الاستهلاك اليومي للمطعم للمقتصد - FJC) (100%)
+
+Comprehensive statutory catering and half-board (نصف داخلي) management under Algerian National Education Law 08-04, Executive Decrees governing school catering, food accounting, and hygiene regulations:
+- [x] **Database Schema & Data Model:**
+      - Migration `2026_11_14_010001_create_school_canteen_and_meal_tables.php` bringing Sajel core database tables from 44 to 48.
+      - Tables: `canteen_food_items`, `canteen_daily_sheets`, `canteen_consumption_entries`, `canteen_weekly_menus`.
+      - Eloquent models: `CanteenFoodItem`, `CanteenDailySheet`, `CanteenConsumptionEntry`, `CanteenWeeklyMenu`.
+      - Full registration in `SajelHealthCheckCommand` (now verifying 48 core domain tables), `SchoolBackupService`, and `SchoolRestoreService`.
+- [x] **Domain Enums & Role Abilities:**
+      - `FoodItemCategory`: MeatFish (لحوم وأسماك ودواجن), Produce (خضر وفواكه طازجة), DryGoods (بقوليات وبقالة وحبوب), Dairy (ألبان وأجبان وبيض), Bakery (مخبوزات وعجائن), OilsCondiments (زيوت وتوابل ومعلبات).
+      - `CanteenSheetStatus`: Draft (مسودة يومية), Certified (مؤشرة ومصادق عليها), Archived (مؤرشفة نهائياً).
+      - Enhanced `Student`: `isHalfBoard(): bool`, `isBoarder(): bool`, and `regimeLabel(): string` supporting national educational terminology.
+      - Enhanced `User`: `canManageCanteen(): bool` granting authorized access strictly to Developer, Principal, General Supervisor, and Finance Officer (المقتصد / مسير المصالح المالية).
+- [x] **Domain Service Layer (`SchoolCanteenService`):**
+      - `seedStandardAlgerianPantryItems()`: automated idempotent seeder with 12 standard Algerian food staples (عدس، حمص، لوبيا، أرز، زيت نباتي، حليب، بيض، دجاج، لحم بقري، طماطم مصبرة، توابل، خبز نصف مدعم).
+      - `getCanteenOverview()`: calculates half-board beneficiaries, detects dietary allergy & chronic illness alerts (severe allergies, celiac, diabetes, PAI emergency protocols), compiles monthly meals served, total expenditure, and average cost per meal.
+      - `getOrCreateDailySheet()`, `addConsumptionEntry()`, `removeConsumptionEntry()`, `certifyDailySheet()`: atomic transactions handling daily sheets, headcount tracking, real-time stock deduction and restoration, and recalculation of daily expenditure and unit cost per meal.
+      - `saveWeeklyMenu()`: validates and records weekly nutritional menus with caloric estimates and UDS doctor approval.
+      - High-fidelity PDF generation methods: `generateDailyConsumptionSheetPdf()`, `generateWeeklyMenuPdf()`, `generatePeriodicBilanPdf()`.
+- [x] **Controller Actions & Secure Routing (`SchoolCanteenController`, `routes/web.php`):**
+      - 6 web routes for in-browser print preview and PDF downloads (`BrowsershotFactory`) with strict role-based authorization:
+        - `print.canteen.daily-sheet` (+ `.pdf`)
+        - `print.canteen.weekly-menu` (+ `.pdf`)
+        - `print.canteen.periodic-bilan` (+ `.pdf`)
+- [x] **Self-Contained Official Algerian Printable Templates:**
+      - `resources/views/print/canteen-daily-sheet.blade.php`: Official Feuille Journalière de Consommation (FJC) - A4 Landscape, tripartite signatures (Storekeeper, Bursar, Principal), itemized category breakdown, unit costs, and daily meal metrics.
+      - `resources/views/print/canteen-weekly-menu.blade.php`: Official Balanced Weekly Menu Poster - A4 Portrait, Sunday through Thursday meals, calories estimate, UDS medical validation visa, and ministerial header.
+      - `resources/views/print/canteen-periodic-bilan.blade.php`: Monthly Catering Movement & Meal Distribution Report (كشف التغذية والإطعام الدوري لمديرية التربية) - A4 Landscape, macro telemetry, daily sheet journal, and Directorate of Education financial visa.
+- [x] **Interactive Filament Livewire Cockpit (`SchoolCanteenHub`):**
+      - Grouped under `__('المصالح المالية والكتاب المدرسي')` with icon `heroicon-o-cake`.
+      - 4 reactive tabs:
+        1. **Daily Sheet FJC (ورقة الاستهلاك اليومي):** Date selector, live headcount editing (half-boarders, teachers, workers), itemized disbursed pantry items, modal for stock consumption, real-time total cost and cost-per-meal computation, and official certification action.
+        2. **Pantry Inventory (مخزون المواد الغذائية):** Complete pantry ledger, stock balance, unit prices, warning threshold indicators, low-stock alerts, one-click national pantry initialization, and restock modal.
+        3. **Weekly Menu Planner (البرنامج الأسبوعي للوجبات):** Nutritional schedule cards from Sunday to Thursday, calories, medical approval status, and print shortcut.
+        4. **Periodic Bilan (كشف التغذية لمديرية التربية):** Monthly financial summary, days operated, meals distributed, total expenditure, average cost per meal, and ministerial export shortcut.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - 193 translation keys verified across Arabic, English, and French by `LocalizationCompletenessTest`.
+      - 9 comprehensive feature tests in `tests/Feature/SchoolCanteenTest.php` passing with 100% green status (66 assertions).
+      - Tailored navigation verified for all roles in `tests/Feature/RoleNavigationTailoringTest.php`.
+
 
 
 

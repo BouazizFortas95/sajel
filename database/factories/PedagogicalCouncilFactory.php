@@ -36,4 +36,3 @@ class PedagogicalCouncilFactory extends Factory
         ];
     }
 }
-

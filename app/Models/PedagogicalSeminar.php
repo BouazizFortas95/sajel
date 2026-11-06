@@ -63,4 +63,3 @@ class PedagogicalSeminar extends Model
         return $query->where('subject_id', $subjectId);
     }
 }
-

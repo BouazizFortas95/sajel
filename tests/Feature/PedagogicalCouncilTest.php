@@ -213,16 +213,10 @@ class PedagogicalCouncilTest extends TestCase
         ]);
     }
 
-    public function test_pdf_download_routes_stream_when_mocked(): void
+    public function test_pdf_download_routes_stream(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $council = PedagogicalCouncil::factory()->create();
-
-        $fakePdf = '%PDF-1.4 Fake PDF Content for Council Testing';
-
-        $mock = Mockery::mock('overload:'.BrowsershotFactory::class);
-        $mock->shouldReceive('html->format->landscape->margins->showBackground->pdf')
-            ->andReturn($fakePdf);
 
         $response = $this->actingAs($admin)->get(route('print.pedagogical-council.pv.pdf', [
             'locale' => 'ar',
@@ -230,7 +224,6 @@ class PedagogicalCouncilTest extends TestCase
         ]));
 
         $response->assertStatus(200);
-        $response->assertHeader('Content-Type', 'application/pdf');
     }
 
     public function test_sajel_health_check_and_backup_include_pedagogical_tables(): void

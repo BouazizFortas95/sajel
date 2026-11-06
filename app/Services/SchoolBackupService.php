@@ -59,6 +59,10 @@ class SchoolBackupService
         'pedagogical_council_attendances',
         'pedagogical_seminars',
         'pedagogical_seminar_attendances',
+        'canteen_food_items',
+        'canteen_daily_sheets',
+        'canteen_consumption_entries',
+        'canteen_weekly_menus',
     ];
 
     /**

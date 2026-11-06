@@ -16,6 +16,7 @@ use App\Http\Controllers\PrintDailyLogsController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
 use App\Http\Controllers\RakmanaSyncController;
 use App\Http\Controllers\SchoolArchiveController;
+use App\Http\Controllers\SchoolCanteenController;
 use App\Http\Controllers\SchoolCensusController;
 use App\Http\Controllers\SchoolHealthController;
 use App\Http\Controllers\SchoolLifeController;
@@ -612,6 +613,36 @@ Route::get('/{locale}/print/pedagogical-council/seminar-calendar/pdf', [Pedagogi
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.pedagogical-council.seminar-calendar.pdf');
+
+Route::get('/{locale}/print/canteen/daily-sheet/{sheet}', [SchoolCanteenController::class, 'dailySheet'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.canteen.daily-sheet');
+
+Route::get('/{locale}/print/canteen/daily-sheet/{sheet}/pdf', [SchoolCanteenController::class, 'dailySheetPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.canteen.daily-sheet.pdf');
+
+Route::get('/{locale}/print/canteen/weekly-menu/{menu}', [SchoolCanteenController::class, 'weeklyMenu'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.canteen.weekly-menu');
+
+Route::get('/{locale}/print/canteen/weekly-menu/{menu}/pdf', [SchoolCanteenController::class, 'weeklyMenuPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.canteen.weekly-menu.pdf');
+
+Route::get('/{locale}/print/canteen/periodic-bilan', [SchoolCanteenController::class, 'periodicBilan'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.canteen.periodic-bilan');
+
+Route::get('/{locale}/print/canteen/periodic-bilan/pdf', [SchoolCanteenController::class, 'periodicBilanPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.canteen.periodic-bilan.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

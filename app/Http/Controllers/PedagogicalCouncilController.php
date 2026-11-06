@@ -201,4 +201,3 @@ class PedagogicalCouncilController extends Controller
         }
     }
 }
-

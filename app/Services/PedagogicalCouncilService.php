@@ -406,4 +406,3 @@ class PedagogicalCouncilService
             ->pdf();
     }
 }
-
