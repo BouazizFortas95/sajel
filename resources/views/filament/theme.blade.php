@@ -15,6 +15,11 @@
   .dark table:not(.fi-ta-table) tfoot tr, .dark table:not(.fi-ta-table) tfoot td { background-color: #111827 !important; color: #f9fafb !important; border-color: #374151 !important; }
   .dark .bg-primary-100, .dark .bg-primary-200, .dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.22) !important; color: #fef3c7 !important; }
   .dark .bg-amber-50, .dark .bg-primary-50 { background-color: rgba(245, 158, 11, 0.15) !important; color: #fef3c7 !important; }
+  .dark .bg-teal-50:not([class*="dark:bg-"]) { background-color: rgba(13, 148, 136, 0.15) !important; color: #5eead4 !important; }
+  .dark .bg-purple-50:not([class*="dark:bg-"]) { background-color: rgba(147, 51, 234, 0.15) !important; color: #d8b4fe !important; }
+  .dark .bg-blue-50:not([class*="dark:bg-"]) { background-color: rgba(37, 99, 235, 0.15) !important; color: #93c5fd !important; }
+  .dark .bg-emerald-50:not([class*="dark:bg-"]) { background-color: rgba(5, 150, 105, 0.15) !important; color: #6ee7b7 !important; }
+  .dark .bg-rose-50:not([class*="dark:bg-"]) { background-color: rgba(225, 29, 72, 0.15) !important; color: #fda4af !important; }
   .dark .text-amber-950, .dark .text-amber-900, .dark .text-amber-800 { color: #fef3c7 !important; }
   .dark .text-gray-500:not([class*="dark:text-"]) { color: #9ca3af !important; }
   .dark .text-gray-600:not([class*="dark:text-"]), .dark .text-gray-700:not([class*="dark:text-"]) { color: #d1d5db !important; }

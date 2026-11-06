@@ -61,4 +61,3 @@ enum ClubType: string
             ->all();
     }
 }
-

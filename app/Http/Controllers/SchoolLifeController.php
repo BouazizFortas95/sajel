@@ -209,4 +209,3 @@ class SchoolLifeController extends Controller
         }
     }
 }
-

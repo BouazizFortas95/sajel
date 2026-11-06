@@ -57,4 +57,3 @@ enum ClubActivityType: string
             ->all();
     }
 }
-

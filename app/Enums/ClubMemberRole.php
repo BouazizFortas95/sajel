@@ -47,4 +47,3 @@ enum ClubMemberRole: string
             ->all();
     }
 }
-

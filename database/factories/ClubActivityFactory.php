@@ -47,4 +47,3 @@ class ClubActivityFactory extends Factory
         ]);
     }
 }
-

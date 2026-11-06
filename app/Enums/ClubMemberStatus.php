@@ -36,4 +36,3 @@ enum ClubMemberStatus: string
             ->all();
     }
 }
-

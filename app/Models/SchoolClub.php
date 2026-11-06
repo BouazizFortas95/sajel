@@ -127,4 +127,3 @@ class SchoolClub extends Model
         return $parts ? implode(' — ', $parts) : __('غير محدد');
     }
 }
-

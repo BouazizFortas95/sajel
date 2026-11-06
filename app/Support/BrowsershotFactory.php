@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Facades\Vite;
 use Spatie\Browsershot\Browsershot;
 
 class BrowsershotFactory
@@ -11,7 +12,52 @@ class BrowsershotFactory
      */
     public static function html(string $html): mixed
     {
+        $html = static::ensureStylesInlined($html);
+
         return static::configure(Browsershot::html($html));
+    }
+
+    /**
+     * Ensure compiled app.css and base URL are embedded inline for headless Chromium rendering.
+     */
+    public static function ensureStylesInlined(string $html): string
+    {
+        if (str_contains($html, 'sajel-inlined-app-css') || str_contains($html, 'data-sajel-inlined')) {
+            return $html;
+        }
+
+        $css = null;
+        try {
+            if (class_exists(Vite::class)) {
+                $css = Vite::content('resources/css/app.css');
+            }
+        } catch (\Throwable) {
+            $css = null;
+        }
+
+        if (! $css) {
+            $builtCss = glob(public_path('build/assets/app-*.css'));
+            if (! empty($builtCss) && file_exists($builtCss[0])) {
+                $css = @file_get_contents($builtCss[0]);
+            }
+        }
+
+        if (! $css) {
+            return $html;
+        }
+
+        $baseUrl = rtrim((string) config('app.url', 'http://sajel.dev'), '/').'/';
+        $injected = '<base href="'.htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8').'"><style id="sajel-inlined-app-css">'.str_replace('</style', '<\/style', $css).'</style>';
+
+        if (stripos($html, '<head>') !== false) {
+            return preg_replace('/<head>/i', "<head>\n".$injected, $html, 1);
+        }
+
+        if (stripos($html, '</head>') !== false) {
+            return str_ireplace('</head>', $injected."\n</head>", $html);
+        }
+
+        return $injected."\n".$html;
     }
 
     /**
