@@ -69,3 +69,4 @@ return new class extends Migration
         Schema::dropIfExists('student_medical_records');
     }
 };
+
