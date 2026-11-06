@@ -83,3 +83,4 @@ class PedagogicalCouncil extends Model
         return sprintf('PV-CE-%s-%s-%03d', $subjectCode, $yearCode, $this->id ?: rand(1, 999));
     }
 }
+
