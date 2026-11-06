@@ -39,4 +39,3 @@ enum HearingCondition: string
             ->all();
     }
 }
-

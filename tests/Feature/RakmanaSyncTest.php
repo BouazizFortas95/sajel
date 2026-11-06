@@ -313,4 +313,239 @@ CSV;
 
         $this->assertSame('201116009999888877', $student->fresh()->national_id_number);
     }
+
+    public function test_generate_rakmana_student_roster_csv_contains_all_ministerial_columns_and_utf8_bom(): void
+    {
+        $classroom = Classroom::factory()->create(['name' => '2م1']);
+        $group = Group::factory()->create(['classroom_id' => $classroom->id]);
+
+        Student::factory()->create([
+            'group_id' => $group->id,
+            'national_id_number' => '201116001234567890',
+            'registration_number' => 'REG-2026-99',
+            'first_name' => 'ياسين',
+            'last_name' => 'بوضياف',
+            'gender' => 'male',
+            'place_of_birth' => 'الجزائر',
+            'guardian_name' => 'محمد بوضياف',
+            'guardian_phone' => '0555998877',
+            'is_active' => true,
+        ]);
+
+        $service = app(RakmanaSyncService::class);
+        $csv = $service->generateRakmanaStudentRosterCsv($classroom->id);
+
+        $this->assertStringStartsWith("\xEF\xBB\xBF", $csv);
+        $this->assertStringContainsString('رقم التعريف الوطني', $csv);
+        $this->assertStringContainsString('اللقب بالعربية', $csv);
+        $this->assertStringContainsString('الاسم بالعربية', $csv);
+        $this->assertStringContainsString('المستوى التعليمي', $csv);
+        $this->assertStringContainsString('القسم التربوي', $csv);
+        $this->assertStringContainsString('صفة التمدرس', $csv);
+        $this->assertStringContainsString('201116001234567890', $csv);
+        $this->assertStringContainsString('بوضياف', $csv);
+        $this->assertStringContainsString('ياسين', $csv);
+        $this->assertStringContainsString('2م1', $csv);
+    }
+
+    public function test_export_roster_csv_route_streams_csv_for_admin_and_staff(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin);
+
+        $response = $this->get(route('rakmana.rosters.export-csv', [
+            'locale' => 'ar',
+        ]));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('رقم التعريف الوطني', $response->streamedContent());
+    }
+
+    public function test_generate_blank_grade_template_csv_contains_students_and_empty_scores(): void
+    {
+        $classroom = Classroom::factory()->create(['name' => '3م2']);
+        $group = Group::factory()->create(['classroom_id' => $classroom->id]);
+        $subject = Subject::factory()->create(['name' => 'العلوم الطبيعية']);
+
+        Student::factory()->create([
+            'group_id' => $group->id,
+            'national_id_number' => '201116004455667788',
+            'first_name' => 'سارة',
+            'last_name' => 'دريدي',
+            'is_active' => true,
+        ]);
+
+        $service = app(RakmanaSyncService::class);
+        $csv = $service->generateBlankGradeTemplateCsv($classroom, $subject, 1);
+
+        $this->assertStringStartsWith("\xEF\xBB\xBF", $csv);
+        $this->assertStringContainsString('التقويم المستمر', $csv);
+        $this->assertStringContainsString('الفرض 1', $csv);
+        $this->assertStringContainsString('الاختبار', $csv);
+        $this->assertStringContainsString('201116004455667788', $csv);
+        $this->assertStringContainsString('دريدي', $csv);
+        $this->assertStringContainsString('سارة', $csv);
+    }
+
+    public function test_download_grade_template_csv_route_accessible_to_admin(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin);
+
+        $classroom = Classroom::factory()->create();
+        $subject = Subject::factory()->create();
+
+        $response = $this->get(route('rakmana.grades.template-csv', [
+            'locale' => 'ar',
+            'classroom' => $classroom->id,
+            'subject' => $subject->id,
+            'trimester' => 1,
+        ]));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('التقويم المستمر', $response->streamedContent());
+    }
+
+    public function test_parse_and_preview_grade_booking_file_matches_students_and_calculates_averages(): void
+    {
+        $classroom = Classroom::factory()->create(['name' => '4م1']);
+        $group = Group::factory()->create(['classroom_id' => $classroom->id]);
+        $subject = Subject::factory()->create(['name' => 'الفيزياء']);
+
+        $student = Student::factory()->create([
+            'group_id' => $group->id,
+            'national_id_number' => '201016001122334455',
+            'registration_number' => 'REG-401',
+            'first_name' => 'كمال',
+            'last_name' => 'مصباحي',
+            'is_active' => true,
+        ]);
+
+        $csv = <<<'CSV'
+"الرقم","رقم التعريف الوطني","رقم التسجيل","اللقب","الاسم","التقويم المستمر","الفرض 1","الاختبار","الملاحظة"
+1,"201016001122334455","REG-401","مصباحي","كمال","17,50","15,00","16,00","ممتاز واصل"
+CSV;
+
+        $service = app(RakmanaSyncService::class);
+        $preview = $service->previewGradeImport($csv, $classroom, $subject, 1);
+
+        $this->assertSame(1, $preview['total_parsed_rows']);
+        $this->assertSame(1, $preview['matched_count']);
+        $this->assertSame(0, $preview['unmatched_count']);
+
+        $matched = $preview['matched_rows'][0];
+        $this->assertSame($student->id, $matched['student_id']);
+        $this->assertSame(17.5, (float) $matched['continuous']);
+        $this->assertSame(15.0, (float) $matched['midterm']);
+        $this->assertSame(16.0, (float) $matched['exam']);
+        // (17.5 + 15 + (16 * 2)) / 4 = 64.5 / 4 = 16.13
+        $this->assertSame(16.13, (float) $matched['projected_average']);
+        $this->assertSame('ممتاز واصل', $matched['remarks']);
+    }
+
+    public function test_execute_grade_import_persists_assessments_and_grades_in_database(): void
+    {
+        $classroom = Classroom::factory()->create(['name' => '1م3']);
+        $group = Group::factory()->create(['classroom_id' => $classroom->id]);
+        $subject = Subject::factory()->create(['name' => 'التاريخ والجغرافيا']);
+
+        $student = Student::factory()->create([
+            'group_id' => $group->id,
+            'national_id_number' => '201216005566778899',
+            'first_name' => 'بلال',
+            'last_name' => 'عمراني',
+            'is_active' => true,
+        ]);
+
+        $matchedRows = [
+            [
+                'student_id' => $student->id,
+                'continuous' => 18.0,
+                'midterm' => 16.5,
+                'exam' => 17.0,
+                'remarks' => 'نتائج مشرفة',
+            ],
+        ];
+
+        $service = app(RakmanaSyncService::class);
+        $result = $service->executeGradeImport($matchedRows, $classroom, $subject, 1);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(1, $result['students_processed']);
+        $this->assertSame(3, $result['total_grades_saved']);
+
+        // Verify Assessment & Grade records exist in DB
+        $this->assertDatabaseHas('assessments', [
+            'type' => AssessmentType::ContinuousAssessment->value,
+        ]);
+        $this->assertDatabaseHas('assessments', [
+            'type' => AssessmentType::Midterm->value,
+        ]);
+        $this->assertDatabaseHas('assessments', [
+            'type' => AssessmentType::Exam->value,
+        ]);
+
+        $this->assertDatabaseHas('grades', [
+            'student_id' => $student->id,
+            'score' => 18.0,
+        ]);
+        $this->assertDatabaseHas('grades', [
+            'student_id' => $student->id,
+            'score' => 16.5,
+        ]);
+        $this->assertDatabaseHas('grades', [
+            'student_id' => $student->id,
+            'score' => 17.0,
+            'remarks' => 'نتائج مشرفة',
+        ]);
+    }
+
+    public function test_filament_rakmana_hub_can_parse_and_execute_grade_import(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin);
+
+        $classroom = Classroom::factory()->create(['name' => '2م3']);
+        $group = Group::factory()->create(['classroom_id' => $classroom->id]);
+        $subject = Subject::factory()->create(['name' => 'اللغة الإنجليزية']);
+
+        $student = Student::factory()->create([
+            'group_id' => $group->id,
+            'national_id_number' => '201116009900112233',
+            'first_name' => 'هدى',
+            'last_name' => 'بن عيسى',
+            'is_active' => true,
+        ]);
+
+        $csvText = <<<'CSV'
+"الرقم","رقم التعريف الوطني","اللقب","الاسم","التقويم المستمر","الفرض 1","الاختبار","الملاحظة"
+1,"201116009900112233","بن عيسى","هدى","19.00","18.00","18.50","Excellent"
+CSV;
+
+        Livewire::test(RakmanaSyncHub::class)
+            ->assertSuccessful()
+            ->set('activeTab', 'grade_import')
+            ->set('importClassroomId', $classroom->id)
+            ->set('importSubjectId', $subject->id)
+            ->set('importTrimester', 1)
+            ->set('gradeRawContent', $csvText)
+            ->call('parseGradeFile')
+            ->assertHasNoErrors()
+            ->assertNotified()
+            ->call('executeGradeImport')
+            ->assertHasNoErrors()
+            ->assertNotified();
+
+        $this->assertDatabaseHas('grades', [
+            'student_id' => $student->id,
+            'score' => 19.00,
+        ]);
+        $this->assertDatabaseHas('grades', [
+            'student_id' => $student->id,
+            'score' => 18.50,
+            'remarks' => 'Excellent',
+        ]);
+    }
 }

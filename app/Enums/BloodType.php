@@ -39,4 +39,3 @@ enum BloodType: string
             ->all();
     }
 }
-

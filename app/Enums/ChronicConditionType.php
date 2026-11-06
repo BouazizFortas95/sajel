@@ -65,4 +65,3 @@ enum ChronicConditionType: string
             ->all();
     }
 }
-

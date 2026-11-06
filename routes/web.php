@@ -427,6 +427,16 @@ Route::get('/{locale}/rakmana/grades/{classroom}/{subject}/export-csv', [Rakmana
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('rakmana.grades.export-csv');
 
+Route::get('/{locale}/rakmana/grades/{classroom}/{subject}/template-csv', [RakmanaSyncController::class, 'downloadGradeTemplate'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('rakmana.grades.template-csv');
+
+Route::get('/{locale}/rakmana/rosters/export-csv', [RakmanaSyncController::class, 'exportRosterCsv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('rakmana.rosters.export-csv');
+
 Route::get('/{locale}/rakmana/sample-roster', [RakmanaSyncController::class, 'downloadSampleRoster'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])

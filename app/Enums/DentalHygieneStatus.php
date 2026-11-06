@@ -39,4 +39,3 @@ enum DentalHygieneStatus: string
             ->all();
     }
 }
-

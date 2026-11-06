@@ -144,4 +144,3 @@ class SchoolHealthController extends Controller
         );
     }
 }
-

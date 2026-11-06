@@ -89,4 +89,69 @@ class RakmanaSyncController extends Controller
             ]
         );
     }
+
+    /**
+     * Download official ministerial student roster CSV according to Algerian Ministry format.
+     */
+    public function exportRosterCsv(
+        Request $request,
+        string $locale,
+        RakmanaSyncService $service
+    ): StreamedResponse {
+        $user = $request->user();
+        abort_unless(
+            $user instanceof User && ($user->isAdmin() || $user->isEducationStaff()),
+            403
+        );
+
+        $classroomId = $request->filled('classroom_id') ? (int) $request->query('classroom_id') : null;
+        $levelId = $request->filled('level_id') ? (int) $request->query('level_id') : null;
+        $academicYear = $request->query('academic_year');
+
+        $csv = $service->generateRakmanaStudentRosterCsv($classroomId, $levelId, $academicYear);
+
+        $suffix = $classroomId ? '-classe-'.$classroomId : ($levelId ? '-niveau-'.$levelId : '-complet');
+        $filename = 'liste-eleves-rakmana'.$suffix.'-'.date('Ymd').'.csv';
+
+        return response()->streamDownload(
+            fn () => print ($csv),
+            $filename,
+            [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            ]
+        );
+    }
+
+    /**
+     * Download blank ministerial grade booking template CSV for a classroom and subject.
+     */
+    public function downloadGradeTemplate(
+        Request $request,
+        string $locale,
+        Classroom $classroom,
+        Subject $subject,
+        RakmanaSyncService $service
+    ): StreamedResponse {
+        $user = $request->user();
+        abort_unless(
+            $user instanceof User && ($user->isAdmin() || $classroom->schedules()->where('user_id', $user->id)->exists()),
+            403
+        );
+
+        $trimester = (int) $request->query('trimester', 1);
+        $academicYear = $request->query('academic_year');
+
+        $csv = $service->generateBlankGradeTemplateCsv($classroom, $subject, $trimester, $academicYear);
+        $filename = 'modele-notes-rakmana-'.$classroom->name.'-'.$subject->name.'-T'.$trimester.'.csv';
+
+        return response()->streamDownload(
+            fn () => print ($csv),
+            $filename,
+            [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            ]
+        );
+    }
 }

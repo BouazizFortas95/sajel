@@ -8,9 +8,11 @@ use App\Models\Classroom;
 use App\Models\Grade;
 use App\Models\Group;
 use App\Models\Level;
+use App\Models\Schedule;
 use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\Subject;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -679,5 +681,569 @@ class RakmanaSyncService
             'missing_guardian_count' => $missingGuardian,
             'deficient_students' => $ninDeficientList,
         ];
+    }
+
+    /**
+     * Resolve date boundaries for Algerian academic trimesters.
+     *
+     * @return array{start: Carbon, end: Carbon}
+     */
+    public function getTrimesterPeriod(int $trimester = 1, ?string $academicYear = null): array
+    {
+        $yearStr = $academicYear ?? SchoolSetting::currentAcademicYear();
+        $parts = preg_split('/[\/\-]/', $yearStr);
+        $startYear = isset($parts[0]) && is_numeric($parts[0]) ? (int) $parts[0] : (int) date('Y');
+        $endYear = isset($parts[1]) && is_numeric($parts[1]) ? (int) $parts[1] : $startYear + 1;
+
+        return match ($trimester) {
+            2 => [
+                'start' => Carbon::create($endYear, 1, 1)->startOfDay(),
+                'end' => Carbon::create($endYear, 3, 31)->endOfDay(),
+            ],
+            3 => [
+                'start' => Carbon::create($endYear, 4, 1)->startOfDay(),
+                'end' => Carbon::create($endYear, 6, 30)->endOfDay(),
+            ],
+            default => [
+                'start' => Carbon::create($startYear, 9, 1)->startOfDay(),
+                'end' => Carbon::create($startYear, 12, 31)->endOfDay(),
+            ],
+        };
+    }
+
+    /**
+     * Generate ministerial student roster CSV according to Algerian Ministry format.
+     */
+    public function generateRakmanaStudentRosterCsv(
+        ?int $classroomId = null,
+        ?int $levelId = null,
+        ?string $academicYear = null
+    ): string {
+        $query = Student::query()
+            ->where('is_active', true)
+            ->with(['group.classroom.level']);
+
+        if ($classroomId) {
+            $query->whereHas('group', fn ($q) => $q->where('classroom_id', $classroomId));
+        } elseif ($levelId) {
+            $query->whereHas('group.classroom', fn ($q) => $q->where('level_id', $levelId));
+        }
+
+        $students = $query
+            ->orderBy('group_id')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
+
+        $output = fopen('php://temp', 'r+');
+
+        // Official Ministry Headers
+        fputcsv($output, [
+            'الرقم',
+            'رقم التعريف الوطني',
+            'رقم التسجيل',
+            'اللقب بالعربية',
+            'الاسم بالعربية',
+            'الجنس',
+            'تاريخ الميلاد',
+            'مكان الميلاد',
+            'المستوى التعليمي',
+            'القسم التربوي',
+            'الفوج',
+            'صفة التمدرس',
+            'اسم ولقب الولي',
+            'صلة القرابة',
+            'رقم هاتف الولي',
+        ]);
+
+        foreach ($students as $index => $student) {
+            $regimeLabel = match ($student->regime) {
+                'half_board' => 'نصف داخلي',
+                'boarder' => 'داخلي',
+                default => 'خارجي',
+            };
+
+            $genderLabel = $student->isMale() ? 'ذكر' : 'أنثى';
+            $dob = $student->date_of_birth ? Carbon::parse($student->date_of_birth)->format('d/m/Y') : '—';
+            $nin = $student->national_id_number ? '="'.$student->national_id_number.'"' : '';
+            $regNum = $student->registration_number ?? $student->matricule_number ?? '';
+
+            fputcsv($output, [
+                $index + 1,
+                $nin,
+                $regNum,
+                $student->last_name,
+                $student->first_name,
+                $genderLabel,
+                $dob,
+                $student->place_of_birth ?? '—',
+                $student->group?->classroom?->level?->name ?? '—',
+                $student->group?->classroom?->name ?? '—',
+                $student->group?->name ?? '—',
+                $regimeLabel,
+                $student->guardian_name ?? '—',
+                $student->guardian_relation ?? 'أب/ولي أمر',
+                $student->guardian_phone ?? '—',
+            ]);
+        }
+
+        rewind($output);
+        $csvContent = stream_get_contents($output);
+        fclose($output);
+
+        // Prepend UTF-8 BOM
+        return "\xEF\xBB\xBF".$csvContent;
+    }
+
+    /**
+     * Generate blank ministerial grade booking template CSV for teachers.
+     */
+    public function generateBlankGradeTemplateCsv(
+        Classroom $classroom,
+        Subject $subject,
+        int $trimester = 1,
+        ?string $academicYear = null
+    ): string {
+        $school = SchoolSetting::current();
+        $year = $academicYear ?? ($school?->academic_year ?? '2026/2027');
+
+        $students = Student::whereHas('group', fn ($q) => $q->where('classroom_id', $classroom->id))
+            ->where('is_active', true)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
+
+        $output = fopen('php://temp', 'r+');
+
+        // Headers matching Ministry Rakmana grade import sheet
+        fputcsv($output, [
+            'الرقم',
+            'رقم التعريف الوطني',
+            'رقم التسجيل',
+            'اللقب',
+            'الاسم',
+            'تاريخ الميلاد',
+            'التقويم المستمر',
+            'الفرض 1',
+            'الاختبار',
+            'المعدل الفصلي',
+            'الملاحظة',
+        ]);
+
+        foreach ($students as $index => $student) {
+            $dob = $student->date_of_birth ? Carbon::parse($student->date_of_birth)->format('d/m/Y') : '—';
+            $nin = $student->national_id_number ? '="'.$student->national_id_number.'"' : '';
+            $regNum = $student->registration_number ?? $student->matricule_number ?? '';
+
+            fputcsv($output, [
+                $index + 1,
+                $nin,
+                $regNum,
+                $student->last_name,
+                $student->first_name,
+                $dob,
+                '', // Continuous
+                '', // Midterm
+                '', // Exam
+                '', // Average
+                '', // Observation
+            ]);
+        }
+
+        rewind($output);
+        $csvContent = stream_get_contents($output);
+        fclose($output);
+
+        return "\xEF\xBB\xBF".$csvContent;
+    }
+
+    /**
+     * Parse raw ministerial grade booking content (CSV, TSV, or semicolons).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function parseGradeBookingFile(string $content): array
+    {
+        if (str_starts_with($content, "\xEF\xBB\xBF")) {
+            $content = substr($content, 3);
+        }
+
+        $content = str_replace(["\r\n", "\r"], "\n", $content);
+        $lines = array_filter(explode("\n", $content), fn ($l) => trim($l) !== '');
+
+        if (empty($lines)) {
+            return [];
+        }
+
+        $firstLine = reset($lines);
+        $delimiters = [',', ';', "\t", '|'];
+        $bestDelimiter = ',';
+        $maxCount = 0;
+
+        foreach ($delimiters as $delim) {
+            $count = substr_count($firstLine, $delim);
+            if ($count > $maxCount) {
+                $maxCount = $count;
+                $bestDelimiter = $delim;
+            }
+        }
+
+        $rawHeader = str_getcsv(array_shift($lines), $bestDelimiter);
+        $fieldMap = $this->mapGradeHeaderColumns($rawHeader);
+
+        $parsedRows = [];
+
+        foreach ($lines as $line) {
+            $cols = str_getcsv($line, $bestDelimiter);
+            if (empty($cols) || count(array_filter($cols, fn ($v) => trim((string) $v) !== '')) === 0) {
+                continue;
+            }
+
+            $row = [];
+            foreach ($fieldMap as $index => $field) {
+                $val = isset($cols[$index]) ? trim($cols[$index]) : null;
+                // Strip ="..." wrappers used for Excel string protection
+                if ($val !== null && str_starts_with($val, '="') && str_ends_with($val, '"')) {
+                    $val = substr($val, 2, -1);
+                }
+                $row[$field] = $val;
+            }
+
+            if (! empty($row['national_id_number']) || ! empty($row['registration_number']) || (! empty($row['last_name']) && ! empty($row['first_name']))) {
+                $parsedRows[] = $this->sanitizeGradeRow($row);
+            }
+        }
+
+        return $parsedRows;
+    }
+
+    /**
+     * Map grade booking headers to canonical keys.
+     *
+     * @param  array<int, string>  $headers
+     * @return array<int, string>
+     */
+    protected function mapGradeHeaderColumns(array $headers): array
+    {
+        $map = [];
+
+        foreach ($headers as $index => $raw) {
+            $header = mb_strtolower(trim($raw), 'UTF-8');
+            $header = str_replace(['_', '-', '.', ':', 'أ', 'إ', 'آ'], ['', '', '', '', 'ا', 'ا', 'ا'], $header);
+
+            if (str_contains($header, 'تعريف') || str_contains($header, 'nin') || str_contains($header, 'national')) {
+                $map[$index] = 'national_id_number';
+            } elseif (str_contains($header, 'تسجيل') || str_contains($header, 'matricule') || str_contains($header, 'قيد')) {
+                $map[$index] = 'registration_number';
+            } elseif (str_contains($header, 'لقب') || str_contains($header, 'nom')) {
+                $map[$index] = 'last_name';
+            } elseif (str_contains($header, 'اسم') || str_contains($header, 'prenom')) {
+                $map[$index] = 'first_name';
+            } elseif (str_contains($header, 'تقويم') || str_contains($header, 'مستمر') || str_contains($header, 'continue') || str_contains($header, 'eval')) {
+                $map[$index] = 'continuous';
+            } elseif (str_contains($header, 'فرض 1') || str_contains($header, 'الفرض') || str_contains($header, 'devoir 1') || str_contains($header, 'devoir')) {
+                $map[$index] = 'midterm';
+            } elseif (str_contains($header, 'اختبار') || str_contains($header, 'امتحان') || str_contains($header, 'examen') || str_contains($header, 'compo')) {
+                $map[$index] = 'exam';
+            } elseif (str_contains($header, 'معدل') || str_contains($header, 'moyenne')) {
+                $map[$index] = 'average';
+            } elseif (str_contains($header, 'ملاحظة') || str_contains($header, 'تقدير') || str_contains($header, 'appreciation') || str_contains($header, 'obs')) {
+                $map[$index] = 'remarks';
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * Normalize individual score values (handling comma decimals, absence markers, range 0-20).
+     *
+     * @param  array<string, mixed>  $row
+     * @return array<string, mixed>
+     */
+    protected function sanitizeGradeRow(array $row): array
+    {
+        foreach (['continuous', 'midterm', 'exam'] as $scoreField) {
+            if (! isset($row[$scoreField]) || $row[$scoreField] === '') {
+                $row[$scoreField] = null;
+
+                continue;
+            }
+
+            $raw = trim((string) $row[$scoreField]);
+            // Convert comma decimal to dot: "14,50" -> "14.50"
+            $normalized = str_replace(',', '.', $raw);
+
+            // Handle absence markers
+            if (in_array(mb_strtolower($raw, 'UTF-8'), ['غ', 'غائب', 'غ/م', 'abs', 'a'], true)) {
+                $row[$scoreField] = null;
+                $row['is_absent_'.$scoreField] = true;
+
+                continue;
+            }
+
+            if (is_numeric($normalized)) {
+                $val = (float) $normalized;
+                $row[$scoreField] = ($val >= 0 && $val <= 20) ? round($val, 2) : null;
+            } else {
+                $row[$scoreField] = null;
+            }
+        }
+
+        return $row;
+    }
+
+    /**
+     * Preview ministerial grade file import before committing to database.
+     *
+     * @return array<string, mixed>
+     */
+    public function previewGradeImport(
+        string $content,
+        Classroom $classroom,
+        Subject $subject,
+        int $trimester = 1,
+        ?string $academicYear = null
+    ): array {
+        $parsedRows = $this->parseGradeBookingFile($content);
+
+        // Fetch classroom students
+        $students = Student::whereHas('group', fn ($q) => $q->where('classroom_id', $classroom->id))
+            ->where('is_active', true)
+            ->get();
+
+        $matchedRows = [];
+        $unmatchedRows = [];
+        $matchedStudentIds = [];
+
+        foreach ($parsedRows as $row) {
+            $matchedStudent = null;
+
+            // 1. Try matching by National ID Number (NIN)
+            if (! empty($row['national_id_number'])) {
+                $cleanNin = preg_replace('/\D/', '', $row['national_id_number']);
+                $matchedStudent = $students->first(fn ($s) => $s->national_id_number && preg_replace('/\D/', '', $s->national_id_number) === $cleanNin);
+            }
+
+            // 2. Try matching by Registration Number
+            if (! $matchedStudent && ! empty($row['registration_number'])) {
+                $cleanReg = trim($row['registration_number']);
+                $matchedStudent = $students->first(fn ($s) => $s->registration_number === $cleanReg || $s->matricule_number === $cleanReg);
+            }
+
+            // 3. Try matching by Name
+            if (! $matchedStudent && ! empty($row['first_name']) && ! empty($row['last_name'])) {
+                $cLast = mb_strtolower(trim($row['last_name']), 'UTF-8');
+                $cFirst = mb_strtolower(trim($row['first_name']), 'UTF-8');
+                $matchedStudent = $students->first(function ($s) use ($cLast, $cFirst) {
+                    return mb_strtolower($s->last_name, 'UTF-8') === $cLast && mb_strtolower($s->first_name, 'UTF-8') === $cFirst;
+                });
+            }
+
+            if ($matchedStudent) {
+                $matchedStudentIds[] = $matchedStudent->id;
+
+                // Calculate projected average
+                $c = $row['continuous'];
+                $m = $row['midterm'];
+                $e = $row['exam'];
+                $projAvg = null;
+                if ($c !== null && $m !== null && $e !== null) {
+                    $projAvg = round(($c + $m + ($e * 2)) / 4, 2);
+                } elseif ($c !== null && $e !== null) {
+                    $projAvg = round(($c + ($e * 2)) / 3, 2);
+                } elseif ($m !== null && $e !== null) {
+                    $projAvg = round(($m + ($e * 2)) / 3, 2);
+                } elseif ($e !== null) {
+                    $projAvg = round($e, 2);
+                }
+
+                $matchedRows[] = [
+                    'student_id' => $matchedStudent->id,
+                    'student_name' => $matchedStudent->full_name,
+                    'national_id_number' => $matchedStudent->national_id_number ?? '—',
+                    'registration_number' => $matchedStudent->registration_number ?? '—',
+                    'continuous' => $c,
+                    'midterm' => $m,
+                    'exam' => $e,
+                    'projected_average' => $projAvg,
+                    'remarks' => $row['remarks'] ?? null,
+                ];
+            } else {
+                $unmatchedRows[] = $row;
+            }
+        }
+
+        $missingStudents = $students->reject(fn ($s) => in_array($s->id, $matchedStudentIds))->values()->all();
+
+        return [
+            'total_parsed_rows' => count($parsedRows),
+            'matched_count' => count($matchedRows),
+            'unmatched_count' => count($unmatchedRows),
+            'missing_in_file_count' => count($missingStudents),
+            'matched_rows' => $matchedRows,
+            'unmatched_rows' => $unmatchedRows,
+            'missing_students' => array_map(fn ($s) => [
+                'id' => $s->id,
+                'full_name' => $s->full_name,
+                'national_id_number' => $s->national_id_number ?? '—',
+            ], $missingStudents),
+        ];
+    }
+
+    /**
+     * Execute full grade import inside database transaction.
+     *
+     * @param  array<int, array<string, mixed>>  $matchedRows
+     * @return array<string, mixed>
+     */
+    public function executeGradeImport(
+        array $matchedRows,
+        Classroom $classroom,
+        Subject $subject,
+        int $trimester = 1,
+        ?User $user = null,
+        ?string $academicYear = null
+    ): array {
+        if (empty($matchedRows)) {
+            return ['success' => false, 'error' => 'No matched rows to import.'];
+        }
+
+        $period = $this->getTrimesterPeriod($trimester, $academicYear);
+
+        DB::beginTransaction();
+        try {
+            // 1. Resolve or create schedule for this classroom and subject
+            $schedule = Schedule::where('classroom_id', $classroom->id)
+                ->where('subject_id', $subject->id)
+                ->first();
+
+            if (! $schedule) {
+                $teacher = User::where('role', 'teacher')->first() ?? $user ?? User::first();
+                if (! $teacher) {
+                    $teacher = User::create([
+                        'name' => 'أستاذ المادة',
+                        'email' => 'teacher.default@sajel.local',
+                        'password' => bcrypt('secret'),
+                        'role' => 'teacher',
+                    ]);
+                }
+
+                $group = $classroom->groups()->first() ?? Group::create([
+                    'classroom_id' => $classroom->id,
+                    'name' => 'الفوج 1',
+                ]);
+
+                $schedule = Schedule::create([
+                    'user_id' => $teacher->id,
+                    'classroom_id' => $classroom->id,
+                    'group_id' => $group->id,
+                    'subject_id' => $subject->id,
+                    'day_of_week' => 'sunday',
+                    'start_time' => '08:00:00',
+                    'end_time' => '09:00:00',
+                ]);
+            }
+
+            // 2. Resolve or create the 3 standard assessments for this trimester
+            $continuousAssessment = Assessment::where('schedule_id', $schedule->id)
+                ->where('type', AssessmentType::ContinuousAssessment)
+                ->whereBetween('date', [$period['start']->toDateString(), $period['end']->toDateString()])
+                ->first();
+
+            if (! $continuousAssessment) {
+                $continuousAssessment = Assessment::create([
+                    'schedule_id' => $schedule->id,
+                    'title' => 'التقويم المستمر - الفصل '.$trimester,
+                    'type' => AssessmentType::ContinuousAssessment,
+                    'date' => $period['start']->copy()->addDays(30)->toDateString(),
+                    'max_score' => 20,
+                ]);
+            }
+
+            $midtermAssessment = Assessment::where('schedule_id', $schedule->id)
+                ->where('type', AssessmentType::Midterm)
+                ->whereBetween('date', [$period['start']->toDateString(), $period['end']->toDateString()])
+                ->first();
+
+            if (! $midtermAssessment) {
+                $midtermAssessment = Assessment::create([
+                    'schedule_id' => $schedule->id,
+                    'title' => 'الفرض المحروس - الفصل '.$trimester,
+                    'type' => AssessmentType::Midterm,
+                    'date' => $period['start']->copy()->addDays(60)->toDateString(),
+                    'max_score' => 20,
+                ]);
+            }
+
+            $examAssessment = Assessment::where('schedule_id', $schedule->id)
+                ->where('type', AssessmentType::Exam)
+                ->whereBetween('date', [$period['start']->toDateString(), $period['end']->toDateString()])
+                ->first();
+
+            if (! $examAssessment) {
+                $examAssessment = Assessment::create([
+                    'schedule_id' => $schedule->id,
+                    'title' => 'الاختبار الفصلي - الفصل '.$trimester,
+                    'type' => AssessmentType::Exam,
+                    'date' => $period['end']->copy()->subDays(10)->toDateString(),
+                    'max_score' => 20,
+                ]);
+            }
+
+            $importedContinuous = 0;
+            $importedMidterm = 0;
+            $importedExam = 0;
+
+            // 3. Upsert grades
+            foreach ($matchedRows as $row) {
+                $studentId = $row['student_id'];
+
+                if (isset($row['continuous']) && $row['continuous'] !== null && $row['continuous'] !== '') {
+                    Grade::updateOrCreate(
+                        ['assessment_id' => $continuousAssessment->id, 'student_id' => $studentId],
+                        ['score' => (float) $row['continuous']]
+                    );
+                    $importedContinuous++;
+                }
+
+                if (isset($row['midterm']) && $row['midterm'] !== null && $row['midterm'] !== '') {
+                    Grade::updateOrCreate(
+                        ['assessment_id' => $midtermAssessment->id, 'student_id' => $studentId],
+                        ['score' => (float) $row['midterm']]
+                    );
+                    $importedMidterm++;
+                }
+
+                if (isset($row['exam']) && $row['exam'] !== null && $row['exam'] !== '') {
+                    Grade::updateOrCreate(
+                        ['assessment_id' => $examAssessment->id, 'student_id' => $studentId],
+                        [
+                            'score' => (float) $row['exam'],
+                            'remarks' => ! empty($row['remarks']) ? trim($row['remarks']) : null,
+                        ]
+                    );
+                    $importedExam++;
+                }
+            }
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'students_processed' => count($matchedRows),
+                'continuous_saved' => $importedContinuous,
+                'midterm_saved' => $importedMidterm,
+                'exam_saved' => $importedExam,
+                'total_grades_saved' => $importedContinuous + $importedMidterm + $importedExam,
+            ];
+        } catch (Throwable $e) {
+            DB::rollBack();
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
     }
 }

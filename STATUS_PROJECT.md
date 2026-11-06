@@ -1426,10 +1426,19 @@ Comprehensive executive intelligence cockpit for Algerian Middle School Principa
 ## 38. Ministry Rakmana Integration Hub (منظومة التكامل والمزامنة مع الرقمنة الوزارية) (100%)
 
 Official ministerial synchronization engine for Algerian national education platforms (فضاء الرقمنة لوزارة التربية الوطنية):
-- [x] Import/Export student registries via official ministerial templates (`.xlsx`, `.csv`).
-- [x] National Identification Number (NIN / رقم التعريف الوطني) tracking, duplicate audits, and discrepancy resolution.
-- [x] Official Grade Import Matrix generation (ملف حجز النقاط بصيغة الرقمنة الوزارية).
-- [x] Full feature test coverage verified in `tests/Feature/RakmanaSyncTest.php` (9 tests passing).
+- [x] **Student Rosters Import & Export (قوائم التلاميذ):**
+      - Robust multi-format roster parser (`parseMinistryRosterCsv`) auto-detecting delimiters (comma, semicolon, tab), BOM stripping, and header normalization for official ministerial formats.
+      - Official certified nominal roster CSV export (`generateRakmanaStudentRosterCsv`) featuring UTF-8 BOM (`\xEF\xBB\xBF`) and literal text formula wrapping (`="NIN"`) to protect 18-digit Algerian National ID Numbers from Excel scientific truncation.
+      - Dedicated streaming export route (`/{locale}/rakmana/rosters/export-csv`) restricted to administrative and education leadership roles.
+- [x] **Ministerial Grade Booking Files (ملفات حجز النقاط):**
+      - Grade booking CSV export (`generateRakmanaGradeCsv`) with continuous assessment, midterm, exam scores, calculated Algerian quarterly averages, and pedagogical remarks.
+      - Blank grade booking template export (`generateBlankGradeTemplateCsv`) pre-populating enrolled students, NINs, and empty score slots for teachers with dedicated route (`/{locale}/rakmana/grades/{classroom}/{subject}/template-csv`).
+      - Intelligent Grade Import Engine (`parseGradeBookingFile`, `previewGradeImport`, `executeGradeImport`) supporting teacher-filled and Rakmana-exported files, fuzzy matching by NIN, matricule or Arabic full name, decimal comma normalization (`14,50` -> `14.50`), absence handling (`غ`/`غائب`), and atomic database upserts creating missing schedules and assessments.
+- [x] **Filament Interactive Management Cockpit (`RakmanaSyncHub`):**
+      - 4 reactive tabs: `import` (قوائم التلاميذ: استيراد وتصدير مع مرشحات الأقسام والمستويات), `grades` (تصدير كشوف حجز النقاط الوزارية وقالب الحجز الفارغ), `grade_import` (معالج تفريغ ومطابقة النقاط المرصودة مع معاينة تفاعلية وسجل الفروقات), and `audit` (مدقق المطابقة والأرقام التعريفية).
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - 47 translation keys verified across Arabic, English, and French passing `LocalizationCompletenessTest`.
+      - Expanded test suite to 16 feature tests (94 assertions) in `tests/Feature/RakmanaSyncTest.php` passing with 100% green status.
 
 ## 39. Administrative Resumption of Work Protocols & Teacher Replacement Mandates (محاضر استئناف العمل والتسخيرات الإدارية لغيابات الأساتذة وإشعارات الخصم من الراتب) (100%)
 
