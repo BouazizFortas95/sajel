@@ -55,6 +55,10 @@ class SchoolBackupService
         'club_memberships',
         'club_activities',
         'student_medical_records',
+        'pedagogical_councils',
+        'pedagogical_council_attendances',
+        'pedagogical_seminars',
+        'pedagogical_seminar_attendances',
     ];
 
     /**

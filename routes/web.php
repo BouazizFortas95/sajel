@@ -10,6 +10,7 @@ use App\Http\Controllers\InstitutionalBilanController;
 use App\Http\Controllers\OfficialReportController;
 use App\Http\Controllers\OrientationController;
 use App\Http\Controllers\ParentPortalController;
+use App\Http\Controllers\PedagogicalCouncilController;
 use App\Http\Controllers\PrintAssessmentController;
 use App\Http\Controllers\PrintDailyLogsController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
@@ -581,6 +582,36 @@ Route::get('/{locale}/print/school-health/annual-uds-bilan/pdf', [SchoolHealthCo
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.school-health.annual-uds-bilan.pdf');
+
+Route::get('/{locale}/print/pedagogical-council/{council}/pv', [PedagogicalCouncilController::class, 'councilPv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.pedagogical-council.pv');
+
+Route::get('/{locale}/print/pedagogical-council/{council}/pv/pdf', [PedagogicalCouncilController::class, 'councilPvPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.pedagogical-council.pv.pdf');
+
+Route::get('/{locale}/print/pedagogical-council/curriculum-pacing', [PedagogicalCouncilController::class, 'curriculumPacing'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.pedagogical-council.curriculum-pacing');
+
+Route::get('/{locale}/print/pedagogical-council/curriculum-pacing/pdf', [PedagogicalCouncilController::class, 'curriculumPacingPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.pedagogical-council.curriculum-pacing.pdf');
+
+Route::get('/{locale}/print/pedagogical-council/seminar-calendar', [PedagogicalCouncilController::class, 'seminarCalendar'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.pedagogical-council.seminar-calendar');
+
+Route::get('/{locale}/print/pedagogical-council/seminar-calendar/pdf', [PedagogicalCouncilController::class, 'seminarCalendarPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.pedagogical-council.seminar-calendar.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

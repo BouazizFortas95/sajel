@@ -14,6 +14,7 @@ use App\Filament\Pages\LabSeatingPlanPage;
 use App\Filament\Pages\ManageSchoolSettings;
 use App\Filament\Pages\MySchedule;
 use App\Filament\Pages\OrientationHub;
+use App\Filament\Pages\PedagogicalCouncilHub;
 use App\Filament\Pages\PedagogicalInspectorHub;
 use App\Filament\Pages\QuickAttendance;
 use App\Filament\Pages\RakmanaSyncHub;
@@ -62,6 +63,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertTrue(ExamTimetableHub::shouldRegisterNavigation());
         $this->assertTrue(ClassCouncilHub::shouldRegisterNavigation());
         $this->assertTrue(StudentAwardsHub::shouldRegisterNavigation());
+        $this->assertTrue(PedagogicalCouncilHub::shouldRegisterNavigation());
 
         // Strictly hidden administrative, structural, and guidance tools
         $this->assertFalse(UserResource::shouldRegisterNavigation());
@@ -98,6 +100,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertFalse(ManageSchoolSettings::shouldRegisterNavigation());
         $this->assertFalse(SchoolCensusHub::shouldRegisterNavigation());
         $this->assertFalse(TeacherAbsenceHub::shouldRegisterNavigation());
+        $this->assertFalse(PedagogicalCouncilHub::shouldRegisterNavigation());
         $this->assertFalse(ScheduleResource::shouldRegisterNavigation());
     }
 
@@ -113,6 +116,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertTrue(StudentMobilityHub::shouldRegisterNavigation());
         $this->assertTrue(SchoolSupervisionHub::shouldRegisterNavigation());
         $this->assertTrue(TeacherAbsenceHub::shouldRegisterNavigation());
+        $this->assertTrue(PedagogicalCouncilHub::shouldRegisterNavigation());
         $this->assertFalse(UserResource::shouldRegisterNavigation());
         $this->assertFalse(ManageSchoolSettings::shouldRegisterNavigation());
         $this->assertFalse(StudentCounselingHub::shouldRegisterNavigation());
@@ -136,6 +140,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertFalse(ManageSchoolSettings::shouldRegisterNavigation());
         $this->assertFalse(SchoolCensusHub::shouldRegisterNavigation());
         $this->assertFalse(TeacherAbsenceHub::shouldRegisterNavigation());
+        $this->assertFalse(PedagogicalCouncilHub::shouldRegisterNavigation());
         $this->assertFalse(StudentCounselingHub::shouldRegisterNavigation());
         $this->assertFalse(DisciplinaryCouncilHub::shouldRegisterNavigation());
         $this->assertFalse(ScheduleResource::shouldRegisterNavigation());
@@ -151,6 +156,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertTrue(SchoolCensusHub::shouldRegisterNavigation());
         $this->assertTrue(RakmanaSyncHub::shouldRegisterNavigation());
         $this->assertTrue(TeacherAbsenceHub::shouldRegisterNavigation());
+        $this->assertTrue(PedagogicalCouncilHub::shouldRegisterNavigation());
         $this->assertTrue(SchoolArchiveHub::shouldRegisterNavigation());
         $this->assertTrue(StudentResource::shouldRegisterNavigation());
         $this->assertTrue(DisciplinaryCouncilHub::shouldRegisterNavigation());

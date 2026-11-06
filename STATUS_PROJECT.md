@@ -1536,6 +1536,44 @@ Comprehensive school healthcare management under Algerian public health and nati
       - Comprehensive automated feature tests in `tests/Feature/SchoolHealthTest.php` (8 tests, 46 assertions, 100% green).
       - All 64 related feature tests pass cleanly with 511 assertions.
 
+## 42. Subject Councils, Pedagogical Coordination & District Seminars System (منظومة مجالس التعليم والتنسيق البيداغوجي للمواد والندوات التربوية للمقاطعة) (100%)
+
+Statutory pedagogical management under Algerian Executive Decree 08-315 and Ministerial Decree 174 governing Subject Councils, Coordination Meetings, and District Inspection Seminars:
+- [x] **Database Schema & Data Model:**
+      - Migration `2026_11_13_010001_create_pedagogical_councils_and_seminars_tables.php` bringing Sajel core database tables from 40 to 44.
+      - Tables: `pedagogical_councils`, `pedagogical_council_attendances`, `pedagogical_seminars`, `pedagogical_seminar_attendances`.
+      - Eloquent models: `PedagogicalCouncil`, `PedagogicalCouncilAttendance`, `PedagogicalSeminar`, `PedagogicalSeminarAttendance`.
+      - Full registration in `SajelHealthCheckCommand` (now verifying 44 core domain tables), `SchoolBackupService`, and `SchoolRestoreService`.
+- [x] **Domain Enums Architecture (`app/Enums`):**
+      - `PedagogicalCouncilType`: `SubjectCouncil` (مجلس التعليم للمادة), `TermCoordination` (جلسة التنسيق البيداغوجي الفصلي), `AdministrativeCoordination` (مجلس التنسيق الإداري والتربوي), `InternalSeminar` (ندوة تربوية داخلية بالمؤسسة).
+      - `PedagogicalCouncilStatus`: `Scheduled`, `InProgress`, `Completed`, `Postponed`.
+      - `SeminarType`: `InspectoralSeminar` (ندوة تربوية مقاطعية), `ModelLesson` (درس نموذجي توضيحي), `StudyDay` (يوم دراسي تكويني), `ExchangeVisit` (زيارة بيداغوجية متبادلة).
+      - `SeminarStatus`: `Planned`, `Completed`, `Postponed`, `Cancelled`.
+- [x] **Domain Service Layer (`PedagogicalCouncilService`):**
+      - `getPedagogicalOverview()`: aggregate executive telemetry, council counts, teacher participation rates, upcoming seminars, and pacing lag analytics.
+      - `computeCurriculumPacingStats()`: automated comparison of completed lessons in daily logs against ministerial school-calendar benchmarks.
+      - `createCouncil()` and `updateCouncil()`: atomic transactions managing council minutes and synchronizing teacher attendance rosters.
+      - `recordSeminar()`: registers inspectoral training days, target teachers, and model lesson animators.
+      - High-fidelity PDF generation methods: `generateCouncilPvPdf()`, `generateCurriculumPacingPdf()`, `generateSeminarCalendarPdf()`.
+- [x] **Controller Actions & Secure Routing (`PedagogicalCouncilController`, `routes/web.php`):**
+      - 6 web routes for in-browser print preview and PDF downloads (`BrowsershotFactory`) with role authorization (Admin, General Supervisor, and Subject Teachers):
+        - `print.pedagogical-council.pv` (+ `.pdf`)
+        - `print.pedagogical-council.curriculum-pacing` (+ `.pdf`)
+        - `print.pedagogical-council.seminar-calendar` (+ `.pdf`)
+- [x] **Self-Contained Official Algerian Printable Templates:**
+      - `resources/views/print/pedagogical-council-pv.blade.php`: Official Minutes of Subject Council (محضر اجتماع مجلس التعليم والتنسيق البيداغوجي - A4 Portrait with attendee signatures and tripartite visas).
+      - `resources/views/print/curriculum-pacing-ledger.blade.php`: Curriculum Pacing & Pedagogical Progression Ledger (كشف متابعة وتيرة تنفيذ المنهاج الدراسي وتدرج التعلمات - A4 Landscape single-page).
+      - `resources/views/print/pedagogical-seminars-calendar.blade.php`: Official Calendar of Pedagogical Seminars & Inspection Training Days (رزنامة الندوات التربوية وأيام التكوين والتفتيش - A4 Landscape single-page).
+- [x] **Interactive Filament Livewire Cockpit (`PedagogicalCouncilHub`):**
+      - Grouped under `__('التخطيط والمناهج والتفتيش')` with icon `heroicon-o-user-group`.
+      - 3 reactive tabs: `councils` (council cards, status badges, coordinator, attendance metrics, print/PDF), `pacing` (automated completion rate vs ministerial expectation, lag badges, status), `seminars` (district seminars agenda, animators, inspector, official call numbers).
+      - Modals: Document Council Minutes (`openCouncilModal`), Schedule District Seminar (`openSeminarModal`).
+      - Role-based visibility: scoped for Teachers (filtered to their subject councils/seminars) and leadership/inspection staff via `User::canManagePedagogicalCouncils()`.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - 164 translation keys verified across Arabic, English, and French by `LocalizationCompletenessTest`.
+      - 8 comprehensive feature tests in `tests/Feature/PedagogicalCouncilTest.php` passing with 100% green status.
+      - Navigation role assertions passing in `tests/Feature/RoleNavigationTailoringTest.php`.
+
 
 
 
