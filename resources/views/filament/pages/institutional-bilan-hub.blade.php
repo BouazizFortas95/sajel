@@ -286,10 +286,10 @@
                         <span class="text-[10px] text-emerald-600 dark:text-emerald-400">{{ __('تلميذ في لوحة الشرف') }}</span>
                     </div>
 
-                    <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 text-center">
-                        <span class="text-xs font-bold text-slate-800 dark:text-slate-300">{{ __('مقبول (10 - 11.99)') }}</span>
-                        <div class="text-xl font-black text-slate-700 dark:text-slate-300 mt-1">{{ $report?->passing_count ?? 0 }}</div>
-                        <span class="text-[10px] text-slate-500 dark:text-slate-400">{{ __('تلميذ فوق المعدل') }}</span>
+                    <div class="p-4 rounded-xl bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-900/40 text-center">
+                        <span class="text-xs font-bold text-teal-800 dark:text-teal-300">{{ __('مقبول (10 - 11.99)') }}</span>
+                        <div class="text-xl font-black text-teal-700 dark:text-teal-400 mt-1">{{ $report?->passing_count ?? 0 }}</div>
+                        <span class="text-[10px] text-teal-600 dark:text-teal-400">{{ __('تلميذ فوق المعدل') }}</span>
                     </div>
 
                     <div class="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-center">
@@ -483,3 +483,4 @@
         @endif
     </div>
 </x-filament-panels::page>
+

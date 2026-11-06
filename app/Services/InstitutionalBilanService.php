@@ -442,7 +442,8 @@ class InstitutionalBilanService
 
         return BrowsershotFactory::html($html)
             ->landscape()
-            ->margins(8, 8, 8, 8)
+            ->showBackground()
+            ->margins(4, 5, 4, 5)
             ->pdf();
     }
 }

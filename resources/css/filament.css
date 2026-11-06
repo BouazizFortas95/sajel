@@ -266,33 +266,45 @@ html.dark,
  * These rules restore the intended dynamic column spanning across all
  * Create, Edit, View, and Resource pages and Section components.
  */
-.col-\[--col-span-default\] { grid-column: var(--col-span-default) !important; }
-.sm\:col-\[--col-span-sm\] { grid-column: var(--col-span-sm) !important; }
-.md\:col-\[--col-span-md\] { grid-column: var(--col-span-md) !important; }
-.lg\:col-\[--col-span-lg\] { grid-column: var(--col-span-lg) !important; }
-.xl\:col-\[--col-span-xl\] { grid-column: var(--col-span-xl) !important; }
-.\32xl\:col-\[--col-span-2xl\] { grid-column: var(--col-span-2xl) !important; }
-
+.col-\[--col-span-default\] { grid-column: var(--col-span-default, 1 / -1) !important; }
 .col-start-\[--col-start-default\] { grid-column-start: var(--col-start-default) !important; }
-.sm\:col-start-\[--col-start-sm\] { grid-column-start: var(--col-start-sm) !important; }
-.md\:col-start-\[--col-start-md\] { grid-column-start: var(--col-start-md) !important; }
-.lg\:col-start-\[--col-start-lg\] { grid-column-start: var(--col-start-lg) !important; }
-.xl\:col-start-\[--col-start-xl\] { grid-column-start: var(--col-start-xl) !important; }
-.\32xl\:col-start-\[--col-start-2xl\] { grid-column-start: var(--col-start-2xl) !important; }
-
 .grid-cols-\[--cols-default\] { grid-template-columns: var(--cols-default) !important; }
-.sm\:grid-cols-\[--cols-sm\] { grid-template-columns: var(--cols-sm) !important; }
-.md\:grid-cols-\[--cols-md\] { grid-template-columns: var(--cols-md) !important; }
-.lg\:grid-cols-\[--cols-lg\] { grid-template-columns: var(--cols-lg) !important; }
-.xl\:grid-cols-\[--cols-xl\] { grid-template-columns: var(--cols-xl) !important; }
-.\32xl\:grid-cols-\[--cols-2xl\] { grid-template-columns: var(--cols-2xl) !important; }
-
 .columns-\[--cols-default\] { columns: var(--cols-default) !important; }
-.sm\:columns-\[--cols-sm\] { columns: var(--cols-sm) !important; }
-.md\:columns-\[--cols-md\] { columns: var(--cols-md) !important; }
-.lg\:columns-\[--cols-lg\] { columns: var(--cols-lg) !important; }
-.xl\:columns-\[--cols-xl\] { columns: var(--cols-xl) !important; }
-.\32xl\:columns-\[--cols-2xl\] { columns: var(--cols-2xl) !important; }
+
+@media (min-width: 640px) {
+    .sm\:col-\[--col-span-sm\] { grid-column: var(--col-span-sm) !important; }
+    .sm\:col-start-\[--col-start-sm\] { grid-column-start: var(--col-start-sm) !important; }
+    .sm\:grid-cols-\[--cols-sm\] { grid-template-columns: var(--cols-sm) !important; }
+    .sm\:columns-\[--cols-sm\] { columns: var(--cols-sm) !important; }
+}
+
+@media (min-width: 768px) {
+    .md\:col-\[--col-span-md\] { grid-column: var(--col-span-md) !important; }
+    .md\:col-start-\[--col-start-md\] { grid-column-start: var(--col-start-md) !important; }
+    .md\:grid-cols-\[--cols-md\] { grid-template-columns: var(--cols-md) !important; }
+    .md\:columns-\[--cols-md\] { columns: var(--cols-md) !important; }
+}
+
+@media (min-width: 1024px) {
+    .lg\:col-\[--col-span-lg\] { grid-column: var(--col-span-lg) !important; }
+    .lg\:col-start-\[--col-start-lg\] { grid-column-start: var(--col-start-lg) !important; }
+    .lg\:grid-cols-\[--cols-lg\] { grid-template-columns: var(--cols-lg) !important; }
+    .lg\:columns-\[--cols-lg\] { columns: var(--cols-lg) !important; }
+}
+
+@media (min-width: 1280px) {
+    .xl\:col-\[--col-span-xl\] { grid-column: var(--col-span-xl) !important; }
+    .xl\:col-start-\[--col-start-xl\] { grid-column-start: var(--col-start-xl) !important; }
+    .xl\:grid-cols-\[--cols-xl\] { grid-template-columns: var(--cols-xl) !important; }
+    .xl\:columns-\[--cols-xl\] { columns: var(--cols-xl) !important; }
+}
+
+@media (min-width: 1536px) {
+    .\32xl\:col-\[--col-span-2xl\] { grid-column: var(--col-span-2xl) !important; }
+    .\32xl\:col-start-\[--col-start-2xl\] { grid-column-start: var(--col-start-2xl) !important; }
+    .\32xl\:grid-cols-\[--cols-2xl\] { grid-template-columns: var(--cols-2xl) !important; }
+    .\32xl\:columns-\[--cols-2xl\] { columns: var(--cols-2xl) !important; }
+}
 
 @media (prefers-reduced-motion: no-preference) {
 
