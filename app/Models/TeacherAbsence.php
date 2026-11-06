@@ -21,6 +21,11 @@ class TeacherAbsence extends Model
         'ends_at' => 'date',
         'reason' => TeacherAbsenceReason::class,
         'status' => TeacherAbsenceStatus::class,
+        'resumed_at' => 'datetime',
+        'is_deduction_notified' => 'boolean',
+        'deduction_days' => 'integer',
+        'deduction_notified_at' => 'date',
+        'is_requisition' => 'boolean',
     ];
 
     public function teacher(): BelongsTo
@@ -56,6 +61,44 @@ class TeacherAbsence extends Model
         return $this->status === TeacherAbsenceStatus::Covered;
     }
 
+    public function hasResumed(): bool
+    {
+        return ! is_null($this->resumed_at);
+    }
+
+    public function hasSalaryDeduction(): bool
+    {
+        return $this->is_deduction_notified;
+    }
+
+    public function hasRequisition(): bool
+    {
+        return $this->is_requisition;
+    }
+
+    /**
+     * Compute default statutory deduction days if absence is unjustified or unauthorized.
+     */
+    public function calculateDeductionDays(): int
+    {
+        return $this->deduction_days ?? $this->durationInDays();
+    }
+
+    public function resumptionPvFormatted(): string
+    {
+        return $this->resumption_pv_number ?? sprintf('PV-REP-%d-%04d', $this->starts_at?->year ?? now()->year, $this->id);
+    }
+
+    public function deductionNoticeFormatted(): string
+    {
+        return $this->deduction_ref_number ?? sprintf('NOTIF-RET-%d-%04d', $this->starts_at?->year ?? now()->year, $this->id);
+    }
+
+    public function requisitionFormatted(): string
+    {
+        return $this->requisition_ref_number ?? sprintf('ORD-REQ-%d-%04d', $this->starts_at?->year ?? now()->year, $this->id);
+    }
+
     public function scopeForTeacher(Builder $query, User|int $teacher): Builder
     {
         $id = $teacher instanceof User ? $teacher->id : $teacher;
@@ -87,5 +130,25 @@ class TeacherAbsence extends Model
             TeacherAbsenceStatus::Uncovered,
             TeacherAbsenceStatus::PartiallyCovered,
         ]);
+    }
+
+    public function scopeResumed(Builder $query): Builder
+    {
+        return $query->whereNotNull('resumed_at');
+    }
+
+    public function scopePendingResumption(Builder $query): Builder
+    {
+        return $query->whereNull('resumed_at');
+    }
+
+    public function scopeDeductionNotified(Builder $query): Builder
+    {
+        return $query->where('is_deduction_notified', true);
+    }
+
+    public function scopeRequisitions(Builder $query): Builder
+    {
+        return $query->where('is_requisition', true);
     }
 }

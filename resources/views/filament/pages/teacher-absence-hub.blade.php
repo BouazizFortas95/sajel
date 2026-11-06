@@ -195,6 +195,77 @@
                                 </div>
                             </div>
 
+                            {{-- Administrative Legal Protocols Strip (استئناف العمل والخصم من الراتب) --}}
+                            <div class="pt-2 border-t border-gray-100 dark:border-gray-700 space-y-2">
+                                <div class="flex flex-wrap items-center justify-between gap-1.5 text-[11px]">
+                                    {{-- Work Resumption Status --}}
+                                    @if ($absence->hasResumed())
+                                        <div class="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded text-emerald-800 dark:text-emerald-300 font-semibold">
+                                            <span>✓ {{ __('استأنف') }}: {{ $absence->resumed_at?->format('d/m/Y') }}</span>
+                                            <a
+                                                href="{{ route('print.teacher-absence.resumption-pv', ['locale' => app()->getLocale(), 'absence' => $absence->id]) }}"
+                                                target="_blank"
+                                                class="text-emerald-700 dark:text-emerald-400 hover:underline font-bold"
+                                                title="{{ __('معاينة محضر استئناف العمل') }}"
+                                            >
+                                                📄 {{ __('المحضر') }}
+                                            </a>
+                                            <a
+                                                href="{{ route('print.teacher-absence.resumption-pv.pdf', ['locale' => app()->getLocale(), 'absence' => $absence->id]) }}"
+                                                target="_blank"
+                                                class="text-[9px] bg-emerald-600 text-white px-1 py-0.2 rounded font-bold"
+                                                title="{{ __('تحميل PDF') }}"
+                                            >
+                                                PDF
+                                            </a>
+                                        </div>
+                                    @elseif ($isAdmin)
+                                        <button
+                                            type="button"
+                                            wire:click="openResumptionModal({{ $absence->id }})"
+                                            class="px-2.5 py-1 text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded shadow-sm transition flex items-center gap-1 cursor-pointer"
+                                            title="{{ __('توثيق عودة الأستاذ للعمل وتوليد المحضر الرسمي') }}"
+                                        >
+                                            <span>📋</span> {{ __('تسجيل استئناف العمل') }}
+                                        </button>
+                                    @else
+                                        <span class="text-[10px] text-gray-400 italic">{{ __('لم يُسجل استئناف العمل بعد') }}</span>
+                                    @endif
+
+                                    {{-- Salary Deduction Notice Status --}}
+                                    @if ($absence->hasSalaryDeduction())
+                                        <div class="flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-2 py-0.5 rounded text-rose-800 dark:text-rose-300 font-semibold">
+                                            <span>⚠️ {{ __('خصم') }}: {{ $absence->deduction_days }} {{ __('يوم') }}</span>
+                                            <a
+                                                href="{{ route('print.teacher-absence.deduction-notice', ['locale' => app()->getLocale(), 'absence' => $absence->id]) }}"
+                                                target="_blank"
+                                                class="text-rose-700 dark:text-rose-400 hover:underline font-bold"
+                                                title="{{ __('معاينة إشعار الخصم من الراتب') }}"
+                                            >
+                                                📄 {{ __('الإشعار') }}
+                                            </a>
+                                            <a
+                                                href="{{ route('print.teacher-absence.deduction-notice.pdf', ['locale' => app()->getLocale(), 'absence' => $absence->id]) }}"
+                                                target="_blank"
+                                                class="text-[9px] bg-rose-600 text-white px-1 py-0.2 rounded font-bold"
+                                                title="{{ __('تحميل PDF') }}"
+                                            >
+                                                PDF
+                                            </a>
+                                        </div>
+                                    @elseif ($isAdmin)
+                                        <button
+                                            type="button"
+                                            wire:click="openDeductionModal({{ $absence->id }})"
+                                            class="px-2 py-0.8 text-[10.5px] font-bold text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950 rounded border border-rose-300 transition flex items-center gap-1 cursor-pointer"
+                                            title="{{ __('إصدار إشعار الخصم من الراتب لغياب غير مبرر') }}"
+                                        >
+                                            <span>⚠️</span> {{ __('إشعار خصم') }}
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+
                             @if ($absence->notes)
                                 <p class="text-xs text-gray-500 dark:text-gray-400 italic line-clamp-2">
                                     "{{ $absence->notes }}"
@@ -295,6 +366,25 @@
                                         target="_blank"
                                         class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-lg transition"
                                         title="{{ __('تحميل استدعاء الاستخلاف (PDF)') }}"
+                                    >
+                                        PDF
+                                    </a>
+
+                                    {{-- Requisition Order Action (قرار تسخير إداري) --}}
+                                    <a
+                                        href="{{ route('print.teacher-absence.requisition-order', ['locale' => app()->getLocale(), 'absence' => $absence->id, 'log' => $log->id]) }}"
+                                        target="_blank"
+                                        class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold rounded-lg transition flex items-center gap-1"
+                                        title="{{ __('معاينة وطباعة قرار التسخير الإداري الرسمي (القانون 08-04)') }}"
+                                    >
+                                        <span>📜</span> {{ __('تسخير إداري') }}
+                                    </a>
+
+                                    <a
+                                        href="{{ route('print.teacher-absence.requisition-order.pdf', ['locale' => app()->getLocale(), 'absence' => $absence->id, 'log' => $log->id]) }}"
+                                        target="_blank"
+                                        class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition"
+                                        title="{{ __('تحميل قرار التسخير الإداري (PDF)') }}"
                                     >
                                         PDF
                                     </a>
@@ -537,6 +627,157 @@
                         class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition"
                     >
                         {{ __('تأكيد التكليف بالاستخلاف') }}
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    @endif
+
+    {{-- MODAL: RECORD WORK RESUMPTION (تسجيل محضر استئناف العمل الرسمي) --}}
+    @if ($isResumptionModalOpen)
+        <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-700 space-y-4">
+                
+                {{-- Modal Header --}}
+                <div class="flex items-start justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
+                    <div>
+                        <h3 class="text-base font-black text-gray-900 dark:text-white flex items-center gap-2">
+                            <span>📝</span> {{ __('تسجيل محضر استئناف العمل الرسمي') }}
+                        </h3>
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            {{ __('توثيق عودة الأستاذ لممارسة مهامه وإثبات تاريخ وتوقيت الاستئناف القانوني') }}
+                        </p>
+                    </div>
+                    <button type="button" wire:click="closeResumptionModal" class="text-gray-400 hover:text-gray-600 text-xl font-bold">✕</button>
+                </div>
+
+                {{-- Form fields --}}
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                            {{ __('تاريخ وساعة استئناف العمل:') }}
+                        </label>
+                        <input
+                            type="datetime-local"
+                            wire:model="resumptionDate"
+                            class="w-full text-xs rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                            {{ __('رقم وتأشيرة المحضر (PV):') }}
+                        </label>
+                        <input
+                            type="text"
+                            wire:model="resumptionPvNumber"
+                            placeholder="PV-REP-..."
+                            class="w-full text-xs font-mono rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                            {{ __('ملاحظات أو ظروف الاستئناف (اختياري):') }}
+                        </label>
+                        <textarea
+                            wire:model="resumptionNotes"
+                            rows="2"
+                            placeholder="{{ __('مثال: استأنف الأستاذ عمله في التوقيت الصباحي بعد انقضاء الإجازة...') }}"
+                            class="w-full text-xs rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        ></textarea>
+                    </div>
+                </div>
+
+                {{-- Modal Footer --}}
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+                    <button
+                        type="button"
+                        wire:click="closeResumptionModal"
+                        class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition"
+                    >
+                        {{ __('إلغاء') }}
+                    </button>
+
+                    <button
+                        type="button"
+                        wire:click="confirmResumption"
+                        class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition"
+                    >
+                        {{ __('اعتماد وحفظ محضر الاستئناف') }}
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    @endif
+
+    {{-- MODAL: SALARY DEDUCTION NOTICE (إشعار الخصم من الراتب) --}}
+    @if ($isDeductionModalOpen)
+        <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-700 space-y-4">
+                
+                {{-- Modal Header --}}
+                <div class="flex items-start justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
+                    <div>
+                        <h3 class="text-base font-black text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                            <span>⚖️</span> {{ __('إصدار إشعار الخصم من الراتب') }}
+                        </h3>
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            {{ __('طبقا للقانون 90-21 والأمر 06-03 (خصم 1/30 من الراتب الأساسي عن كل يوم غياب غير مبرر)') }}
+                        </p>
+                    </div>
+                    <button type="button" wire:click="closeDeductionModal" class="text-gray-400 hover:text-gray-600 text-xl font-bold">✕</button>
+                </div>
+
+                {{-- Form fields --}}
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                            {{ __('عدد أيام الغياب المقتطعة:') }}
+                        </label>
+                        <input
+                            type="number"
+                            min="1"
+                            wire:model="deductionDays"
+                            class="w-full text-xs font-mono font-bold rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                            {{ __('رقم مرجع الإشعار المالي:') }}
+                        </label>
+                        <input
+                            type="text"
+                            wire:model="deductionRefNumber"
+                            placeholder="NOTIF-DED-..."
+                            class="w-full text-xs font-mono rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+
+                    <div class="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 p-2.5 rounded-lg text-rose-800 dark:text-rose-300 text-xs">
+                        ⚠️ <strong>{{ __('تنبيه قانوني') }}:</strong> {{ __('يتيح هذا الإشعار للموظف حق تقديم طعن مبرر خلال أجل أقصاه 48 ساعة قبل الإحالة لمصلحة الرواتب بمديرية التربية.') }}
+                    </div>
+                </div>
+
+                {{-- Modal Footer --}}
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+                    <button
+                        type="button"
+                        wire:click="closeDeductionModal"
+                        class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition"
+                    >
+                        {{ __('إلغاء') }}
+                    </button>
+
+                    <button
+                        type="button"
+                        wire:click="confirmDeduction"
+                        class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-lg shadow-sm transition"
+                    >
+                        {{ __('تأكيد وإصدار إشعار الخصم') }}
                     </button>
                 </div>
 

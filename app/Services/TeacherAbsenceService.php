@@ -459,4 +459,133 @@ class TeacherAbsenceService
             ->showBackground()
             ->pdf();
     }
+
+    /**
+     * Record statutory work resumption (محضر استئناف العمل).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function recordWorkResumption(TeacherAbsence $absence, array $data): TeacherAbsence
+    {
+        $resumedAt = isset($data['resumed_at']) ? Carbon::parse($data['resumed_at']) : now();
+        $pvNumber = $data['resumption_pv_number'] ?? sprintf('PV-REP-%d-%04d', $resumedAt->year, $absence->id);
+
+        $absence->update([
+            'resumed_at' => $resumedAt,
+            'resumption_pv_number' => $pvNumber,
+            'resumption_notes' => $data['resumption_notes'] ?? $absence->resumption_notes,
+        ]);
+
+        return $absence->fresh();
+    }
+
+    /**
+     * Issue an official salary deduction notice (إشعار بالخصم من الراتب).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function issueSalaryDeductionNotice(TeacherAbsence $absence, array $data): TeacherAbsence
+    {
+        $deductionDays = (int) ($data['deduction_days'] ?? $absence->durationInDays());
+        $noticeNumber = $data['deduction_ref_number'] ?? sprintf('NOTIF-RET-%d-%04d', now()->year, $absence->id);
+        $notifiedAt = isset($data['deduction_notified_at']) ? Carbon::parse($data['deduction_notified_at']) : now();
+
+        $absence->update([
+            'is_deduction_notified' => true,
+            'deduction_days' => max(1, $deductionDays),
+            'deduction_ref_number' => $noticeNumber,
+            'deduction_notified_at' => $notifiedAt,
+        ]);
+
+        return $absence->fresh();
+    }
+
+    /**
+     * Mark absence as covered by an administrative requisition (تسخير إداري رسمي).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function issueRequisitionMandate(TeacherAbsence $absence, array $data): TeacherAbsence
+    {
+        $reqNumber = $data['requisition_ref_number'] ?? sprintf('ORD-REQ-%d-%04d', now()->year, $absence->id);
+        $justification = $data['requisition_justification'] ?? __('ضرورة المصلحة وضمان السير المنتظم للدروس وفق التشريع المدرسي الجزائري');
+
+        $absence->update([
+            'is_requisition' => true,
+            'requisition_ref_number' => $reqNumber,
+            'requisition_justification' => $justification,
+        ]);
+
+        return $absence->fresh();
+    }
+
+    /**
+     * Generate printable PDF for official work resumption minutes (PV de reprise de travail).
+     */
+    public function generateResumptionPvPdf(TeacherAbsence $absence): string
+    {
+        $absence->load(['teacher.primarySubject', 'recordedBy']);
+        $html = view('print.teacher-resumption-pv', [
+            'absence' => $absence,
+            'teacher' => $absence->teacher,
+            'school' => SchoolSetting::current(),
+            'inlineCss' => true,
+        ])->render();
+
+        return BrowsershotFactory::html($html)
+            ->format('A4')
+            ->landscape(false)
+            ->margins(8, 8, 8, 8)
+            ->showBackground()
+            ->pdf();
+    }
+
+    /**
+     * Generate printable PDF for salary deduction notice (إشعار بالخصم من الراتب).
+     */
+    public function generateDeductionNoticePdf(TeacherAbsence $absence): string
+    {
+        $absence->load(['teacher.primarySubject', 'recordedBy']);
+        $html = view('print.salary-deduction-notice', [
+            'absence' => $absence,
+            'teacher' => $absence->teacher,
+            'school' => SchoolSetting::current(),
+            'inlineCss' => true,
+        ])->render();
+
+        return BrowsershotFactory::html($html)
+            ->format('A4')
+            ->landscape(false)
+            ->margins(8, 8, 8, 8)
+            ->showBackground()
+            ->pdf();
+    }
+
+    /**
+     * Generate printable PDF for administrative requisition order (قرار تسخير إداري رسمي).
+     */
+    public function generateRequisitionOrderPdf(TeacherAbsence $absence, DailyLog $log, User $substitute): string
+    {
+        $absence->load(['teacher.primarySubject']);
+        $log->load(['schedule.subject', 'schedule.classroom', 'schedule.group']);
+
+        $html = view('print.administrative-requisition-order', [
+            'absence' => $absence,
+            'log' => $log,
+            'schedule' => $log->schedule,
+            'classroom' => $log->schedule?->resolvedClassroom(),
+            'subject' => $log->schedule?->subject,
+            'absentTeacher' => $absence->teacher,
+            'substituteTeacher' => $substitute,
+            'school' => SchoolSetting::current(),
+            'inlineCss' => true,
+        ])->render();
+
+        return BrowsershotFactory::html($html)
+            ->format('A4')
+            ->landscape(false)
+            ->margins(8, 8, 8, 8)
+            ->showBackground()
+            ->pdf();
+    }
 }

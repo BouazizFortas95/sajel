@@ -55,6 +55,28 @@ class TeacherAbsenceHub extends Page
 
     public ?string $substituteInstructions = null;
 
+    // Modal state for Work Resumption (محضر استئناف العمل)
+    public bool $isResumptionModalOpen = false;
+
+    public ?int $resumingAbsenceId = null;
+
+    public ?string $resumptionDate = null;
+
+    public ?string $resumptionPvNumber = null;
+
+    public ?string $resumptionNotes = null;
+
+    // Modal state for Salary Deduction (إشعار الخصم من الراتب)
+    public bool $isDeductionModalOpen = false;
+
+    public ?int $deductingAbsenceId = null;
+
+    public ?int $deductionDays = null;
+
+    public ?string $deductionRefNumber = null;
+
+    public ?string $deductionNotes = null;
+
     public function mount(): void
     {
         $this->year = $this->year ?: (int) now()->year;
@@ -248,6 +270,124 @@ class TeacherAbsenceHub extends Page
             Notification::make()
                 ->title(__('تم إلغاء تكليف الاستخلاف'))
                 ->info()
+                ->send();
+        }
+    }
+
+    public function openResumptionModal(int $absenceId): void
+    {
+        $absence = TeacherAbsence::find($absenceId);
+        if (! $absence) {
+            return;
+        }
+
+        $this->resumingAbsenceId = $absence->id;
+        $this->resumptionDate = now()->format('Y-m-d\TH:i');
+        $this->resumptionPvNumber = $absence->resumptionPvFormatted();
+        $this->resumptionNotes = $absence->resumption_notes;
+        $this->isResumptionModalOpen = true;
+    }
+
+    public function closeResumptionModal(): void
+    {
+        $this->isResumptionModalOpen = false;
+        $this->resumingAbsenceId = null;
+        $this->resumptionDate = null;
+        $this->resumptionPvNumber = null;
+        $this->resumptionNotes = null;
+    }
+
+    public function confirmResumption(TeacherAbsenceService $service): void
+    {
+        if (! Auth::user()?->isAdmin()) {
+            abort(403);
+        }
+
+        $absence = TeacherAbsence::find($this->resumingAbsenceId);
+        if (! $absence) {
+            $this->closeResumptionModal();
+
+            return;
+        }
+
+        $service->recordWorkResumption($absence, [
+            'resumed_at' => $this->resumptionDate,
+            'resumption_pv_number' => $this->resumptionPvNumber,
+            'resumption_notes' => $this->resumptionNotes,
+        ]);
+
+        Notification::make()
+            ->title(__('تم تسجيل استئناف العمل بنجاح'))
+            ->body(__('تم توثيق المحضر ويمكن الآن معاينته وطباعته أو تحميله بصيغة PDF.'))
+            ->success()
+            ->send();
+
+        $this->closeResumptionModal();
+    }
+
+    public function openDeductionModal(int $absenceId): void
+    {
+        $absence = TeacherAbsence::find($absenceId);
+        if (! $absence) {
+            return;
+        }
+
+        $this->deductingAbsenceId = $absence->id;
+        $this->deductionDays = $absence->calculateDeductionDays();
+        $this->deductionRefNumber = $absence->deductionNoticeFormatted();
+        $this->deductionNotes = $absence->notes;
+        $this->isDeductionModalOpen = true;
+    }
+
+    public function closeDeductionModal(): void
+    {
+        $this->isDeductionModalOpen = false;
+        $this->deductingAbsenceId = null;
+        $this->deductionDays = null;
+        $this->deductionRefNumber = null;
+        $this->deductionNotes = null;
+    }
+
+    public function confirmDeduction(TeacherAbsenceService $service): void
+    {
+        if (! Auth::user()?->isAdmin()) {
+            abort(403);
+        }
+
+        $absence = TeacherAbsence::find($this->deductingAbsenceId);
+        if (! $absence) {
+            $this->closeDeductionModal();
+
+            return;
+        }
+
+        $service->issueSalaryDeductionNotice($absence, [
+            'deduction_days' => $this->deductionDays,
+            'deduction_ref_number' => $this->deductionRefNumber,
+        ]);
+
+        Notification::make()
+            ->title(__('تم إصدار إشعار الخصم من الراتب بنجاح'))
+            ->body(__('تم حصر أيام الخصم وتوثيق الإشعار الرسمي للتبليغ.'))
+            ->warning()
+            ->send();
+
+        $this->closeDeductionModal();
+    }
+
+    public function toggleRequisition(int $absenceId, TeacherAbsenceService $service): void
+    {
+        if (! Auth::user()?->isAdmin()) {
+            abort(403);
+        }
+
+        $absence = TeacherAbsence::find($absenceId);
+        if ($absence) {
+            $service->issueRequisitionMandate($absence, []);
+
+            Notification::make()
+                ->title(__('تم اعتماد التسخير الإداري الرسمي'))
+                ->success()
                 ->send();
         }
     }

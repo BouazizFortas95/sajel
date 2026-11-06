@@ -1423,19 +1423,43 @@ Comprehensive executive intelligence cockpit for Algerian Middle School Principa
       - 110+ translation keys across Arabic, English, and French verified by `LocalizationCompletenessTest`.
       - System health check passing with 36 core tables verified.
 
-## 38. Ministry Rakmana Integration Hub (منظومة التكامل والمزامنة مع الرقمنة الوزارية) (Planned)
+## 38. Ministry Rakmana Integration Hub (منظومة التكامل والمزامنة مع الرقمنة الوزارية) (100%)
 
 Official ministerial synchronization engine for Algerian national education platforms (فضاء الرقمنة لوزارة التربية الوطنية):
-- [ ] Import/Export student registries via official ministerial templates (`.xlsx`, `.csv`).
-- [ ] National Identification Number (NIN / رقم التعريف الوطني) tracking and discrepancy resolution.
-- [ ] Official Grade Import Matrix generation (ملف حجز النقاط بصيغة الرقمنة الوزارية).
+- [x] Import/Export student registries via official ministerial templates (`.xlsx`, `.csv`).
+- [x] National Identification Number (NIN / رقم التعريف الوطني) tracking, duplicate audits, and discrepancy resolution.
+- [x] Official Grade Import Matrix generation (ملف حجز النقاط بصيغة الرقمنة الوزارية).
+- [x] Full feature test coverage verified in `tests/Feature/RakmanaSyncTest.php` (9 tests passing).
 
-## 39. Administrative Resumption of Work Protocols & Teacher Replacement Mandates (محاضر استئناف العمل والتسخيرات الإدارية لغيابات الأساتذة) (Planned)
+## 39. Administrative Resumption of Work Protocols & Teacher Replacement Mandates (محاضر استئناف العمل والتسخيرات الإدارية لغيابات الأساتذة وإشعارات الخصم من الراتب) (100%)
 
-Administrative legal workflow for teacher absences, statutory leaves, and replacements:
-- [ ] Official Resumption of Work Minutes (محضر استئناف العمل الرسمي - PV de reprise de travail après congé ou absence).
-- [ ] Administrative Requisition Mandate (تسخير إداري رسمي لتغطية الساعات الشاغرة).
-- [ ] Salary deduction notification slips (إشعارات الخصم من الراتب للغيابات غير المبررة).
+Complete statutory Algerian administrative and legal workflow for managing teacher absences, returns, and requisitions under Algerian Education Law 08-04, Executive Decree 08-315, and General Civil Service Ordinance 06-03:
+- [x] **Database Schema & Eloquent Attributes (`teacher_absences`):**
+      - Migration `2026_11_06_134144_add_administrative_protocols_to_teacher_absences_table.php` adding `resumed_at`, `resumption_pv_number`, `resumption_notes`, `is_deduction_notified`, `deduction_days`, `deduction_ref_number`, `deduction_notified_at`, `is_requisition`, `requisition_ref_number`, and `requisition_justification`.
+      - Scopes: `resumed()`, `pendingResumption()`, `deductionNotified()`, `requisitions()`.
+      - Model helpers: `hasResumed()`, `hasSalaryDeduction()`, `hasRequisition()`, `calculateDeductionDays()`, `resumptionPvFormatted()`, `deductionNoticeFormatted()`, `requisitionFormatted()`.
+- [x] **Service Layer Expansion (`TeacherAbsenceService`):**
+      - `recordWorkResumption(TeacherAbsence, array)`: records effective return to work, date/time, and registers official PV reference.
+      - `issueSalaryDeductionNotice(TeacherAbsence, array)`: records 1/30th per-day statutory financial deductions under Law 90-21 with 48h appeal window.
+      - `issueRequisitionMandate(TeacherAbsence, array)`: official administrative requisition to safeguard classroom teaching continuity.
+      - High-fidelity PDF generation methods: `generateResumptionPvPdf()`, `generateDeductionNoticePdf()`, and `generateRequisitionOrderPdf()`.
+- [x] **Controller Actions & Secure Routing (`TeacherAbsenceController`, `routes/web.php`):**
+      - Web routes with tri-party role authorization (Admin, Teacher, Substitute):
+        - `print.teacher-absence.resumption-pv` (+ `.pdf`)
+        - `print.teacher-absence.deduction-notice` (+ `.pdf`)
+        - `print.teacher-absence.requisition-order` (+ `.pdf`)
+- [x] **Self-Contained Official Algerian Ministerial Printable Templates:**
+      - `resources/views/print/teacher-resumption-pv.blade.php`: Official Minutes of Resumption of Work (محضر استئناف العمل الرسمي).
+      - `resources/views/print/salary-deduction-notice.blade.php`: Official Salary Deduction Notice (إشعار رسمي بالخصم من الراتب لغياب غير مبرر).
+      - `resources/views/print/administrative-requisition-order.blade.php`: Official Requisition Order (قرار تسخير إداري رسمي لتغطية حصة تعليمية).
+- [x] **Interactive Filament Livewire Cockpit Integration (`TeacherAbsenceHub`):**
+      - Visual status badges and quick action buttons on absence radar cards.
+      - Work Resumption modal (`$isResumptionModalOpen`) for date, PV number, and notes.
+      - Salary Deduction modal (`$isDeductionModalOpen`) with auto-calculated deduction days and statutory appeal alerts.
+      - Requisition button and PDF downloads on affected session rows.
+- [x] **Tri-Lingual Localization & Automated Testing:**
+      - 114 translation keys across Arabic, English, and French verified by `LocalizationCompletenessTest`.
+      - 7 feature tests passing in `tests/Feature/TeacherAbsenceProtocolsTest.php` with 56 assertions.
 
 ## 40. School Life & Extra-curricular Clubs System (منظومة الحياة المدرسية والنوادي والأنشطة اللاصفية) (Planned)
 

@@ -290,6 +290,36 @@ Route::get('/{locale}/print/teacher-absences/monthly-ledger/pdf', [TeacherAbsenc
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.teacher-absence.monthly-ledger.pdf');
 
+Route::get('/{locale}/print/teacher-absences/{absence}/resumption-pv', [TeacherAbsenceController::class, 'printResumptionPv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-absence.resumption-pv');
+
+Route::get('/{locale}/print/teacher-absences/{absence}/resumption-pv/pdf', [TeacherAbsenceController::class, 'pdfResumptionPv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-absence.resumption-pv.pdf');
+
+Route::get('/{locale}/print/teacher-absences/{absence}/deduction-notice', [TeacherAbsenceController::class, 'printDeductionNotice'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-absence.deduction-notice');
+
+Route::get('/{locale}/print/teacher-absences/{absence}/deduction-notice/pdf', [TeacherAbsenceController::class, 'pdfDeductionNotice'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-absence.deduction-notice.pdf');
+
+Route::get('/{locale}/print/teacher-absences/{absence}/requisitions/{log}', [TeacherAbsenceController::class, 'printRequisitionOrder'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-absence.requisition-order');
+
+Route::get('/{locale}/print/teacher-absences/{absence}/requisitions/{log}/pdf', [TeacherAbsenceController::class, 'pdfRequisitionOrder'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-absence.requisition-order.pdf');
+
 Route::get('/{locale}/print/students/{student}/textbook-clearance', [TextbookInventoryController::class, 'clearance'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
