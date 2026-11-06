@@ -26,9 +26,9 @@ use App\Http\Middleware\SetFilamentLocale;
 use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Services\StudentMotivationService;
-use App\Support\BrowsershotFactory;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
+use App\Support\BrowsershotFactory;
 
 Route::get('/', function () {
     return view('welcome');

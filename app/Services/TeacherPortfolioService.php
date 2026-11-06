@@ -11,11 +11,11 @@ use App\Models\User;
 use App\Services\Concerns\ConfiguresBrowsershot;
 use Illuminate\Foundation\ViteException;
 use Illuminate\Support\Facades\Vite;
+use Spatie\Browsershot\Browsershot;
 
 class TeacherPortfolioService
 {
     use ConfiguresBrowsershot;
-
     public function viewData(User $teacher): array
     {
         $scheduleQuery = Schedule::query()->where('user_id', $teacher->id);

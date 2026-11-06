@@ -7,18 +7,18 @@ use App\Models\Classroom;
 use App\Models\CurriculumResource;
 use App\Models\DailyLog;
 use App\Models\InspectionReport;
+use App\Services\Concerns\ConfiguresBrowsershot;
 use App\Models\Level;
 use App\Models\Schedule;
 use App\Models\SchoolSetting;
 use App\Models\Subject;
 use App\Models\User;
-use App\Services\Concerns\ConfiguresBrowsershot;
 use Illuminate\Support\Facades\DB;
+use Spatie\Browsershot\Browsershot;
 
 class PedagogicalInspectionService
 {
     use ConfiguresBrowsershot;
-
     /**
      * Compute curriculum velocity and parallel section pacing.
      *
@@ -224,4 +224,5 @@ class PedagogicalInspectionService
 
         return $this->browsershot($html)->pdf();
     }
+
 }

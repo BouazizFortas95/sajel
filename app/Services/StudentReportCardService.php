@@ -18,11 +18,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
+use Spatie\Browsershot\Browsershot;
 
 class StudentReportCardService
 {
     use ConfiguresBrowsershot;
-
     /**
      * Prepare report data after policy authorization.
      *
@@ -191,6 +191,7 @@ class StudentReportCardService
 
         return $this->browsershot($html)->pdf();
     }
+
 
     private function inlineCss(string $html, string $css): string
     {
