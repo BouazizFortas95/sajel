@@ -39,3 +39,4 @@ class ClubMembershipFactory extends Factory
         ]);
     }
 }
+

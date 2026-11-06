@@ -79,3 +79,4 @@ class ClubMembership extends Model
         );
     }
 }
+

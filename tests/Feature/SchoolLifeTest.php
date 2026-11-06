@@ -382,3 +382,4 @@ class SchoolLifeTest extends TestCase
             ->assertDownload('bilan-annuel-vie-scolaire-20262027.pdf');
     }
 }
+

@@ -72,3 +72,4 @@ class ClubActivity extends Model
         return $this->start_time ?: __('غير محدد');
     }
 }
+
