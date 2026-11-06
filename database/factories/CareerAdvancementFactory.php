@@ -33,3 +33,4 @@ class CareerAdvancementFactory extends Factory
         ];
     }
 }
+

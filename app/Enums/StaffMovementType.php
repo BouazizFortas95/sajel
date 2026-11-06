@@ -62,3 +62,4 @@ enum StaffMovementType: string
         ];
     }
 }
+
