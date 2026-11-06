@@ -54,6 +54,7 @@ class SchoolBackupService
         'school_clubs',
         'club_memberships',
         'club_activities',
+        'student_medical_records',
     ];
 
     /**

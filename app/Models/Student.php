@@ -112,6 +112,29 @@ class Student extends Model
         return $this->hasOne(CounselingSession::class)->latestOfMany('session_date');
     }
 
+    public function medicalRecords(): HasMany
+    {
+        return $this->hasMany(StudentMedicalRecord::class);
+    }
+
+    public function currentMedicalRecord(): HasOne
+    {
+        $year = SchoolSetting::currentAcademicYear();
+
+        return $this->hasOne(StudentMedicalRecord::class)->ofMany(
+            ['academic_year' => 'max'],
+            fn ($query) => $query->where('academic_year', $year)
+        );
+    }
+
+    public function isEpsDispensed(?string $year = null): bool
+    {
+        $year = $year ?? SchoolSetting::currentAcademicYear();
+        $record = $this->medicalRecords()->where('academic_year', $year)->first();
+
+        return $record ? $record->isExemptFromEps() : false;
+    }
+
     /**
      * The student's full name, used by Filament tables and reports.
      */

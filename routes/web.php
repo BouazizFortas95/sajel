@@ -16,6 +16,7 @@ use App\Http\Controllers\PrintPedagogicalMemoController;
 use App\Http\Controllers\RakmanaSyncController;
 use App\Http\Controllers\SchoolArchiveController;
 use App\Http\Controllers\SchoolCensusController;
+use App\Http\Controllers\SchoolHealthController;
 use App\Http\Controllers\SchoolLifeController;
 use App\Http\Controllers\StudentAwardController;
 use App\Http\Controllers\StudentMobilityController;
@@ -540,6 +541,36 @@ Route::get('/{locale}/print/school-life/annual-bilan/pdf', [SchoolLifeController
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.school-life.annual-bilan.pdf');
+
+Route::get('/{locale}/print/school-health/dossier/{record}', [SchoolHealthController::class, 'studentDossier'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-health.student-dossier');
+
+Route::get('/{locale}/print/school-health/dossier/{record}/pdf', [SchoolHealthController::class, 'studentDossierPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-health.student-dossier.pdf');
+
+Route::get('/{locale}/print/school-health/eps-dispensation/{record}', [SchoolHealthController::class, 'epsDispensation'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-health.eps-dispensation');
+
+Route::get('/{locale}/print/school-health/eps-dispensation/{record}/pdf', [SchoolHealthController::class, 'epsDispensationPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-health.eps-dispensation.pdf');
+
+Route::get('/{locale}/print/school-health/annual-uds-bilan', [SchoolHealthController::class, 'annualUdsBilan'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-health.annual-uds-bilan');
+
+Route::get('/{locale}/print/school-health/annual-uds-bilan/pdf', [SchoolHealthController::class, 'annualUdsBilanPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.school-health.annual-uds-bilan.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

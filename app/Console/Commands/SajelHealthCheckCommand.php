@@ -22,6 +22,7 @@ class SajelHealthCheckCommand extends Command
         'student_transfers', 'disciplinary_records', 'school_census_records',
         'student_orientations', 'student_counseling_profiles', 'counseling_sessions',
         'quarterly_institutional_reports', 'school_clubs', 'club_memberships', 'club_activities',
+        'student_medical_records',
     ];
 
     public function handle(): int

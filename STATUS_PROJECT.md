@@ -1496,12 +1496,36 @@ Comprehensive management of student extracurricular life, school clubs, activiti
       - 188 translation keys across Arabic, English, and French verified by `LocalizationCompletenessTest`.
       - 7 feature tests passing in `tests/Feature/SchoolLifeTest.php` with 58 assertions.
 
-## 41. School Health & Medical Screening Unit (منظومة الصحة المدرسية ووحدة الكشف والمتابعة الصحية - UDS) (Planned)
+## 41. School Health & Medical Screening Unit (منظومة الصحة المدرسية ووحدة الكشف والمتابعة الصحية - UDS) (Completed - 100%)
 
 Comprehensive school healthcare management under Algerian public health and national education inter-ministerial decrees:
-- [ ] Student medical dossiers, screening visits (فحوصات وحدة الكشف والمتابعة UDS), and biometric checkups.
-- [ ] Vaccination tracking, chronic illness protocols (الربو، السكري، الحساسية), and emergency contact flags.
-- [ ] Official medical dispensations from physical education (الإعفاء من التربية البدنية والرياضية) and dietary canteen arrangements.
+- [x] **Database Schema & Data Model:**
+      - Migration `2026_11_12_010001_create_student_medical_records_table.php` creating table `student_medical_records` with composite uniqueness on `(student_id, academic_year)`.
+      - Captures biometrics (height, weight, BMI), blood types, vision acuity, hearing conditions, dental health (caries count & hygiene), chronic conditions (asthma, diabetes, allergies, epilepsy, cardiopathy, etc.), individual emergency reception protocols (PAI - Projet d'Accueil Individualisé), on-site emergency medications, vaccinations, and physical education dispensations.
+      - Eloquent model `StudentMedicalRecord` with calculated properties (`bmi`, `bmi_classification`), scoping scopes, and relationship hooks on `Student` (`medicalRecords`, `currentMedicalRecord`, `isEpsDispensed`).
+      - Full registration in `SajelHealthCheckCommand` (now tracking 40 core domain tables), `SchoolBackupService`, and `SchoolRestoreService`.
+- [x] **Enums Architecture:**
+      - `App\Enums\BloodType`: Complete Rhesus blood groups (A+, A-, B+, B-, AB+, AB-, O+, O-, Unknown) with badge labels.
+      - `App\Enums\ChronicConditionType`: Standard public health disease taxonomy (None, Asthma, Diabetes, Severe Allergy, Epilepsy, Cardiopathy, Hematological, Renal, Physical Handicap, Other).
+      - `App\Enums\EpsDispensationStatus`: Official physical education statuses (Fit, Temporary, Trimester, Annual, Exempt) with active exemption checks.
+      - `App\Enums\HearingCondition`: Audiological screening taxonomy (Normal, Mild Impairment, Severe Impairment, Uses Hearing Aid).
+      - `App\Enums\DentalHygieneStatus`: Oral healthcare status (Good, Moderate, Poor, Needs Orthodontics).
+- [x] **Domain Service & Livewire Cockpit:**
+      - `SchoolHealthService`: Encapsulates screening updates, biometric BMI calculations, chronic condition and PAI protocols, EPS dispensation validation, summary KPIs computation, and PDF generation.
+      - `SchoolHealthHub` (`app/Filament/Pages/SchoolHealthHub.php` & `resources/views/filament/pages/school-health-hub.blade.php`): Full-featured Livewire cockpit with reactive tabs:
+        1. **Systematic Screenings (فحوصات الكشف الدوري):** Student health roster, biometric indicators, search, level filtering, and screening entry modal.
+        2. **Chronic Conditions & PAI (الأمراض المزمنة وبروتوكول PAI):** PAI emergency protocol tracking, medication stock at infirmary, and rapid crisis management instructions.
+        3. **Physical Education Exemptions (إعفاءات التربية البدنية والرياضية EPS):** Official dispensation tracking with validity dates and certificate numbers.
+        4. **Annual UDS Statistical Bilan (الحصيلة الإحصائية السنوية):** Macro institutional indicators, level breakdown coverage rates, chronic condition classification, and EPS dispensation statistics.
+- [x] **Self-Contained Printable Views & PDF Generation:**
+      - `resources/views/print/student-medical-dossier.blade.php`: Official A4 portrait student medical card (بطاقة الفحص والمتابعة الطبية المدرسية).
+      - `resources/views/print/eps-medical-dispensation.blade.php`: Formal A4 portrait EPS medical exemption certificate (شهادة الإعفاء الطبي من ممارسة التربية البدنية والرياضية).
+      - `resources/views/print/annual-uds-bilan.blade.php`: High-density single-page A4 landscape institutional health report with bulletproof CSS table layout.
+      - `SchoolHealthController`: 6 web routes for in-browser print preview and PDF downloads (`BrowsershotFactory`).
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - 232 translation keys verified across Arabic, English, and French by `LocalizationCompletenessTest`.
+      - Comprehensive automated feature tests in `tests/Feature/SchoolHealthTest.php` (8 tests, 46 assertions, 100% green).
+      - All 64 related feature tests pass cleanly with 511 assertions.
 
 
 
