@@ -182,11 +182,11 @@
         @media print {
             html,
             body {
-                background: #fffdf8 !important;
+                background: #ffffff !important;
             }
 
             .screen-canvas {
-                background: #fffdf8 !important;
+                background: #ffffff !important;
             }
 
             .no-print {

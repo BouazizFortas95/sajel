@@ -17,7 +17,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     @unless ($inlineCss ?? false)
         @vite('resources/css/app.css')
@@ -32,7 +32,7 @@
 
         @page {
             size: A4 {{ $printOrientation }};
-            margin: 10mm;
+            margin: 8mm 12mm 6mm 12mm;
         }
 
         html,
@@ -42,16 +42,11 @@
         }
 
         body {
-            background-color: #f4efe6;
-            background-image:
-                radial-gradient(60rem 36rem at 50% -12%, rgba(245, 158, 11, .16), transparent 62%),
-                linear-gradient(to left, rgba(120, 53, 15, .035) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(120, 53, 15, .035) 1px, transparent 1px);
-            background-size: auto, 32px 32px, 32px 32px;
-            color: #1e293b;
-            font-family: 'Cairo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
-            font-size: 12px;
-            line-height: 1.7;
+            background-color: #ffffff;
+            color: #0f172a;
+            font-family: 'Amiri', 'Cairo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+            font-size: 10pt;
+            line-height: 1.5;
         }
 
         h1,
@@ -66,11 +61,10 @@
             position: sticky;
             top: 0;
             z-index: 50;
-            padding: 12px 16px;
-            border-bottom: 1px solid #fde68a;
-            background: rgba(255, 251, 235, .94);
-            box-shadow: 0 6px 24px rgba(146, 64, 14, .08);
-            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-bottom: 1px solid #cbd5e1;
+            background: #f8fafc;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
         }
 
         .print-toolbar__inner {
@@ -91,31 +85,30 @@
 
         .print-toolbar__mark {
             display: grid;
-            width: 38px;
-            height: 38px;
+            width: 34px;
+            height: 34px;
             flex: 0 0 auto;
             place-items: center;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #fbbf24, #d97706);
+            border-radius: 6px;
+            background: #1a237e;
             color: #fff;
-            font-size: 18px;
-            font-weight: 900;
-            box-shadow: 0 8px 18px rgba(217, 119, 6, .25);
+            font-size: 16px;
+            font-weight: 700;
         }
 
         .print-toolbar__title {
             overflow: hidden;
-            color: #78350f;
+            color: #1a237e;
             font-size: 13px;
-            font-weight: 900;
+            font-weight: 700;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
         .print-toolbar__subtitle {
             overflow: hidden;
-            color: #a16207;
-            font-size: 10px;
+            color: #475569;
+            font-size: 11px;
             font-weight: 600;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -126,37 +119,31 @@
             flex: 0 0 auto;
             align-items: center;
             gap: 8px;
-            border: 1px solid #b45309;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            padding: 9px 16px;
+            border: 1px solid #0d47a1;
+            border-radius: 6px;
+            background: #1a237e;
+            padding: 6px 16px;
             color: #fff;
             cursor: pointer;
             font-family: inherit;
             font-size: 12px;
-            font-weight: 800;
-            box-shadow: 0 8px 18px rgba(217, 119, 6, .25);
+            font-weight: 700;
         }
 
         .print-button:hover {
-            background: linear-gradient(135deg, #d97706, #b45309);
+            background: #0d47a1;
         }
 
         .document-sheet {
             position: relative;
             width: 210mm;
-            max-width: calc(100% - 32px);
-            margin: 24px auto 40px;
-            padding: 8mm;
-            border: 1px solid #fcd34d;
-            border-radius: 18px;
-            background-color: #fffdf8;
-            background-image:
-                radial-gradient(42rem 26rem at 100% 0%, rgba(245, 158, 11, .10), transparent 58%),
-                linear-gradient(to left, rgba(146, 64, 14, .045) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(146, 64, 14, .045) 1px, transparent 1px);
-            background-size: auto, 24px 24px, 24px 24px;
-            box-shadow: 0 24px 60px rgba(120, 53, 15, .14);
+            max-width: 100%;
+            margin: 0 auto 20px;
+            padding: 6mm 8mm;
+            border: 1px solid #cbd5e1;
+            border-radius: 2px;
+            background-color: #ffffff;
+            box-shadow: none;
         }
 
         .print-landscape .document-sheet {
@@ -169,10 +156,11 @@
 
         .doc-header {
             overflow: hidden;
-            border: 1px solid #fcd34d;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, .78);
-            box-shadow: 0 1px 3px rgba(120, 53, 15, .08);
+            border: 1px solid #1a237e;
+            border-bottom: 2px double #1a237e;
+            border-radius: 4px;
+            background: #ffffff;
+            box-shadow: none;
         }
 
         .doc-header-grid {
@@ -183,30 +171,30 @@
         }
 
         .doc-header-col {
-            padding: 12px 14px;
+            padding: 10px 12px;
         }
 
         .doc-header-col + .doc-header-col {
-            border-inline-start: 1px dashed #fcd34d;
+            border-inline-start: 1px solid #1a237e;
         }
 
         .doc-header-republic {
-            color: #78350f;
-            font-size: 10px;
-            font-weight: 800;
-            line-height: 1.7;
+            color: #1a237e;
+            font-size: 10pt;
+            font-weight: 700;
+            line-height: 1.5;
         }
 
         .doc-header-republic .ministry {
-            color: #57534e;
+            color: #334155;
             font-weight: 700;
         }
 
         .doc-header-republic .directorate {
             margin-top: 3px;
-            color: #92400e;
-            font-size: 11px;
-            font-weight: 900;
+            color: #1a237e;
+            font-size: 10.5pt;
+            font-weight: 700;
         }
 
         .doc-header-school {
@@ -214,60 +202,62 @@
         }
 
         .doc-school-name {
-            color: #0f172a;
-            font-size: 15px;
-            font-weight: 900;
-            line-height: 1.4;
+            color: #1a237e;
+            font-size: 13pt;
+            font-weight: 700;
+            line-height: 1.3;
         }
 
         .doc-school-meta {
             margin-top: 2px;
-            color: #78716c;
-            font-size: 9px;
-            font-weight: 700;
+            color: #64748b;
+            font-size: 8.5pt;
+            font-weight: 600;
         }
 
         .doc-header-meta {
-            color: #57534e;
-            font-size: 9px;
+            color: #475569;
+            font-size: 8.5pt;
             font-weight: 600;
-            line-height: 1.8;
+            line-height: 1.6;
         }
 
         .doc-header-meta strong {
             display: block;
-            color: #1e293b;
-            font-size: 11px;
+            color: #0f172a;
+            font-size: 10pt;
         }
 
         .doc-title-banner {
-            margin-top: 10px;
-            border-radius: 10px;
-            background: linear-gradient(90deg, #b45309, #f59e0b 55%, #d97706);
-            padding: 8px 14px;
-            color: #fff;
+            margin-top: 6px;
+            border: 2px solid #1a237e;
+            border-radius: 4px;
+            background: #f0f4fa;
+            padding: 4px 14px;
+            color: #1a237e;
             text-align: center;
-            font-size: 17px;
-            font-weight: 900;
-            letter-spacing: -.01em;
-            text-shadow: 0 1px 2px rgba(120, 53, 15, .25);
+            font-size: 12.5pt;
+            font-weight: 700;
+            letter-spacing: 0;
+            text-shadow: none;
         }
 
         .doc-subtitle {
-            margin-top: 4px;
-            color: #92400e;
-            font-size: 10px;
-            font-weight: 700;
+            margin-top: 3px;
+            color: #475569;
+            font-size: 8.5pt;
+            font-weight: 600;
         }
 
         .report-section {
-            margin-top: 12px;
+            margin-top: 8px;
             break-inside: avoid;
-            border: 1px solid #e7e5e4;
-            border-radius: 14px;
-            background: rgba(255, 255, 255, .78);
-            padding: 12px;
-            box-shadow: 0 1px 2px rgba(120, 53, 15, .04);
+            page-break-inside: avoid;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            background: #ffffff;
+            padding: 8px 10px;
+            box-shadow: none;
         }
 
         .report-section--flow {
@@ -280,130 +270,130 @@
             flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
-            gap: 8px;
-            margin-bottom: 9px;
+            gap: 6px;
+            margin-bottom: 6px;
         }
 
         .section-title {
             display: flex;
             align-items: center;
-            gap: 7px;
-            color: #78350f;
-            font-size: 13px;
-            font-weight: 900;
+            gap: 6px;
+            color: #1a237e;
+            font-size: 10.5pt;
+            font-weight: 700;
         }
 
         .section-title::before {
             content: '';
             display: inline-block;
             width: 4px;
-            height: 16px;
-            border-radius: 99px;
-            background: linear-gradient(#fbbf24, #d97706);
+            height: 14px;
+            border-radius: 1px;
+            background: #1a237e;
         }
 
         .identity-card {
-            margin-top: 12px;
-            border: 1px solid #fde68a;
-            border-radius: 16px;
-            background: rgba(255, 251, 235, .72);
-            padding: 12px;
+            margin-top: 8px;
+            border: 1px solid #1a237e;
+            border-radius: 4px;
+            background: #f8fafc;
+            padding: 8px 10px;
         }
 
         .identity-grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 10px;
+            gap: 6px;
         }
 
         .identity-item {
-            border: 1px solid rgba(253, 230, 138, .9);
-            border-radius: 10px;
-            background: rgba(255, 255, 255, .8);
-            padding: 7px 9px;
+            border: 1px solid #cbd5e1;
+            border-radius: 2px;
+            background: #ffffff;
+            padding: 4px 8px;
         }
 
         .identity-label {
-            color: #a16207;
-            font-size: 8.5px;
-            font-weight: 800;
+            color: #1a237e;
+            font-size: 8pt;
+            font-weight: 700;
         }
 
         .identity-value {
-            margin-top: 2px;
-            color: #1e293b;
-            font-size: 11px;
-            font-weight: 800;
-            line-height: 1.5;
+            margin-top: 1px;
+            color: #0f172a;
+            font-size: 9.5pt;
+            font-weight: 700;
+            line-height: 1.3;
             word-break: break-word;
         }
 
         .kpi-strip {
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 8px;
+            gap: 6px;
             text-align: center;
         }
 
         .kpi-card {
-            border: 1px solid #e7e5e4;
-            border-radius: 12px;
-            background: #fff;
-            padding: 8px 6px;
+            border: 1px solid #475569;
+            border-radius: 2px;
+            background: #ffffff;
+            padding: 4px 6px;
         }
 
         .kpi-card__label {
-            color: #78716c;
-            font-size: 8.5px;
-            font-weight: 800;
+            color: #334155;
+            font-size: 8pt;
+            font-weight: 700;
         }
 
         .kpi-card__value {
-            margin-top: 2px;
-            color: #1e293b;
-            font-size: 20px;
-            font-weight: 900;
-            line-height: 1.2;
+            margin-top: 1px;
+            color: #1a237e;
+            font-size: 14pt;
+            font-weight: 700;
+            line-height: 1.1;
             font-variant-numeric: tabular-nums;
         }
 
         .kpi-card__hint {
-            margin-top: 2px;
-            color: #a8a29e;
-            font-size: 8px;
+            margin-top: 1px;
+            color: #64748b;
+            font-size: 7.5pt;
             font-weight: 600;
         }
 
         .kpi--emerald {
-            border-color: #a7f3d0;
-            background: #ecfdf5;
+            border-color: #475569;
+            background: #f8fafc;
         }
 
         .kpi--emerald .kpi-card__value {
-            color: #047857;
+            color: #065f46;
         }
 
         .kpi--rose {
-            border-color: #fecdd3;
-            background: #fff1f2;
+            border-color: #475569;
+            background: #f8fafc;
         }
 
         .kpi--rose .kpi-card__value {
-            color: #be123c;
+            color: #991b1b;
         }
 
         .kpi--amber {
-            border-color: #fde68a;
-            background: #fffbeb;
+            border-color: #475569;
+            background: #f8fafc;
         }
 
         .kpi--amber .kpi-card__value {
-            color: #b45309;
+            color: #92400e;
         }
 
         .kpi--sky {
-            border-color: #bae6fd;
-            background: #f0f9ff;
+            border-color: #475569;
+            background: #f8fafc;
         }
 
         .kpi--sky .kpi-card__value {
@@ -411,7 +401,7 @@
         }
 
         .kpi--slate {
-            border-color: #cbd5e1;
+            border-color: #475569;
             background: #f8fafc;
         }
 
@@ -421,32 +411,98 @@
 
         .table-wrap {
             overflow-x: auto;
-            border: 1px solid #e7e5e4;
-            border-radius: 10px;
+            border: 1px solid #475569;
+            border-radius: 2px;
         }
 
         .report-table {
             width: 100%;
             border-collapse: collapse;
-            color: #334155;
-            font-size: 9.5px;
+            color: #0f172a;
+            font-size: 8.5pt;
         }
 
         .report-table th {
-            border-bottom: 1px solid #78350f;
-            background: #78350f;
-            padding: 6px 7px;
+            border: 1px solid #475569;
+            background: #1a237e;
+            padding: 4px 6px;
             color: #fff;
             text-align: start;
-            font-size: 8.5px;
-            font-weight: 800;
+            font-size: 8.5pt;
+            font-weight: 700;
             white-space: nowrap;
         }
 
         .report-table td {
-            border-bottom: 1px solid #f1f5f9;
-            padding: 5px 7px;
-            vertical-align: top;
+            border: 1px solid #cbd5e1;
+            padding: 4px 6px;
+            vertical-align: middle;
+        }
+
+        .subject-card {
+            margin-top: 6px;
+            border: 1px solid #475569;
+            border-radius: 2px;
+            background: #ffffff;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .subject-card__head {
+            background: #f1f5f9;
+            border-bottom: 1px solid #475569;
+            padding: 4px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .subject-card__title {
+            color: #1a237e;
+            font-size: 9.5pt;
+            font-weight: 700;
+        }
+
+        .subject-card__average {
+            color: #0f172a;
+            font-size: 9pt;
+            font-weight: 700;
+        }
+
+        .signature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .signature-box {
+            border: 1px solid #475569;
+            border-radius: 2px;
+            background: #ffffff;
+            padding: 6px;
+            text-align: center;
+            min-height: 70px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .signature-box strong {
+            color: #1a237e;
+            font-size: 8.5pt;
+            font-weight: 700;
+        }
+
+        .signature-box span {
+            color: #64748b;
+            font-size: 7.5pt;
+        }
+
+        .signature-line {
+            height: 24px;
         }
 
         .report-table tbody tr:nth-child(even) {
