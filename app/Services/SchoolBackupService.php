@@ -76,6 +76,9 @@ class SchoolBackupService
         'inventory_items',
         'inventory_allocations',
         'inventory_reforms',
+        'school_budget_lines',
+        'budget_commitments',
+        'payment_mandates',
     ];
 
     /**

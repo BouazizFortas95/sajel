@@ -1827,6 +1827,52 @@ Full statutory alignment with Algerian National Education Circular 143/97 and Mi
       - Strict role navigation tailoring verified in `tests/Feature/RoleNavigationTailoringTest.php`.
       - Code style verified with `vendor/bin/pint`.
 
+## 49. School Budget & Financial Public Accounting System (منظومة تسيير الميزانية والمحاسبة المدرسية وسجل الالتزامات وحوالات الدفع - Budget Scolaire et Comptabilité Publique) (100%)
+
+Full statutory alignment with Algerian Public Accounting Law 90-21 and Executive Decree 91-311 governing financial accounting and budgetary management in public educational institutions:
+- [x] **Database Schema & Financial Tables (64 core tables):**
+      - Migration `2026_11_20_010001_create_school_budget_and_accounting_tables.php` creating 3 core tables:
+        - `school_budget_lines`: standard chapters and articles for expenditures (Dépenses) and revenues (Recettes), allocated credits, commitments, and liquidations.
+        - `budget_commitments`: official purchase orders (Bons de Commande) and commitments ledger (ENG) with supplier data, tax registration (NIF), order subject, estimated amounts, and status.
+        - `payment_mandates`: payment mandates (MAND) and liquidation orders with invoice details, reception slip numbers, net liquidated amounts, payment methods (Treasury, Cheque, Cash), and authorization visas.
+      - Updated `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` expanding verified schema to 64 domain tables: `[PASS] schema: All required tables present (64)`.
+- [x] **Domain Enums Architecture (`app/Enums`):**
+      - `BudgetType`: `Expenditure` (نفقات التسيير والتجهيز), `Revenue` (الإيرادات والمداخيل) with statutory classification.
+      - `CommitmentStatus`: `Committed` (ملتزم به قيد الإنجاز), `Liquidated` (مصفى ومسدد), `Cancelled` (ملغى).
+      - `MandateStatus`: `Pending`, `Approved` (مؤشر ومقبول للدفع), `Paid` (تم التحويل والدفع), `Rejected`.
+      - `PaymentMethod`: `TreasuryTransfer` (تحويل عبر الخزينة العمومية), `Cheque` (شيك بريدي / بنكي), `Cash` (نقداً من صندوق المؤسسة).
+- [x] **Domain Service Layer (`SchoolBudgetService`):**
+      - `seedStandardBudgetGrid`: automatic generation of statutory chapters and articles conforming to Executive Decree 91-311 (staff charges, educational supplies, food & canteen, maintenance, state subsidies, self-financing).
+      - Sequential numbering generators: `BC/{year}/{seq}` for purchase orders, `ENG/{year}/{seq}` for commitments, `MAND/{year}/{seq}` for payment mandates.
+      - Transaction-safe operations: `recordCommitment` with automated budget line commitment incrementation; `recordPaymentMandate` with commitment status liquidation and liquidated amount incrementation.
+      - Financial KPIs engine: total allocated credits, committed expenditures, liquidated amounts, remaining uncommitted balance, and consumption percentage rate.
+      - High-fidelity printable data assemblers: `assembleBudgetLedgerData`, `assemblePurchaseOrderData`, `assemblePaymentMandateData`.
+- [x] **Controller Actions & Secure Routing (`SchoolBudgetController`, `routes/web.php`):**
+      - 6 dedicated routes for official sheet previews and PDF streaming via `BrowsershotFactory` with HTML fallback:
+        - `print.budget.ledger` (`/{locale}/print/budget/ledger/{fiscalYear?}`)
+        - `print.budget.ledger.pdf` (`/{locale}/print/budget/ledger/{fiscalYear?}/pdf`)
+        - `print.budget.purchase-order` (`/{locale}/print/budget/purchase-order/{commitment}`)
+        - `print.budget.purchase-order.pdf` (`/{locale}/print/budget/purchase-order/{commitment}/pdf`)
+        - `print.budget.mandate` (`/{locale}/print/budget/mandate/{mandate}`)
+        - `print.budget.mandate.pdf` (`/{locale}/print/budget/mandate/{mandate}/pdf`)
+- [x] **Official Algerian Printable Templates:**
+      - `resources/views/print/school-budget-execution-ledger.blade.php`: État d'exécution du budget scolaire (كشف تنفيذ ميزانية المؤسسة وحساب التسيير - A4 Landscape) detailing chapters, articles, allocations, commitments, liquidations, balances, and multi-member audit signatures (Bursar, Principal, Board).
+      - `resources/views/print/school-purchase-order.blade.php`: Bon de Commande officiel (سند طلب بضائع وخدمات - A4 Portrait) with supplier tax details, budget chapter imputation, estimated amounts, and Principal/Bursar visas.
+      - `resources/views/print/school-payment-mandate.blade.php`: Mandat de Paiement (حوالة دفع وتصفية نفقة - A4 Portrait) with invoice details, reception slips, liquidation certificates, payment reference, and Ordonnateur/Comptable signatures.
+- [x] **Interactive Filament Livewire Cockpit (`SchoolBudgetHub`):**
+      - Registered under `__('المصالح المالية والكتاب المدرسي')` with icon `heroicon-o-banknotes` (sort order 4).
+      - 3 interactive tabs:
+        1. **Budget Map & Allocations (خريطة الميزانية والاعتمادات):** Fiscal year selector, seed standard grid action, real-time consumption progress bars, and Add Budget Line modal.
+        2. **Purchase Orders & Commitments (سندات الطلب وسجل الالتزامات):** Ledger of all commitments, Add Bon de Commande modal with auto-numbering, status tracking, and instant print/PDF actions.
+        3. **Payment Mandates & Liquidations (حوالات الدفع وتصفية النفقات):** Liquidation workflow linked to committed orders, payment method tracking, and printable mandates.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - Complete tri-lingual dictionary populated in `lang/ar.json`, `lang/en.json`, and `lang/fr.json` verified by `LocalizationCompletenessTest`.
+      - 17 comprehensive feature tests in `tests/Feature/SchoolBudgetTest.php` passing 100% green (54 assertions).
+      - Schema integrity verified by `sajel:health-check`: `[PASS] schema: All required tables present (64)`.
+      - Backward compatibility verified with 15 tests in `SchoolInventoryTest.php` (40 assertions).
+      - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php`.
+      - Code style verified with `vendor/bin/pint`.
+
 
 
 

@@ -18,6 +18,7 @@ use App\Http\Controllers\PrintDailyLogsController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
 use App\Http\Controllers\RakmanaSyncController;
 use App\Http\Controllers\SchoolArchiveController;
+use App\Http\Controllers\SchoolBudgetController;
 use App\Http\Controllers\SchoolCanteenController;
 use App\Http\Controllers\SchoolCensusController;
 use App\Http\Controllers\SchoolHealthController;
@@ -792,6 +793,37 @@ Route::get('/{locale}/print/inventory/reform/{reform}/pdf', [SchoolInventoryCont
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.inventory.reform-pv.pdf');
+
+// ─── School Budget & Public Accounting (Phase 49) ───────────────────────────
+Route::get('/{locale}/print/budget/ledger/{fiscalYear?}', [SchoolBudgetController::class, 'printBudgetLedger'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.budget.ledger');
+
+Route::get('/{locale}/print/budget/ledger/{fiscalYear?}/pdf', [SchoolBudgetController::class, 'printBudgetLedgerPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.budget.ledger.pdf');
+
+Route::get('/{locale}/print/budget/purchase-order/{commitment}', [SchoolBudgetController::class, 'printPurchaseOrder'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.budget.purchase-order');
+
+Route::get('/{locale}/print/budget/purchase-order/{commitment}/pdf', [SchoolBudgetController::class, 'printPurchaseOrderPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.budget.purchase-order.pdf');
+
+Route::get('/{locale}/print/budget/mandate/{mandate}', [SchoolBudgetController::class, 'printMandate'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.budget.mandate');
+
+Route::get('/{locale}/print/budget/mandate/{mandate}/pdf', [SchoolBudgetController::class, 'printMandatePdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.budget.mandate.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

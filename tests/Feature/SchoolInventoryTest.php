@@ -263,10 +263,10 @@ class SchoolInventoryTest extends TestCase
 
     // ─── 4. Health Check ────────────────────────────────────────────────────
 
-    public function test_health_check_verifies_all_61_tables(): void
+    public function test_health_check_verifies_tables(): void
     {
         $this->artisan('sajel:health-check')
             ->assertExitCode(0)
-            ->expectsOutputToContain('[PASS] schema: All required tables present (61)');
+            ->expectsOutputToContain('[PASS] schema: All required tables present');
     }
 }

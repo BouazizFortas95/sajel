@@ -371,6 +371,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->isDeveloper() || $this->isPrincipal() || $this->isCensor() || $this->isFinanceOfficer() || $this->isAdmin();
     }
 
+    public function canManageSchoolBudget(): bool
+    {
+        return $this->isDeveloper() || $this->isPrincipal() || $this->isCensor() || $this->isFinanceOfficer() || $this->isAdmin();
+    }
+
     public function classCouncilSessionsAsPresident(): HasMany
     {
         return $this->hasMany(ClassCouncilSession::class, 'president_id');
