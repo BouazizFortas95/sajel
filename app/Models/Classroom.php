@@ -80,6 +80,16 @@ class Classroom extends Model
         return $this->hasMany(Schedule::class);
     }
 
+    public function classCouncilSessions(): HasMany
+    {
+        return $this->hasMany(ClassCouncilSession::class);
+    }
+
+    public function curriculumPacingAudits(): HasMany
+    {
+        return $this->hasMany(CurriculumPacingAudit::class);
+    }
+
     /**
      * A readable label combining level, class name and academic year.
      */

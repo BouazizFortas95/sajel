@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdministrativeArchiveController;
 use App\Http\Controllers\ClassCouncilController;
+use App\Http\Controllers\ClassCouncilDeliberationController;
 use App\Http\Controllers\CounselingController;
 use App\Http\Controllers\DisciplinaryCouncilController;
 use App\Http\Controllers\DownloadPedagogicalMemoPdfController;
@@ -728,6 +729,37 @@ Route::get('/{locale}/print/admin-archive/mail-ledger/{type}/{year}/pdf', [Admin
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.admin-archive.mail-ledger.pdf');
+
+// ─── Class Councils & Pedagogical Coordination (Phase 47) ─────────────────────
+Route::get('/{locale}/print/class-council-deliberation/{session}', [ClassCouncilDeliberationController::class, 'printSessionPv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.class-council-deliberation.pv');
+
+Route::get('/{locale}/print/class-council-deliberation/{session}/pdf', [ClassCouncilDeliberationController::class, 'printSessionPvPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.class-council-deliberation.pv.pdf');
+
+Route::get('/{locale}/print/subject-coordination/{protocol}', [ClassCouncilDeliberationController::class, 'printCoordinationPv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.subject-coordination.pv');
+
+Route::get('/{locale}/print/subject-coordination/{protocol}/pdf', [ClassCouncilDeliberationController::class, 'printCoordinationPvPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.subject-coordination.pv.pdf');
+
+Route::get('/{locale}/print/curriculum-pacing-audit/{year}/{trimester}', [ClassCouncilDeliberationController::class, 'printPacingAudit'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.curriculum-pacing-audit');
+
+Route::get('/{locale}/print/curriculum-pacing-audit/{year}/{trimester}/pdf', [ClassCouncilDeliberationController::class, 'printPacingAuditPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.curriculum-pacing-audit.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

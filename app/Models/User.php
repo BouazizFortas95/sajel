@@ -5,9 +5,6 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\Role;
 use Carbon\Carbon;
-use App\Models\StaffInstallation;
-use App\Models\AdministrativeHandover;
-use App\Models\OfficialMail;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -362,6 +359,31 @@ class User extends Authenticatable implements FilamentUser
     public function canManageAdministrativeArchive(): bool
     {
         return $this->isDeveloper() || $this->isPrincipal() || $this->isCensor() || $this->isFinanceOfficer() || $this->isAdmin();
+    }
+
+    public function canManageClassCouncils(): bool
+    {
+        return $this->isDeveloper() || $this->isPrincipal() || $this->isCensor() || $this->isGeneralSupervisor() || $this->isCounselor() || $this->isTeacher() || $this->isAdmin();
+    }
+
+    public function classCouncilSessionsAsPresident(): HasMany
+    {
+        return $this->hasMany(ClassCouncilSession::class, 'president_id');
+    }
+
+    public function classCouncilSessionsAsMainTeacher(): HasMany
+    {
+        return $this->hasMany(ClassCouncilSession::class, 'main_teacher_id');
+    }
+
+    public function subjectCoordinationProtocols(): HasMany
+    {
+        return $this->hasMany(SubjectCoordinationProtocol::class, 'coordinator_id');
+    }
+
+    public function curriculumPacingAudits(): HasMany
+    {
+        return $this->hasMany(CurriculumPacingAudit::class, 'teacher_id');
     }
 
     /**

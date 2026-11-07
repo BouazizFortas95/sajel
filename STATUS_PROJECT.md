@@ -1737,6 +1737,53 @@ Full statutory compliance with Algerian Executive Decrees and National Education
       - Health check verified: `[PASS] schema: All required tables present (54)`.
       - Code standards enforced via `vendor/bin/pint`.
 
+## 47. Official Class Councils Deliberation Ledger, Subject Coordination Protocols & Curriculum Pacing Audit System (منظومة محاضر مداولات مجالس الأقسام الرسمية، بروتوكولات التنسيق البيداغوجي، وتدقيق نسب إنجاز المناهج والتدرج السنوي - Procès-Verbaux des Conseils de Classe, Coordination Pédagogique & Suivi d'Avancement des Programmes) (100%)
+
+Full statutory alignment with Algerian Ministerial Decrees 157 and 158 governing Teaching Councils, Class Councils, pedagogical coordination protocols, and curriculum progression audits:
+- [x] **Database Schema & Deliberation Tables (58 core tables):**
+      - Migration `2026_11_18_010001_create_class_council_and_pedagogical_coordination_tables.php` adding 4 dedicated domain tables:
+        - `class_council_sessions`: official quarterly council sessions (`classroom_id`, `trimester`, `academic_year`, `session_date`, `president_id`, `main_teacher_id`, `counselor_id`, `supervisor_id`, `student_delegates`, `general_appreciation`, `class_average`, `highest_average`, `lowest_average`, `success_rate`, `total_students`, `status`, `council_decisions_summary`, `recorded_by`).
+        - `class_council_decisions`: student-by-student official council decisions (`class_council_session_id`, `student_id`, `trimester_average`, `annual_average`, `rank`, `honors`, `sanctions`, `end_of_year_decision`, `orientation_stream`, `remarks`).
+        - `subject_coordination_protocols`: periodic subject coordination meeting minutes (`academic_year`, `subject_id`, `trimester`, `meeting_date`, `coordinator_id`, `attendees`, `topic`, `syllabus_pacing_notes`, `unified_exams_notes`, `difficulties_and_remediations`, `recommendations`, `recorded_by`).
+        - `curriculum_pacing_audits`: quarterly syllabus execution audits per classroom and subject (`academic_year`, `trimester`, `audit_date`, `classroom_id`, `subject_id`, `teacher_id`, `expected_resources_count`, `completed_resources_count`, `execution_percentage`, `pacing_status`, `delay_reasons`, `compensatory_plan`, `audited_by`).
+      - Updated `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` expanding core schema from 54 to 58 tables: `[PASS] schema: All required tables present (58)`.
+- [x] **Domain Enums Architecture (`app/Enums`):**
+      - `ClassCouncilSessionStatus`: `Draft`, `Deliberated`, `Certified` with bilingual labels and tone badges.
+      - `CouncilHonors`: `None`, `TableauHonneur` (>=12.0), `Encouragement` (>=14.0), `Felicitations` (>=15.0).
+      - `CouncilSanctions`: `None`, `AvertissementTravail` (<8.0), `BlameTravail` (<6.0), `AvertissementConduite`, `BlameConduite`.
+      - `EndOfYearDecision`: `None`, `Admis`, `Redouble`, `Reoriente`, `Exclu` with statutory Algerian terminology.
+      - `PacingStatus`: `Ahead`, `OnTrack`, `MinorDelay`, `CriticalDelay` with execution rate classifier.
+- [x] **Domain Service Layer (`ClassCouncilDeliberationService`):**
+      - `getOrCreateSession()`: creates or resolves the session for classroom, trimester, and academic year.
+      - `syncDecisionsFromGrades()`: automatically calculates student averages from assessments, assigns ranks, determines statutory honors and academic reprimands, evaluates class statistics (class average, highest, lowest, pass rate), and updates session status.
+      - `certifySession()`: officially locks and certifies the class council deliberation minutes.
+      - `recordSubjectCoordination()`: records subject team meetings, unified testing criteria, and remedial strategies.
+      - `auditCurriculumPacing()`: scans daily logs and compares actual completed knowledge resources against expected ministerial progression to detect syllabus pacing delays.
+      - `assembleClassCouncilPvData()`, `assembleCoordinationPvData()`, `assemblePacingAuditData()`.
+- [x] **Controller Actions & Secure Routing (`ClassCouncilDeliberationController`, `routes/web.php`):**
+      - 6 dedicated routes for official sheet previews and high-fidelity PDF stream downloads via `BrowsershotFactory` with resilient HTML fallback:
+        - `print.class-council-deliberation.pv` (`/{locale}/print/class-council-deliberation/{session}`)
+        - `print.class-council-deliberation.pv.pdf` (`/{locale}/print/class-council-deliberation/{session}/pdf`)
+        - `print.subject-coordination.pv` (`/{locale}/print/subject-coordination/{protocol}`)
+        - `print.subject-coordination.pv.pdf` (`/{locale}/print/subject-coordination/{protocol}/pdf`)
+        - `print.curriculum-pacing-audit` (`/{locale}/print/curriculum-pacing-audit/{year}/{trimester}`)
+        - `print.curriculum-pacing-audit.pdf` (`/{locale}/print/curriculum-pacing-audit/{year}/{trimester}/pdf`)
+- [x] **Official Algerian Printable Templates:**
+      - `resources/views/print/class-council-pv.blade.php`: Procès-verbal de délibération du conseil de classe (محضر مداولات مجلس القسم الرسمي - القرار الوزاري 158 - A4 Landscape) featuring ministerial header, council leadership composition, statistical distribution cards, full student roster with ranks, averages, honors, sanctions, and end-of-year decisions, general council appreciation, and multi-member signature visas.
+      - `resources/views/print/subject-coordination-pv.blade.php`: Procès-verbal de coordination pédagogique (محضر جلسة التنسيق البيداغوجي لمدرسي المادة - القرار 157 - A4 Portrait) featuring subject coordinator, attendee teachers, syllabus pacing review, unified exam agreements, learning difficulties and remedial plan, and teacher signatures.
+      - `resources/views/print/curriculum-pacing-audit-sheet.blade.php`: Bilan de progression des programmes (كشف تدقيق ومتابعة نسب إنجاز المناهج والتدرج السنوي - A4 Landscape) detailing classroom, subject, teacher, expected lessons, completed logbook lessons, execution %, status badge, and compensatory remedial calendar.
+- [x] **Interactive Filament Livewire Cockpit (`ClassCouncilHub`):**
+      - Enhanced existing `ClassCouncilHub` under `__('التقويمات والامتحانات والمجالس')` with 3 dynamic tabs:
+        1. **Class Council Sessions (مجالس الأقسام ومحاضر المداولات):** Classroom and trimester selectors, live KPI cards, one-click deliberation calculation and grade sync action, student decision matrix, official certification action, and instant print/PDF shortcuts.
+        2. **Subject Coordination (التنسيق البيداغوجي لمدرسي المادة):** Subject and trimester filters, modal for recording new coordination sessions, protocols ledger, and printable minutes.
+        3. **Curriculum Pacing Audit (تدقيق وتدرج المناهج السنوي):** Trimester and level filters, automated audit executor, execution progress table, status badges, and official audit ledger print.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - 74 translation keys added to `lang/ar.json`, `lang/en.json`, and `lang/fr.json` verified by `LocalizationCompletenessTest`.
+      - 15 comprehensive feature tests in `tests/Feature/ClassCouncilDeliberationTest.php` passing 100% green (51 assertions).
+      - Backward compatibility verified with 5 tests in `tests/Feature/ClassCouncilTest.php` passing 100% green (42 assertions).
+      - Strict role navigation tailoring verified in `tests/Feature/RoleNavigationTailoringTest.php`.
+      - Code style verified with `vendor/bin/pint`.
+
 
 
 

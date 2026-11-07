@@ -71,6 +71,10 @@ class SchoolRestoreService
         'staff_installations',
         'administrative_handovers',
         'official_mails',
+        'class_council_sessions',
+        'class_council_decisions',
+        'subject_coordination_protocols',
+        'curriculum_pacing_audits',
     ];
 
     /**
