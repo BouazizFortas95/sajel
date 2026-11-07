@@ -303,7 +303,12 @@ class User extends Authenticatable implements FilamentUser
 
     public function canManageSchoolSettings(): bool
     {
-        return $this->isDeveloper() || $this->isPrincipal();
+        return $this->isPrincipal();
+    }
+
+    public function canManageInstitutions(): bool
+    {
+        return $this->isDeveloper() || $this->role === Role::Admin;
     }
 
     public function canValidateOfficialReports(): bool

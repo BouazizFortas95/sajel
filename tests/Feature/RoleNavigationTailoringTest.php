@@ -42,6 +42,7 @@ use App\Filament\Resources\AssessmentResource;
 use App\Filament\Resources\ClassroomResource;
 use App\Filament\Resources\CurriculumDomainResource;
 use App\Filament\Resources\DailyLogResource;
+use App\Filament\Resources\EducationalInstitutionResource;
 use App\Filament\Resources\EducationPhaseResource;
 use App\Filament\Resources\PedagogicalMemoResource;
 use App\Filament\Resources\ScheduleResource;
@@ -243,6 +244,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertTrue(ScheduleResource::shouldRegisterNavigation());
         $this->assertTrue(UserResource::shouldRegisterNavigation());
         $this->assertTrue(ManageSchoolSettings::shouldRegisterNavigation());
+        $this->assertFalse(EducationalInstitutionResource::shouldRegisterNavigation(), 'Principal manages their own school settings, not the platform institution registry.');
         $this->assertTrue(DeveloperSettingsHub::shouldRegisterNavigation());
 
         $dev = User::factory()->create(['role' => Role::Developer]);
@@ -259,7 +261,8 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertTrue(SchoolCanteenHub::shouldRegisterNavigation());
         $this->assertTrue(StaffCareerHub::shouldRegisterNavigation());
         $this->assertTrue(UserResource::shouldRegisterNavigation());
-        $this->assertTrue(ManageSchoolSettings::shouldRegisterNavigation());
+        $this->assertFalse(ManageSchoolSettings::shouldRegisterNavigation(), 'Developer does not see the single school settings page.');
+        $this->assertTrue(EducationalInstitutionResource::shouldRegisterNavigation(), 'Developer sees the multi-institution registry.');
         $this->assertTrue(DeveloperSettingsHub::shouldRegisterNavigation());
     }
 }

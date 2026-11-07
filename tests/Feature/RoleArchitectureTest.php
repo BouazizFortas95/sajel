@@ -42,7 +42,8 @@ class RoleArchitectureTest extends TestCase
         $this->assertTrue($dev->isAdmin());
         $this->assertTrue($dev->isLeadership());
         $this->assertTrue($dev->canManageUsers());
-        $this->assertTrue($dev->canManageSchoolSettings());
+        $this->assertFalse($dev->canManageSchoolSettings());
+        $this->assertTrue($dev->canManageInstitutions());
         $this->assertTrue($dev->canManageDiscipline());
         $this->assertTrue($dev->canManageCounseling());
         $this->assertTrue($dev->canManageTextbooks());
@@ -90,6 +91,7 @@ class RoleArchitectureTest extends TestCase
         $this->assertTrue($principal->isLeadership());
         $this->assertTrue($principal->canManageUsers());
         $this->assertTrue($principal->canManageSchoolSettings());
+        $this->assertFalse($principal->canManageInstitutions());
         $this->assertTrue($principal->canManageDiscipline());
         $this->assertTrue($principal->canManageCounseling());
         $this->assertTrue($principal->canManageTextbooks());

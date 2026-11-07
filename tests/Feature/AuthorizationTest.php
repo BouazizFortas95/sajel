@@ -157,8 +157,8 @@ class AuthorizationTest extends TestCase
         $ownSchedule = Schedule::factory()->create(['user_id' => $teacher->id]);
         $otherSchedule = Schedule::factory()->create();
 
-        // Schedules: ownership for teachers, full access for admins.
-        $this->assertTrue(Gate::forUser($teacher)->allows('update', $ownSchedule));
+        // Schedules: teachers cannot modify schedules; only leadership/admin can update.
+        $this->assertFalse(Gate::forUser($teacher)->allows('update', $ownSchedule));
         $this->assertFalse(Gate::forUser($teacher)->allows('update', $otherSchedule));
         $this->assertTrue(Gate::forUser($admin)->allows('update', $otherSchedule));
         $this->assertFalse(Gate::forUser($teacher)->allows('delete', $otherSchedule));

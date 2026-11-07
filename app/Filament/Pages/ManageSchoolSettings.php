@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\EducationalInstitution;
 use App\Models\SchoolSetting;
 use App\Services\SchoolBackupService;
 use App\Services\SchoolRestoreService;
@@ -35,7 +36,18 @@ class ManageSchoolSettings extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return Auth::user()?->isAdmin() ?? false;
+        $user = Auth::user();
+
+        if (! $user) {
+            return false;
+        }
+
+        // Hiding single-school settings from the Developer; Developer manages the institutions registry instead
+        if ($user->isDeveloper()) {
+            return false;
+        }
+
+        return $user->canManageSchoolSettings();
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -205,6 +217,20 @@ class ManageSchoolSettings extends Page implements HasForms
 
         $setting = SchoolSetting::query()->orderBy('id')->first() ?? new SchoolSetting;
         $setting->fill($data)->save();
+
+        // Keep current EducationalInstitution record in sync
+        $institution = EducationalInstitution::where('is_current', true)->first();
+        if ($institution) {
+            $institution->update([
+                'name' => $data['school_name'] ?? $institution->name,
+                'directorate_name' => $data['directorate_name'] ?? $institution->directorate_name,
+                'municipality' => $data['municipality_name'] ?? $institution->municipality,
+                'principal_name' => $data['principal_name'] ?? $institution->principal_name,
+                'counselor_name' => $data['counselor_name'] ?? $institution->counselor_name,
+                'code' => $data['school_code'] ?? $institution->code,
+                'academic_year' => $data['academic_year'] ?? $institution->academic_year,
+            ]);
+        }
 
         SchoolSetting::flushCache();
 

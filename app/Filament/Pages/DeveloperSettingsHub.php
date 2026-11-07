@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\EducationalInstitutionResource;
 use App\Models\PlatformSetting;
 use App\Services\PlatformSettingsService;
 use Filament\Actions\Action;
@@ -293,6 +294,12 @@ class DeveloperSettingsHub extends Page implements HasForms
         $telemetry = app(PlatformSettingsService::class)->getSystemTelemetry();
 
         return [
+            Action::make('manageInstitutions')
+                ->label(__('سجل المؤسسات التربوية'))
+                ->icon('heroicon-o-building-office-2')
+                ->color('success')
+                ->url(fn (): string => EducationalInstitutionResource::getUrl()),
+
             Action::make('clearCache')
                 ->label(__('مسح وتحديث ذاكرة التخزين المؤقت'))
                 ->icon('heroicon-o-trash')
