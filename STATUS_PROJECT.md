@@ -1784,6 +1784,49 @@ Full statutory alignment with Algerian Ministerial Decrees 157 and 158 governing
       - Strict role navigation tailoring verified in `tests/Feature/RoleNavigationTailoringTest.php`.
       - Code style verified with `vendor/bin/pint`.
 
+## 48. Permanent & Special School Inventory, Material Allocations & Asset Decommissioning System (منظومة سجل الجرد الدائم العام والخاص، بطاقات تخصيص العتاد، ومحاضر الإسقاط والإتلاف - Inventaire Permanent du Mobilier et Matériel Scolaire) (100%)
+
+Full statutory alignment with Algerian National Education Circular 143/97 and Ministry of Finance regulations governing public property inventory, room allocations, and asset reform in educational institutions:
+- [x] **Database Schema & Inventory Tables (61 core tables):**
+      - Migration `2026_11_19_010001_create_school_inventory_tables.php` creating 3 dedicated tables:
+        - `inventory_items`: permanent general and special inventory registry (`inventory_number`, `category`, `designation`, `specifications`, `acquisition_date`, `acquisition_source`, `acquisition_cost`, `quantity`, `location_type`, `location_name`, `custodian_id`, `condition`, `is_reformed`, `reformed_at`, `reform_reason`, `notes`, `recorded_by`).
+        - `inventory_allocations`: room and science lab allocation cards (`allocation_ref`, `room_name`, `room_type`, `responsible_user_id`, `academic_year`, `items_count`, `condition_verified`, `notes`, `signed_at`, `recorded_by`).
+        - `inventory_reforms`: reform and asset decommissioning commission minutes (`reform_number`, `reform_date`, `academic_year`, `committee_president_id`, `total_items_count`, `total_estimated_value`, `commission_observations`, `domains_notification_date`, `status`, `recorded_by`).
+      - Updated `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` expanding core schema from 58 to 61 tables: `[PASS] schema: All required tables present (61)`.
+- [x] **Domain Enums Architecture (`app/Enums`):**
+      - `InventoryCategory`: `Furniture` (01), `ScientificLab` (02), `AudiovisualIt` (03), `Sports` (04), `LibraryDocs` (05), `KitchenRefectory` (06) with statutory category codes and colors.
+      - `InventoryCondition`: `Good`, `Fair`, `Damaged`, `Reformed`, `Lost` with condition labels and badge tones.
+      - `InventoryReformStatus`: `Proposed`, `ApprovedByBoard`, `Discharged` tracking the official disposal lifecycle.
+- [x] **Domain Service Layer (`SchoolInventoryService`):**
+      - Statutory inventory numbering generator conforming to Circular 143/97: `category_code/sequential_number/year` (e.g. `02/0001/2026`).
+      - Asset registration (`registerItem`), condition updating (`updateCondition`), room allocations (`recordAllocation`), and reform execution (`recordReform`).
+      - KPI metrics engine (`getInventoryKpis`): active items count, total estimated valuation in DZD, scientific lab assets, and reform counts.
+      - Printable data assemblers: `assembleGeneralLedgerData`, `assembleAllocationSheetData`, `assembleReformPvData`.
+- [x] **Controller Actions & Secure Routing (`SchoolInventoryController`, `routes/web.php`):**
+      - 6 dedicated routes for official previews and high-fidelity PDF stream downloads via `BrowsershotFactory`:
+        - `print.inventory.general-ledger` (`/{locale}/print/inventory/general-ledger/{category?}`)
+        - `print.inventory.general-ledger.pdf` (`/{locale}/print/inventory/general-ledger/{category?}/pdf`)
+        - `print.inventory.allocation-sheet` (`/{locale}/print/inventory/allocation/{allocation}`)
+        - `print.inventory.allocation-sheet.pdf` (`/{locale}/print/inventory/allocation/{allocation}/pdf`)
+        - `print.inventory.reform-pv` (`/{locale}/print/inventory/reform/{reform}`)
+        - `print.inventory.reform-pv.pdf` (`/{locale}/print/inventory/reform/{reform}/pdf`)
+- [x] **Official Algerian Printable Templates:**
+      - `resources/views/print/inventory-general-ledger.blade.php`: Grand livre d'inventaire permanent général et spécial (سجل الجرد الدائم العام والخاص المعتمد - A4 Landscape) formatted per Circular 143/97 with statutory registration numbers, acquisition origins, costs, and multi-partite visa blocks (Bursar, Principal, Custodian).
+      - `resources/views/print/inventory-allocation-sheet.blade.php`: Fiche d'affectation de local (بطاقة تخصيص عتاد الحجرة / المخبر - A4 Portrait) featuring room designation, custodian commitment, itemized inventory, and signature visas.
+      - `resources/views/print/inventory-reform-pv.blade.php`: Procès-verbal de commission de réforme (محضر معاينة وإسقاط التجهيزات غير الصالحة للاستعمال - A4 Portrait) with inspection committee members, technical depreciation causes, total estimated value, and State Property recommendation.
+- [x] **Interactive Filament Livewire Cockpit (`SchoolInventoryHub`):**
+      - Registered under `__('المصالح المالية والكتاب المدرسي')` with icon `heroicon-o-cube` (sort order 3).
+      - 3 interactive tabs:
+        1. **Inventory Ledger (سجل الجرد الدائم العام والخاص):** Real-time financial valuation cards, comprehensive search, category/condition filters, Add Item modal, and print/PDF ledger actions.
+        2. **Location Allocations (بطاقات التخصيص والمواقع):** Grid of room and lab custody cards, custodian assignment, item counts, and print allocation sheets.
+        3. **Asset Reforms (محاضر الإسقاط والإتلاف):** Multi-item decommissioning workflow, committee president assignment, observations, and official reform PV generation.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - Full tri-lingual dictionary populated in `lang/ar.json`, `lang/en.json`, and `lang/fr.json` verified by `LocalizationCompletenessTest`.
+      - 15 comprehensive feature tests in `tests/Feature/SchoolInventoryTest.php` passing 100% green (39 assertions).
+      - Health check verified: `[PASS] schema: All required tables present (61)`.
+      - Strict role navigation tailoring verified in `tests/Feature/RoleNavigationTailoringTest.php`.
+      - Code style verified with `vendor/bin/pint`.
+
 
 
 

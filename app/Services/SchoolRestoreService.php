@@ -75,6 +75,9 @@ class SchoolRestoreService
         'class_council_decisions',
         'subject_coordination_protocols',
         'curriculum_pacing_audits',
+        'inventory_items',
+        'inventory_allocations',
+        'inventory_reforms',
     ];
 
     /**

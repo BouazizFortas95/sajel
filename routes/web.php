@@ -21,6 +21,7 @@ use App\Http\Controllers\SchoolArchiveController;
 use App\Http\Controllers\SchoolCanteenController;
 use App\Http\Controllers\SchoolCensusController;
 use App\Http\Controllers\SchoolHealthController;
+use App\Http\Controllers\SchoolInventoryController;
 use App\Http\Controllers\SchoolLifeController;
 use App\Http\Controllers\StaffCareerController;
 use App\Http\Controllers\StudentAwardController;
@@ -760,6 +761,37 @@ Route::get('/{locale}/print/curriculum-pacing-audit/{year}/{trimester}/pdf', [Cl
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.curriculum-pacing-audit.pdf');
+
+// ─── School Inventory: General Ledger, Allocations & Reforms (Phase 48) ──────
+Route::get('/{locale}/print/inventory/general-ledger/{category?}', [SchoolInventoryController::class, 'printGeneralLedger'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.inventory.general-ledger');
+
+Route::get('/{locale}/print/inventory/general-ledger/{category?}/pdf', [SchoolInventoryController::class, 'printGeneralLedgerPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.inventory.general-ledger.pdf');
+
+Route::get('/{locale}/print/inventory/allocation/{allocation}', [SchoolInventoryController::class, 'printAllocationSheet'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.inventory.allocation-sheet');
+
+Route::get('/{locale}/print/inventory/allocation/{allocation}/pdf', [SchoolInventoryController::class, 'printAllocationSheetPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.inventory.allocation-sheet.pdf');
+
+Route::get('/{locale}/print/inventory/reform/{reform}', [SchoolInventoryController::class, 'printReformPv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.inventory.reform-pv');
+
+Route::get('/{locale}/print/inventory/reform/{reform}/pdf', [SchoolInventoryController::class, 'printReformPvPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.inventory.reform-pv.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link
