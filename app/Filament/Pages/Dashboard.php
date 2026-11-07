@@ -16,6 +16,13 @@ class Dashboard extends BaseDashboard
         return 'filament.pages.dashboard';
     }
 
+    public function getTitle(): string
+    {
+        return auth()->user()?->isDeveloper()
+            ? __('مركز قيادة المطور ومجمّع شبكة المؤسسات التربوية')
+            : __('لوحة القيادة التربوية للمؤسسة');
+    }
+
     /**
      * Widget classes kept for the dashboard contract and widget tests.
      *

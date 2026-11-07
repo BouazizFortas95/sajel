@@ -13,7 +13,7 @@
                     <p class="text-sm font-semibold text-amber-700 dark:text-amber-400">{{ __('مرحباً بك في سجِّل') }}</p>
 
                     <h1 class="mt-1 text-2xl font-bold tracking-tight text-gray-950 dark:text-white sm:text-3xl">
-                        {{ __('لوحة التحكم') }}
+                        {{ $user->isPrincipal() ? __('لوحة القيادة التربوية — إدارة المؤسسة') : __('لوحة المتابعة البيداغوجية للمؤسسة') }}
                     </h1>
 
                     <p class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-600 dark:text-gray-300">
