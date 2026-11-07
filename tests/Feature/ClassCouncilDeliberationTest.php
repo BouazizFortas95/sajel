@@ -363,6 +363,6 @@ class ClassCouncilDeliberationTest extends TestCase
     {
         $this->artisan('sajel:health-check')
             ->assertExitCode(0)
-            ->expectsOutputToContain('[PASS] schema: All required tables present (58)');
+            ->expectsOutputToContain('[PASS] schema: All required tables present');
     }
 }

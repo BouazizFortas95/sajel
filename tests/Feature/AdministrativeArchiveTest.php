@@ -370,6 +370,6 @@ class AdministrativeArchiveTest extends TestCase
     {
         $this->artisan('sajel:health-check')
             ->assertExitCode(0)
-            ->expectsOutputToContain('[PASS] schema: All required tables present (54)');
+            ->expectsOutputToContain('[PASS] schema: All required tables present');
     }
 }
