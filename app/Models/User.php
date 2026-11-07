@@ -5,6 +5,9 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\Role;
 use Carbon\Carbon;
+use App\Models\StaffInstallation;
+use App\Models\AdministrativeHandover;
+use App\Models\OfficialMail;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -129,6 +132,26 @@ class User extends Authenticatable implements FilamentUser
     public function movements(): HasMany
     {
         return $this->hasMany(StaffMovement::class)->orderByDesc('effective_date');
+    }
+
+    public function installations(): HasMany
+    {
+        return $this->hasMany(StaffInstallation::class)->orderByDesc('installation_date');
+    }
+
+    public function outgoingHandovers(): HasMany
+    {
+        return $this->hasMany(AdministrativeHandover::class, 'outgoing_user_id')->orderByDesc('handover_date');
+    }
+
+    public function incomingHandovers(): HasMany
+    {
+        return $this->hasMany(AdministrativeHandover::class, 'incoming_user_id')->orderByDesc('handover_date');
+    }
+
+    public function assignedMails(): HasMany
+    {
+        return $this->hasMany(OfficialMail::class, 'assigned_to')->orderByDesc('mail_date');
     }
 
     /**
@@ -334,6 +357,11 @@ class User extends Authenticatable implements FilamentUser
     public function canManageStaffCareer(): bool
     {
         return $this->isDeveloper() || $this->isPrincipal() || $this->isCensor() || $this->isAdmin();
+    }
+
+    public function canManageAdministrativeArchive(): bool
+    {
+        return $this->isDeveloper() || $this->isPrincipal() || $this->isCensor() || $this->isFinanceOfficer() || $this->isAdmin();
     }
 
     /**

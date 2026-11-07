@@ -66,6 +66,9 @@ class SchoolBackupService
         'staff_evaluations',
         'career_advancements',
         'staff_movements',
+        'staff_installations',
+        'administrative_handovers',
+        'official_mails',
     ];
 
     /**

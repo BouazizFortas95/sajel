@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdministrativeArchiveController;
 use App\Http\Controllers\ClassCouncilController;
 use App\Http\Controllers\CounselingController;
 use App\Http\Controllers\DisciplinaryCouncilController;
@@ -694,6 +695,39 @@ Route::get('/{locale}/staff-career/advancements/export-csv', [StaffCareerControl
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('staff-career.advancements.export-csv');
+
+// ─── Administrative Archive: Installation Minutes ───────────────────────────────
+Route::get('/{locale}/print/admin-archive/installation/{installation}', [AdministrativeArchiveController::class, 'printInstallationSheet'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.admin-archive.installation-sheet');
+
+Route::get('/{locale}/print/admin-archive/installation/{installation}/pdf', [AdministrativeArchiveController::class, 'printInstallationSheetPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.admin-archive.installation-sheet.pdf');
+
+// ─── Administrative Archive: Handover Minutes ────────────────────────────────────
+Route::get('/{locale}/print/admin-archive/handover/{handover}', [AdministrativeArchiveController::class, 'printHandoverSheet'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.admin-archive.handover-sheet');
+
+Route::get('/{locale}/print/admin-archive/handover/{handover}/pdf', [AdministrativeArchiveController::class, 'printHandoverSheetPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.admin-archive.handover-sheet.pdf');
+
+// ─── Administrative Archive: Official Mail Ledger ────────────────────────────────
+Route::get('/{locale}/print/admin-archive/mail-ledger/{type}/{year}', [AdministrativeArchiveController::class, 'printMailLedger'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.admin-archive.mail-ledger');
+
+Route::get('/{locale}/print/admin-archive/mail-ledger/{type}/{year}/pdf', [AdministrativeArchiveController::class, 'printMailLedgerPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.admin-archive.mail-ledger.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link
