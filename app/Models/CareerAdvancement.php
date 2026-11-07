@@ -89,4 +89,3 @@ class CareerAdvancement extends Model
         ];
     }
 }
-

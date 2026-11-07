@@ -32,4 +32,3 @@ enum EndOfYearDecision: string
         };
     }
 }
-

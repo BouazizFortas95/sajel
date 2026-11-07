@@ -94,6 +94,12 @@ class SchoolBackupService
         'boarding_exit_passes',
         'school_bus_routes',
         'student_bus_subscriptions',
+        'safety_emergency_plans',
+        'safety_intervention_teams',
+        'school_safety_incidents',
+        'safety_fire_equipment',
+        'safety_evacuation_drills',
+        'safety_committee_meetings',
     ];
 
     /**

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\HandoverRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -49,4 +48,3 @@ class StaffInstallation extends Model
         return $this->user?->name ?? '—';
     }
 }
-

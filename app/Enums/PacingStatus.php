@@ -52,4 +52,3 @@ enum PacingStatus: string
         return self::CriticalDelay;
     }
 }
-

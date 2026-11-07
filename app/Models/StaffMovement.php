@@ -49,4 +49,3 @@ class StaffMovement extends Model
         };
     }
 }
-

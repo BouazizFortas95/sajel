@@ -33,4 +33,3 @@ class OfficialExamIncident extends Model
         return $this->belongsTo(User::class, 'reported_by');
     }
 }
-

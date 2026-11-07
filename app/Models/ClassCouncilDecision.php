@@ -34,4 +34,3 @@ class ClassCouncilDecision extends Model
         return $this->belongsTo(Student::class);
     }
 }
-

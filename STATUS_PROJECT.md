@@ -2024,6 +2024,55 @@ Full statutory alignment with Algerian educational legislation on boarding insti
       - Schema integrity verified by `sajel:health-check`: `[PASS] schema: All required tables present (79)`.
       - Code style verified with `vendor/bin/pint`.
 
+## 53. Comprehensive School Physical Security, Internal Security Plan (PSI), Emergency Evacuation Drills & School Accidents Management System (منظومة الوقاية والأمن الداخلي للمؤسسة PSI، تمارين الإخلاء، سجل أجهزة الإطفاء والغاز، والتصريح بالحوادث المدرسية وحوادث العمل - Plan de Sécurité Interne (PSI), Prévention & Accidents Scolaires) (100%)
+
+Full statutory alignment with Algerian legislation on occupational hygiene, safety, major hazards management, civil protection joint drills, and school accidents reporting, notably **Loi n° 88-07** (relative à l'hygiène, à la sécurité et à la médecine du travail), **Loi n° 04-20** (relative à la prévention des risques majeurs et à la gestion des catastrophes), Joint Ministerial Instructions (MEN + DGPC) on the **Plan de Sécurité Interne (PSI)**, and Ministerial Circulars on the mandatory 48-hour declaration of school accidents to the Directorate of Education and school insurance (MAATEC):
+- [x] **Database Schema & Core Domain Tables (expanded to 85 core tables):**
+      - Migration `2026_11_25_010001_create_school_safety_and_psi_tables.php` creating 6 domain tables:
+        - `safety_emergency_plans`: school internal emergency & security plan (`academic_year`, `plan_code`, `title`, `crisis_cell_leader`, `evacuation_coordinator`, `first_aid_leader`, `technical_safety_officer`, `assembly_points`, `emergency_contacts`, `hazardous_zones`, `status`, `approval_date`, `approved_by`, `notes`).
+        - `safety_intervention_teams`: crisis response squads & first-aiders (`safety_plan_id`, `team_type`, `member_name`, `institution_role`, `user_id`, `assigned_zone`, `phone_number`, `is_certified_first_aider`, `notes`).
+        - `school_safety_incidents`: school & work accidents ledger (`academic_year`, `incident_number`, `incident_type`, `severity_level`, `incident_date`, `location`, `victim_type`, `student_id`, `user_id`, `victim_name`, `circumstances_description`, `bodily_injuries_description`, `immediate_care_administered`, `hospital_evacuation`, `hospital_name`, `medical_certificate_ref`, `temporary_incapacity_days`, `witnesses_statements`, `supervising_personnel_at_time`, `insurance_declared`, `declaration_date`, `directorate_notified`, `status`, `investigating_officer_name`, `notes`).
+        - `safety_fire_equipment`: fire extinguishers and gas detection ledger (`equipment_code`, `equipment_type`, `exact_location`, `installation_date`, `last_inspection_date`, `next_inspection_due_date`, `inspection_status`, `inspector_entity`, `notes`).
+        - `safety_evacuation_drills`: disaster evacuation simulation ledger (`academic_year`, `drill_code`, `drill_date`, `drill_time`, `simulation_scenario`, `evacuation_time_seconds`, `total_persons_evacuated`, `students_evacuated_count`, `staff_evacuated_count`, `assembly_zone_used`, `civil_protection_partner`, `civil_protection_representatives`, `evaluation_rating`, `bottlenecks_and_remarks`, `corrective_measures`, `status`).
+        - `safety_committee_meetings`: hygiene & safety commission (CHS) sessions (`academic_year`, `session_code`, `meeting_date`, `session_type`, `meeting_chair`, `members_present`, `agenda_items`, `deliberation_summary`, `decisions_and_recommendations`, `status`).
+      - Updated `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` expanding verified schema to 85 domain tables: `[PASS] schema: All required tables present (85)`.
+- [x] **Domain Enums Architecture (`app/Enums`):**
+      - `SafetyIncidentType`: `StudentAccident` (حادث مدرسي لتلميذ - Accident scolaire), `WorkAccident` (حادث عمل لموظف - Accident de travail), `InfrastructureHazard` (خطر هيكلي بالمنشأة - Risque bâtiment), `MaterialDamage` (أضرار مادية وتلف تجهيزات - Dégâts matériels).
+      - `SafetyIncidentSeverity`: `Minor` (بسيط / طفيف - Léger), `Moderate` (متوسط / إسعاف أولي - Moyen), `Severe` (خطير / إخلاء مستشفى - Grave), `Critical` (حرج جداً - Critique).
+      - `SafetyIncidentStatus`: `Draft` (مسودة قيد التحرير), `Declared` (تم التصريح رسمياً), `InTreatment` (قيد المتابعة الطبية), `Settled` (تمت التسوية والشفاء), `Archived` (مؤرشف).
+      - `SafetyEquipmentType`: `ExtinguisherPowder` (مطفأة بودرة جافة ABC), `ExtinguisherCo2` (مطفأة ثاني أكسيد الكربون CO2), `ExtinguisherWater` (مطفأة ماء رغوي), `FireAlarm` (جرس وإنذار حريق صوتي), `EmergencyLighting` (وحدات الإنارة الذاتية للطوارئ BAES), `CoDetector` (كاشف غاز أحادي أكسيد الكربون CO), `GasShutoffValve` (صمام أمان قطع الغاز المركزي).
+      - `SafetyEquipmentStatus`: `Operational` (صالح وجاهز للاستعمال), `NeedsRefill` (بحاجة لإعادة شحن وتعبئة), `NeedsMaintenance` (بحاجة للصيانة والتصليح), `OutOfService` (معطل وخارج الخدمة).
+      - `SafetyDrillScenario`: `Earthquake` (تمرين وقاية وإخلاء ضد الزلازل - Simulation Séisme), `FireOutbreak` (تمرين إخلاء ضد نشوب حريق - Simulation Incendie), `GasLeak` (تمرين إخلاء ضد تسرب غازي - Simulation Fuite de gaz), `GeneralDisaster` (تمرين إخلاء شامل ضد الأخطار الكبرى).
+      - `SafetyInterventionTeamType`: `FirstAid` (فوج الإسعافات الأولية والتضميد), `EvacuationGuide` (فوج التوجيه وتأمين مسالك الإخلاء), `FireContainment` (فوج التدخل الأولي والإطفاء), `SecurityPerimeter` (فوج تأمين المنافذ والمحيط الخارجي).
+- [x] **Domain Service Layer (`SchoolSafetyService`):**
+      - Sequential reference generators: `ACC/{year}/{seq}` for accidents, `PSI-{$year}-{$seq}` for security plans, `EXT-{$seq}` / `CO-DET-{$seq}` for fire safety equipment, `DRIL-{$year}-{$seq}` for disaster drills, and `CHS-{$year}-{$seq}` for committee sessions.
+      - Core operations: `declareAccident` with student/staff resolution and automatic incident numbering; `updateAccidentStatus` with statutory 48-hour insurance declaration and directorate notification timestamps; `createOrUpdateSafetyPlan` with default safe assembly zones, emergency phone directory, and hazard hotspots; `addInterventionMember` with civil protection certification flag; `registerEquipment` and `updateEquipmentInspection` with dynamic expiration and validity extension; `recordEvacuationDrill` with stopwatch elapsed time formatting (`2 د 45 ث`); `recordCommitteeMeeting`.
+      - Real-time telemetry & KPIs engine (`getSafetyTelemetry`): total incidents, student accidents, work accidents, hospitalized transfers, pending insurance declarations, total fire equipment, operational units, due/expired units, operational readiness rate (%), drills count, and certified first-aiders count.
+      - Printable data assemblers: `assembleAccidentDeclarationData`, `assembleEvacuationDrillPvData`, `assembleSafetyEquipmentRegisterData`.
+- [x] **Controller Actions & Secure Routing (`SchoolSafetyController`, `routes/web.php`):**
+      - 6 dedicated routes with Browsershot PDF streaming and HTML fallback:
+        - `print.safety.accident-declaration` & `.pdf` (`/{locale}/print/safety/incident/{incident}/declaration`)
+        - `print.safety.drill-pv` & `.pdf` (`/{locale}/print/safety/drill/{drill}/pv`)
+        - `print.safety.equipment-register` & `.pdf` (`/{locale}/print/safety/equipment/register`)
+      - Protected by strict permission check `User::canManageSchoolSafety()`.
+- [x] **Official Algerian Printable Templates:**
+      - `resources/views/print/safety-accident-declaration.blade.php`: Déclaration d'accident scolaire et procès-verbal de constat (استمارة التصريح الرسمي بحادث مدرسي / حادث عمل ومحضر المعاينة الإدارية - A4 Portrait) featuring victim credentials, class, matricule, precise date/time/location, detailed narrative of the event, witness statements, bodily injuries description, emergency hospital evacuation details, initial medical certificate reference, ITT days, and tripartite visas (Supervising Teacher, School Bursar, School Principal).
+      - `resources/views/print/safety-evacuation-drill-pv.blade.php`: Procès-verbal de l'exercice d'évacuation d'urgence et de simulation (محضر تمرين الإخلاء الافتراضي المشترك للوقاية من الكوارث والأخطار الكبرى - A4 Landscape) detailing simulation scenario, stopwatch duration, total evacuated count, assembly zone compliance, Civil Protection joint delegation attendees, bottlenecks and flow issues observed, corrective measures, and dual signatures (Evacuation Coordinator, Civil Protection Inspector, School Principal).
+      - `resources/views/print/safety-equipment-register.blade.php`: Registre de contrôle périodique des extincteurs, détecteurs de gaz et réseaux de sécurité (سجل المراقبة الدورية لأجهزة الإطفاء ومعدات السلامة وشبكة الغاز - A4 Landscape) tracking equipment codes, technical types, building locations, last inspection, next mandatory due date, operational status badges, certified inspecting body, and administrative certifying visas.
+- [x] **Interactive Filament Livewire Cockpit (`SchoolSafetyHub`):**
+      - Registered under `__('الحياة المدرسية وشؤون التلاميذ')` with icon `heroicon-o-shield-check` (sort order 5).
+      - 4 interactive tabs:
+        1. **الحوادث والتصريح الرسمي:** 5 live telemetry cards (Total, student accidents, work accidents, hospital evacuations, pending declarations), search and severity/type filters, incidents ledger with severity badges and declaration workflow buttons, Declare Accident modal, and instant Print/PDF official declaration shortcuts.
+        2. **أجهزة الإطفاء والغاز:** 4 live telemetry cards (Total equipment, operational, due for check, readiness rate %), operational/due filter pills, equipment ledger with expiration badges, Add Equipment modal, Quick Periodic Inspection modal, and instant Print/PDF Safety Register shortcuts.
+        3. **تمارين الإخلاء والمحاكاة:** Disaster simulations grid with scenario badges, stopwatch duration, evacuated counters, assembly zones, bottlenecks alert, Record Evacuation Drill modal, and instant Print/PDF Drill PV shortcuts.
+        4. **مخطط PSI وفرق التدخل:** Internal Security Plan leadership overview, safe assembly points list, official emergency phone numbers directory, intervention teams squad ledger (First Aid, Evacuation Guides, Fire Containment, Perimeter Security), and Add Member modal.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - Complete tri-lingual dictionary populated in `lang/ar.json`, `lang/en.json`, and `lang/fr.json` verified by `LocalizationCompletenessTest` (2 passed, 7 assertions).
+      - 18 comprehensive feature tests in `tests/Feature/SchoolSafetyTest.php` passing 100% green (76 assertions).
+      - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php` (6 tests, 122 assertions).
+      - Schema integrity verified by `sajel:health-check`: `[PASS] schema: All required tables present (85)`.
+      - Code style verified with `vendor/bin/pint`.
+
 
 
 

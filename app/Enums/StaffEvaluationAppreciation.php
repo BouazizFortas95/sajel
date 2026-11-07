@@ -57,4 +57,3 @@ enum StaffEvaluationAppreciation: string
         ];
     }
 }
-

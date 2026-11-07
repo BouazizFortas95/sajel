@@ -93,4 +93,3 @@ return new class extends Migration
         Schema::dropIfExists('official_exam_centers');
     }
 };
-

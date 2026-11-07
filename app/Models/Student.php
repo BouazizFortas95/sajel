@@ -300,4 +300,9 @@ class Student extends Model
     {
         return $this->hasMany(StudentBusSubscription::class);
     }
+
+    public function safetyIncidents(): HasMany
+    {
+        return $this->hasMany(SchoolSafetyIncident::class)->orderByDesc('incident_date');
+    }
 }

@@ -31,11 +31,11 @@ class OfficialMail extends Model
     ];
 
     protected $casts = [
-        'mail_date'         => 'date',
+        'mail_date' => 'date',
         'response_deadline' => 'date',
-        'mail_type'         => OfficialMailType::class,
-        'confidentiality'   => MailConfidentiality::class,
-        'status'            => MailStatus::class,
+        'mail_type' => OfficialMailType::class,
+        'confidentiality' => MailConfidentiality::class,
+        'status' => MailStatus::class,
     ];
 
     // ───── Relationships ─────
@@ -70,4 +70,3 @@ class OfficialMail extends Model
         return $this->mail_type === OfficialMailType::Outgoing;
     }
 }
-

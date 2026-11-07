@@ -9,7 +9,7 @@ enum OfficialMailType: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Incoming => __('وارد'),
             self::Outgoing => __('صادر'),
         };
@@ -17,7 +17,7 @@ enum OfficialMailType: string
 
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Incoming => 'info',
             self::Outgoing => 'warning',
         };
@@ -25,10 +25,9 @@ enum OfficialMailType: string
 
     public function prefix(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Incoming => 'ARR',
             self::Outgoing => 'DEP',
         };
     }
 }
-

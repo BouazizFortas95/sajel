@@ -34,6 +34,8 @@ class SajelHealthCheckCommand extends Command
         'school_solidarity_campaigns', 'student_solidarity_beneficiaries', 'school_solidarity_committee_members', 'school_solidarity_aid_distributions',
         'dormitory_rooms', 'student_dormitory_allocations', 'boarding_night_sessions', 'boarding_exit_passes',
         'school_bus_routes', 'student_bus_subscriptions',
+        'safety_emergency_plans', 'safety_intervention_teams', 'school_safety_incidents',
+        'safety_fire_equipment', 'safety_evacuation_drills', 'safety_committee_meetings',
     ];
 
     public function handle(): int

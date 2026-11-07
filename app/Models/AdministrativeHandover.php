@@ -29,11 +29,11 @@ class AdministrativeHandover extends Model
     ];
 
     protected $casts = [
-        'handover_date'   => 'date',
+        'handover_date' => 'date',
         'outgoing_signed' => 'boolean',
         'incoming_signed' => 'boolean',
         'director_signed' => 'boolean',
-        'role'            => HandoverRole::class,
+        'role' => HandoverRole::class,
     ];
 
     // ───── Relationships ─────
@@ -70,4 +70,3 @@ class AdministrativeHandover extends Model
         return $this->outgoing_signed && $this->incoming_signed && $this->director_signed;
     }
 }
-

@@ -71,4 +71,3 @@ return new class extends Migration
         Schema::dropIfExists('staff_installations');
     }
 };
-

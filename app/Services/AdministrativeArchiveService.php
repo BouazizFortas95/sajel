@@ -32,13 +32,13 @@ class AdministrativeArchiveService
     public function assembleInstallationSheetData(StaffInstallation $installation): array
     {
         $setting = SchoolSetting::current();
-        $user    = $installation->user;
+        $user = $installation->user;
 
         return [
             'installation' => $installation,
-            'user'         => $user,
-            'school'       => $setting,
-            'printed_at'   => now()->locale('ar')->isoFormat('LL'),
+            'user' => $user,
+            'school' => $setting,
+            'printed_at' => now()->locale('ar')->isoFormat('LL'),
         ];
     }
 
@@ -92,8 +92,8 @@ class AdministrativeArchiveService
         $setting = SchoolSetting::current();
 
         return [
-            'handover'   => $handover,
-            'school'     => $setting,
+            'handover' => $handover,
+            'school' => $setting,
             'printed_at' => now()->locale('ar')->isoFormat('LL'),
         ];
     }
@@ -108,7 +108,7 @@ class AdministrativeArchiveService
      */
     public function generateMailNumber(OfficialMailType $type, ?int $year = null): string
     {
-        $year   = $year ?? now()->year;
+        $year = $year ?? now()->year;
         $prefix = $type->prefix();
 
         $lastNumber = OfficialMail::where('mail_type', $type->value)
@@ -129,7 +129,7 @@ class AdministrativeArchiveService
 
         // Auto-generate mail number if not provided
         if (empty($data['mail_number'])) {
-            $year               = isset($data['mail_date'])
+            $year = isset($data['mail_date'])
                 ? (int) date('Y', strtotime($data['mail_date']))
                 : now()->year;
             $data['mail_number'] = $this->generateMailNumber($type, $year);
@@ -156,7 +156,7 @@ class AdministrativeArchiveService
     public function assembleMailLedgerData(string $mailType, ?int $year = null): array
     {
         $setting = SchoolSetting::current();
-        $year    = $year ?? now()->year;
+        $year = $year ?? now()->year;
 
         $mails = OfficialMail::where('mail_type', $mailType)
             ->whereYear('mail_date', $year)
@@ -164,10 +164,10 @@ class AdministrativeArchiveService
             ->get();
 
         return [
-            'mails'     => $mails,
+            'mails' => $mails,
             'mail_type' => OfficialMailType::from($mailType),
-            'year'      => $year,
-            'school'    => $setting,
+            'year' => $year,
+            'school' => $setting,
             'printed_at' => now()->locale('ar')->isoFormat('LL'),
         ];
     }
@@ -179,9 +179,9 @@ class AdministrativeArchiveService
     public function getInstallationStats(): array
     {
         return [
-            'total'        => StaffInstallation::count(),
-            'this_year'    => StaffInstallation::whereYear('installation_date', now()->year)->count(),
-            'this_month'   => StaffInstallation::whereYear('installation_date', now()->year)
+            'total' => StaffInstallation::count(),
+            'this_year' => StaffInstallation::whereYear('installation_date', now()->year)->count(),
+            'this_month' => StaffInstallation::whereYear('installation_date', now()->year)
                 ->whereMonth('installation_date', now()->month)->count(),
         ];
     }
@@ -189,8 +189,8 @@ class AdministrativeArchiveService
     public function getHandoverStats(): array
     {
         return [
-            'total'        => AdministrativeHandover::count(),
-            'unsigned'     => AdministrativeHandover::where('outgoing_signed', false)
+            'total' => AdministrativeHandover::count(),
+            'unsigned' => AdministrativeHandover::where('outgoing_signed', false)
                 ->orWhere('incoming_signed', false)
                 ->orWhere('director_signed', false)
                 ->count(),
@@ -202,17 +202,16 @@ class AdministrativeArchiveService
         $year = $year ?? now()->year;
 
         return [
-            'incoming_total'  => OfficialMail::where('mail_type', OfficialMailType::Incoming->value)
+            'incoming_total' => OfficialMail::where('mail_type', OfficialMailType::Incoming->value)
                 ->whereYear('mail_date', $year)->count(),
-            'outgoing_total'  => OfficialMail::where('mail_type', OfficialMailType::Outgoing->value)
+            'outgoing_total' => OfficialMail::where('mail_type', OfficialMailType::Outgoing->value)
                 ->whereYear('mail_date', $year)->count(),
-            'pending'         => OfficialMail::where('status', 'pending')
+            'pending' => OfficialMail::where('status', 'pending')
                 ->whereYear('mail_date', $year)->count(),
-            'overdue'         => OfficialMail::where('status', 'pending')
+            'overdue' => OfficialMail::where('status', 'pending')
                 ->whereNotNull('response_deadline')
                 ->where('response_deadline', '<', now()->toDateString())
                 ->count(),
         ];
     }
 }
-

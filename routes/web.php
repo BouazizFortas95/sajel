@@ -26,6 +26,7 @@ use App\Http\Controllers\SchoolCensusController;
 use App\Http\Controllers\SchoolHealthController;
 use App\Http\Controllers\SchoolInventoryController;
 use App\Http\Controllers\SchoolLifeController;
+use App\Http\Controllers\SchoolSafetyController;
 use App\Http\Controllers\SchoolSolidarityController;
 use App\Http\Controllers\StaffCareerController;
 use App\Http\Controllers\StudentAwardController;
@@ -942,6 +943,38 @@ Route::get('/{locale}/print/boarding/transport/{subscription}/card/pdf', [School
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.boarding.bus-card.pdf');
+
+// ─── School Safety, PSI & Accidents Routes ──────────────────────────
+
+Route::get('/{locale}/print/safety/incident/{incident}/declaration', [SchoolSafetyController::class, 'printAccidentDeclaration'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.safety.accident-declaration');
+
+Route::get('/{locale}/print/safety/incident/{incident}/declaration/pdf', [SchoolSafetyController::class, 'printAccidentDeclarationPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.safety.accident-declaration.pdf');
+
+Route::get('/{locale}/print/safety/drill/{drill}/pv', [SchoolSafetyController::class, 'printDrillPv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.safety.drill-pv');
+
+Route::get('/{locale}/print/safety/drill/{drill}/pv/pdf', [SchoolSafetyController::class, 'printDrillPvPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.safety.drill-pv.pdf');
+
+Route::get('/{locale}/print/safety/equipment/register', [SchoolSafetyController::class, 'printEquipmentRegister'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.safety.equipment-register');
+
+Route::get('/{locale}/print/safety/equipment/register/pdf', [SchoolSafetyController::class, 'printEquipmentRegisterPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.safety.equipment-register.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

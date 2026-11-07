@@ -2,13 +2,8 @@
 
 namespace App\Filament\Pages;
 
-use App\Enums\HandoverRole;
-use App\Enums\MailConfidentiality;
-use App\Enums\MailStatus;
-use App\Enums\OfficialMailType;
 use App\Models\AdministrativeHandover;
 use App\Models\OfficialMail;
-use App\Models\SchoolSetting;
 use App\Models\StaffInstallation;
 use App\Models\User;
 use App\Services\AdministrativeArchiveService;
@@ -56,53 +51,83 @@ class AdministrativeArchiveHub extends Page
     public string $activeTab = 'installations';
 
     // ─── Search & Filters ────────────────────────────────────────────────────
-    public string $searchQuery    = '';
+    public string $searchQuery = '';
+
     public string $mailTypeFilter = 'incoming';
-    public int    $yearFilter     = 2026;
+
+    public int $yearFilter = 2026;
 
     // ─── Installation Modal ─────────────────────────────────────────────────
-    public bool    $isInstallationModalOpen = false;
-    public ?int    $installUserId           = null;
-    public string  $installDate             = '';
-    public string  $installOrderRef         = '';
-    public string  $installRoleLabel        = '';
-    public string  $installGrade            = '';
-    public string  $installPrevInstitution  = '';
-    public string  $installDecisionRef      = '';
-    public string  $installNotes            = '';
+    public bool $isInstallationModalOpen = false;
+
+    public ?int $installUserId = null;
+
+    public string $installDate = '';
+
+    public string $installOrderRef = '';
+
+    public string $installRoleLabel = '';
+
+    public string $installGrade = '';
+
+    public string $installPrevInstitution = '';
+
+    public string $installDecisionRef = '';
+
+    public string $installNotes = '';
 
     // ─── Handover Modal ─────────────────────────────────────────────────────
-    public bool    $isHandoverModalOpen   = false;
-    public string  $handoverRole          = 'principal';
-    public string  $handoverDate          = '';
-    public ?int    $outgoingUserId        = null;
-    public ?int    $incomingUserId        = null;
-    public string  $outgoingName          = '';
-    public string  $incomingName          = '';
-    public string  $inventorySummary      = '';
-    public string  $inventoryRef          = '';
-    public string  $pendingDossiers       = '';
-    public string  $handoverRemarks       = '';
+    public bool $isHandoverModalOpen = false;
+
+    public string $handoverRole = 'principal';
+
+    public string $handoverDate = '';
+
+    public ?int $outgoingUserId = null;
+
+    public ?int $incomingUserId = null;
+
+    public string $outgoingName = '';
+
+    public string $incomingName = '';
+
+    public string $inventorySummary = '';
+
+    public string $inventoryRef = '';
+
+    public string $pendingDossiers = '';
+
+    public string $handoverRemarks = '';
 
     // ─── Mail Modal ─────────────────────────────────────────────────────────
-    public bool    $isMailModalOpen       = false;
-    public string  $mailType              = 'incoming';
-    public string  $mailDate              = '';
-    public string  $mailSender            = '';
-    public string  $mailRecipient         = '';
-    public string  $mailSubject           = '';
-    public string  $mailRefNumber         = '';
-    public string  $mailConfidentiality   = 'normal';
-    public ?string $mailDeadline          = null;
-    public string  $mailNotes             = '';
-    public ?int    $mailAssignedTo        = null;
+    public bool $isMailModalOpen = false;
+
+    public string $mailType = 'incoming';
+
+    public string $mailDate = '';
+
+    public string $mailSender = '';
+
+    public string $mailRecipient = '';
+
+    public string $mailSubject = '';
+
+    public string $mailRefNumber = '';
+
+    public string $mailConfidentiality = 'normal';
+
+    public ?string $mailDeadline = null;
+
+    public string $mailNotes = '';
+
+    public ?int $mailAssignedTo = null;
 
     public function mount(): void
     {
         $this->yearFilter = now()->year;
         $this->installDate = now()->toDateString();
         $this->handoverDate = now()->toDateString();
-        $this->mailDate    = now()->toDateString();
+        $this->mailDate = now()->toDateString();
     }
 
     // ─── Computed Properties ─────────────────────────────────────────────────
@@ -110,8 +135,7 @@ class AdministrativeArchiveHub extends Page
     public function getInstallationsProperty()
     {
         return StaffInstallation::with('user')
-            ->when($this->searchQuery, fn ($q) => $q->whereHas('user', fn ($u) =>
-                $u->where('name', 'like', "%{$this->searchQuery}%")
+            ->when($this->searchQuery, fn ($q) => $q->whereHas('user', fn ($u) => $u->where('name', 'like', "%{$this->searchQuery}%")
             ))
             ->orderByDesc('installation_date')
             ->get();
@@ -129,9 +153,8 @@ class AdministrativeArchiveHub extends Page
         return OfficialMail::with('assignedUser')
             ->where('mail_type', $this->mailTypeFilter)
             ->whereYear('mail_date', $this->yearFilter)
-            ->when($this->searchQuery, fn ($q) =>
-                $q->where('subject', 'like', "%{$this->searchQuery}%")
-                  ->orWhere('mail_number', 'like', "%{$this->searchQuery}%")
+            ->when($this->searchQuery, fn ($q) => $q->where('subject', 'like', "%{$this->searchQuery}%")
+                ->orWhere('mail_number', 'like', "%{$this->searchQuery}%")
             )
             ->orderBy('mail_number')
             ->get();
@@ -143,8 +166,8 @@ class AdministrativeArchiveHub extends Page
 
         return [
             'installations' => $service->getInstallationStats(),
-            'handovers'     => $service->getHandoverStats(),
-            'mails'         => $service->getMailStats($this->yearFilter),
+            'handovers' => $service->getHandoverStats(),
+            'mails' => $service->getMailStats($this->yearFilter),
         ];
     }
 
@@ -170,19 +193,19 @@ class AdministrativeArchiveHub extends Page
     {
         $this->validate([
             'installUserId' => 'required|exists:users,id',
-            'installDate'   => 'required|date',
+            'installDate' => 'required|date',
             'installRoleLabel' => 'required|string|max:200',
         ]);
 
         app(AdministrativeArchiveService::class)->recordInstallation([
-            'user_id'              => $this->installUserId,
-            'installation_date'    => $this->installDate,
+            'user_id' => $this->installUserId,
+            'installation_date' => $this->installDate,
             'recruitment_order_ref' => $this->installOrderRef ?: null,
-            'role_label'           => $this->installRoleLabel,
-            'statutory_grade'      => $this->installGrade ?: null,
+            'role_label' => $this->installRoleLabel,
+            'statutory_grade' => $this->installGrade ?: null,
             'previous_institution' => $this->installPrevInstitution ?: null,
             'ministry_decision_ref' => $this->installDecisionRef ?: null,
-            'notes'                => $this->installNotes ?: null,
+            'notes' => $this->installNotes ?: null,
         ]);
 
         $this->closeInstallationModal();
@@ -226,16 +249,16 @@ class AdministrativeArchiveHub extends Page
         ]);
 
         app(AdministrativeArchiveService::class)->recordHandover([
-            'role'              => $this->handoverRole,
-            'handover_date'     => $this->handoverDate,
-            'outgoing_user_id'  => $this->outgoingUserId ?: null,
-            'incoming_user_id'  => $this->incomingUserId ?: null,
-            'outgoing_name'     => $this->outgoingName ?: null,
-            'incoming_name'     => $this->incomingName ?: null,
+            'role' => $this->handoverRole,
+            'handover_date' => $this->handoverDate,
+            'outgoing_user_id' => $this->outgoingUserId ?: null,
+            'incoming_user_id' => $this->incomingUserId ?: null,
+            'outgoing_name' => $this->outgoingName ?: null,
+            'incoming_name' => $this->incomingName ?: null,
             'inventory_summary' => $this->inventorySummary ?: null,
-            'inventory_ref'     => $this->inventoryRef ?: null,
-            'pending_dossiers'  => $this->pendingDossiers ?: null,
-            'remarks'           => $this->handoverRemarks ?: null,
+            'inventory_ref' => $this->inventoryRef ?: null,
+            'pending_dossiers' => $this->pendingDossiers ?: null,
+            'remarks' => $this->handoverRemarks ?: null,
         ]);
 
         $this->closeHandoverModal();
@@ -287,22 +310,22 @@ class AdministrativeArchiveHub extends Page
     public function saveMail(): void
     {
         $this->validate([
-            'mailType'    => 'required|in:incoming,outgoing',
-            'mailDate'    => 'required|date',
+            'mailType' => 'required|in:incoming,outgoing',
+            'mailDate' => 'required|date',
             'mailSubject' => 'required|string|max:500',
         ]);
 
         app(AdministrativeArchiveService::class)->registerMail([
-            'mail_type'       => $this->mailType,
-            'mail_date'       => $this->mailDate,
-            'sender_name'     => $this->mailSender ?: null,
-            'recipient_name'  => $this->mailRecipient ?: null,
-            'subject'         => $this->mailSubject,
+            'mail_type' => $this->mailType,
+            'mail_date' => $this->mailDate,
+            'sender_name' => $this->mailSender ?: null,
+            'recipient_name' => $this->mailRecipient ?: null,
+            'subject' => $this->mailSubject,
             'reference_number' => $this->mailRefNumber ?: null,
             'confidentiality' => $this->mailConfidentiality,
             'response_deadline' => $this->mailDeadline ?: null,
-            'notes'           => $this->mailNotes ?: null,
-            'assigned_to'     => $this->mailAssignedTo ?: null,
+            'notes' => $this->mailNotes ?: null,
+            'assigned_to' => $this->mailAssignedTo ?: null,
         ]);
 
         $this->closeMailModal();
@@ -343,7 +366,7 @@ class AdministrativeArchiveHub extends Page
     public function getInstallationPrintUrl(int $id): string
     {
         return route('print.admin-archive.installation-sheet', [
-            'locale'       => app()->getLocale(),
+            'locale' => app()->getLocale(),
             'installation' => $id,
         ]);
     }
@@ -351,7 +374,7 @@ class AdministrativeArchiveHub extends Page
     public function getHandoverPrintUrl(int $id): string
     {
         return route('print.admin-archive.handover-sheet', [
-            'locale'   => app()->getLocale(),
+            'locale' => app()->getLocale(),
             'handover' => $id,
         ]);
     }
@@ -360,9 +383,8 @@ class AdministrativeArchiveHub extends Page
     {
         return route('print.admin-archive.mail-ledger', [
             'locale' => app()->getLocale(),
-            'type'   => $type,
-            'year'   => $year,
+            'type' => $type,
+            'year' => $year,
         ]);
     }
 }
-
