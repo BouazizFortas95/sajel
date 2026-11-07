@@ -193,7 +193,7 @@
                 class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition {{ $activeTab === 'active_school_preview' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700' }}"
             >
                 <x-filament::icon icon="heroicon-o-eye" class="h-4 w-4" />
-                <span>{{ __('معاينة لوحة المؤسسة النشطة') }}</span>
+                <span>{{ __('معاينة وفحص لوحة المؤسسة') }} ({{ $selectedInstitution?->name ?? '—' }})</span>
             </button>
 
             <button
@@ -342,7 +342,7 @@
                             </div>
                         </div>
 
-                        <div class="mt-4 flex items-center justify-between gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                        <div class="mt-4 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
                             <div>
                                 @if ($inst->status === 'active')
                                     <span class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
@@ -363,14 +363,25 @@
                             </div>
 
                             <div class="flex items-center gap-2">
+                                {{-- Inspect Dashboard & Statistics Button --}}
+                                <button
+                                    type="button"
+                                    wire:click="selectInstitution({{ $inst->id }})"
+                                    class="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 dark:bg-indigo-950/60 dark:text-indigo-300"
+                                >
+                                    <x-filament::icon icon="heroicon-o-presentation-chart-line" class="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                                    <span>{{ __('معاينة لوحة وإحصائيات المؤسسة') }}</span>
+                                </button>
+
                                 @if (! $inst->is_current)
                                     <button
                                         type="button"
                                         wire:click="makeInstitutionCurrent({{ $inst->id }})"
-                                        class="inline-flex items-center gap-1 rounded-xl bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300"
+                                        class="inline-flex items-center gap-1 rounded-xl bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300"
+                                        title="{{ __('تعيين كمؤسسة نشطة معتمدة للنظام') }}"
                                     >
                                         <x-filament::icon icon="heroicon-o-check-badge" class="h-3.5 w-3.5" />
-                                        <span>{{ __('تعيين كنشطة للنظام') }}</span>
+                                        <span>{{ __('تفعيل') }}</span>
                                     </button>
                                 @endif
 
@@ -400,32 +411,64 @@
         <div class="space-y-4">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($wilayasDistribution as $w)
-                    <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-base font-bold text-gray-900 dark:text-white">
-                                {{ __('ولاية') }} {{ $w->wilaya ?? __('غير محددة') }}
-                            </h3>
-                            <span class="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                                {{ $w->count }} {{ __('مؤسسات') }}
-                            </span>
+                    <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                                    <x-filament::icon icon="heroicon-o-map-pin" class="h-4 w-4 text-indigo-500" />
+                                    <span>{{ __('ولاية') }} {{ $w->wilaya ?? __('غير محددة') }}</span>
+                                </h3>
+                                <span class="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                                    {{ $w->count }} {{ __('مؤسسات') }}
+                                </span>
+                            </div>
+
+                            <div class="mt-3 text-xs text-gray-600 dark:text-gray-400">
+                                <p>{{ __('إجمالي طاقة المقاعد:') }} <span class="font-bold text-gray-900 dark:text-white">{{ number_format($w->total_capacity) }}</span> {{ __('مقعد') }}</p>
+                            </div>
+
+                            <div class="mt-4 border-t border-gray-100 pt-3 dark:border-gray-800">
+                                <span class="text-[11px] font-semibold text-gray-500">{{ __('المؤسسات التابعة للولاية:') }}</span>
+                                <ul class="mt-2 space-y-2 text-xs">
+                                    @foreach ($institutions->where('wilaya', $w->wilaya) as $item)
+                                        <li class="flex items-center justify-between rounded-xl bg-gray-50 p-2 transition hover:bg-indigo-50/50 dark:bg-gray-800/60 dark:hover:bg-indigo-950/40">
+                                            <div class="min-w-0 pr-2">
+                                                <p class="font-bold text-gray-900 dark:text-white truncate">{{ $item->name }}</p>
+                                                <p class="text-[10px] text-gray-500">
+                                                    @if ($item->stage === 'primary') {{ __('ابتدائي') }}
+                                                    @elseif ($item->stage === 'middle') {{ __('متوسط') }}
+                                                    @elseif ($item->stage === 'secondary') {{ __('ثانوي') }}
+                                                    @else {{ __('مجمع') }}
+                                                    @endif
+                                                    · {{ $item->municipality }}
+                                                    @if ($item->is_current)
+                                                        · <span class="text-emerald-600 font-bold">({{ __('المؤسسة النشطة') }})</span>
+                                                    @endif
+                                                </p>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                wire:click="selectInstitution({{ $item->id }})"
+                                                class="shrink-0 rounded-lg bg-indigo-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm hover:bg-indigo-700"
+                                                title="{{ __('عرض لوحة وإحصائيات هذه المؤسسة') }}"
+                                            >
+                                                {{ __('عرض اللوحة') }}
+                                            </button>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
                         </div>
 
-                        <div class="mt-3 text-xs text-gray-600 dark:text-gray-400">
-                            <p>{{ __('إجمالي طاقة المقاعد:') }} <span class="font-bold text-gray-900 dark:text-white">{{ number_format($w->total_capacity) }}</span></p>
-                        </div>
-
-                        <div class="mt-3 border-t border-gray-100 pt-3 dark:border-gray-800">
-                            <span class="text-[11px] font-semibold text-gray-500">{{ __('المؤسسات التابعة:') }}</span>
-                            <ul class="mt-1 space-y-1 text-xs text-gray-700 dark:text-gray-300">
-                                @foreach ($institutions->where('wilaya', $w->wilaya) as $item)
-                                    <li class="flex items-center justify-between">
-                                        <span>{{ $item->name }}</span>
-                                        @if ($item->is_current)
-                                            <span class="text-[10px] font-bold text-emerald-600">({{ __('النشطة') }})</span>
-                                        @endif
-                                    </li>
-                                @endforeach
-                            </ul>
+                        <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+                            <button
+                                type="button"
+                                wire:click="filterByWilayaAndPreview('{{ $w->wilaya }}')"
+                                class="w-full rounded-xl border border-indigo-200 bg-indigo-50/60 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-900/40 dark:bg-indigo-950/40 dark:text-indigo-300"
+                            >
+                                {{ __('تصفية ومعاينة مؤسسات') }} {{ $w->wilaya }} →
+                            </button>
                         </div>
                     </div>
                 @endforeach
@@ -433,25 +476,189 @@
         </div>
     @endif
 
-    {{-- TAB 3: Operational School Preview --}}
+    {{-- TAB 3: Operational School Preview & Explorer Across All Institutions --}}
     @if ($activeTab === 'active_school_preview')
-        <div class="space-y-4">
-            <div class="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
-                <div class="flex items-center justify-between">
+        <div class="space-y-5">
+            {{-- Search, Wilayas Filter & Institution Selector Bar --}}
+            <div class="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/60 via-white to-indigo-50/30 p-5 shadow-sm dark:border-indigo-900/40 dark:bg-gray-900">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                        <h3 class="text-sm font-bold text-amber-900 dark:text-amber-200">
-                            {{ __('معاينة لوحة القيادة التربوية للمؤسسة النشطة:') }} {{ $currentInstitution?->name }}
-                        </h3>
-                        <p class="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
-                            {{ __('هذه هي لوحة التحكم المخصصة لمدير المؤسسة وهيئة التدريس لمتابعة الحصص، الحضور، والسجلات اليومية.') }}
+                        <h2 class="text-base font-bold text-indigo-950 dark:text-white flex items-center gap-2">
+                            <x-filament::icon icon="heroicon-o-magnifying-glass-circle" class="h-6 w-6 text-indigo-600" />
+                            <span>{{ __('مستكشف لوحات وإحصائيات المؤسسات التربوية') }}</span>
+                        </h2>
+                        <p class="text-xs text-indigo-800 dark:text-indigo-300 mt-0.5">
+                            {{ __('اختر أي مؤسسة تربوية عبر الولايات أو الأطوار لتفحص كافة لوحاتها البيداغوجية، حصصها، وسجلاتها فورياً.') }}
                         </p>
+                    </div>
+
+                    {{-- Quick Select Dropdown --}}
+                    <div class="min-w-[280px]">
+                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">{{ __('اختر المؤسسة المراد معاينتها مباشرة:') }}</label>
+                        <select
+                            wire:model.live="selectedInstitutionId"
+                            class="block w-full rounded-xl border border-indigo-300 bg-white px-3 py-2 text-xs font-bold text-gray-900 shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                        >
+                            @foreach ($institutions as $inst)
+                                <option value="{{ $inst->id }}">
+                                    {{ $inst->name }} ({{ $inst->wilaya }}) @if ($inst->is_current) [★ {{ __('المعتمدة النشطة') }}] @endif
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                {{-- Interactive Wilaya & Stage Filter Chips --}}
+                <div class="mt-4 pt-4 border-t border-indigo-100 dark:border-gray-800 space-y-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-bold text-gray-500">{{ __('تصفية سريعة حسب الولاية:') }}</span>
+                        <button
+                            type="button"
+                            wire:click="$set('previewWilayaFilter', null)"
+                            class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ empty($previewWilayaFilter) ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300' }}"
+                        >
+                            {{ __('كل الولايات') }}
+                        </button>
+
+                        @foreach ($availableWilayas as $wilayaName)
+                            <button
+                                type="button"
+                                wire:click="$set('previewWilayaFilter', '{{ $wilayaName }}')"
+                                class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ $previewWilayaFilter === $wilayaName ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300' }}"
+                            >
+                                {{ $wilayaName }}
+                            </button>
+                        @endforeach
+                    </div>
+
+                    {{-- Search within filtered results --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="sm:col-span-2">
+                            <input
+                                type="text"
+                                wire:model.live.debounce.300ms="previewSearchTerm"
+                                placeholder="{{ __('ابحث بالاسم، البلدية، أو الرمز الوطني للمؤسسة...') }}"
+                                class="block w-full rounded-xl border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                            />
+                        </div>
+
+                        <div>
+                            <select
+                                wire:model.live="previewStageFilter"
+                                class="block w-full rounded-xl border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                            >
+                                <option value="">{{ __('جميع الأطوار التعليمية') }}</option>
+                                <option value="primary">{{ __('التعليم الابتدائي') }}</option>
+                                <option value="middle">{{ __('التعليم المتوسط') }}</option>
+                                <option value="secondary">{{ __('التعليم الثانوي') }}</option>
+                                <option value="complex">{{ __('مجمع مدرسي') }}</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                @livewire('dashboard-stats')
-            </div>
+            {{-- Selected Institution Identity Banner & KPIs --}}
+            @if ($selectedInstitution)
+                <div class="overflow-hidden rounded-2xl border {{ $selectedInstitution->is_current ? 'border-emerald-400 bg-emerald-50/10 ring-2 ring-emerald-500/20' : 'border-indigo-200 bg-white' }} p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="rounded-md px-2.5 py-0.5 text-xs font-bold
+                                    @if ($selectedInstitution->stage === 'primary') bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300
+                                    @elseif ($selectedInstitution->stage === 'middle') bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300
+                                    @elseif ($selectedInstitution->stage === 'secondary') bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300
+                                    @else bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300
+                                    @endif
+                                ">
+                                    @if ($selectedInstitution->stage === 'primary') {{ __('الطور الابتدائي') }}
+                                    @elseif ($selectedInstitution->stage === 'middle') {{ __('الطور المتوسط') }}
+                                    @elseif ($selectedInstitution->stage === 'secondary') {{ __('الطور الثانوي') }}
+                                    @else {{ __('مجمع مدرسي') }}
+                                    @endif
+                                </span>
+
+                                @if ($selectedInstitution->code)
+                                    <span class="rounded bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">{{ $selectedInstitution->code }}</span>
+                                @endif
+
+                                @if ($selectedInstitution->is_current)
+                                    <span class="inline-flex items-center gap-1 rounded bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white shadow-sm">
+                                        ✓ {{ __('المؤسسة النشطة المعتمدة في النظام') }}
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 rounded bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                                        {{ __('معاينة وفحص (ليست المؤسسة النشطة حالياً)') }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            <h1 class="text-xl font-black text-gray-950 dark:text-white sm:text-2xl">
+                                {{ $selectedInstitution->name }}
+                            </h1>
+
+                            <p class="text-xs text-gray-600 dark:text-gray-300">
+                                {{ $selectedInstitution->directorate_name }} · {{ __('ولاية') }} {{ $selectedInstitution->wilaya }} ({{ $selectedInstitution->municipality }})
+                                @if ($selectedInstitution->address) · {{ $selectedInstitution->address }} @endif
+                            </p>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            @if (! $selectedInstitution->is_current)
+                                <button
+                                    type="button"
+                                    wire:click="makeInstitutionCurrent({{ $selectedInstitution->id }})"
+                                    class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition"
+                                >
+                                    <x-filament::icon icon="heroicon-o-check-badge" class="h-4 w-4" />
+                                    <span>{{ __('تعيين هذه المؤسسة كنشطة للنظام') }}</span>
+                                </button>
+                            @endif
+
+                            <a
+                                href="{{ \App\Filament\Resources\EducationalInstitutionResource::getUrl('edit', ['record' => $selectedInstitution->id]) }}"
+                                class="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-bold text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                            >
+                                <x-filament::icon icon="heroicon-o-pencil-square" class="h-4 w-4" />
+                                <span>{{ __('تعديل بيانات المؤسسة في السجل') }}</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    {{-- Quick Metadata Grid --}}
+                    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs">
+                        <div class="rounded-xl bg-gray-50 p-2.5 dark:bg-gray-800/60">
+                            <span class="block text-[11px] text-gray-400">{{ __('مدير المؤسسة:') }}</span>
+                            <span class="font-bold text-gray-900 dark:text-white">{{ $selectedInstitution->principal_name ?? __('غير محدد') }}</span>
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-2.5 dark:bg-gray-800/60">
+                            <span class="block text-[11px] text-gray-400">{{ __('مستشار التربية:') }}</span>
+                            <span class="font-bold text-gray-900 dark:text-white">{{ $selectedInstitution->counselor_name ?? __('غير محدد') }}</span>
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-2.5 dark:bg-gray-800/60">
+                            <span class="block text-[11px] text-gray-400">{{ __('طاقة الاستيعاب المقدرة:') }}</span>
+                            <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ $selectedInstitution->capacity ? number_format($selectedInstitution->capacity).' مقعد' : '—' }}</span>
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-2.5 dark:bg-gray-800/60">
+                            <span class="block text-[11px] text-gray-400">{{ __('نظام التمدرس والدوام:') }}</span>
+                            <span class="font-bold text-gray-900 dark:text-white">
+                                @if ($selectedInstitution->regime === 'half_board') {{ __('نصف داخلي (Demi-pension)') }}
+                                @elseif ($selectedInstitution->regime === 'internat') {{ __('داخلي (Internat)') }}
+                                @else {{ __('خارجي (Externat)') }}
+                                @endif
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Embed Full Livewire Operational Dashboard with all its tabs --}}
+                <div class="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                    @livewire('dashboard-stats', ['institutionId' => $selectedInstitution->id], key('inspected-school-'.$selectedInstitution->id))
+                </div>
+            @endif
         </div>
     @endif
 

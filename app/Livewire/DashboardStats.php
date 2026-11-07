@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\EducationalInstitution;
 use App\Models\SchoolSetting;
 use App\Models\Subject;
 use App\Models\User;
@@ -23,8 +24,11 @@ class DashboardStats extends Component
     #[Url(as: 'subject')]
     public ?int $subjectId = null;
 
-    public function mount(): void
+    public ?int $institutionId = null;
+
+    public function mount(?int $institutionId = null): void
     {
+        $this->institutionId = $institutionId ?? $this->institutionId;
         $user = $this->user();
         $this->activeTab = $this->normaliseTab($user, $this->activeTab);
         $this->period = $this->normalisePeriod($this->period);
@@ -113,7 +117,9 @@ class DashboardStats extends Component
         $options = $service->filterOptions($user);
         $this->validateFilters($user, $options);
 
-        $settings = SchoolSetting::current();
+        $settings = $this->institutionId
+            ? (EducationalInstitution::find($this->institutionId)?->toSchoolSetting() ?? SchoolSetting::current())
+            : SchoolSetting::current();
         $data = match ($this->activeTab) {
             'schedule' => $service->schedule($user, $this->classroomId, $this->subjectId),
             'attendance' => $service->attendance($user, $this->period, $this->classroomId, $this->subjectId),

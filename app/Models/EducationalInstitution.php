@@ -80,6 +80,25 @@ class EducationalInstitution extends Model
     }
 
     /**
+     * Convert this institution instance to a SchoolSetting compatibility model.
+     */
+    public function toSchoolSetting(): SchoolSetting
+    {
+        $setting = new SchoolSetting;
+        $setting->forceFill([
+            'school_name' => $this->name,
+            'directorate_name' => $this->directorate_name,
+            'municipality_name' => $this->municipality,
+            'principal_name' => $this->principal_name,
+            'counselor_name' => $this->counselor_name,
+            'school_code' => $this->code,
+            'academic_year' => $this->academic_year ?? '2026-2027',
+        ]);
+
+        return $setting;
+    }
+
+    /**
      * Scope for active institutions.
      */
     public function scopeActive(Builder $query): Builder

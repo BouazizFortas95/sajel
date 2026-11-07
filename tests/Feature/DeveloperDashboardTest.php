@@ -138,6 +138,53 @@ class DeveloperDashboardTest extends TestCase
             ->assertDontSee('ابتدائية ابن خلدون');
     }
 
+    public function test_developer_can_select_and_inspect_any_institution_dashboard(): void
+    {
+        $dev = User::factory()->create(['role' => Role::Developer]);
+        $school1 = EducationalInstitution::factory()->create([
+            'name' => 'متوسطة الشهيد العربي بن مهيدي',
+            'code' => '30-1102-0007',
+            'is_current' => true,
+        ]);
+        $school2 = EducationalInstitution::factory()->create([
+            'name' => 'ثانوية مفدي زكريا التكنولوجية',
+            'code' => '47-0201-0015',
+            'directorate_name' => 'مديرية التربية لولاية غرداية',
+            'wilaya' => 'غرداية',
+            'stage' => 'secondary',
+            'is_current' => false,
+        ]);
+
+        $this->actingAs($dev);
+
+        Livewire::test(DeveloperDashboardStats::class)
+            ->call('selectInstitution', $school2->id)
+            ->assertSet('selectedInstitutionId', $school2->id)
+            ->assertSet('activeTab', 'active_school_preview')
+            ->assertSee('ثانوية مفدي زكريا التكنولوجية')
+            ->assertSee('47-0201-0015')
+            ->assertSee('مديرية التربية لولاية غرداية');
+    }
+
+    public function test_developer_can_filter_wilayas_and_preview(): void
+    {
+        $dev = User::factory()->create(['role' => Role::Developer]);
+        $schoolConstantine = EducationalInstitution::factory()->create([
+            'name' => 'متوسطة الأمير عبد القادر',
+            'wilaya' => 'قسنطينة',
+            'stage' => 'middle',
+        ]);
+
+        $this->actingAs($dev);
+
+        Livewire::test(DeveloperDashboardStats::class)
+            ->call('filterByWilayaAndPreview', 'قسنطينة')
+            ->assertSet('previewWilayaFilter', 'قسنطينة')
+            ->assertSet('selectedInstitutionId', $schoolConstantine->id)
+            ->assertSet('activeTab', 'active_school_preview')
+            ->assertSee('متوسطة الأمير عبد القادر');
+    }
+
     public function test_non_developer_and_non_admin_cannot_mount_developer_dashboard(): void
     {
         $teacher = User::factory()->create(['role' => Role::Teacher]);
