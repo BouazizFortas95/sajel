@@ -37,4 +37,3 @@ enum AscsTransactionType: string
         return $this->isIncome() ? 'success' : 'danger';
     }
 }
-

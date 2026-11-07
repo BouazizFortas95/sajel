@@ -44,4 +44,3 @@ class SportsEquipmentInventory extends Model
         return $this->belongsTo(SportsCulturalDiscipline::class, 'discipline_id');
     }
 }
-

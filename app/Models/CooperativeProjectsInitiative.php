@@ -53,4 +53,3 @@ class CooperativeProjectsInitiative extends Model
         return $this->belongsTo(User::class, 'coordinator_user_id');
     }
 }
-

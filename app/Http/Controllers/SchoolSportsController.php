@@ -229,4 +229,3 @@ class SchoolSportsController extends Controller
         }
     }
 }
-

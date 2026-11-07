@@ -12,6 +12,10 @@ class GradePolicy
      */
     public function before(User $user, string $ability): ?bool
     {
+        if ($user->isDeveloper() && in_array($ability, ['create', 'update', 'delete', 'restore', 'forceDelete'], true)) {
+            return false;
+        }
+
         return $user->isAdmin() ? true : null;
     }
 

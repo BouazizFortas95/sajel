@@ -36,7 +36,7 @@ enum Role: string
             self::FinanceOfficer => __('المقتصد / مسير مالي'),
             self::HeadTeacher => __('أستاذ رئيسي / منسق مادة'),
             self::Teacher => __('أستاذ'),
-            self::Admin => __('مدير المنصة (نظام)'),
+            self::Admin => __('المكلف بالرقمنة وأمانة النظام (Référent Numérique)'),
         };
     }
 

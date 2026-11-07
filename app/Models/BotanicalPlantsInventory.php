@@ -44,4 +44,3 @@ class BotanicalPlantsInventory extends Model
         return $this->belongsTo(PedagogicalGardenPlot::class, 'pedagogical_garden_plot_id');
     }
 }
-

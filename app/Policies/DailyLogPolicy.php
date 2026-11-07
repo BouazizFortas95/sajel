@@ -13,6 +13,10 @@ class DailyLogPolicy
      */
     public function before(User $user, string $ability): ?bool
     {
+        if ($user->isDeveloper() && in_array($ability, ['create', 'update', 'delete', 'restore', 'forceDelete'], true)) {
+            return false;
+        }
+
         if ($ability === 'create' && $user->isAdmin()) {
             return false;
         }

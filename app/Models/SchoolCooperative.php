@@ -56,4 +56,3 @@ class SchoolCooperative extends Model
         return $this->hasMany(CooperativeFinancialLedger::class, 'school_cooperative_id');
     }
 }
-

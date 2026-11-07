@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\Role;
+use App\Models\Schedule;
 use App\Models\User;
 use Database\Seeders\RoleProfilesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -49,6 +50,35 @@ class RoleArchitectureTest extends TestCase
         $this->assertTrue($dev->canSuperviseSchoolLife());
         $this->assertFalse($dev->isTeacher());
         $this->assertFalse($dev->isEducationStaff());
+    }
+
+    public function test_developer_and_teacher_cannot_tamper_with_schedules(): void
+    {
+        $dev = User::factory()->create(['role' => Role::Developer]);
+        $teacher = User::factory()->create(['role' => Role::Teacher]);
+        $principal = User::factory()->create(['role' => Role::Principal]);
+        $censor = User::factory()->create(['role' => Role::Censor]);
+
+        $schedule = Schedule::factory()->create(['user_id' => $teacher->id]);
+
+        // Developer cannot create, update, or delete schedules
+        $this->assertFalse($dev->can('create', Schedule::class));
+        $this->assertFalse($dev->can('update', $schedule));
+        $this->assertFalse($dev->can('delete', $schedule));
+
+        // Teacher cannot modify institutional schedules
+        $this->assertFalse($teacher->can('create', Schedule::class));
+        $this->assertFalse($teacher->can('update', $schedule));
+        $this->assertFalse($teacher->can('delete', $schedule));
+
+        // Principal and Censor hold statutory authority to manage schedules
+        $this->assertTrue($principal->can('create', Schedule::class));
+        $this->assertTrue($principal->can('update', $schedule));
+        $this->assertTrue($principal->can('delete', $schedule));
+
+        $this->assertTrue($censor->can('create', Schedule::class));
+        $this->assertTrue($censor->can('update', $schedule));
+        $this->assertTrue($censor->can('delete', $schedule));
     }
 
     public function test_principal_role_has_institutional_management_authority(): void

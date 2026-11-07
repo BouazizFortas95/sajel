@@ -52,4 +52,3 @@ class PedagogicalGardenPlot extends Model
         return $this->hasMany(BotanicalPlantsInventory::class, 'pedagogical_garden_plot_id');
     }
 }
-

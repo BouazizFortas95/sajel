@@ -29,4 +29,3 @@ enum AscsDisciplineCategory: string
         };
     }
 }
-

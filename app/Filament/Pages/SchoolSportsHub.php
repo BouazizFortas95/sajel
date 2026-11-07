@@ -459,4 +459,3 @@ class SchoolSportsHub extends Page
         return Student::with('group.classroom')->orderBy('last_name')->limit(150)->get();
     }
 }
-

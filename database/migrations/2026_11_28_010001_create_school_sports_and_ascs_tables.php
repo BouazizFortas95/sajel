@@ -143,4 +143,3 @@ return new class extends Migration
         Schema::dropIfExists('school_sports_associations');
     }
 };
-

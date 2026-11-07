@@ -42,4 +42,3 @@ enum CooperativeTransactionType: string
         return $this->isIncome() ? 'success' : 'danger';
     }
 }
-
