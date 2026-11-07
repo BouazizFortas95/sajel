@@ -1873,6 +1873,52 @@ Full statutory alignment with Algerian Public Accounting Law 90-21 and Executive
       - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php`.
       - Code style verified with `vendor/bin/pint`.
 
+## 50. Official National Examination Center Operations, Proctoring Staffing & Candidate Management System (منظومة تسيير مراكز الامتحانات الرسمية BEM / BAC، تأطير الحراسة، مخططات قاعات الامتحان، ومحاضر فتح الأظرفة والغش - Gestion des Centres d'Examens Officiels) (100%)
+
+Full statutory alignment with Algerian National Education and ONEC (Office National des Examens et Concours) regulations, ministerial instructions, and Executive Decree 20-241 on the integrity of official national examinations (BEM, BAC, Primary Attainment):
+- [x] **Database Schema & Official Examination Tables (68 core tables):**
+      - Migration `2026_11_21_010001_create_official_examination_center_tables.php` creating 4 core domain tables:
+        - `official_exam_centers`: center registry (`exam_type`, `session_year`, `center_code`, `center_name`, `head_user_id`, `vice_head_name`, `secretariat_chief_name`, `candidate_count`, `room_count`, `start_date`, `end_date`, `status`, `notes`).
+        - `official_exam_rooms`: standardized exam rooms with candidate seating allocation (`center_id`, `room_number`, `room_label`, `physical_location`, `candidate_start_number`, `candidate_end_number`, `candidate_count`, `supervisors_required`, `notes`).
+        - `official_exam_supervisors`: proctoring staff roster (`center_id`, `room_id`, `user_id`, `supervisor_name`, `origin_institution`, `duty_role`, `attendance_status`, `replacement_name`, `convocation_reference`).
+        - `official_exam_incidents`: statutory minutes and disciplinary documentation (`center_id`, `room_id`, `incident_number`, `incident_type`, `incident_date`, `session_time`, `subject_name`, `candidate_registration_number`, `candidate_name`, `description`, `seized_evidence`, `measures_taken`, `reported_by`).
+      - Updated `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` expanding verified schema to 68 domain tables: `[PASS] schema: All required tables present (68)`.
+- [x] **Domain Enums Architecture (`app/Enums`):**
+      - `OfficialExamType`: `Bem` (شهادة التعليم المتوسط - BEM), `Bac` (شهادة البكالوريا - BAC), `PrimaryEval` (تقييم مكتسبات مرحلة التعليم الابتدائي) with standard abbreviations and badge tones.
+      - `OfficialExamCenterStatus`: `Planning` (قيد التحضير والتنظيم), `Active` (الامتحان جارٍ رسمياً), `Completed` (مكتمل ومغلق).
+      - `OfficialExamDutyRole`: `RoomChief` (رئيس القاعة المسؤول), `RoomSupervisor` (أستاذ حارس بالقاعة), `CorridorGuard` (حارس ممر وجناح), `Secretariat` (عضو الأمانة العامة للمركز), `Reserve` (أستاذ حارس احتياطي).
+      - `OfficialExamIncidentType`: `EnvelopeOpening` (محضر فتح وتأكيد سلامة أظرفة المواضيع), `CheatingAttempt` (محضر إثبات محاولة غش [المرسوم 20-241]), `CandidateAbsence`, `MedicalIncident`, `DisciplinaryExclusion`.
+- [x] **Domain Service Layer (`OfficialExamCenterService`):**
+      - Automatic center code generator: `CEN-{TYPE}-{YEAR}-{SEQ}`.
+      - Sequential incident and PV reference generator: `INC/{TYPE}/{YEAR}/{SEQ}`.
+      - Automated room batch generator (`generateRooms`): automatically materializes $N$ standard rooms with 20 candidates each, continuous roll call intervals (`candidate_start_number` ⟶ `candidate_end_number`), and updates center totals.
+      - Telemetry metrics engine (`getCenterTelemetry`): total rooms, total candidates, proctor counts by role, required supervisor capacity, and coverage percentage.
+      - High-fidelity printable data assemblers: `assembleCenterRosterData`, `assembleEnvelopeOpeningPvData`, `assembleIncidentPvData`.
+- [x] **Controller Actions & Secure Routing (`OfficialExamCenterController`, `routes/web.php`):**
+      - 6 dedicated routes for official sheet previews and PDF streaming via `BrowsershotFactory` with resilient HTML fallback:
+        - `print.official-exam.center-roster` (`/{locale}/print/official-exam/center/{center}/roster`)
+        - `print.official-exam.center-roster.pdf` (`/{locale}/print/official-exam/center/{center}/roster/pdf`)
+        - `print.official-exam.envelope-pv` (`/{locale}/print/official-exam/incident/{incident}/envelope-pv`)
+        - `print.official-exam.envelope-pv.pdf` (`/{locale}/print/official-exam/incident/{incident}/envelope-pv/pdf`)
+        - `print.official-exam.incident-pv` (`/{locale}/print/official-exam/incident/{incident}/pv`)
+        - `print.official-exam.incident-pv.pdf` (`/{locale}/print/official-exam/incident/{incident}/pv/pdf`)
+- [x] **Official Algerian Printable Templates:**
+      - `resources/views/print/official-exam-center-roster.blade.php`: Tableau général d'affectation des salles et de la surveillance (كشف توزيع القاعات والمترشحين ومخطط تأطير الحراسة والأمانة - A4 Landscape) formatted per ONEC standards with room locations, candidate registration number ranges, room chiefs, assistant proctors, and multi-partite visa blocks (Center Head, Ministerial Observer).
+      - `resources/views/print/official-exam-envelope-pv.blade.php`: Procès-verbal d'ouverture des plis de sujets (محضر فتح أظرفة مواضيع الامتحانات الرسمية وتأكيد سلامتها - A4 Portrait) featuring sealed wax verification, 2 candidate witnesses, room chief, and center head authentication.
+      - `resources/views/print/official-exam-incident-pv.blade.php`: Procès-verbal de constat de fraude et d'incident (محضر إثبات محاولة غش / إخلال بسير الامتحان الرسمي - المرسوم التنفيذي 20-241 - A4 Portrait) detailing candidate registration number, subject, seized forbidden devices (phones/earphones/cheat sheets), eyewitness statements, and disciplinary commission report.
+- [x] **Interactive Filament Livewire Cockpit (`OfficialExamCenterHub`):**
+      - Registered under `__('التقويمات والامتحانات والمجالس')` with icon `heroicon-o-academic-cap` (sort order 3).
+      - 3 interactive tabs:
+        1. **Rooms & Candidate Allocation (قاعات الامتحان وتوزيع المترشحين):** Center selector, live telemetry cards, room grid with candidate numbering range and capacity, and automated room generator action.
+        2. **Supervision Staff Roster (تأطير الحراسة والأمانة العامة):** Supervisors table with origin school, assigned room, duty role, add/assign supervisor modal, and instant print/PDF center roster shortcuts.
+        3. **Official Minutes & Incidents (محاضر الأظرفة ووقائع الامتحان [20-241]):** Minutes ledger, envelope opening PVs, cheating/incident workflow with seized evidence fields, and instant print/PDF PV actions.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - Complete tri-lingual dictionary populated in `lang/ar.json`, `lang/en.json`, and `lang/fr.json` verified by `LocalizationCompletenessTest`.
+      - 18 comprehensive feature tests in `tests/Feature/OfficialExamCenterTest.php` passing 100% green (52 assertions).
+      - Schema integrity verified by `sajel:health-check`: `[PASS] schema: All required tables present (68)`.
+      - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php`.
+      - Code style verified with `vendor/bin/pint`.
+
 
 
 

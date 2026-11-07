@@ -9,6 +9,7 @@ use App\Http\Controllers\DownloadPedagogicalMemoPdfController;
 use App\Http\Controllers\ExamTimetableController;
 use App\Http\Controllers\InspectionReportController;
 use App\Http\Controllers\InstitutionalBilanController;
+use App\Http\Controllers\OfficialExamCenterController;
 use App\Http\Controllers\OfficialReportController;
 use App\Http\Controllers\OrientationController;
 use App\Http\Controllers\ParentPortalController;
@@ -824,6 +825,37 @@ Route::get('/{locale}/print/budget/mandate/{mandate}/pdf', [SchoolBudgetControll
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.budget.mandate.pdf');
+
+// ─── Official National Examination Centers & Proctoring (Phase 50) ─────────
+Route::get('/{locale}/print/official-exam/center/{center}/roster', [OfficialExamCenterController::class, 'printCenterRoster'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.official-exam.center-roster');
+
+Route::get('/{locale}/print/official-exam/center/{center}/roster/pdf', [OfficialExamCenterController::class, 'printCenterRosterPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.official-exam.center-roster.pdf');
+
+Route::get('/{locale}/print/official-exam/incident/{incident}/envelope-pv', [OfficialExamCenterController::class, 'printEnvelopePv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.official-exam.envelope-pv');
+
+Route::get('/{locale}/print/official-exam/incident/{incident}/envelope-pv/pdf', [OfficialExamCenterController::class, 'printEnvelopePvPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.official-exam.envelope-pv.pdf');
+
+Route::get('/{locale}/print/official-exam/incident/{incident}/pv', [OfficialExamCenterController::class, 'printIncidentPv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.official-exam.incident-pv');
+
+Route::get('/{locale}/print/official-exam/incident/{incident}/pv/pdf', [OfficialExamCenterController::class, 'printIncidentPvPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.official-exam.incident-pv.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

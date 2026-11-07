@@ -79,6 +79,10 @@ class SchoolBackupService
         'school_budget_lines',
         'budget_commitments',
         'payment_mandates',
+        'official_exam_centers',
+        'official_exam_rooms',
+        'official_exam_supervisors',
+        'official_exam_incidents',
     ];
 
     /**
