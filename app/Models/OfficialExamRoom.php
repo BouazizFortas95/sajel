@@ -34,3 +34,4 @@ class OfficialExamRoom extends Model
         return $this->hasMany(OfficialExamIncident::class, 'room_id');
     }
 }
+

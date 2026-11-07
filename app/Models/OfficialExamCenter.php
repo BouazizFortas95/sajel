@@ -45,3 +45,4 @@ class OfficialExamCenter extends Model
         return $this->hasMany(OfficialExamIncident::class, 'center_id')->latest('incident_date');
     }
 }
+
