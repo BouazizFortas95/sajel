@@ -32,3 +32,4 @@ enum BotanicalPlantCategory: string
         };
     }
 }
+

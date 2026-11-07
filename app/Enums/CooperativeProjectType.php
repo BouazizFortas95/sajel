@@ -35,3 +35,4 @@ enum CooperativeProjectType: string
         };
     }
 }
+

@@ -26,3 +26,4 @@ enum SportsMedicalAptitude: string
         };
     }
 }
+

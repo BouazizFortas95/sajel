@@ -37,3 +37,4 @@ class SchoolSportsAssociation extends Model
         ];
     }
 }
+

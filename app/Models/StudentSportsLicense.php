@@ -67,3 +67,4 @@ class StudentSportsLicense extends Model
             && $this->insurance_covered;
     }
 }
+

@@ -29,3 +29,4 @@ enum GardenIrrigationType: string
         };
     }
 }
+

@@ -32,3 +32,4 @@ enum SportsCompetitionLevel: string
         };
     }
 }
+

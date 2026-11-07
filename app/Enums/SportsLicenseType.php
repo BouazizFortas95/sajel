@@ -23,3 +23,4 @@ enum SportsLicenseType: string
         };
     }
 }
+

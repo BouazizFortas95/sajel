@@ -69,3 +69,4 @@ class SportsCulturalDiscipline extends Model
             ->count();
     }
 }
+

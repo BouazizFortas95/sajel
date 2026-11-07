@@ -36,3 +36,4 @@ class AscsFinancialTransaction extends Model
         ];
     }
 }
+

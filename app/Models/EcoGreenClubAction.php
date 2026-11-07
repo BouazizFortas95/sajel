@@ -44,3 +44,4 @@ class EcoGreenClubAction extends Model
         return $this->belongsTo(User::class, 'supervising_teacher_id');
     }
 }
+
