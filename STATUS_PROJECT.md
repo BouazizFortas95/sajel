@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-11-07
-> Verified by `php artisan test` (**665 passed**, 22,285 assertions, **0 failures**),
+> Verified by `php artisan test` (**685 passed**, 22,402 assertions, **0 failures**),
 > `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -2170,6 +2170,58 @@ Full statutory alignment with Algerian educational and sports legislation: Law 0
       - 20 comprehensive feature tests in `tests/Feature/SchoolSportsTest.php` passing 100% green (78 assertions).
       - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php` (6 tests, 139 assertions).
       - Schema integrity verified by `sajel:health-check`: `[PASS] schema: All required tables present (103)`.
+      - Code style verified with `vendor/bin/pint`.
+
+## 57. School Cooperative, Pedagogical Garden, Green Spaces & Environmental Club System (منظومة التعاونية المدرسية، الحديقة البيداغوجية، النوادي الخضراء والبيئة المدرسية - Coopérative Scolaire, Jardin Pédagogique et Éco-École) (100%)
+
+Full statutory alignment with Algerian educational administration regulations, ministerial directives on school cooperatives (**Circulaire ministérielle sur les coopératives scolaires et les activités coopératives parascolaires**), joint inter-ministerial convention with the Ministry of the Environment (**Convention interministérielle Éducation Nationale - Environnement pour les Clubs Verts et l'Éco-École**), botanical gardens and school nurseries, selective waste sorting, water conservation, and solidarity funds:
+- [x] **Database Schema & Core Domain Tables (expanded to 109 core tables):**
+      - Migration `2026_11_29_010001_create_school_cooperative_and_garden_tables.php` creating 6 domain tables:
+        - `school_cooperatives`: School cooperative identity, legal creation date, academic year, motto, supervising teacher coordinator, student executive board (elected student president, vice-president, student secretary, student treasurer), total student members count, bank/treasury cash balance, annual action plan approval.
+        - `cooperative_projects_initiatives`: Cooperative projects, initiatives and solidarity campaigns (`project_code`, `academic_year`, `title`, `project_type` [SolidarityCharity, HandicraftsExhibition, BotanicalGardening, RecyclingEcoDrive, SchoolCleanlinessDay, CulturalBookSale], `target_audience`, `start_date`, `end_date`, `budget_allocated`, `budget_spent`, `status` [Planned, Active, Completed, Cancelled], `coordinator_user_id`, `student_leads_summary`, `achievements_notes`).
+        - `cooperative_financial_ledger`: School cooperative cashbook / solidarity fund entries (`transaction_reference`, `academic_year`, `school_cooperative_id`, `transaction_date`, `transaction_type` [IncomeMembershipDues, IncomeProceedsCrafts, IncomeProceedsGardenProduce, IncomeDonationsSponsorship, ExpenseSolidarityKits, ExpenseGardenToolsSeeds, ExpenseCraftMaterials, ExpenseExhibitionPrizes], `amount_dzd`, `beneficiary_or_source`, `payment_method` [Cash, PostalCCP], `receipt_voucher_number`, `recorded_by_user_id`, `description`).
+        - `pedagogical_garden_plots`: Botanical parcels, green zones and garden spaces (`plot_code`, `plot_name`, `surface_area_sqm`, `soil_type`, `irrigation_type` [DripIrrigation, Sprinkler, ManualWatering, RainwaterHarvesting], `location_in_school`, `assigned_classroom_id`, `supervising_teacher_id`, `status` [ActivePlanted, FallowResting, PreparationTillage, UnderMaintenance], `notes`).
+        - `botanical_plants_inventory`: Catalog of plants, trees, vegetables, and medicinal herbs grown in the school garden (`plant_code`, `pedagogical_garden_plot_id`, `botanical_name`, `common_name_ar`, `common_name_fr`, `plant_category` [AromaticMedicinal, VegetableCrop, FruitTree, OrnamentalFlowering, ForestShrub], `quantity_planted`, `planting_date`, `expected_harvest_date`, `health_status` [ThrivingGood, Moderate, NeedsCare, DiseasedWilted], `notes`).
+        - `eco_green_club_actions`: Environmental club audits, recycling drives, tree-planting campaigns, and energy/water conservation challenges (`action_code`, `academic_year`, `action_title`, `action_category` [TreePlanting, WasteRecycling, WaterConservation, EnergySavingAudit, EnvironmentalAwareness, OrganicComposting], `execution_date`, `participants_count`, `trees_planted_count`, `waste_collected_kg`, `supervising_teacher_id`, `location_details`, `partner_organization` [DirectorateOfEnvironment, ConservatoireNational, LocalMunicipalityAPC, ForestryConservancy], `impact_summary`).
+      - Updated `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` expanding verified schema to 109 domain tables: `[PASS] schema: All required tables present (109)`.
+- [x] **Domain Enums Architecture (`app/Enums`):**
+      - `CooperativeProjectType`: `SolidarityCharity`, `HandicraftsExhibition`, `BotanicalGardening`, `RecyclingEcoDrive`, `SchoolCleanlinessDay`, `CulturalBookSale`.
+      - `CooperativeProjectStatus`: `Planned`, `Active`, `Completed`, `Cancelled`.
+      - `CooperativeTransactionType`: `IncomeMembershipDues`, `IncomeProceedsCrafts`, `IncomeProceedsGardenProduce`, `IncomeDonationsSponsorship`, `ExpenseSolidarityKits`, `ExpenseGardenToolsSeeds`, `ExpenseCraftMaterials`, `ExpenseExhibitionPrizes`.
+      - `GardenIrrigationType`: `DripIrrigation`, `Sprinkler`, `ManualWatering`, `RainwaterHarvesting`.
+      - `GardenPlotStatus`: `ActivePlanted`, `FallowResting`, `PreparationTillage`, `UnderMaintenance`.
+      - `BotanicalPlantCategory`: `AromaticMedicinal`, `VegetableCrop`, `FruitTree`, `OrnamentalFlowering`, `ForestShrub`.
+      - `PlantHealthStatus`: `ThrivingGood`, `Moderate`, `NeedsCare`, `DiseasedWilted`.
+      - `EcoActionCategory`: `TreePlanting`, `WasteRecycling`, `WaterConservation`, `EnergySavingAudit`, `EnvironmentalAwareness`, `OrganicComposting`.
+- [x] **Domain Service Layer (`SchoolCooperativeService`):**
+      - Sequential reference code generators: `COOP-PRJ-{year}-{seq}`, `COOP-FIN-{year}-{seq}`, `PLOT-{seq}`, `PLT-{seq}`, and `ECO-ACT-{year}-{seq}`.
+      - Core operations: `getOrCreateCooperative`, `createProject`, `updateProjectStatus`, `recordFinancialTransaction` with automatic cooperative treasury balance adjustment, `createGardenPlot`, `bootstrapDefaultGardenPlots` (initializes 4 standard plots), `addBotanicalPlant`, `recordEcoAction`.
+      - Real-time telemetry & KPIs engine (`getCooperativeTelemetry`): total members count, active/completed projects count, net treasury balance in DZD, total incomes, total expenditures, garden plots count, total cultivated area in m², total plant species count, trees planted count, waste recycled in kg, and participating pupils.
+      - Printable data assemblers: `assembleCooperativeProjectFicheData`, `assembleBotanicalGardenFicheData`, `assembleEcoActionReportData`, and `assembleCooperativeAnnualBilanData`.
+- [x] **Controller Actions & Secure Routing (`SchoolCooperativeController`, `routes/web.php`):**
+      - 8 dedicated routes with Browsershot PDF streaming and HTML fallback:
+        - `print.cooperative.project-fiche` & `.pdf` (`/{locale}/print/cooperative/project/{project}`)
+        - `print.cooperative.garden-fiche` & `.pdf` (`/{locale}/print/cooperative/garden-plot/{plot}`)
+        - `print.cooperative.eco-report` & `.pdf` (`/{locale}/print/cooperative/eco-action/{action}`)
+        - `print.cooperative.annual-bilan` & `.pdf` (`/{locale}/print/cooperative/annual-bilan/{academicYear}`)
+      - Protected by strict permission check `User::canManageSchoolCooperative()`.
+- [x] **Official Algerian Printable Templates:**
+      - `resources/views/print/cooperative-project-fiche.blade.php`: Fiche de projet coopératif scolaire (بطاقة مشروع ومبادرة التعاونية المدرسية - A4 Portrait) with official ministry header, project classification, student leadership bureau, schedule, allocated/spent budgets, pedagogical impact, and tripartite visas.
+      - `resources/views/print/cooperative-garden-plot-fiche.blade.php`: Fiche technique de la parcelle et jardin botanique pédagogique (بطاقة الحوض البيداغوجي والحديقة النباتية المدرسية - A4 Portrait) detailing parcel coordinates, irrigation mode, botanical species ledger, maintenance rota, and teacher/student visas.
+      - `resources/views/print/cooperative-eco-action-report.blade.php`: Procès-verbal d'action environnementale et éco-école (محضر إنجاز نشاط بيئي ومبادرة النادي الأخضر - A4 Portrait) recording trees planted count, waste recycled in kg, partner organizations, participants roster, and official stamping.
+      - `resources/views/print/cooperative-annual-bilan.blade.php`: Bilan moral et financier annuel de la coopérative scolaire et éco-école (الحصيلة الأدبية والمالية للتعاونية المدرسية والنادي البيئي - A4 Landscape) detailing moral achievements, solidarity actions for needy students, green club initiatives, complete cashbook statement, and certifying signatures.
+- [x] **Interactive Filament Livewire Cockpit (`SchoolCooperativeHub`):**
+      - Registered under `__('الحياة المدرسية وشؤون التلاميذ')` with icon `heroicon-o-sparkles` (sort order 8).
+      - 4 interactive tabs:
+        1. **مشاريع ومبادرات التعاونية:** 4 telemetry cards (Total projects, Active projects, Completed initiatives, Student members), search and category/status filters, projects ledger, Add Project modal, and instant Print/PDF shortcuts for project fiches.
+        2. **الحديقة البيداغوجية والمشتلة:** Plot cards with surface areas, modern irrigation modes, botanical species inventories, Add Plot modal, Add Plant modal, and instant Print/PDF garden plot sheet shortcuts.
+        3. **النادي الأخضر والبيئة المدرسية:** Eco-actions ledger (tree planting, recycling, water/energy saving), Record Eco Action modal, and instant Print/PDF eco report shortcuts.
+        4. **صندوق المالية والتضامن:** Treasury summary card, cashbook transactions table with receipt vouchers, Record Transaction modal, and instant Print/PDF Annual Cooperative Bilan shortcuts.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - Complete tri-lingual dictionary populated in `lang/ar.json`, `lang/en.json`, and `lang/fr.json` verified by `LocalizationCompletenessTest` (2 passed, 7 assertions).
+      - 20 comprehensive feature tests in `tests/Feature/SchoolCooperativeTest.php` passing 100% green (117 assertions).
+      - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php` (6 tests, 145 assertions).
+      - Schema integrity verified by `sajel:health-check`: `[PASS] schema: All required tables present (109)`.
       - Code style verified with `vendor/bin/pint`.
 
 

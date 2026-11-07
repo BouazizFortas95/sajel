@@ -24,6 +24,7 @@ use App\Http\Controllers\SchoolBoardingController;
 use App\Http\Controllers\SchoolBudgetController;
 use App\Http\Controllers\SchoolCanteenController;
 use App\Http\Controllers\SchoolCensusController;
+use App\Http\Controllers\SchoolCooperativeController;
 use App\Http\Controllers\SchoolHealthController;
 use App\Http\Controllers\SchoolInventoryController;
 use App\Http\Controllers\SchoolLifeController;
@@ -1094,6 +1095,48 @@ Route::get('/{locale}/print/sports/ascs-bilan/{academicYear}/pdf', [SchoolSports
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.sports.ascs-bilan.pdf');
+
+// ─── School Cooperative & Pedagogical Garden Routes ─────────────────
+
+Route::get('/{locale}/print/cooperative/project/{project}', [SchoolCooperativeController::class, 'printProjectFiche'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.cooperative.project-fiche');
+
+Route::get('/{locale}/print/cooperative/project/{project}/pdf', [SchoolCooperativeController::class, 'printProjectFichePdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.cooperative.project-fiche.pdf');
+
+Route::get('/{locale}/print/cooperative/garden-plot/{plot}', [SchoolCooperativeController::class, 'printGardenPlotFiche'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.cooperative.garden-fiche');
+
+Route::get('/{locale}/print/cooperative/garden-plot/{plot}/pdf', [SchoolCooperativeController::class, 'printGardenPlotFichePdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.cooperative.garden-fiche.pdf');
+
+Route::get('/{locale}/print/cooperative/eco-action/{action}', [SchoolCooperativeController::class, 'printEcoActionReport'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.cooperative.eco-report');
+
+Route::get('/{locale}/print/cooperative/eco-action/{action}/pdf', [SchoolCooperativeController::class, 'printEcoActionReportPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.cooperative.eco-report.pdf');
+
+Route::get('/{locale}/print/cooperative/annual-bilan/{academicYear}', [SchoolCooperativeController::class, 'printAnnualBilan'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.cooperative.annual-bilan');
+
+Route::get('/{locale}/print/cooperative/annual-bilan/{academicYear}/pdf', [SchoolCooperativeController::class, 'printAnnualBilanPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.cooperative.annual-bilan.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

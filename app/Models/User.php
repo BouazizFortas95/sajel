@@ -458,6 +458,34 @@ class User extends Authenticatable implements FilamentUser
         ], true);
     }
 
+    public function canManageSchoolCooperative(): bool
+    {
+        return in_array($this->role, [
+            Role::Principal,
+            Role::FinanceOfficer,
+            Role::GeneralSupervisor,
+            Role::Teacher,
+            Role::Censor,
+            Role::Admin,
+            Role::Developer,
+        ], true);
+    }
+
+    public function cooperativeProjectsCoordinated(): HasMany
+    {
+        return $this->hasMany(CooperativeProjectsInitiative::class, 'coordinator_user_id');
+    }
+
+    public function gardenPlotsSupervised(): HasMany
+    {
+        return $this->hasMany(PedagogicalGardenPlot::class, 'supervising_teacher_id');
+    }
+
+    public function ecoActionsSupervised(): HasMany
+    {
+        return $this->hasMany(EcoGreenClubAction::class, 'supervising_teacher_id');
+    }
+
     public function sportsDisciplinesSupervised(): HasMany
     {
         return $this->hasMany(SportsCulturalDiscipline::class, 'supervising_user_id');

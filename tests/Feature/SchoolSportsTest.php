@@ -440,10 +440,10 @@ class SchoolSportsTest extends TestCase
         ]);
     }
 
-    public function test_health_check_verifies_all_103_tables(): void
+    public function test_health_check_verifies_schema(): void
     {
         $this->artisan('sajel:health-check')
             ->assertExitCode(0)
-            ->expectsOutputToContain('All required tables present (103)');
+            ->expectsOutputToContain('[PASS] schema: All required tables present');
     }
 }

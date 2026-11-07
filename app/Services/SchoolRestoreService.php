@@ -120,6 +120,12 @@ class SchoolRestoreService
         'sports_competitions_events',
         'ascs_financial_transactions',
         'sports_equipment_inventories',
+        'school_cooperatives',
+        'cooperative_projects_initiatives',
+        'cooperative_financial_ledger',
+        'pedagogical_garden_plots',
+        'botanical_plants_inventory',
+        'eco_green_club_actions',
     ];
 
     /**
