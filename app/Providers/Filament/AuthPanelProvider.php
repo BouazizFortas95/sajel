@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
 use App\Http\Middleware\SetFilamentLocale;
+use App\Models\PlatformSetting;
 use Filament\FontProviders\GoogleFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -61,7 +62,11 @@ class AuthPanelProvider extends PanelProvider
                     ->icon('heroicon-o-building-library')
                     ->collapsed(),
             ])
-            ->brandName('سجِّل')
+            ->brandName(fn () => PlatformSetting::current()->platform_name ?? 'سجِّل')
+            ->brandLogo(fn () => PlatformSetting::current()->getLogoUrl())
+            ->darkModeBrandLogo(fn () => PlatformSetting::current()->getDarkLogoUrl())
+            ->brandLogoHeight('2.5rem')
+            ->favicon(fn () => PlatformSetting::current()->getFaviconUrl() ?? asset('pwa-icon.svg'))
             ->font('Cairo', provider: GoogleFontProvider::class)
             ->login()
             ->registration()
@@ -71,6 +76,10 @@ class AuthPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn () => view('filament.partials.platform-announcement'),
+            )
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn () => view('filament.partials.pwa-head'),
@@ -82,6 +91,10 @@ class AuthPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::TOPBAR_END,
                 fn () => view('filament.partials.language-switcher'),
+            )
+            ->renderHook(
+                PanelsRenderHook::FOOTER,
+                fn () => view('filament.partials.platform-footer'),
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')

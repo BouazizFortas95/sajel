@@ -126,6 +126,7 @@ class SchoolRestoreService
         'pedagogical_garden_plots',
         'botanical_plants_inventory',
         'eco_green_club_actions',
+        'platform_settings',
     ];
 
     /**

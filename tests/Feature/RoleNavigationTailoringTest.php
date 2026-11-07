@@ -7,6 +7,7 @@ use App\Filament\Pages\ClassCouncilHub;
 use App\Filament\Pages\ClassroomToolbar;
 use App\Filament\Pages\CurriculumProgress;
 use App\Filament\Pages\DataShowMode;
+use App\Filament\Pages\DeveloperSettingsHub;
 use App\Filament\Pages\DisciplinaryCouncilHub;
 use App\Filament\Pages\ExamTimetableHub;
 use App\Filament\Pages\InstitutionalBilanHub;
@@ -103,6 +104,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertFalse(SchoolBoardGovernanceHub::shouldRegisterNavigation());
         $this->assertFalse(SchoolMaintenanceHub::shouldRegisterNavigation());
         $this->assertFalse(StaffCareerHub::shouldRegisterNavigation());
+        $this->assertFalse(DeveloperSettingsHub::shouldRegisterNavigation());
     }
 
     public function test_counselor_navigation_is_tailored_to_psychopedagogical_guidance(): void
@@ -132,6 +134,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertFalse(SchoolSportsHub::shouldRegisterNavigation());
         $this->assertFalse(SchoolCooperativeHub::shouldRegisterNavigation());
         $this->assertFalse(StaffCareerHub::shouldRegisterNavigation());
+        $this->assertFalse(DeveloperSettingsHub::shouldRegisterNavigation());
     }
 
     public function test_general_supervisor_navigation_focuses_on_school_life_and_discipline(): void
@@ -164,6 +167,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertFalse(SchoolBudgetHub::shouldRegisterNavigation());
         $this->assertFalse(SchoolSolidarityHub::shouldRegisterNavigation());
         $this->assertFalse(StaffCareerHub::shouldRegisterNavigation());
+        $this->assertFalse(DeveloperSettingsHub::shouldRegisterNavigation());
     }
 
     public function test_finance_officer_navigation_focuses_on_textbooks_and_clearance(): void
@@ -194,6 +198,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertFalse(DisciplinaryCouncilHub::shouldRegisterNavigation());
         $this->assertFalse(ScheduleResource::shouldRegisterNavigation());
         $this->assertFalse(StaffCareerHub::shouldRegisterNavigation());
+        $this->assertFalse(DeveloperSettingsHub::shouldRegisterNavigation());
     }
 
     public function test_censor_navigation_excludes_school_budget_hub(): void
@@ -202,6 +207,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->actingAs($censor);
 
         $this->assertFalse(SchoolBudgetHub::shouldRegisterNavigation());
+        $this->assertFalse(DeveloperSettingsHub::shouldRegisterNavigation());
     }
 
     public function test_principal_and_developer_have_comprehensive_visibility(): void
@@ -237,6 +243,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertTrue(ScheduleResource::shouldRegisterNavigation());
         $this->assertTrue(UserResource::shouldRegisterNavigation());
         $this->assertTrue(ManageSchoolSettings::shouldRegisterNavigation());
+        $this->assertTrue(DeveloperSettingsHub::shouldRegisterNavigation());
 
         $dev = User::factory()->create(['role' => Role::Developer]);
         $this->actingAs($dev);
@@ -253,5 +260,6 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertTrue(StaffCareerHub::shouldRegisterNavigation());
         $this->assertTrue(UserResource::shouldRegisterNavigation());
         $this->assertTrue(ManageSchoolSettings::shouldRegisterNavigation());
+        $this->assertTrue(DeveloperSettingsHub::shouldRegisterNavigation());
     }
 }

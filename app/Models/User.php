@@ -471,6 +471,11 @@ class User extends Authenticatable implements FilamentUser
         ], true);
     }
 
+    public function canManagePlatformSettings(): bool
+    {
+        return $this->isDeveloper() || $this->role === Role::Admin || $this->isPrincipal();
+    }
+
     public function cooperativeProjectsCoordinated(): HasMany
     {
         return $this->hasMany(CooperativeProjectsInitiative::class, 'coordinator_user_id');

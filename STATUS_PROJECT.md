@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
 > Last updated: 2026-11-07
-> Verified by `php artisan test` (**685 passed**, 22,402 assertions, **0 failures**),
+> Verified by `php artisan test` (**694 passed**, 22,453 assertions, **0 failures**),
 > `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -2222,6 +2222,44 @@ Full statutory alignment with Algerian educational administration regulations, m
       - 20 comprehensive feature tests in `tests/Feature/SchoolCooperativeTest.php` passing 100% green (117 assertions).
       - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php` (6 tests, 145 assertions).
       - Schema integrity verified by `sajel:health-check`: `[PASS] schema: All required tables present (109)`.
+      - Code style verified with `vendor/bin/pint`.
+
+### Phase 58: Platform General & Developer Technical Settings Hub (إعدادات المنصة العامة وإدارة النظام والتحكم التقني للمطور)
+- [x] **Database Schema & Health Check Auditing:**
+      - Migration `2026_11_30_010001_create_platform_settings_table.php` introducing `platform_settings` table:
+        - Platform branding & visual identity: `platform_name`, `platform_slogan`, `meta_description`, `logo_path`, `dark_logo_path`, `favicon_path`, `primary_color`.
+        - Developer & software governance: `developer_name`, `developer_organization`, `developer_website`, `developer_support_email`, `developer_support_phone`, `version_tag`, `footer_copyright_text`.
+        - Technical maintenance & announcements: `is_maintenance_mode`, `maintenance_message`, `maintenance_allowed_ips`, `enable_public_registration`, `system_announcement`, `announcement_active`, `announcement_type`.
+        - AI & platform engine limits: `enable_ai_assistant`, `ai_default_model`, `max_file_upload_mb`, `session_lifetime_minutes`.
+      - Schema audit expanded in `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService`: **110 verified tables present**.
+- [x] **Domain Models & Service Architecture:**
+      - Single-row cached singleton model `PlatformSetting` with automatic cache invalidation on save/delete, default fallbacks, and helper URL generators (`getLogoUrl`, `getDarkLogoUrl`, `getFaviconUrl`, `isMaintenanceActive`, `isAnnouncementVisible`).
+      - Technical service layer `PlatformSettingsService` providing:
+        - Dynamic settings updating & cache purging.
+        - Maintenance mode toggling with custom messaging.
+        - Comprehensive system telemetry diagnostics (`getSystemTelemetry`): PHP version, Laravel version, database engine & table count, memory usage/limits, execution times, upload limits, and session/cache drivers.
+        - Cache clearing operations (`clearAllCaches`): purging application cache, compiled views, routes, and configs.
+- [x] **Filament Layout & Dynamic Branding Integration (`AuthPanelProvider`):**
+      - Dynamic brand name: `fn () => PlatformSetting::current()->platform_name ?? 'سجِّل'`.
+      - Dynamic brand logo (light and dark mode): `PlatformSetting::current()->getLogoUrl()` and `getDarkLogoUrl()`.
+      - Dynamic browser favicon: `PlatformSetting::current()->getFaviconUrl()`.
+      - Render hook `PanelsRenderHook::BODY_START`: `resources/views/filament/partials/platform-announcement.blade.php` rendering instant technical maintenance alerts and global system announcement banners.
+      - Render hook `PanelsRenderHook::FOOTER`: `resources/views/filament/partials/platform-footer.blade.php` rendering platform copyright credits, version badge, and developer links.
+- [x] **Interactive Livewire Filament Cockpit (`DeveloperSettingsHub`):**
+      - Registered under `__('الإدارة المدرسية والرقمنة والأرشيف')` with icon `heroicon-o-cpu-chip` (sort order 6).
+      - Accessible strictly by Developer (`Role::Developer`), Digitization Officer (`Role::Admin`), and Principal (`Role::Principal`).
+      - 4 comprehensive tabs:
+        1. **هوية المنصة والشعارات:** Platform name, slogan, meta description, light/dark logos file uploaders, favicon uploader, and primary hex color picker.
+        2. **بيانات المطور وحقوق الملكية:** Developer name, software company, portfolio/support URL, support email, phone, version tag, and footer copyright text.
+        3. **وضع الصيانة والأمان والوصول:** Maintenance mode toggle, custom maintenance message for teachers/students, IP whitelist, self-registration toggle, and global announcement banner controls (info, warning, danger, success).
+        4. **محرك الذكاء الاصطناعي وحدود النظام:** AI engine toggle, default Gemini model selector, max upload file size in MB, and session lifetime in minutes.
+      - Header actions:
+        - `clearCache`: Clear and rebuild all application, route, view, and config caches.
+        - `systemTelemetry`: Modal displaying real-time server diagnostics (PHP/Laravel versions, database driver, tables count, memory usage).
+- [x] **Automated Testing & Code Quality:**
+      - 9 dedicated tests in `tests/Feature/DeveloperSettingsTest.php` passing 100% green (44 assertions).
+      - Strict role separation verified in `RoleNavigationTailoringTest.php` (6 tests, 152 assertions).
+      - Tri-lingual completeness verified in `LocalizationCompletenessTest.php` (`ar`, `en`, `fr`).
       - Code style verified with `vendor/bin/pint`.
 
 
