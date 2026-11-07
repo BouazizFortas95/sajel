@@ -1799,31 +1799,39 @@ Full statutory alignment with Algerian National Education Circular 143/97 and Mi
       - `InventoryReformStatus`: `Proposed`, `ApprovedByBoard`, `Discharged` tracking the official disposal lifecycle.
 - [x] **Domain Service Layer (`SchoolInventoryService`):**
       - Statutory inventory numbering generator conforming to Circular 143/97: `category_code/sequential_number/year` (e.g. `02/0001/2026`).
-      - Asset registration (`registerItem`), condition updating (`updateCondition`), room allocations (`recordAllocation`), and reform execution (`recordReform`).
-      - KPI metrics engine (`getInventoryKpis`): active items count, total estimated valuation in DZD, scientific lab assets, and reform counts.
-      - Printable data assemblers: `assembleGeneralLedgerData`, `assembleAllocationSheetData`, `assembleReformPvData`.
+      - Statutory recolement numbering generator: `REC/{year}/{seq}` (e.g. `REC/2026/001`).
+      - Asset registration (`registerItem`), condition updating (`updateCondition`), room allocations with custody nature (`recordAllocation`), periodic verification and discrepancies resolution (`recordRecolement`), and reform execution (`recordReform`).
+      - KPI metrics engine (`getInventoryKpis`): active items count, total estimated valuation in DZD, scientific lab assets, furniture & office assets, IT/audiovisual items, verification recolements, and reform counts.
+      - Printable data assemblers: `assembleGeneralLedgerData`, `assembleAllocationSheetData`, `assembleCustodyVoucherData`, `assembleRecolementData`, `assembleReformPvData`.
 - [x] **Controller Actions & Secure Routing (`SchoolInventoryController`, `routes/web.php`):**
-      - 6 dedicated routes for official previews and high-fidelity PDF stream downloads via `BrowsershotFactory`:
+      - 10 dedicated routes for official previews and high-fidelity PDF stream downloads via `BrowsershotFactory`:
         - `print.inventory.general-ledger` (`/{locale}/print/inventory/general-ledger/{category?}`)
         - `print.inventory.general-ledger.pdf` (`/{locale}/print/inventory/general-ledger/{category?}/pdf`)
         - `print.inventory.allocation-sheet` (`/{locale}/print/inventory/allocation/{allocation}`)
         - `print.inventory.allocation-sheet.pdf` (`/{locale}/print/inventory/allocation/{allocation}/pdf`)
+        - `print.inventory.custody-voucher` (`/{locale}/print/inventory/allocation/{allocation}/custody`)
+        - `print.inventory.custody-voucher.pdf` (`/{locale}/print/inventory/allocation/{allocation}/custody/pdf`)
+        - `print.inventory.recolement` (`/{locale}/print/inventory/recolement/{recolement}`)
+        - `print.inventory.recolement.pdf` (`/{locale}/print/inventory/recolement/{recolement}/pdf`)
         - `print.inventory.reform-pv` (`/{locale}/print/inventory/reform/{reform}`)
         - `print.inventory.reform-pv.pdf` (`/{locale}/print/inventory/reform/{reform}/pdf`)
 - [x] **Official Algerian Printable Templates:**
       - `resources/views/print/inventory-general-ledger.blade.php`: Grand livre d'inventaire permanent général et spécial (سجل الجرد الدائم العام والخاص المعتمد - A4 Landscape) formatted per Circular 143/97 with statutory registration numbers, acquisition origins, costs, and multi-partite visa blocks (Bursar, Principal, Custodian).
       - `resources/views/print/inventory-allocation-sheet.blade.php`: Fiche d'affectation de local (بطاقة تخصيص عتاد الحجرة / المخبر - A4 Portrait) featuring room designation, custodian commitment, itemized inventory, and signature visas.
+      - `resources/views/print/inventory-custody-voucher.blade.php`: Fiche et procès-verbal de prise en charge et de décharge de matériel scolaire (سند ومحضر تسليم واستلام عهدة التجهيزات المدرسية والمكتبية والمخبرية - A4 Portrait) with legal custody undertaking, itemized inventory, and tripartite signatures (Custodian, Bursar, Principal).
+      - `resources/views/print/inventory-recolement-sheet.blade.php`: Fiche de récolement et procès-verbal de constatation périodique de conformité (بطاقة ومحضر المطابقة والمعاينة السنوية للتجهيزات المدرسية - A4 Landscape) featuring theoretical vs physical counts, conform/missing/surplus/damaged audits, and inspection committee visas.
       - `resources/views/print/inventory-reform-pv.blade.php`: Procès-verbal de commission de réforme (محضر معاينة وإسقاط التجهيزات غير الصالحة للاستعمال - A4 Portrait) with inspection committee members, technical depreciation causes, total estimated value, and State Property recommendation.
 - [x] **Interactive Filament Livewire Cockpit (`SchoolInventoryHub`):**
       - Registered under `__('المصالح المالية والكتاب المدرسي')` with icon `heroicon-o-cube` (sort order 3).
-      - 3 interactive tabs:
-        1. **Inventory Ledger (سجل الجرد الدائم العام والخاص):** Real-time financial valuation cards, comprehensive search, category/condition filters, Add Item modal, and print/PDF ledger actions.
-        2. **Location Allocations (بطاقات التخصيص والمواقع):** Grid of room and lab custody cards, custodian assignment, item counts, and print allocation sheets.
-        3. **Asset Reforms (محاضر الإسقاط والإتلاف):** Multi-item decommissioning workflow, committee president assignment, observations, and official reform PV generation.
+      - 4 interactive tabs:
+        1. **Inventory Ledger (سجل الجرد الدائم العام والخاص):** Real-time financial valuation cards, special inventory quick filter pills (Scientific/Lab, Office, IT/Audiovisual, Sports, Library, Refectory), Add Item modal, and instant print/PDF ledger actions.
+        2. **Location Allocations & Custody (بطاقات التخصيص وسجل جرد العهدة للمواقع):** Grid of room and lab custody cards, custodian assignment, custody nature indicators, item counts, print allocation sheet, and print custody voucher.
+        3. **Periodic Verification & Conformity (بطاقات ومحاضر المطابقة والمعاينة السنوية):** Recolement ledger, New Recolement modal, discrepancy tracking, and print/PDF verification minutes.
+        4. **Asset Reforms (محاضر الإسقاط والإتلاف):** Multi-item decommissioning workflow, committee president assignment, observations, and official reform PV generation.
 - [x] **Tri-Lingual Localization & Automated Verification:**
       - Full tri-lingual dictionary populated in `lang/ar.json`, `lang/en.json`, and `lang/fr.json` verified by `LocalizationCompletenessTest`.
-      - 15 comprehensive feature tests in `tests/Feature/SchoolInventoryTest.php` passing 100% green (39 assertions).
-      - Health check verified: `[PASS] schema: All required tables present (61)`.
+      - 23 comprehensive feature tests in `tests/Feature/SchoolInventoryTest.php` passing 100% green (71 assertions).
+      - Health check verified: `[PASS] schema: All required tables present (69)`.
       - Strict role navigation tailoring verified in `tests/Feature/RoleNavigationTailoringTest.php`.
       - Code style verified with `vendor/bin/pint`.
 
