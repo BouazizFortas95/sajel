@@ -72,4 +72,3 @@ class SchoolBoardSession extends Model
         return $this->hasMany(SchoolInternalRegulation::class, 'adoption_board_session_id');
     }
 }
-

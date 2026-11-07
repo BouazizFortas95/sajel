@@ -624,4 +624,3 @@ class SchoolMaintenanceHub extends Page
             ->get();
     }
 }
-

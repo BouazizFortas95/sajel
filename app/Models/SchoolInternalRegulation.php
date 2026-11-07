@@ -41,4 +41,3 @@ class SchoolInternalRegulation extends Model
         return $this->belongsTo(SchoolBoardSession::class, 'adoption_board_session_id');
     }
 }
-

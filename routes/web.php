@@ -27,8 +27,10 @@ use App\Http\Controllers\SchoolCensusController;
 use App\Http\Controllers\SchoolHealthController;
 use App\Http\Controllers\SchoolInventoryController;
 use App\Http\Controllers\SchoolLifeController;
+use App\Http\Controllers\SchoolMaintenanceController;
 use App\Http\Controllers\SchoolSafetyController;
 use App\Http\Controllers\SchoolSolidarityController;
+use App\Http\Controllers\SchoolSportsController;
 use App\Http\Controllers\StaffCareerController;
 use App\Http\Controllers\StudentAwardController;
 use App\Http\Controllers\StudentMobilityController;
@@ -1008,6 +1010,90 @@ Route::get('/{locale}/print/governance/parents-meeting/{meeting}/pv/pdf', [Schoo
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.governance.parents-assembly-pv.pdf');
+
+// ─── School Technical Infrastructure & Maintenance Routes ───────────
+
+Route::get('/{locale}/print/maintenance/work-order/{workOrder}', [SchoolMaintenanceController::class, 'printWorkOrder'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.maintenance.work-order');
+
+Route::get('/{locale}/print/maintenance/work-order/{workOrder}/pdf', [SchoolMaintenanceController::class, 'printWorkOrderPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.maintenance.work-order.pdf');
+
+Route::get('/{locale}/print/maintenance/heating-log/{log}/pv', [SchoolMaintenanceController::class, 'printHeatingSafetyPv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.maintenance.heating-pv');
+
+Route::get('/{locale}/print/maintenance/heating-log/{log}/pv/pdf', [SchoolMaintenanceController::class, 'printHeatingSafetyPvPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.maintenance.heating-pv.pdf');
+
+Route::get('/{locale}/print/maintenance/water-hygiene/{inspection}/register', [SchoolMaintenanceController::class, 'printWaterHygieneRegister'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.maintenance.water-register');
+
+Route::get('/{locale}/print/maintenance/water-hygiene/{inspection}/register/pdf', [SchoolMaintenanceController::class, 'printWaterHygieneRegisterPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.maintenance.water-register.pdf');
+
+Route::get('/{locale}/print/maintenance/energy-bilan/{academicYear}', [SchoolMaintenanceController::class, 'printEnergyConsumptionBilan'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.maintenance.energy-bilan');
+
+Route::get('/{locale}/print/maintenance/energy-bilan/{academicYear}/pdf', [SchoolMaintenanceController::class, 'printEnergyConsumptionBilanPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.maintenance.energy-bilan.pdf');
+
+// ─── School Sports and Cultural Association (ASCS) Routes ───────────
+
+Route::get('/{locale}/print/sports/license/{license}', [SchoolSportsController::class, 'printStudentLicense'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.sports.student-license');
+
+Route::get('/{locale}/print/sports/license/{license}/pdf', [SchoolSportsController::class, 'printStudentLicensePdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.sports.student-license.pdf');
+
+Route::get('/{locale}/print/sports/medical-fiche/{license}', [SchoolSportsController::class, 'printParentalMedicalFiche'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.sports.medical-fiche');
+
+Route::get('/{locale}/print/sports/medical-fiche/{license}/pdf', [SchoolSportsController::class, 'printParentalMedicalFichePdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.sports.medical-fiche.pdf');
+
+Route::get('/{locale}/print/sports/event/{event}/roster-pv', [SchoolSportsController::class, 'printCompetitionRosterPv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.sports.competition-pv');
+
+Route::get('/{locale}/print/sports/event/{event}/roster-pv/pdf', [SchoolSportsController::class, 'printCompetitionRosterPvPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.sports.competition-pv.pdf');
+
+Route::get('/{locale}/print/sports/ascs-bilan/{academicYear}', [SchoolSportsController::class, 'printAscsBilan'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.sports.ascs-bilan');
+
+Route::get('/{locale}/print/sports/ascs-bilan/{academicYear}/pdf', [SchoolSportsController::class, 'printAscsBilanPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.sports.ascs-bilan.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

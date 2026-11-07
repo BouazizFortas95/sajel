@@ -106,6 +106,18 @@ class SchoolBackupService
         'school_internal_regulations',
         'parents_associations',
         'parents_association_meetings',
+        'school_building_facilities',
+        'maintenance_work_orders',
+        'central_heating_logs',
+        'water_tank_hygiene_inspections',
+        'energy_utility_meters',
+        'utility_consumption_records',
+        'school_sports_associations',
+        'sports_cultural_disciplines',
+        'student_sports_licenses',
+        'sports_competitions_events',
+        'ascs_financial_transactions',
+        'sports_equipment_inventories',
     ];
 
     /**

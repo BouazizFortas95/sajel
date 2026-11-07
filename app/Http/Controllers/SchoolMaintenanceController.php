@@ -230,4 +230,3 @@ class SchoolMaintenanceController extends Controller
         }
     }
 }
-

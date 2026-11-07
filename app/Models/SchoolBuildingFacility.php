@@ -57,4 +57,3 @@ class SchoolBuildingFacility extends Model
             || $this->condition_rating === FacilityCondition::Dilapidated;
     }
 }
-

@@ -81,4 +81,3 @@ class MaintenanceWorkOrder extends Model
             || $this->priority_level === MaintenancePriority::Urgent;
     }
 }
-

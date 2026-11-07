@@ -174,4 +174,3 @@ class SchoolBoardGovernanceController extends Controller
         }
     }
 }
-

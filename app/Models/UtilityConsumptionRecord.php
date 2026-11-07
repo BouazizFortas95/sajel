@@ -52,4 +52,3 @@ class UtilityConsumptionRecord extends Model
         return $this->belongsTo(EnergyUtilityMeter::class, 'energy_utility_meter_id');
     }
 }
-

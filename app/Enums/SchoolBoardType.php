@@ -23,4 +23,3 @@ enum SchoolBoardType: string
         };
     }
 }
-

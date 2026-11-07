@@ -26,4 +26,3 @@ enum BoilerFuelType: string
         };
     }
 }
-

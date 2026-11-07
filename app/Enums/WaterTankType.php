@@ -26,4 +26,3 @@ enum WaterTankType: string
         };
     }
 }
-

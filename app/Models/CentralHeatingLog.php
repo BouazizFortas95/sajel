@@ -59,4 +59,3 @@ class CentralHeatingLog extends Model
             && $this->status === HeatingInspectionStatus::CompliantApproved;
     }
 }
-

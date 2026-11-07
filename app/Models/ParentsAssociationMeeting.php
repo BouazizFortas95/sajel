@@ -39,4 +39,3 @@ class ParentsAssociationMeeting extends Model
         return $this->belongsTo(ParentsAssociation::class, 'parents_association_id');
     }
 }
-
