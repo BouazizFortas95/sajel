@@ -373,7 +373,12 @@ class User extends Authenticatable implements FilamentUser
 
     public function canManageSchoolBudget(): bool
     {
-        return $this->isDeveloper() || $this->isPrincipal() || $this->isCensor() || $this->isFinanceOfficer() || $this->isAdmin();
+        return in_array($this->role, [
+            Role::FinanceOfficer,
+            Role::Principal,
+            Role::Admin,
+            Role::Developer,
+        ], true);
     }
 
     public function canManageOfficialExams(): bool

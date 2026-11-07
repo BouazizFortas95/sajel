@@ -69,8 +69,22 @@ class SchoolBudgetTest extends TestCase
 
     public function test_can_manage_school_budget_permissions(): void
     {
-        $this->assertTrue($this->principal->canManageSchoolBudget());
+        $admin = User::factory()->create(['role' => Role::Admin]);
+        $developer = User::factory()->create(['role' => Role::Developer]);
+        $censor = User::factory()->create(['role' => Role::Censor]);
+        $supervisor = User::factory()->create(['role' => Role::GeneralSupervisor]);
+        $counselor = User::factory()->create(['role' => Role::Counselor]);
+
+        // Authorized: Accountant (المحاسب) or Higher Authority (سلطة أعلى: المدير، المطور، مدير النظام)
         $this->assertTrue($this->financeOfficer->canManageSchoolBudget());
+        $this->assertTrue($this->principal->canManageSchoolBudget());
+        $this->assertTrue($admin->canManageSchoolBudget());
+        $this->assertTrue($developer->canManageSchoolBudget());
+
+        // Forbidden: Censor (الناظر ليس محاسباً ولا سلطة أعلى منه) and all other roles
+        $this->assertFalse($censor->canManageSchoolBudget());
+        $this->assertFalse($supervisor->canManageSchoolBudget());
+        $this->assertFalse($counselor->canManageSchoolBudget());
         $this->assertFalse($this->teacher->canManageSchoolBudget());
     }
 
@@ -224,6 +238,27 @@ class SchoolBudgetTest extends TestCase
 
     public function test_budget_hub_renders_for_authorized_users(): void
     {
+        $admin = User::factory()->create(['role' => Role::Admin]);
+        $developer = User::factory()->create(['role' => Role::Developer]);
+
+        // Accountant (المحاسب)
+        $this->actingAs($this->financeOfficer);
+        $this->assertTrue(SchoolBudgetHub::shouldRegisterNavigation());
+        $this->get('/ar/auth/school-budget-hub')->assertOk();
+
+        // Higher Authority (المدير، مدير المنصة، المطور)
+        $this->actingAs($this->principal);
+        $this->assertTrue(SchoolBudgetHub::shouldRegisterNavigation());
+        $this->get('/ar/auth/school-budget-hub')->assertOk();
+
+        $this->actingAs($admin);
+        $this->assertTrue(SchoolBudgetHub::shouldRegisterNavigation());
+        $this->get('/ar/auth/school-budget-hub')->assertOk();
+
+        $this->actingAs($developer);
+        $this->assertTrue(SchoolBudgetHub::shouldRegisterNavigation());
+        $this->get('/ar/auth/school-budget-hub')->assertOk();
+
         Livewire::actingAs($this->financeOfficer)
             ->test(SchoolBudgetHub::class)
             ->assertSuccessful()
@@ -233,9 +268,29 @@ class SchoolBudgetTest extends TestCase
 
     public function test_budget_hub_forbids_unauthorized_users(): void
     {
-        $this->actingAs($this->teacher)
-            ->get('/ar/auth/school-budget-hub')
-            ->assertForbidden();
+        $censor = User::factory()->create(['role' => Role::Censor]);
+        $supervisor = User::factory()->create(['role' => Role::GeneralSupervisor]);
+        $counselor = User::factory()->create(['role' => Role::Counselor]);
+
+        // Teacher
+        $this->actingAs($this->teacher);
+        $this->assertFalse(SchoolBudgetHub::shouldRegisterNavigation());
+        $this->get('/ar/auth/school-budget-hub')->assertForbidden();
+
+        // Censor (الناظر)
+        $this->actingAs($censor);
+        $this->assertFalse(SchoolBudgetHub::shouldRegisterNavigation());
+        $this->get('/ar/auth/school-budget-hub')->assertForbidden();
+
+        // General Supervisor (مستشار التربية)
+        $this->actingAs($supervisor);
+        $this->assertFalse(SchoolBudgetHub::shouldRegisterNavigation());
+        $this->get('/ar/auth/school-budget-hub')->assertForbidden();
+
+        // Counselor (مستشار التوجيه)
+        $this->actingAs($counselor);
+        $this->assertFalse(SchoolBudgetHub::shouldRegisterNavigation());
+        $this->get('/ar/auth/school-budget-hub')->assertForbidden();
     }
 
     public function test_budget_hub_can_seed_standard_grid(): void
