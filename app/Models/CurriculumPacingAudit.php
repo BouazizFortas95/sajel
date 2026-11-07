@@ -42,3 +42,4 @@ class CurriculumPacingAudit extends Model
         return $this->belongsTo(User::class, 'audited_by');
     }
 }
+

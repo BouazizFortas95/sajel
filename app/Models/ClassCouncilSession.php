@@ -76,3 +76,4 @@ class ClassCouncilSession extends Model
         return $this->decisions()->where('sanctions', '!=', 'none')->count();
     }
 }
+

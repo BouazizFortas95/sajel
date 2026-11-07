@@ -106,3 +106,4 @@ return new class extends Migration
         Schema::dropIfExists('class_council_sessions');
     }
 };
+

@@ -43,3 +43,4 @@ enum CouncilSanctions: string
         };
     }
 }
+
