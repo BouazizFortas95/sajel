@@ -29,3 +29,4 @@ enum FacilityCondition: string
         };
     }
 }
+

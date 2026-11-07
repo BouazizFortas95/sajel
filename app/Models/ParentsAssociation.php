@@ -45,3 +45,4 @@ class ParentsAssociation extends Model
         return $this->hasMany(ParentsAssociationMeeting::class, 'parents_association_id');
     }
 }
+

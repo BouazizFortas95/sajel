@@ -38,8 +38,6 @@ class SajelHealthCheckCommand extends Command
         'safety_fire_equipment', 'safety_evacuation_drills', 'safety_committee_meetings',
         'school_board_sessions', 'school_board_members', 'school_projects',
         'school_internal_regulations', 'parents_associations', 'parents_association_meetings',
-        'school_building_facilities', 'maintenance_work_orders', 'central_heating_logs',
-        'water_tank_hygiene_inspections', 'energy_utility_meters', 'utility_consumption_records',
     ];
 
     public function handle(): int

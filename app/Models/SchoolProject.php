@@ -44,3 +44,4 @@ class SchoolProject extends Model
         return $this->belongsTo(SchoolBoardSession::class, 'board_session_id');
     }
 }
+

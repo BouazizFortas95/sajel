@@ -46,3 +46,4 @@ class EnergyUtilityMeter extends Model
         return $this->consumptionRecords()->latest('reading_date_end')->first();
     }
 }
+

@@ -149,3 +149,4 @@ return new class extends Migration
         Schema::dropIfExists('school_building_facilities');
     }
 };
+

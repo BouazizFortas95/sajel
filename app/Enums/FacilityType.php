@@ -41,3 +41,4 @@ enum FacilityType: string
         };
     }
 }
+
