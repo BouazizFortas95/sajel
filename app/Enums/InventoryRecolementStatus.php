@@ -26,3 +26,4 @@ enum InventoryRecolementStatus: string
         };
     }
 }
+
