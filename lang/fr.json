@@ -4510,5 +4510,6 @@
     "“لم تبدأ” تعني عدم وجود أي صف علامة لذلك التقييم، وليس أن كل التلاميذ حصلوا على صفر.": "« Non commencée » signifie qu’aucune ligne de note n’existe pour l’évaluation, et non que tous les élèves ont obtenu zéro.",
     "“متابعة مفتوحة” تعني ملاحظة سالبة أو انضباطية أو عامة لم تُعلَّم كمتابَعة بعد.": "« Suivi ouvert » désigne une observation négative, disciplinaire ou générale qui n’a pas encore été marquée comme suivie.",
     "“مخطط” و“منجز” و“ملغى” حالات سجل موجود. “معلق” حصة انتهى وقتها دون سجل منجز أو ملغى؛ ويُحتسب بعد نهاية وقت الحصة فقط، مع استثناء العطل.": "« Planifié », « réalisé » et « annulé » sont des états d’un journal existant. « En attente » désigne une séance terminée sans journal réalisé ou annulé ; elle n’est comptée qu’après l’heure de fin, hors vacances.",
-    "“معالجة مفتوحة” تعني معالجة بحالة “مخطط” أو “مستمر” داخل الفترة.": "« Remédiation ouverte » désigne une remédiation au statut « planifiée » ou « en cours » dans la période."
+    "“معالجة مفتوحة” تعني معالجة بحالة “مخطط” أو “مستمر” داخل الفترة.": "« Remédiation ouverte » désigne une remédiation au statut « planifiée » ou « en cours » dans la période.",
+    "رقم البريد": "N° de Courrier"
 }

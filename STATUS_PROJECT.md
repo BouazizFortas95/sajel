@@ -1,7 +1,7 @@
 # Sajel (سجِّل) — Project Status
 
-> Last updated: 2026-11-06
-> Verified by `php artisan test` (**537 passed**, 21,496 assertions, **0 failures**),
+> Last updated: 2026-11-07
+> Verified by `php artisan test` (**645 passed**, 22,207 assertions, **0 failures**),
 > `npm run test:js` (8 passed), `npm run build`, `php artisan sajel:health-check`, and `vendor/bin/pint`.
 
 ## 1. Overview
@@ -1694,6 +1694,48 @@ Full statutory alignment with Algerian Public Civil Service Law (Ordinance 06-03
       - 10 comprehensive feature tests in `tests/Feature/StaffCareerTest.php` passing with 100% green status (58 assertions).
       - Strict role navigation tailoring verified in `tests/Feature/RoleNavigationTailoringTest.php`.
       - Code style verified with `vendor/bin/pint`.
+
+## 46. Digital Administrative & Pedagogical Archive, Handover/Takeover Registers, and Official Mail Ledger (منظومة تسيير الأرشيف الإداري والتربوي الرقمي، محاضر تنصيب الموظفين الجدد، محاضر تسليم المهام الرسمية، وسجل البريد الصادر والوارد - Passation de Consignes, Procès-verbaux d'Installation & Courrier Officiel) (100%)
+
+Full statutory compliance with Algerian Executive Decrees and National Education circulars governing institutional records, personnel installation, administrative succession, and official correspondence registers:
+- [x] **Database Schema & Archival Tables (54 core tables):**
+      - Migration `2026_11_17_010001_create_administrative_archive_tables.php` creating 3 dedicated administrative tables:
+        - `staff_installations`: tracking new personnel installations (`user_id`, `installation_date`, `recruitment_order_ref`, `role_label`, `statutory_grade`, `previous_institution`, `ministry_decision_ref`, `notes`, `recorded_by`).
+        - `administrative_handovers`: official handover/takeover minutes (`role`, `handover_date`, `outgoing_user_id`, `incoming_user_id`, `outgoing_name`, `incoming_name`, `inventory_summary`, `inventory_ref`, `pending_dossiers`, `remarks`, `outgoing_signed`, `incoming_signed`, `director_signed`, `recorded_by`).
+        - `official_mails`: ministerial and local mail ledgers (`mail_number`, `mail_type`, `mail_date`, `sender_name`, `recipient_name`, `subject`, `reference_number`, `confidentiality`, `attachment_path`, `response_deadline`, `status`, `notes`, `assigned_to`, `recorded_by`).
+      - Updated `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` expanding verification to 54 tables: `[PASS] schema: All required tables present (54)`.
+- [x] **Domain Enums & Models:**
+      - Enums: `OfficialMailType` (Incoming, Outgoing) with statutory number prefixes (`ARR/` / `DEP/`), `MailConfidentiality` (Normal, Confidential, Urgent), `MailStatus` (Pending, Processed, Archived), and `HandoverRole` (Principal, Censor, FinanceOfficer).
+      - Models: `StaffInstallation`, `AdministrativeHandover`, `OfficialMail` with full casts, relationship bindings, overdue tracking (`isOverdue()`), and search scopes.
+      - User model relationships: `installations()`, `outgoingHandovers()`, `incomingHandovers()`, `assignedMails()`, and permission gate `canManageAdministrativeArchive(): bool`.
+- [x] **Domain Service Layer (`AdministrativeArchiveService`):**
+      - Personnel installation workflow: `recordInstallation()`, `assembleInstallationSheetData()`.
+      - Handover/Takeover workflow: `recordHandover()`, `signHandover()`, `assembleHandoverSheetData()`.
+      - Official Mail workflow: sequential reference formatting (`generateMailNumber`), mail registration (`registerMail`), status management (`updateMailStatus`), overdue deadline detection, and ledger aggregation (`assembleMailLedgerData`).
+      - Comprehensive KPI aggregations: `getInstallationStats()`, `getHandoverStats()`, and `getMailStats()`.
+- [x] **Controller Actions & Secure Routing (`AdministrativeArchiveController`, `routes/web.php`):**
+      - 6 dedicated routes for official sheet previews and high-fidelity PDF stream downloads via `BrowsershotFactory` with resilient HTML fallback:
+        - `print.admin-archive.installation-sheet` (`/{locale}/print/admin-archive/installation/{installation}`)
+        - `print.admin-archive.installation-sheet.pdf` (`/{locale}/print/admin-archive/installation/{installation}/pdf`)
+        - `print.admin-archive.handover-sheet` (`/{locale}/print/admin-archive/handover/{handover}`)
+        - `print.admin-archive.handover-sheet.pdf` (`/{locale}/print/admin-archive/handover/{handover}/pdf`)
+        - `print.admin-archive.mail-ledger` (`/{locale}/print/admin-archive/mail-ledger/{type}/{year}`)
+        - `print.admin-archive.mail-ledger.pdf` (`/{locale}/print/admin-archive/mail-ledger/{type}/{year}/pdf`)
+- [x] **Official Algerian Printable Templates:**
+      - `resources/views/print/staff-installation-sheet.blade.php`: Procès-verbal d'installation (محضر تنصيب رسمي - A4 Portrait) compliant with Algerian Ministry of National Education statutory template, featuring Algerian institutional header, employee civil and professional identifiers, recruitment order and ministry decision references, and legal notice of taking office.
+      - `resources/views/print/administrative-handover-sheet.blade.php`: Procès-verbal de passation de consignes (محضر تسليم واستلام المهام - A4 Portrait) for administrative leadership (Principal, Censor, Finance Officer), featuring physical inventory handover, pending dossiers, institutional stamps, and tri-partite signature visas (Outgoing, Incoming, Director/Inspector).
+      - `resources/views/print/official-mail-ledger.blade.php`: Official Mail Register (سجل البريد الصادر والوارد - A4 Landscape) formatted with ministerial sequential number, receipt/dispatch dates, source/destination authority, subject summary, confidentiality, response deadline, status, and administrative visa box.
+- [x] **Interactive Filament Livewire Cockpit (`AdministrativeArchiveHub`):**
+      - Integrated under `__('الإدارة المدرسية والرقمنة والأرشيف')` with icon `heroicon-o-archive-box-arrow-down` (sort order 7).
+      - 3 reactive tabs:
+        1. **Staff Installations (محاضر التنصيب):** Live KPI metrics (total installations, latest record, current session count), search bar, new installation modal, and single-click access to official printable sheets and PDF downloads.
+        2. **Administrative Handovers (محاضر تسليم واستلام المهام):** Role selector (مدير، ناظر، مقتصد), handover log, digital signing actions (تأشيرة المسلِّم، المستلِم، والمدير), inventory references, and official print shortcuts.
+        3. **Official Mail (سجل البريد الصادر والوارد):** Toggle between Incoming (الوارد) and Outgoing (الصادر), year selector, live stats (pending, processed, urgent, overdue), search, register mail modal, status update actions, and full-year official ledger print/PDF generator.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - Full tri-lingual localization across Arabic, English, and French in `lang/ar.json`, `lang/en.json`, and `lang/fr.json` verified by `LocalizationCompletenessTest`.
+      - 22 comprehensive feature tests in `tests/Feature/AdministrativeArchiveTest.php` passing with 100% green status (49 assertions).
+      - Health check verified: `[PASS] schema: All required tables present (54)`.
+      - Code standards enforced via `vendor/bin/pint`.
 
 
 

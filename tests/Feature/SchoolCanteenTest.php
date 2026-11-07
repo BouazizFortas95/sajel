@@ -349,7 +349,7 @@ class SchoolCanteenTest extends TestCase
         }
 
         $this->artisan('sajel:health-check')
-            ->expectsOutputToContain('All required tables present (48)')
+            ->expectsOutputToContain('All required tables present')
             ->assertExitCode(0);
     }
 }

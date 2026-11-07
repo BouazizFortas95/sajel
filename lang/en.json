@@ -4513,5 +4513,6 @@
     "“لم تبدأ” تعني عدم وجود أي صف علامة لذلك التقييم، وليس أن كل التلاميذ حصلوا على صفر.": "“Not started” means no grade rows exist for the assessment, not that every student scored zero.",
     "“متابعة مفتوحة” تعني ملاحظة سالبة أو انضباطية أو عامة لم تُعلَّم كمتابَعة بعد.": "“Open follow-up” means a negative, disciplinary or general observation not yet marked as followed up.",
     "“مخطط” و“منجز” و“ملغى” حالات سجل موجود. “معلق” حصة انتهى وقتها دون سجل منجز أو ملغى؛ ويُحتسب بعد نهاية وقت الحصة فقط، مع استثناء العطل.": "“Planned”, “completed” and “cancelled” are states of an existing log. “Pending” is a lesson whose time has passed without a completed or cancelled log; it is counted only after the lesson end time, excluding holidays.",
-    "“معالجة مفتوحة” تعني معالجة بحالة “مخطط” أو “مستمر” داخل الفترة.": "“Open remediation” means remediation in “planned” or “ongoing” status within the period."
+    "“معالجة مفتوحة” تعني معالجة بحالة “مخطط” أو “مستمر” داخل الفترة.": "“Open remediation” means remediation in “planned” or “ongoing” status within the period.",
+    "رقم البريد": "Mail Number"
 }

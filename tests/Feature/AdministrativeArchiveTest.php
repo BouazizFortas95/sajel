@@ -7,6 +7,7 @@ use App\Enums\MailConfidentiality;
 use App\Enums\MailStatus;
 use App\Enums\OfficialMailType;
 use App\Enums\Role;
+use App\Filament\Pages\AdministrativeArchiveHub;
 use App\Models\AdministrativeHandover;
 use App\Models\OfficialMail;
 use App\Models\StaffInstallation;
@@ -34,7 +35,7 @@ class AdministrativeArchiveTest extends TestCase
         parent::setUp();
 
         $this->principal = User::factory()->create(['role' => Role::Principal]);
-        $this->teacher   = User::factory()->create(['role' => Role::Teacher]);
+        $this->teacher = User::factory()->create(['role' => Role::Teacher]);
     }
 
     // ─── 1. Database Schema ───────────────────────────────────────────────────
@@ -84,16 +85,16 @@ class AdministrativeArchiveTest extends TestCase
         $staff = User::factory()->create(['role' => Role::Teacher]);
 
         $service = app(AdministrativeArchiveService::class);
-        $inst    = $service->recordInstallation([
-            'user_id'           => $staff->id,
+        $inst = $service->recordInstallation([
+            'user_id' => $staff->id,
             'installation_date' => '2026-09-01',
-            'role_label'        => 'أستاذ تعليم متوسط',
-            'statutory_grade'   => 'أستاذ رئيسي',
+            'role_label' => 'أستاذ تعليم متوسط',
+            'statutory_grade' => 'أستاذ رئيسي',
         ]);
 
         $this->assertInstanceOf(StaffInstallation::class, $inst);
         $this->assertDatabaseHas('staff_installations', [
-            'user_id'    => $staff->id,
+            'user_id' => $staff->id,
             'role_label' => 'أستاذ تعليم متوسط',
         ]);
     }
@@ -104,14 +105,14 @@ class AdministrativeArchiveTest extends TestCase
         $staff = User::factory()->create(['role' => Role::Teacher]);
 
         $inst = StaffInstallation::create([
-            'user_id'           => $staff->id,
+            'user_id' => $staff->id,
             'installation_date' => '2026-09-01',
-            'role_label'        => 'ناظر',
-            'recorded_by'       => $this->principal->id,
+            'role_label' => 'ناظر',
+            'recorded_by' => $this->principal->id,
         ]);
 
         $service = app(AdministrativeArchiveService::class);
-        $data    = $service->assembleInstallationSheetData($inst);
+        $data = $service->assembleInstallationSheetData($inst);
 
         $this->assertArrayHasKey('installation', $data);
         $this->assertArrayHasKey('user', $data);
@@ -126,20 +127,20 @@ class AdministrativeArchiveTest extends TestCase
         $this->actingAs($this->principal);
         $incoming = User::factory()->create(['role' => Role::Principal]);
 
-        $service  = app(AdministrativeArchiveService::class);
+        $service = app(AdministrativeArchiveService::class);
         $handover = $service->recordHandover([
-            'role'              => 'principal',
-            'handover_date'     => '2026-10-01',
-            'outgoing_user_id'  => $this->principal->id,
-            'incoming_user_id'  => $incoming->id,
+            'role' => 'principal',
+            'handover_date' => '2026-10-01',
+            'outgoing_user_id' => $this->principal->id,
+            'incoming_user_id' => $incoming->id,
             'inventory_summary' => 'جرد كامل بدون ملاحظات',
         ]);
 
         $this->assertInstanceOf(AdministrativeHandover::class, $handover);
         $this->assertDatabaseHas('administrative_handovers', [
-            'role'              => 'principal',
-            'outgoing_user_id'  => $this->principal->id,
-            'incoming_user_id'  => $incoming->id,
+            'role' => 'principal',
+            'outgoing_user_id' => $this->principal->id,
+            'incoming_user_id' => $incoming->id,
         ]);
     }
 
@@ -148,18 +149,18 @@ class AdministrativeArchiveTest extends TestCase
         $this->actingAs($this->principal);
 
         $handover = AdministrativeHandover::create([
-            'role'              => 'censor',
-            'handover_date'     => '2026-10-15',
-            'outgoing_name'     => 'المُسلِّم',
-            'incoming_name'     => 'المُتسلِّم',
-            'outgoing_signed'   => false,
-            'incoming_signed'   => false,
-            'director_signed'   => false,
-            'recorded_by'       => $this->principal->id,
+            'role' => 'censor',
+            'handover_date' => '2026-10-15',
+            'outgoing_name' => 'المُسلِّم',
+            'incoming_name' => 'المُتسلِّم',
+            'outgoing_signed' => false,
+            'incoming_signed' => false,
+            'director_signed' => false,
+            'recorded_by' => $this->principal->id,
         ]);
 
-        $service  = app(AdministrativeArchiveService::class);
-        $updated  = $service->signHandover($handover, 'outgoing');
+        $service = app(AdministrativeArchiveService::class);
+        $updated = $service->signHandover($handover, 'outgoing');
 
         $this->assertTrue($updated->outgoing_signed);
         $this->assertFalse($updated->incoming_signed);
@@ -173,7 +174,7 @@ class AdministrativeArchiveTest extends TestCase
         $this->actingAs($this->principal);
         $service = app(AdministrativeArchiveService::class);
 
-        $first  = $service->generateMailNumber(OfficialMailType::Incoming, 2026);
+        $first = $service->generateMailNumber(OfficialMailType::Incoming, 2026);
         $second = $service->generateMailNumber(OfficialMailType::Outgoing, 2026);
 
         $this->assertStringStartsWith('ARR/2026/', $first);
@@ -186,17 +187,17 @@ class AdministrativeArchiveTest extends TestCase
         $service = app(AdministrativeArchiveService::class);
 
         $mail = $service->registerMail([
-            'mail_type'       => 'incoming',
-            'mail_date'       => '2026-10-10',
-            'sender_name'     => 'مديرية التربية',
-            'subject'         => 'تعليمة رقم 15',
+            'mail_type' => 'incoming',
+            'mail_date' => '2026-10-10',
+            'sender_name' => 'مديرية التربية',
+            'subject' => 'تعليمة رقم 15',
             'confidentiality' => 'normal',
         ]);
 
         $this->assertInstanceOf(OfficialMail::class, $mail);
         $this->assertStringStartsWith('ARR/', $mail->mail_number);
         $this->assertDatabaseHas('official_mails', [
-            'mail_type'   => 'incoming',
+            'mail_type' => 'incoming',
             'sender_name' => 'مديرية التربية',
         ]);
     }
@@ -207,13 +208,13 @@ class AdministrativeArchiveTest extends TestCase
         $service = app(AdministrativeArchiveService::class);
 
         $mail = OfficialMail::create([
-            'mail_number'     => 'ARR/2026/999',
-            'mail_type'       => 'incoming',
-            'mail_date'       => '2026-10-01',
-            'subject'         => 'اختبار الحالة',
+            'mail_number' => 'ARR/2026/999',
+            'mail_type' => 'incoming',
+            'mail_date' => '2026-10-01',
+            'subject' => 'اختبار الحالة',
             'confidentiality' => 'normal',
-            'status'          => 'pending',
-            'recorded_by'     => $this->principal->id,
+            'status' => 'pending',
+            'recorded_by' => $this->principal->id,
         ]);
 
         $updated = $service->updateMailStatus($mail, 'processed');
@@ -226,14 +227,14 @@ class AdministrativeArchiveTest extends TestCase
         $this->actingAs($this->principal);
 
         $overdueMail = OfficialMail::create([
-            'mail_number'       => 'ARR/2026/888',
-            'mail_type'         => 'incoming',
-            'mail_date'         => '2026-09-01',
-            'subject'           => 'بريد منتهي الأجل',
-            'confidentiality'   => 'normal',
-            'status'            => 'pending',
+            'mail_number' => 'ARR/2026/888',
+            'mail_type' => 'incoming',
+            'mail_date' => '2026-09-01',
+            'subject' => 'بريد منتهي الأجل',
+            'confidentiality' => 'normal',
+            'status' => 'pending',
             'response_deadline' => '2026-09-15',  // in the past
-            'recorded_by'       => $this->principal->id,
+            'recorded_by' => $this->principal->id,
         ]);
 
         $this->assertTrue($overdueMail->isOverdue());
@@ -244,17 +245,17 @@ class AdministrativeArchiveTest extends TestCase
         $this->actingAs($this->principal);
 
         OfficialMail::create([
-            'mail_number'     => 'ARR/2026/777',
-            'mail_type'       => 'incoming',
-            'mail_date'       => '2026-10-20',
-            'subject'         => 'وثيقة اختبار',
+            'mail_number' => 'ARR/2026/777',
+            'mail_type' => 'incoming',
+            'mail_date' => '2026-10-20',
+            'subject' => 'وثيقة اختبار',
             'confidentiality' => 'urgent',
-            'status'          => 'pending',
-            'recorded_by'     => $this->principal->id,
+            'status' => 'pending',
+            'recorded_by' => $this->principal->id,
         ]);
 
         $service = app(AdministrativeArchiveService::class);
-        $data    = $service->assembleMailLedgerData('incoming', 2026);
+        $data = $service->assembleMailLedgerData('incoming', 2026);
 
         $this->assertArrayHasKey('mails', $data);
         $this->assertArrayHasKey('mail_type', $data);
@@ -268,18 +269,57 @@ class AdministrativeArchiveTest extends TestCase
     public function test_installation_print_requires_auth(): void
     {
         $inst = StaffInstallation::create([
-            'user_id'           => $this->teacher->id,
+            'user_id' => $this->teacher->id,
             'installation_date' => '2026-09-01',
-            'role_label'        => 'أستاذ',
-            'recorded_by'       => $this->principal->id,
+            'role_label' => 'أستاذ',
+            'recorded_by' => $this->principal->id,
         ]);
 
         $response = $this->get(route('print.admin-archive.installation-sheet', [
-            'locale'       => 'ar',
+            'locale' => 'ar',
             'installation' => $inst->id,
         ]));
 
         $response->assertRedirect();
+    }
+
+    public function test_installation_print_accessible_to_principal(): void
+    {
+        $this->actingAs($this->principal);
+
+        $inst = StaffInstallation::create([
+            'user_id' => $this->teacher->id,
+            'installation_date' => '2026-09-01',
+            'role_label' => 'أستاذ',
+            'recorded_by' => $this->principal->id,
+        ]);
+
+        $response = $this->get(route('print.admin-archive.installation-sheet', [
+            'locale' => 'ar',
+            'installation' => $inst->id,
+        ]));
+
+        $response->assertOk();
+    }
+
+    public function test_handover_print_accessible_to_principal(): void
+    {
+        $this->actingAs($this->principal);
+
+        $handover = AdministrativeHandover::create([
+            'role' => 'censor',
+            'handover_date' => '2026-09-10',
+            'outgoing_name' => 'السابق',
+            'incoming_name' => 'اللاحق',
+            'recorded_by' => $this->principal->id,
+        ]);
+
+        $response = $this->get(route('print.admin-archive.handover-sheet', [
+            'locale' => 'ar',
+            'handover' => $handover->id,
+        ]));
+
+        $response->assertOk();
     }
 
     public function test_mail_ledger_print_accessible_to_principal(): void
@@ -288,8 +328,8 @@ class AdministrativeArchiveTest extends TestCase
 
         $response = $this->get(route('print.admin-archive.mail-ledger', [
             'locale' => 'ar',
-            'type'   => 'incoming',
-            'year'   => 2026,
+            'type' => 'incoming',
+            'year' => 2026,
         ]));
 
         $response->assertOk();
@@ -301,10 +341,26 @@ class AdministrativeArchiveTest extends TestCase
 
         $response = $this->get(route('print.admin-archive.mail-ledger', [
             'locale' => 'ar',
-            'type'   => 'incoming',
-            'year'   => 2026,
+            'type' => 'incoming',
+            'year' => 2026,
         ]));
 
+        $response->assertForbidden();
+    }
+
+    public function test_administrative_archive_hub_filament_page_accessible_to_principal(): void
+    {
+        $this->actingAs($this->principal);
+
+        $response = $this->get(AdministrativeArchiveHub::getUrl());
+        $response->assertOk();
+    }
+
+    public function test_administrative_archive_hub_filament_page_forbidden_to_teacher(): void
+    {
+        $this->actingAs($this->teacher);
+
+        $response = $this->get(AdministrativeArchiveHub::getUrl());
         $response->assertForbidden();
     }
 
@@ -317,4 +373,3 @@ class AdministrativeArchiveTest extends TestCase
             ->expectsOutputToContain('[PASS] schema: All required tables present (54)');
     }
 }
-

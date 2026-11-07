@@ -3,11 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdministrativeHandover;
-use App\Models\OfficialMail;
 use App\Models\StaffInstallation;
+use App\Models\User;
 use App\Services\AdministrativeArchiveService;
+use App\Services\BrowsershotFactory;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class AdministrativeArchiveController extends Controller
 {
@@ -17,85 +21,177 @@ class AdministrativeArchiveController extends Controller
 
     // ─── Staff Installation Print ───────────────────────────────
 
-    public function printInstallationSheet(StaffInstallation $installation): Response
-    {
-        abort_unless(Auth::user()?->canManageAdministrativeArchive(), 403);
+    public function printInstallationSheet(
+        Request $request,
+        string $locale,
+        StaffInstallation $installation
+    ): View {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->canManageAdministrativeArchive(), 403);
 
         $data = $this->service->assembleInstallationSheetData($installation);
 
-        return response()->view('print.staff-installation-sheet', $data);
+        return view('print.staff-installation-sheet', $data);
     }
 
-    public function printInstallationSheetPdf(StaffInstallation $installation): Response
-    {
-        abort_unless(Auth::user()?->canManageAdministrativeArchive(), 403);
+    public function printInstallationSheetPdf(
+        Request $request,
+        string $locale,
+        StaffInstallation $installation,
+        BrowsershotFactory $browsershot
+    ): StreamedResponse|Response {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->canManageAdministrativeArchive(), 403);
 
+        $filename = "installation-{$installation->id}.pdf";
         $data = $this->service->assembleInstallationSheetData($installation);
 
-        $pdf = app(\App\Services\BrowsershotFactory::class)
-            ->fromView('print.staff-installation-sheet', $data)
-            ->portrait()
-            ->generate();
+        try {
+            $pdf = $browsershot
+                ->fromView('print.staff-installation-sheet', $data)
+                ->portrait()
+                ->generate();
 
-        return response($pdf, 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"installation-{$installation->id}.pdf\"",
-        ]);
+            if (! $pdf) {
+                throw new \RuntimeException('Browsershot PDF generation failed');
+            }
+
+            return response()->streamDownload(
+                function () use ($pdf): void {
+                    echo $pdf;
+                },
+                $filename,
+                [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => "inline; filename=\"{$filename}\"",
+                ]
+            );
+        } catch (Throwable) {
+            return response()->streamDownload(
+                function () use ($request, $locale, $installation): void {
+                    echo $this->printInstallationSheet($request, $locale, $installation)->render();
+                },
+                "installation-{$installation->id}.html",
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
+        }
     }
 
     // ─── Handover Print ──────────────────────────────────────────
 
-    public function printHandoverSheet(AdministrativeHandover $handover): Response
-    {
-        abort_unless(Auth::user()?->canManageAdministrativeArchive(), 403);
+    public function printHandoverSheet(
+        Request $request,
+        string $locale,
+        AdministrativeHandover $handover
+    ): View {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->canManageAdministrativeArchive(), 403);
 
         $data = $this->service->assembleHandoverSheetData($handover);
 
-        return response()->view('print.administrative-handover-sheet', $data);
+        return view('print.administrative-handover-sheet', $data);
     }
 
-    public function printHandoverSheetPdf(AdministrativeHandover $handover): Response
-    {
-        abort_unless(Auth::user()?->canManageAdministrativeArchive(), 403);
+    public function printHandoverSheetPdf(
+        Request $request,
+        string $locale,
+        AdministrativeHandover $handover,
+        BrowsershotFactory $browsershot
+    ): StreamedResponse|Response {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->canManageAdministrativeArchive(), 403);
 
+        $filename = "handover-{$handover->id}.pdf";
         $data = $this->service->assembleHandoverSheetData($handover);
 
-        $pdf = app(\App\Services\BrowsershotFactory::class)
-            ->fromView('print.administrative-handover-sheet', $data)
-            ->portrait()
-            ->generate();
+        try {
+            $pdf = $browsershot
+                ->fromView('print.administrative-handover-sheet', $data)
+                ->portrait()
+                ->generate();
 
-        return response($pdf, 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"handover-{$handover->id}.pdf\"",
-        ]);
+            if (! $pdf) {
+                throw new \RuntimeException('Browsershot PDF generation failed');
+            }
+
+            return response()->streamDownload(
+                function () use ($pdf): void {
+                    echo $pdf;
+                },
+                $filename,
+                [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => "inline; filename=\"{$filename}\"",
+                ]
+            );
+        } catch (Throwable) {
+            return response()->streamDownload(
+                function () use ($request, $locale, $handover): void {
+                    echo $this->printHandoverSheet($request, $locale, $handover)->render();
+                },
+                "handover-{$handover->id}.html",
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
+        }
     }
 
     // ─── Official Mail Ledger Print ──────────────────────────────
 
-    public function printMailLedger(string $type, string $year): Response
-    {
-        abort_unless(Auth::user()?->canManageAdministrativeArchive(), 403);
+    public function printMailLedger(
+        Request $request,
+        string $locale,
+        string $type,
+        string $year
+    ): View {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->canManageAdministrativeArchive(), 403);
 
         $data = $this->service->assembleMailLedgerData($type, (int) $year);
 
-        return response()->view('print.official-mail-ledger', $data);
+        return view('print.official-mail-ledger', $data);
     }
 
-    public function printMailLedgerPdf(string $type, string $year): Response
-    {
-        abort_unless(Auth::user()?->canManageAdministrativeArchive(), 403);
+    public function printMailLedgerPdf(
+        Request $request,
+        string $locale,
+        string $type,
+        string $year,
+        BrowsershotFactory $browsershot
+    ): StreamedResponse|Response {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->canManageAdministrativeArchive(), 403);
 
+        $filename = "mail-ledger-{$type}-{$year}.pdf";
         $data = $this->service->assembleMailLedgerData($type, (int) $year);
 
-        $pdf = app(\App\Services\BrowsershotFactory::class)
-            ->fromView('print.official-mail-ledger', $data)
-            ->landscape()
-            ->generate();
+        try {
+            $pdf = $browsershot
+                ->fromView('print.official-mail-ledger', $data)
+                ->landscape()
+                ->generate();
 
-        return response($pdf, 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"mail-ledger-{$type}-{$year}.pdf\"",
-        ]);
+            if (! $pdf) {
+                throw new \RuntimeException('Browsershot PDF generation failed');
+            }
+
+            return response()->streamDownload(
+                function () use ($pdf): void {
+                    echo $pdf;
+                },
+                $filename,
+                [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => "inline; filename=\"{$filename}\"",
+                ]
+            );
+        } catch (Throwable) {
+            return response()->streamDownload(
+                function () use ($request, $locale, $type, $year): void {
+                    echo $this->printMailLedger($request, $locale, $type, $year)->render();
+                },
+                "mail-ledger-{$type}-{$year}.html",
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
+        }
     }
 }
