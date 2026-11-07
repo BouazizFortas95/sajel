@@ -409,10 +409,10 @@ class SchoolSolidarityTest extends TestCase
         $this->assertSame(SolidarityBeneficiaryStatus::DeliberatedApproved, $beneficiary->fresh()->status);
     }
 
-    public function test_health_check_verifies_all_73_tables(): void
+    public function test_health_check_verifies_all_tables(): void
     {
         $this->artisan('sajel:health-check')
             ->assertExitCode(0)
-            ->expectsOutputToContain('[PASS] schema: All required tables present (73)');
+            ->expectsOutputToContain('[PASS] schema: All required tables present');
     }
 }

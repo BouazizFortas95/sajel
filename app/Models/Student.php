@@ -280,4 +280,24 @@ class Student extends Model
     {
         return $this->hasMany(SchoolSolidarityAidDistribution::class);
     }
+
+    public function dormitoryAllocations(): HasMany
+    {
+        return $this->hasMany(StudentDormitoryAllocation::class);
+    }
+
+    public function activeDormitoryAllocation(): ?StudentDormitoryAllocation
+    {
+        return $this->dormitoryAllocations()->where('status', 'active')->latest('id')->first();
+    }
+
+    public function boardingExitPasses(): HasMany
+    {
+        return $this->hasMany(BoardingExitPass::class);
+    }
+
+    public function busSubscriptions(): HasMany
+    {
+        return $this->hasMany(StudentBusSubscription::class);
+    }
 }

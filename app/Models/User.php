@@ -397,6 +397,18 @@ class User extends Authenticatable implements FilamentUser
         ], true);
     }
 
+    public function canManageBoarding(): bool
+    {
+        return in_array($this->role, [
+            Role::Principal,
+            Role::GeneralSupervisor,
+            Role::FinanceOfficer,
+            Role::Censor,
+            Role::Admin,
+            Role::Developer,
+        ], true);
+    }
+
     public function classCouncilSessionsAsPresident(): HasMany
     {
         return $this->hasMany(ClassCouncilSession::class, 'president_id');

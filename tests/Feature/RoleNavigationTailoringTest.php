@@ -19,6 +19,7 @@ use App\Filament\Pages\PedagogicalInspectorHub;
 use App\Filament\Pages\QuickAttendance;
 use App\Filament\Pages\RakmanaSyncHub;
 use App\Filament\Pages\SchoolArchiveHub;
+use App\Filament\Pages\SchoolBoardingHub;
 use App\Filament\Pages\SchoolBudgetHub;
 use App\Filament\Pages\SchoolCanteenHub;
 use App\Filament\Pages\SchoolCensusHub;
@@ -90,6 +91,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertFalse(SchoolCanteenHub::shouldRegisterNavigation());
         $this->assertFalse(SchoolBudgetHub::shouldRegisterNavigation());
         $this->assertFalse(SchoolSolidarityHub::shouldRegisterNavigation());
+        $this->assertFalse(SchoolBoardingHub::shouldRegisterNavigation());
         $this->assertFalse(StaffCareerHub::shouldRegisterNavigation());
     }
 
@@ -113,6 +115,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertFalse(SchoolCanteenHub::shouldRegisterNavigation());
         $this->assertFalse(SchoolBudgetHub::shouldRegisterNavigation());
         $this->assertFalse(SchoolSolidarityHub::shouldRegisterNavigation());
+        $this->assertFalse(SchoolBoardingHub::shouldRegisterNavigation());
         $this->assertFalse(StaffCareerHub::shouldRegisterNavigation());
     }
 
@@ -125,6 +128,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertTrue(StudentResource::shouldRegisterNavigation());
         $this->assertTrue(DisciplinaryCouncilHub::shouldRegisterNavigation());
         $this->assertTrue(SchoolLifeHub::shouldRegisterNavigation());
+        $this->assertTrue(SchoolBoardingHub::shouldRegisterNavigation());
         $this->assertTrue(StudentMobilityHub::shouldRegisterNavigation());
         $this->assertTrue(SchoolSupervisionHub::shouldRegisterNavigation());
         $this->assertTrue(TeacherAbsenceHub::shouldRegisterNavigation());
@@ -151,6 +155,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertTrue(TextbookInventoryHub::shouldRegisterNavigation());
         $this->assertTrue(SchoolBudgetHub::shouldRegisterNavigation());
         $this->assertTrue(SchoolSolidarityHub::shouldRegisterNavigation());
+        $this->assertTrue(SchoolBoardingHub::shouldRegisterNavigation());
         $this->assertTrue(SchoolCanteenHub::shouldRegisterNavigation());
         $this->assertTrue(StudentResource::shouldRegisterNavigation());
 
@@ -182,6 +187,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertTrue(InstitutionalBilanHub::shouldRegisterNavigation());
         $this->assertTrue(SchoolBudgetHub::shouldRegisterNavigation());
         $this->assertTrue(SchoolSolidarityHub::shouldRegisterNavigation());
+        $this->assertTrue(SchoolBoardingHub::shouldRegisterNavigation());
         $this->assertTrue(PedagogicalInspectorHub::shouldRegisterNavigation());
         $this->assertTrue(SchoolCensusHub::shouldRegisterNavigation());
         $this->assertTrue(RakmanaSyncHub::shouldRegisterNavigation());
@@ -209,6 +215,7 @@ class RoleNavigationTailoringTest extends TestCase
         $this->assertTrue(InstitutionalBilanHub::shouldRegisterNavigation());
         $this->assertTrue(SchoolBudgetHub::shouldRegisterNavigation());
         $this->assertTrue(SchoolSolidarityHub::shouldRegisterNavigation());
+        $this->assertTrue(SchoolBoardingHub::shouldRegisterNavigation());
         $this->assertTrue(SchoolCanteenHub::shouldRegisterNavigation());
         $this->assertTrue(StaffCareerHub::shouldRegisterNavigation());
         $this->assertTrue(UserResource::shouldRegisterNavigation());

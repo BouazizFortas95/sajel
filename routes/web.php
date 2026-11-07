@@ -19,6 +19,7 @@ use App\Http\Controllers\PrintDailyLogsController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
 use App\Http\Controllers\RakmanaSyncController;
 use App\Http\Controllers\SchoolArchiveController;
+use App\Http\Controllers\SchoolBoardingController;
 use App\Http\Controllers\SchoolBudgetController;
 use App\Http\Controllers\SchoolCanteenController;
 use App\Http\Controllers\SchoolCensusController;
@@ -909,6 +910,38 @@ Route::get('/{locale}/print/solidarity/aid/{distribution}/voucher/pdf', [SchoolS
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.solidarity.aid-voucher.pdf');
+
+// ─── School Boarding, Dormitories & Transportation Routes ───────────────────
+
+Route::get('/{locale}/print/boarding/room/{room}/roster', [SchoolBoardingController::class, 'printRoomRoster'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.boarding.room-roster');
+
+Route::get('/{locale}/print/boarding/room/{room}/roster/pdf', [SchoolBoardingController::class, 'printRoomRosterPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.boarding.room-roster.pdf');
+
+Route::get('/{locale}/print/boarding/pass/{pass}/billet', [SchoolBoardingController::class, 'printExitPass'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.boarding.exit-pass');
+
+Route::get('/{locale}/print/boarding/pass/{pass}/billet/pdf', [SchoolBoardingController::class, 'printExitPassPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.boarding.exit-pass.pdf');
+
+Route::get('/{locale}/print/boarding/transport/{subscription}/card', [SchoolBoardingController::class, 'printBusCard'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.boarding.bus-card');
+
+Route::get('/{locale}/print/boarding/transport/{subscription}/card/pdf', [SchoolBoardingController::class, 'printBusCardPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.boarding.bus-card.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

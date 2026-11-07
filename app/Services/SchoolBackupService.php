@@ -88,6 +88,12 @@ class SchoolBackupService
         'student_solidarity_beneficiaries',
         'school_solidarity_committee_members',
         'school_solidarity_aid_distributions',
+        'dormitory_rooms',
+        'student_dormitory_allocations',
+        'boarding_night_sessions',
+        'boarding_exit_passes',
+        'school_bus_routes',
+        'student_bus_subscriptions',
     ];
 
     /**

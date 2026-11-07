@@ -1969,8 +1969,59 @@ Full statutory alignment with Algerian legislation, notably **Executive Decree N
 - [x] **Tri-Lingual Localization & Automated Verification:**
       - Complete tri-lingual dictionary populated in `lang/ar.json`, `lang/en.json`, and `lang/fr.json` verified by `LocalizationCompletenessTest`.
       - 17 comprehensive feature tests in `tests/Feature/SchoolSolidarityTest.php` passing 100% green (62 assertions).
-      - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php` (6 tests, 111 assertions).
+      - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php` (6 tests, 117 assertions).
       - Schema integrity verified by `sajel:health-check`: `[PASS] schema: All required tables present (73)`.
+      - Code style verified with `vendor/bin/pint`.
+
+## 52. School Boarding, Dormitories Allocation, Night Supervision & Student Transportation System (منظومة النظام الداخلي، الإيواء والمراقد، المداومة والمذاكرة الليلية، والنقل المدرسي - Régime d'Internat, Dortoirs, Permanences de Nuit et Transport Scolaire) (100%)
+
+Full statutory alignment with Algerian educational legislation on boarding institutions (Decree 91-311 and Ministerial instructions on Internat management, dormitory hygiene, evening supervised study, night educational watch, and municipal school transportation):
+- [x] **Database Schema & Core Domain Tables (expanded to 79 core tables):**
+      - Migration `2026_11_24_010001_create_school_boarding_and_transport_tables.php` creating 6 domain tables:
+        - `dormitory_rooms`: dormitories and pavilions ledger (`wing` [boys/girls], `room_code`, `room_name`, `floor_level`, `bed_capacity`, `active_occupants_count`, `supervisor_in_charge`, `status`, `notes`).
+        - `student_dormitory_allocations`: bed and locker allocations (`dormitory_room_id`, `student_id`, `academic_year`, `bed_number`, `locker_number`, `check_in_date`, `check_out_date`, `status`, `linen_received`, `notes`).
+        - `boarding_night_sessions`: evening study and night supervision logbook (`academic_year`, `session_date`, `session_type`, `supervisor_user_id`, `supervisor_name`, `boarders_present_count`, `boarders_absent_count`, `sickbay_count`, `authorized_leave_count`, `incident_report`, `recorded_by`).
+        - `boarding_exit_passes`: weekend and holiday boarder exit permits (`pass_number`, `student_id`, `academic_year`, `pass_type`, `departure_datetime`, `expected_return_datetime`, `actual_return_datetime`, `escort_guardian_name`, `destination`, `status`, `supervisor_signature_notes`, `authorized_by`).
+        - `school_bus_routes`: school transport lines and bus fleet (`route_code`, `route_name`, `bus_license_plate`, `provider_entity`, `driver_name`, `driver_phone`, `chaperone_name`, `passenger_capacity`, `subscribed_students_count`, `morning_departure_time`, `evening_return_time`, `stops_list`, `status`, `notes`).
+        - `student_bus_subscriptions`: student bus passes and subscriptions (`bus_route_id`, `student_id`, `academic_year`, `card_number`, `pickup_stop`, `issue_date`, `expiry_date`, `status`, `notes`).
+      - Updated `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` expanding verified schema to 79 domain tables: `[PASS] schema: All required tables present (79)`.
+- [x] **Domain Enums Architecture (`app/Enums`):**
+      - `DormitoryWing`: `Boys` (جناح الذكور - Pavillon Garçons), `Girls` (جناح الإناث - Pavillon Filles).
+      - `DormitoryAllocationStatus`: `Active` (مقيم حالياً بالمرقد), `Suspended` (موقوف مؤقتاً), `Transferred` (محول لمرقد آخر), `Vacated` (أخلى المرقد وسلّم الفراش).
+      - `BoardingNightSessionType`: `EveningStudy` (مذاكرة مسائية محروسة), `NightSupervision` (مداومة ليلية بالمراقد), `WeekendDuty` (مداومة نهاية الأسبوع).
+      - `BoardingExitPassType`: `WeekendLeave` (خروج عطلة نهاية الأسبوع), `HolidayLeave` (خروج العطلة المدرسية الرسمية), `ExceptionalLeave` (رخصة خروج استثنائية), `MedicalLeave` (خروج صحي واستشفائي).
+      - `BoardingExitPassStatus`: `Authorized` (مرخص ومقبول), `Departed` (غادر المؤسسة فعلياً), `Returned` (عاد والتحق بالمرقد), `Overdue` (متأخر عن موعد العودة), `Cancelled` (ملغى).
+      - `BusRouteStatus`: `Active` (خط عامل بانتظام), `Suspended` (معلق مؤقتاً), `Inactive` (متوقف عن الخدمة).
+- [x] **Domain Service Layer (`SchoolBoardingService`):**
+      - Auto-sequential reference numbering: `DORT-{W}-{F}{seq}` for room codes, `PASS/{year}/{seq}` for exit permits, `TRANS/{year}/{seq}` for bus subscription cards, and `BUS-L{seq}` for bus routes.
+      - Allocation engine: `allocateBed` with duplicate check, capacity increment, and automated student `regime` switch to `boarder`; `vacateBed` with check-out timestamp and active occupants count decrement.
+      - Night supervision logger: `recordNightSession` tracking roll call, sickbay transfers, and authorized leaves.
+      - Exit permit workflow: `issueExitPass` and `markPassReturned`.
+      - Transport engine: `createBusRoute` and `subscribeStudentToBus`.
+      - Real-time telemetry & KPIs engine (`getBoardingTelemetry`): total bed capacity, occupied beds, vacant beds, occupancy rate, active boarders, and subscribed bus passengers.
+      - Printable data assemblers: `assembleDormitoryRosterData`, `assembleExitPassData`, `assembleBusCardData`.
+- [x] **Controller Actions & Secure Routing (`SchoolBoardingController`, `routes/web.php`):**
+      - 6 dedicated routes with Browsershot PDF streaming and HTML fallback:
+        - `print.boarding.room-roster` & `.pdf` (`/{locale}/print/boarding/room/{room}/roster`)
+        - `print.boarding.exit-pass` & `.pdf` (`/{locale}/print/boarding/pass/{pass}/billet`)
+        - `print.boarding.bus-card` & `.pdf` (`/{locale}/print/boarding/transport/{subscription}/card`)
+      - Protected by strict permission check `User::canManageBoarding()`.
+- [x] **Official Algerian Printable Templates:**
+      - `resources/views/print/dormitory-room-roster.blade.php`: Tableau d'affectation du dortoir et inventaire de literie (مخطط توزيع نزلاء المرقد وجرد الأسرّة والخزانات الفردية - A4 Landscape) detailing wing, floor, bed numbers, locker numbers, student names, matricules, classes, bedding reception status, and tripartite signatures (Wing Supervisor, Bursar, General Supervisor).
+      - `resources/views/print/boarding-exit-pass.blade.php`: Billet et autorisation de sortie d'interne (بطاقة ورخصة خروج تلميذ داخلي - A4 Portrait) featuring departure/return timestamps, escort guardian commitment, destination, and visas (General Supervisor, Gate Guard).
+      - `resources/views/print/student-bus-card.blade.php`: Carte officielle d'abonnement au transport scolaire (بطاقة اشتراك وركوب النقل المدرسي الرسمية - A4 Portrait badge) with photo box, student credentials, bus route, pickup stop, driver contacts, and official school seal.
+- [x] **Interactive Filament Livewire Cockpit (`SchoolBoardingHub`):**
+      - Registered under `__('الحياة المدرسية وشؤون التلاميذ')` with icon `heroicon-o-home-modern` (sort order 4).
+      - 4 interactive tabs:
+        1. **المراقد وتوزيع الأسرّة والخزانات:** Wing filter pills, 5 live telemetry KPI cards, rooms grid with occupancy progress bars, selected room occupants ledger with bed vacating action, Add Room modal, and Allocate Bed modal.
+        2. **المداومة والمذاكرة الليلية:** Night study and supervision logbook with present/absent counters, sickbay alerts, and Record Night Session modal.
+        3. **رخص الخروج الأسبوعي والعطل:** Exit permits table with search, status badges, return confirmation action, and Issue Exit Pass modal.
+        4. **حافلات وخطوط النقل المدرسي:** Bus fleet cards with driver details and schedules, student subscriptions ledger, Add Route modal, and Subscribe Student modal.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - Complete tri-lingual dictionary populated in `lang/ar.json`, `lang/en.json`, and `lang/fr.json` verified by `LocalizationCompletenessTest`.
+      - 17 comprehensive feature tests in `tests/Feature/SchoolBoardingTest.php` passing 100% green (67 assertions).
+      - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php` (6 tests, 117 assertions).
+      - Schema integrity verified by `sajel:health-check`: `[PASS] schema: All required tables present (79)`.
       - Code style verified with `vendor/bin/pint`.
 
 
