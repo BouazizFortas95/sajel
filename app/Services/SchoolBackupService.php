@@ -100,6 +100,12 @@ class SchoolBackupService
         'safety_fire_equipment',
         'safety_evacuation_drills',
         'safety_committee_meetings',
+        'school_board_sessions',
+        'school_board_members',
+        'school_projects',
+        'school_internal_regulations',
+        'parents_associations',
+        'parents_association_meetings',
     ];
 
     /**

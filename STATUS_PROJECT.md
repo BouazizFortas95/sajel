@@ -2070,8 +2070,55 @@ Full statutory alignment with Algerian legislation on occupational hygiene, safe
       - Complete tri-lingual dictionary populated in `lang/ar.json`, `lang/en.json`, and `lang/fr.json` verified by `LocalizationCompletenessTest` (2 passed, 7 assertions).
       - 18 comprehensive feature tests in `tests/Feature/SchoolSafetyTest.php` passing 100% green (76 assertions).
       - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php` (6 tests, 122 assertions).
-      - Schema integrity verified by `sajel:health-check`: `[PASS] schema: All required tables present (85)`.
+
+## 54. School Board of Education and Management / Guidance and Management, School Strategic Multi-Year Project, Internal Regulations & Parents-Teachers Association (منظومة مجلس التربية والتسيير / التوجيه والتسيير CEG / COG، مشروع المؤسسة، النظام الداخلي النموذجي، وجمعية أولياء التلاميذ APE) (100%)
+
+Full statutory alignment with Algerian educational governance and institutional legislation, strictly adhering to **Décret exécutif n° 90-12** (fixant les dispositions applicables aux Collèges d'Enseignement Moyen - CEM et instituant le Conseil d'Éducation et de Gestion - CEG), **Décret exécutif n° 90-13** (fixant les dispositions applicables aux Lycées et instituant le Conseil d'Orientation et de Gestion - COG), **Arrêté ministériel n° 65/771** (portant règlement intérieur type des établissements d'enseignement moyen et secondaire), **Loi n° 12-06** (relative aux associations, régissant l'Association des Parents d'Élèves - APE), and Ministerial Circulars on the multi-year School Project contract (**Projet d'Établissement**):
+- [x] **Database Schema & Core Domain Tables (expanded to 91 core tables):**
+      - Migration `2026_11_26_010001_create_school_governance_and_board_tables.php` creating 6 domain tables:
+        - `school_board_sessions`: statutory CEG/COG board sessions (`academic_year`, `session_reference`, `board_type` [CEG/COG], `session_term` [Term1Opening, Term2Budget, Term3Bilan, Extraordinary], `session_date`, `session_time`, `president_user_id`, `president_name`, `rapporteur_user_id`, `rapporteur_name`, `statutory_quorum`, `attendees_count`, `absentees_count`, `is_quorum_reached`, `agenda_items`, `deliberations_narrative`, `decisions_and_recommendations`, `voting_results`, `status`, `directorate_submission_date`, `notes`).
+        - `school_board_members`: statutory & elected members roster (`school_board_session_id`, `member_category` [Statutory, ElectedTeacher, ElectedStaff, ElectedParent], `full_name`, `institution_role`, `user_id`, `election_date`, `mandate_start_year`, `mandate_end_year`, `attendance_status`, `notes`).
+        - `school_projects`: multi-year strategic project contract (`project_code`, `title`, `start_academic_year`, `end_academic_year`, `strategic_axes`, `quantitative_targets`, `action_plan_matrix`, `kpi_indicators`, `completion_percentage`, `status`, `approval_date`, `approved_by`, `evaluation_summary`, `notes`).
+        - `school_internal_regulations`: model school internal rules (`regulation_code`, `title`, `legal_basis_reference`, `chapters_and_articles`, `adoption_date`, `adopted_by_board_session_id`, `directorate_approval_date`, `is_currently_active`, `signed_undertakings_count`, `notes`).
+        - `parents_associations`: parents-teachers association (APE) identity (`association_name`, `receipt_registration_number`, `accreditation_date`, `wilaya_accreditation_ref`, `president_name`, `president_phone`, `secretary_name`, `treasurer_name`, `executive_bureau_members`, `active_members_count`, `annual_subscription_fee`, `status`, `notes`).
+        - `parents_association_meetings`: APE general assemblies & school joint coordination sessions (`parents_association_id`, `meeting_reference`, `meeting_type` [OrdinaryGeneralAssembly, ExtraordinaryGeneralAssembly, JointSchoolMeeting], `meeting_date`, `meeting_time`, `location`, `chairperson_name`, `attendees_count`, `agenda_items`, `assembly_resolutions`, `renewed_bureau_summary`, `status`, `notes`).
+      - Updated `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` expanding verified schema to 91 domain tables: `[PASS] schema: All required tables present (91)`.
+- [x] **Domain Enums Architecture (`app/Enums`):**
+      - `SchoolBoardType`: `Ceg` (مجلس التربية والتسيير - CEG), `Cog` (مجلس التوجيه والتسيير - COG).
+      - `SchoolBoardSessionTerm`: `Term1Opening` (الدورة العادية الأولى: افتتاح السنة والمصادقة على التنظيم التربوي), `Term2Budget` (الدورة العادية الثانية: دراسة ومناقشة مشروع الميزانية السنوية), `Term3Bilan` (الدورة العادية الثالثة: الحصيلة الإدارية والمالية ونهاية السنة), `Extraordinary` (دورة استثنائية طارئة).
+      - `SchoolBoardSessionStatus`: `Draft` (مسودة محضر قيد التحرير), `Deliberated` (تمت المداولة واعتماد القرارات), `SubmittedToDirectorate` (أُرسل المحضر لمديرية التربية), `Approved` (مصادق عليه رسمياً), `Archived` (مؤرشف).
+      - `SchoolBoardMemberCategory`: `Statutory` (عضو بحكم القانون والوظيفة - Membre de droit), `ElectedTeacher` (أستاذ منتخب عن هيئة التدريس), `ElectedStaff` (موظف منتخب عن المساعدين والعمال), `ElectedParent` (مندوب منتخب عن أولياء التلاميذ).
+      - `SchoolProjectStatus`: `Draft` (مشروع قيد الإعداد), `Submitted` (مرفوع للمصادقة), `ValidatedByDirectorate` (مصادق عليه من مديرية التربية), `InProgress` (قيد التنفيذ والمتابعة), `Evaluated` (تم التقييم المرحلي / النهائي), `Archived` (مؤرشف).
+      - `ParentsMeetingType`: `OrdinaryGeneralAssembly` (جمعية عامة عادية وانتخابية), `ExtraordinaryGeneralAssembly` (جمعية عامة استثنائية), `JointSchoolMeeting` (جلسة عمل وتنسيق مشتركة مع إدارة المؤسسة).
+- [x] **Domain Service Layer (`SchoolBoardGovernanceService`):**
+      - Sequential reference generators: `CEG/{year}/{seq}`, `COG/{year}/{seq}`, `PRJ-{year}-{seq}`, `REG-{year}-{seq}`, and `APE-{year}-{seq}`.
+      - Core operations: `recordBoardSession` with statutory quorum verification (`attendees_count >= statutory_quorum`), `autoBootstrapBoardMembers` (automatically populating statutory members: Principal, Censor, Bursar, Counselor, UDS Doctor, and elected slots for teachers, staff, and parents), `addBoardMember` with mandate tracking, `createOrUpdateSchoolProject` with strategic axes & completion %, `adoptInternalRegulations` (with automatic deactivation of older versions), `registerParentsAssociation`, and `recordParentsMeeting`.
+      - Real-time telemetry & KPIs engine (`getGovernanceTelemetry`): total sessions, current year sessions, quorum-compliant sessions, board members count, elected teachers/staff count, active project status, project completion %, active regulations reference, signed parental undertakings count, registered APE info, and general assemblies held.
+      - Printable data assemblers: `assembleBoardSessionPvData`, `assembleSchoolProjectSummaryData`, and `assembleParentsGeneralAssemblyPvData`.
+- [x] **Controller Actions & Secure Routing (`SchoolBoardGovernanceController`, `routes/web.php`):**
+      - 6 dedicated routes with Browsershot PDF streaming and HTML fallback:
+        - `print.governance.board-session-pv` & `.pdf` (`/{locale}/print/governance/session/{session}/pv`)
+        - `print.governance.school-project-summary` & `.pdf` (`/{locale}/print/governance/project/{project}/summary`)
+        - `print.governance.parents-assembly-pv` & `.pdf` (`/{locale}/print/governance/parents-meeting/{meeting}/pv`)
+      - Protected by strict permission check `User::canManageSchoolGovernance()`.
+- [x] **Official Algerian Printable Templates:**
+      - `resources/views/print/governance-board-session-pv.blade.php`: Procès-verbal des délibérations du Conseil d'Éducation et de Gestion / Orientation et Gestion (محضر مداولات دورة مجلس التربية والتسيير / التوجيه والتسيير - A4 Portrait) featuring official ministerial header, session type and term, statutory quorum verification statement, comprehensive members attendance and voting table, detailed deliberations narrative by agenda item, adopted resolutions, and signatures (Board President, Rapporteur).
+      - `resources/views/print/governance-school-project-summary.blade.php`: Fiche de synthèse et contrat d'objectifs du Projet d'Établissement (بطاقة تركيبية وبطاقة أهداف مشروع المؤسسة - A4 Landscape) detailing multi-year horizon, strategic priorities, quantitative target indicators (BEM/BAC success rate targets, drop-out reduction, pedagogical support), action plan matrices, resource mobilization, and validating committee visas (Principal, Board Representative, Inspector / Director of Education).
+      - `resources/views/print/governance-parents-assembly-pv.blade.php`: Procès-verbal de l'Assemblée Générale de l'Association des Parents d'Élèves (محضر الجمعية العامة لجمعية أولياء التلاميذ - A4 Portrait) featuring legal accreditation reference (Loi 12-06), bureau members, attendees quorum, resolutions adopted, moral and financial reports approval, newly elected executive bureau members, and dual validation (Association President, General Secretary).
+- [x] **Interactive Filament Livewire Cockpit (`SchoolBoardGovernanceHub`):**
+      - Registered under `__('الحياة المدرسية وشؤون التلاميذ')` with icon `heroicon-o-building-library` (sort order 6).
+      - 4 interactive tabs:
+        1. **دورات ومحاضر المجلس:** Session switcher, 4 live telemetry KPI cards (Total Sessions, Quorum Compliance, Directorate Submission, Pending Minutes), sessions table with quorum badges, status workflow actions (Submit to Directorate, Mark Approved), Record Board Session modal, and instant Print/PDF Official PV shortcuts.
+        2. **أعضاء المجلس والهيئة:** Board membership ledger grouped by category (Statutory, Elected Teacher, Elected Staff, Elected Parent), mandate validity period, Statutory Bootstrap action (initializes mandatory members in one click), and Add Board Member modal.
+        3. **مشروع المؤسسة والنجاعة:** Strategic multi-year contract overview, completion progress bar (0-100%), strategic axes cards, quantitative targets breakdown, Create/Edit Project modal, and instant Print/PDF Project Summary sheet.
+        4. **جمعية الأولياء والنظام الداخلي:** APE identity card with executive bureau contact details, official accreditation receipt number, general assemblies ledger, Record APE Meeting modal, Internal Regulations adoption banner with signed parental undertakings counter, and Adopt Regulations modal.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - Complete tri-lingual dictionary populated in `lang/ar.json`, `lang/en.json`, and `lang/fr.json` verified by `LocalizationCompletenessTest` (2 passed, 7 assertions).
+      - 18 comprehensive feature tests in `tests/Feature/SchoolBoardGovernanceTest.php` passing 100% green (71 assertions).
+      - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php` (6 tests, 127 assertions).
+      - Schema integrity verified by `sajel:health-check`: `[PASS] schema: All required tables present (91)`.
       - Code style verified with `vendor/bin/pint`.
+
 
 
 

@@ -421,6 +421,33 @@ class User extends Authenticatable implements FilamentUser
         ], true);
     }
 
+    public function canManageSchoolGovernance(): bool
+    {
+        return in_array($this->role, [
+            Role::Principal,
+            Role::GeneralSupervisor,
+            Role::FinanceOfficer,
+            Role::Censor,
+            Role::Admin,
+            Role::Developer,
+        ], true);
+    }
+
+    public function boardSessionsAsPresident(): HasMany
+    {
+        return $this->hasMany(SchoolBoardSession::class, 'president_user_id');
+    }
+
+    public function boardSessionsAsRapporteur(): HasMany
+    {
+        return $this->hasMany(SchoolBoardSession::class, 'rapporteur_user_id');
+    }
+
+    public function boardMemberships(): HasMany
+    {
+        return $this->hasMany(SchoolBoardMember::class);
+    }
+
     public function safetyIncidents(): HasMany
     {
         return $this->hasMany(SchoolSafetyIncident::class)->orderByDesc('incident_date');

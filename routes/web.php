@@ -19,6 +19,7 @@ use App\Http\Controllers\PrintDailyLogsController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
 use App\Http\Controllers\RakmanaSyncController;
 use App\Http\Controllers\SchoolArchiveController;
+use App\Http\Controllers\SchoolBoardGovernanceController;
 use App\Http\Controllers\SchoolBoardingController;
 use App\Http\Controllers\SchoolBudgetController;
 use App\Http\Controllers\SchoolCanteenController;
@@ -975,6 +976,38 @@ Route::get('/{locale}/print/safety/equipment/register/pdf', [SchoolSafetyControl
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.safety.equipment-register.pdf');
+
+// ─── School Board Governance, School Project & APE Routes ───────────
+
+Route::get('/{locale}/print/governance/session/{session}/pv', [SchoolBoardGovernanceController::class, 'printBoardSessionPv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.governance.board-session-pv');
+
+Route::get('/{locale}/print/governance/session/{session}/pv/pdf', [SchoolBoardGovernanceController::class, 'printBoardSessionPvPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.governance.board-session-pv.pdf');
+
+Route::get('/{locale}/print/governance/project/{project}/summary', [SchoolBoardGovernanceController::class, 'printSchoolProjectSummary'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.governance.school-project');
+
+Route::get('/{locale}/print/governance/project/{project}/summary/pdf', [SchoolBoardGovernanceController::class, 'printSchoolProjectSummaryPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.governance.school-project.pdf');
+
+Route::get('/{locale}/print/governance/parents-meeting/{meeting}/pv', [SchoolBoardGovernanceController::class, 'printParentsAssemblyPv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.governance.parents-assembly-pv');
+
+Route::get('/{locale}/print/governance/parents-meeting/{meeting}/pv/pdf', [SchoolBoardGovernanceController::class, 'printParentsAssemblyPvPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.governance.parents-assembly-pv.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link
