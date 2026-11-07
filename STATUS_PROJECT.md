@@ -1927,6 +1927,52 @@ Full statutory alignment with Algerian National Education and ONEC (Office Natio
       - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php`.
       - Code style verified with `vendor/bin/pint`.
 
+## 51. School Social Solidarity, 5,000 DZD Special School Allowance & Free Textbooks/Supplies Program (منظومة التضامن المدرسي، منحة التمدرس الخاصة 5000 دج ومجانية الكتاب والحقيبة المدرسية - Prime de Scolarité 5 000 DA et Solidarité Sociale) (100%)
+
+Full statutory alignment with Algerian legislation, notably **Executive Decree No. 21-61** (المرسوم التنفيذي 21-61 المؤرخ في 08 فبراير 2021 المحدد لشروط وكيفيات منح منحة التمدرس الخاصة) and Joint Ministerial Circulars of the Ministry of National Education and Ministry of Interior / Local Authorities on school solidarity, allowance disbursement via postal accounts (CCP), and free provision of educational kits and school bags:
+- [x] **Database Schema & Core Domain Tables (expanded to 73 core tables):**
+      - Migration `2026_11_23_010001_create_school_solidarity_tables.php` creating 4 domain tables:
+        - `school_solidarity_campaigns`: annual campaigns ledger (`campaign_year`, `academic_year`, `title`, `start_date`, `end_date`, `grant_amount` default 5000.00, `status`, `allocated_budget`, `approved_beneficiaries_count`, `total_disbursed_amount`, `notes`, `created_by`).
+        - `student_solidarity_beneficiaries`: student dossier and applicant registry (`campaign_id`, `student_id`, `file_number`, `eligibility_category`, `guardian_type`, `guardian_national_id`, `guardian_full_name`, `guardian_profession`, `monthly_income`, `ccp_account_number`, `ccp_key`, `rip_number`, `status`, `rejection_reason`, `payment_reference`, `payment_date`, `submitted_documents`, `notes`, `verified_by`).
+        - `school_solidarity_committee_members`: institutional solidarity commission (`campaign_id`, `user_id`, `member_name`, `committee_role`, `institution_role_label`, `attended_deliberation`, `signature_notes`).
+        - `school_solidarity_aid_distributions`: in-kind aid delivery register (`campaign_id`, `student_id`, `aid_type`, `voucher_number`, `distribution_date`, `items_description`, `estimated_value`, `donor_entity`, `received_by_guardian`, `guardian_signature_confirmed`, `issued_by`, `notes`).
+      - Updated `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` expanding verified schema to 73 domain tables: `[PASS] schema: All required tables present (73)`.
+- [x] **Domain Enums Architecture (`app/Enums`):**
+      - `SolidarityCampaignStatus`: `Planning` (قيد الإعداد وتجميع الملفات), `InReview` (قيد التدقيق الإداري والاجتماعي), `Deliberated` (تمت مداولة لجنة المؤسسة), `SubmittedToDaira` (مرسل للجنة الدائرية والمديرية), `Approved` (مؤشر ومصادق عليه رسمياً), `Disbursed` (تم صرف المنحة عبر البريد), `Closed` (مختتم ومؤرشف).
+      - `SocialEligibilityCategory`: `Orphan` (يتيم فاقد الأب أو الوالدين معاً), `NeedyNoIncome` (معوز - أسرة بدون أي دخل), `LowIncome` (دخل ضعيف ≤ SNMG), `SpecialNeeds` (ذوو الاحتياجات الخاصة والإعاقة), `NationalTragedy` (ضحايا المأساة الوطنية وحالات خاصة).
+      - `SolidarityBeneficiaryStatus`: `Submitted` (ملف مودع), `VerifiedBySchool` (مدقق ومستوفٍ بالمؤسسة), `DeliberatedApproved` (مقبول بمداولة اللجنة), `ApprovedByDaira` (مصادق عليه من الدائرة), `Paid` (تم الصرف والتحويل), `Rejected` (ملف مرفوض).
+      - `SolidarityCommitteeRole`: `President` (مدير المؤسسة - رئيس اللجنة), `FinancialReporter` (المقتصد / المسير المالي - المقرر), `CensorMember` (الناظر / مستشار التربية - عضو), `GuidanceMember` (مستشار التوجيه المدرسي - عضو), `TeacherRepresentative` (ممثل هيئة التدريس - عضو), `ParentAssociationRepresentative` (ممثل جمعية أولياء التلاميذ - عضو), `BoardMember` (ممثل مجلس الإدارة والتسيير).
+      - `SolidarityAidType`: `FreeTextbooks` (مجانية طقم الكتب المدرسية), `SchoolBag` (الحقيبة والمحفظة المدرسية المجهزة), `StationerySupplies` (مستلزمات الأدوات والكراريس), `ClothingAid` (كسوة التضامن المدرسي), `Other` (إعانات تضامنية ومساعدات عينية أخرى).
+- [x] **Domain Service Layer (`SchoolSolidarityService`):**
+      - Auto-sequential reference numbering: `SOL/{year}/{seq}` for applicant dossiers, `AID/{year}/{seq}` for delivery vouchers.
+      - Automated commission initialization (`initializeDefaultCommittee`): auto-assigns Principal, Financial Officer, Censor, Guidance Counselor, and representatives.
+      - Dossier management & workflow: `registerBeneficiary` with student deduplication; `updateBeneficiaryStatus` with instant campaign totals recalculation; `markBeneficiaryPaid` with payment reference and disbursement summation.
+      - Real-time telemetry & KPIs engine (`getSolidarityKpis`): applicants, approved, paid, total disbursed volume in DZD, category breakdowns, and aid values.
+      - Printable data assemblers: `assembleNominativeListData`, `assembleCommitteePvData`, `assembleAidVoucherData`.
+- [x] **Controller Actions & Secure Routing (`SchoolSolidarityController`, `routes/web.php`):**
+      - 6 dedicated routes for official Algerian administrative documents with Browsershot PDF streaming and HTML preview:
+        - `print.solidarity.nominative-list` & `.pdf` (`/{locale}/print/solidarity/campaign/{campaign}/nominative-list`)
+        - `print.solidarity.committee-pv` & `.pdf` (`/{locale}/print/solidarity/campaign/{campaign}/committee-pv`)
+        - `print.solidarity.aid-voucher` & `.pdf` (`/{locale}/print/solidarity/aid/{distribution}/voucher`)
+      - Protected by strict permission check `User::canManageSolidarity()`.
+- [x] **Official Algerian Printable Templates:**
+      - `resources/views/print/solidarity-nominative-list.blade.php`: État nominatif des bénéficiaires de la prime de scolarité de 5 000 DA (الكشف الإسمي للمستفيدين من منحة التمدرس الخاصة 5000 دج - A4 Landscape) formatted per ministerial standards with student matricule, birth date, eligibility category, guardian national ID, CCP account & key, individual 5,000 DZD allocation, totals, and tripartite signatures (Bursar, Principal, Daira / Directorate Commission).
+      - `resources/views/print/solidarity-committee-pv.blade.php`: Procès-verbal des délibérations de la commission de solidarité scolaire (محضر مداولات لجنة التضامن المدرسي بالمؤسسة - A4 Portrait) featuring statutory legal references (Loi 08-04, Décret 21-61), quorum validation, summary statistics of examined files, category breakdown table, deliberation clauses, and full committee members signatures table.
+      - `resources/views/print/solidarity-aid-voucher.blade.php`: Bon de décharge et récépissé de remise de gratuité (سند ومحضر تسليم واستلام مجانية المستلزمات والكتب المدرسية - A4 Portrait) detailing student, guardian, in-kind aid specification, legal undertaking of receipt and maintenance, and multi-partite validation.
+- [x] **Interactive Filament Livewire Cockpit (`SchoolSolidarityHub`):**
+      - Registered under `__('المصالح المالية والكتاب المدرسي')` with icon `heroicon-o-heart` (sort order 5).
+      - 4 interactive tabs:
+        1. **حملات منحة التمدرس (5000 دج):** Campaign switcher, 5 live telemetry KPI cards, campaign status pill, quick buttons to print/PDF the official Nominative CCP list and Committee PV, and Launch Campaign modal.
+        2. **ملفات التلاميذ وقوائم الاستحقاق:** Searchable & filterable applicant registry, eligibility category badges, guardian CCP info, status workflow actions (Approve, Reject with justification, Record Postal Transfer & Pay), and Add Beneficiary Dossier modal.
+        3. **لجنة التضامن ومحضر المداولة:** Statutory commission information banner, members roster, deliberation attendance status, Add Member modal, and instant print/PDF PV action.
+        4. **مجانية الكتاب والحقيبة المدرسية:** In-kind aid delivery register, Record Aid Distribution modal, and instant print/PDF delivery voucher actions.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - Complete tri-lingual dictionary populated in `lang/ar.json`, `lang/en.json`, and `lang/fr.json` verified by `LocalizationCompletenessTest`.
+      - 17 comprehensive feature tests in `tests/Feature/SchoolSolidarityTest.php` passing 100% green (62 assertions).
+      - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php` (6 tests, 111 assertions).
+      - Schema integrity verified by `sajel:health-check`: `[PASS] schema: All required tables present (73)`.
+      - Code style verified with `vendor/bin/pint`.
+
 
 
 

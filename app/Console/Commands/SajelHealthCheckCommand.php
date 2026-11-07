@@ -31,6 +31,7 @@ class SajelHealthCheckCommand extends Command
         'inventory_items', 'inventory_allocations', 'inventory_reforms', 'inventory_recolements',
         'school_budget_lines', 'budget_commitments', 'payment_mandates',
         'official_exam_centers', 'official_exam_rooms', 'official_exam_supervisors', 'official_exam_incidents',
+        'school_solidarity_campaigns', 'student_solidarity_beneficiaries', 'school_solidarity_committee_members', 'school_solidarity_aid_distributions',
     ];
 
     public function handle(): int

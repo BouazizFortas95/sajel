@@ -84,6 +84,10 @@ class SchoolBackupService
         'official_exam_rooms',
         'official_exam_supervisors',
         'official_exam_incidents',
+        'school_solidarity_campaigns',
+        'student_solidarity_beneficiaries',
+        'school_solidarity_committee_members',
+        'school_solidarity_aid_distributions',
     ];
 
     /**

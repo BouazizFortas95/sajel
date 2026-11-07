@@ -25,6 +25,7 @@ use App\Http\Controllers\SchoolCensusController;
 use App\Http\Controllers\SchoolHealthController;
 use App\Http\Controllers\SchoolInventoryController;
 use App\Http\Controllers\SchoolLifeController;
+use App\Http\Controllers\SchoolSolidarityController;
 use App\Http\Controllers\StaffCareerController;
 use App\Http\Controllers\StudentAwardController;
 use App\Http\Controllers\StudentMobilityController;
@@ -876,6 +877,38 @@ Route::get('/{locale}/print/official-exam/incident/{incident}/pv/pdf', [Official
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.official-exam.incident-pv.pdf');
+
+// ─── School Solidarity, 5,000 DZD Grant & Aid Routes (Décret 21-61) ──────────
+
+Route::get('/{locale}/print/solidarity/campaign/{campaign}/nominative-list', [SchoolSolidarityController::class, 'printNominativeList'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.solidarity.nominative-list');
+
+Route::get('/{locale}/print/solidarity/campaign/{campaign}/nominative-list/pdf', [SchoolSolidarityController::class, 'printNominativeListPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.solidarity.nominative-list.pdf');
+
+Route::get('/{locale}/print/solidarity/campaign/{campaign}/committee-pv', [SchoolSolidarityController::class, 'printCommitteePv'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.solidarity.committee-pv');
+
+Route::get('/{locale}/print/solidarity/campaign/{campaign}/committee-pv/pdf', [SchoolSolidarityController::class, 'printCommitteePvPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.solidarity.committee-pv.pdf');
+
+Route::get('/{locale}/print/solidarity/aid/{distribution}/voucher', [SchoolSolidarityController::class, 'printAidVoucher'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.solidarity.aid-voucher');
+
+Route::get('/{locale}/print/solidarity/aid/{distribution}/voucher/pdf', [SchoolSolidarityController::class, 'printAidVoucherPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.solidarity.aid-voucher.pdf');
 
 /*
  * Filament's panel routes are localized ({locale}/auth/...). If an old link

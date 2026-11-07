@@ -270,4 +270,14 @@ class Student extends Model
     {
         return $query->where('is_active', true);
     }
+
+    public function solidarityBeneficiaries(): HasMany
+    {
+        return $this->hasMany(StudentSolidarityBeneficiary::class);
+    }
+
+    public function solidarityAidDistributions(): HasMany
+    {
+        return $this->hasMany(SchoolSolidarityAidDistribution::class);
+    }
 }
