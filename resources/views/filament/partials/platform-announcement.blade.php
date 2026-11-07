@@ -31,3 +31,4 @@
         <span class="text-xs opacity-75 font-mono">{{ $platformSetting->platform_name }}</span>
     </div>
 @endif
+

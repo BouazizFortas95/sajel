@@ -184,6 +184,18 @@ class AdministrativeArchiveHub extends Page
         $this->isInstallationModalOpen = true;
     }
 
+    public function updatedInstallUserId($value): void
+    {
+        if ($value && ($selectedUser = User::find($value))) {
+            if (empty($this->installRoleLabel)) {
+                $this->installRoleLabel = $selectedUser->role?->label() ?? '';
+            }
+            if (empty($this->installGrade)) {
+                $this->installGrade = (string) ($selectedUser->statutory_grade ?? '');
+            }
+        }
+    }
+
     public function closeInstallationModal(): void
     {
         $this->isInstallationModalOpen = false;

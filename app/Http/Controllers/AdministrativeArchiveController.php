@@ -6,7 +6,7 @@ use App\Models\AdministrativeHandover;
 use App\Models\StaffInstallation;
 use App\Models\User;
 use App\Services\AdministrativeArchiveService;
-use App\Services\BrowsershotFactory;
+use App\Support\BrowsershotFactory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
