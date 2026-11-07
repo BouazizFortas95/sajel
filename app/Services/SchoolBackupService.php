@@ -106,6 +106,12 @@ class SchoolBackupService
         'school_internal_regulations',
         'parents_associations',
         'parents_association_meetings',
+        'school_building_facilities',
+        'maintenance_work_orders',
+        'central_heating_logs',
+        'water_tank_hygiene_inspections',
+        'energy_utility_meters',
+        'utility_consumption_records',
     ];
 
     /**

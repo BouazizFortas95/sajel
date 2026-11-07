@@ -2119,6 +2119,62 @@ Full statutory alignment with Algerian educational governance and institutional 
       - Schema integrity verified by `sajel:health-check`: `[PASS] schema: All required tables present (91)`.
       - Code style verified with `vendor/bin/pint`.
 
+## 55. School Technical Infrastructure, Preventive Maintenance, Central Heating & Utilities Energy Registry (منظومة صيانة الهياكل والمنشآت المدرسية، شبكات التدفئة المركزية والغاز، وسجل الطاقة والمرافق - Maintenance des Bâtiments, Chaufferie et Fluides Énergétiques) (100%)
+
+Full statutory alignment with Algerian educational administration regulations, ministerial directives on winter readiness and heating safety (**Circulaire ministérielle sur la préparation de la saison hivernale et la sécurité des installations de chauffage central**), mandatory periodic chemical cleaning and microbiological disinfection of drinking water tanks (**Désinfection des bâches à eau et citernes d'eau potable avec le Bureau d'Hygiène Municipal - BHM**), work orders tracking for preventive and corrective maintenance (**Bons de travaux et interventions techniques des ouvriers professionnels OP**), and energy meters auditing against utility invoices from Sonelgaz and Algérienne Des Eaux (ADE):
+- [x] **Database Schema & Core Domain Tables (expanded to 97 core tables):**
+      - Migration `2026_11_27_010001_create_school_maintenance_and_utilities_tables.php` creating 6 domain tables:
+        - `school_building_facilities`: school facilities, educational wings and premises ledger (`facility_code`, `facility_name`, `facility_type` [PedagogicalWing, AdministrativeWing, BoardingDormitory, RefectoryKitchen, SportsHall, WorkshopLab, StaffHousing, ExteriorYard], `building_block`, `total_rooms_count`, `condition_rating` [Good, Acceptable, NeedsRestoration, Dilapidated], `has_heating`, `has_water_connection`, `has_gas_connection`, `notes`).
+        - `maintenance_work_orders`: technical work orders and maintenance interventions (`work_order_number`, `academic_year`, `facility_id`, `exact_location`, `category` [Electricity, PlumbingSanitary, CentralHeating, CarpentryLocksmith, MasonryPainting, GlazingRoofing], `priority_level` [Low, Normal, Urgent, EmergencySafety], `issue_description`, `reported_by_user_id`, `reported_by_name`, `report_date`, `scheduled_date`, `completion_date`, `intervention_type` [InternalStaff, ExternalContractor], `contractor_name`, `estimated_cost`, `actual_cost`, `status` [Reported, Scheduled, InProgress, Completed, Cancelled], `technician_notes`, `approved_by_user_id`).
+        - `central_heating_logs`: boiler room safety and central heating technical inspection ledger (`log_reference`, `academic_year`, `boiler_code`, `boiler_brand_model`, `installation_year`, `fuel_type` [NaturalGas, PropaneLpg, FuelOil], `inspection_date`, `inspector_entity`, `burner_operational_state`, `safety_valve_tested`, `pressure_bar`, `water_temp_celsius`, `co_detector_tested`, `room_ventilation_ok`, `chimneys_cleaned`, `status` [CompliantApproved, ConditionalUse, ShutDownEmergency], `observations_and_repairs`, `certified_by_name`).
+        - `water_tank_hygiene_inspections`: drinking water tanks and bâches hygiene & chlorination ledger (`inspection_reference`, `academic_year`, `tank_name_code`, `tank_type` [UndergroundBache, ElevatedRoofTank, GroundCistern], `capacity_cubic_meters`, `inspection_date`, `operation_type`, `chemical_agent_used`, `executed_by`, `residual_chlorine_ppm`, `water_potable_clearance` [CompliantPotable, ContaminatedNonPotable, PendingAnalysis], `next_disinfection_due_date`, `certification_ref`, `notes`).
+        - `energy_utility_meters`: utility meters registry (`meter_code`, `meter_type` [Electricity, NaturalGas, PotableWater], `utility_provider` [Sonelgaz, ADE, NaftalPropane], `meter_serial_number`, `meter_location`, `subscribed_power_or_flow`, `tariff_category`, `unit_of_measure` [kWh, m³], `is_active`, `installation_date`, `notes`).
+        - `utility_consumption_records`: quarterly index readings and utility bills reconciliation (`bill_reference`, `academic_year`, `energy_utility_meter_id`, `billing_period_quarter`, `reading_date_start`, `reading_date_end`, `previous_index`, `current_index`, `consumption_units`, `invoiced_amount_dzd`, `invoice_number`, `invoice_reception_date`, `payment_status` [ReceivedPendingAudit, AuditedApproved, MandatedPaid, ContestedOverbilled], `meter_auditor_name`, `anomaly_detected`, `remarks`).
+      - Updated `SajelHealthCheckCommand`, `SchoolBackupService`, and `SchoolRestoreService` expanding verified schema to 97 domain tables: `[PASS] schema: All required tables present (97)`.
+- [x] **Domain Enums Architecture (`app/Enums`):**
+      - `FacilityType`: `PedagogicalWing`, `AdministrativeWing`, `BoardingDormitory`, `RefectoryKitchen`, `SportsHall`, `WorkshopLab`, `StaffHousing`, `ExteriorYard`.
+      - `FacilityCondition`: `Good`, `Acceptable`, `NeedsRestoration`, `Dilapidated`.
+      - `MaintenanceCategory`: `Electricity`, `PlumbingSanitary`, `CentralHeating`, `CarpentryLocksmith`, `MasonryPainting`, `GlazingRoofing`.
+      - `MaintenancePriority`: `Low`, `Normal`, `Urgent`, `EmergencySafety`.
+      - `MaintenanceStatus`: `Reported`, `Scheduled`, `InProgress`, `Completed`, `Cancelled`.
+      - `BoilerFuelType`: `NaturalGas`, `PropaneLpg`, `FuelOil`.
+      - `HeatingInspectionStatus`: `CompliantApproved`, `ConditionalUse`, `ShutDownEmergency`.
+      - `WaterTankType`: `UndergroundBache`, `ElevatedRoofTank`, `GroundCistern`.
+      - `WaterPotabilityStatus`: `CompliantPotable`, `ContaminatedNonPotable`, `PendingAnalysis`.
+      - `UtilityMeterType`: `Electricity` (kWh), `NaturalGas` (m³), `PotableWater` (m³).
+      - `UtilityPaymentStatus`: `ReceivedPendingAudit`, `AuditedApproved`, `MandatedPaid`, `ContestedOverbilled`.
+- [x] **Domain Service Layer (`SchoolMaintenanceService`):**
+      - Sequential reference code generators: `ORD-{year}-{seq}`, `FAC-{type}-{seq}`, `CHAUF-{year}-{seq}`, `BACHE-{year}-{seq}`, `BILL-{year}-{seq}`, and `MTR-{type}-{seq}`.
+      - Core operations: `createFacility`, `bootstrapDefaultFacilities` (initializes standard Algerian school facilities), `createWorkOrder` with status `Reported`, `updateWorkOrderStatus` with actual cost and completion timestamps, `recordHeatingInspection` with automatic compliance safety evaluation (checks pressure, water temperature, CO detectors, safety valve, and chimneys), `recordWaterTankDisinfection` with residual chlorine and automated next due date (+90 days), `registerUtilityMeter`, and `recordUtilityBill` with automated consumption index delta and surge anomaly detection.
+      - Real-time telemetry & KPIs engine (`getMaintenanceTelemetry`): total facilities, restoration-needed facilities, open work orders, urgent emergencies, completed work orders, central heating logs count, heating compliance rate (%), water storage tanks count, safe water percentage (%), active utility meters count, and total annual utility expenses volume in DZD.
+      - Printable data assemblers: `assembleWorkOrderData`, `assembleHeatingSafetyPvData`, `assembleWaterHygieneCertificateData`, and `assembleEnergyConsumptionBilanData`.
+- [x] **Controller Actions & Secure Routing (`SchoolMaintenanceController`, `routes/web.php`):**
+      - 8 dedicated routes with Browsershot PDF streaming and HTML fallback:
+        - `print.maintenance.work-order` & `.pdf` (`/{locale}/print/maintenance/work-order/{workOrder}`)
+        - `print.maintenance.heating-pv` & `.pdf` (`/{locale}/print/maintenance/heating-log/{log}/pv`)
+        - `print.maintenance.water-register` & `.pdf` (`/{locale}/print/maintenance/water-hygiene/{inspection}/register`)
+        - `print.maintenance.energy-bilan` & `.pdf` (`/{locale}/print/maintenance/energy-bilan/{academicYear}`)
+      - Protected by strict permission check `User::canManageSchoolMaintenance()`.
+- [x] **Official Algerian Printable Templates:**
+      - `resources/views/print/maintenance-work-order.blade.php`: Bon de travail et ordre d'intervention technique (سند وأمر أشغال وتدخل تقني لصيانة المنشآت المدرسية - A4 Portrait) featuring official ministerial header, target facility & block, exact location, breakdown description, technical execution entity (OP vs private contractor), costs, and tripartite visas (Requester/Technician, Bursar, Principal).
+      - `resources/views/print/maintenance-heating-safety-pv.blade.php`: Fiche de contrôle et de sécurité de la chaufferie centrale (بطاقة المراقبة التقنية والأمنية للتدفئة المركزية والغلايات - A4 Landscape) tracking boiler specifications, network pressure (bar), water temperature (°C), burner condition, safety valve test, CO detectors readiness, natural ventilation vents, chimney sweeping, compliance verdict, and tripartite signatures.
+      - `resources/views/print/maintenance-water-hygiene-register.blade.php`: Registre sanitaire de désinfection des bâches à eau et citernes (سجل وشهادة النظافة والتطهير الدوري لخزانات وباشات الماء الشروب - A4 Landscape) detailing tank type, cubic meters capacity, cleaning method, disinfectant chemicals, residual chlorine in PPM (0.2-0.5 PPM standard), bacteriological lab clearance, next quarterly due date, and multi-partite validation (BHM Hygiene Officer / School Doctor, Bursar, Principal).
+      - `resources/views/print/maintenance-energy-consumption-bilan.blade.php`: Bilan annuel de consommation des fluides énergétiques et audit des factures (كشف الحصيلة السنوية لاستهلاك الطاقة والمرافق ومطابقة الفواتير - A4 Landscape) featuring quarterly telemetry cards (Electricity Sonelgaz, Natural Gas Sonelgaz, Potable Water ADE), audit ledger, consumption indices, grand total DZD, and administrative certifying signatures.
+- [x] **Interactive Filament Livewire Cockpit (`SchoolMaintenanceHub`):**
+      - Registered under `__('المصالح المالية والكتاب المدرسي')` with icon `heroicon-o-wrench-screwdriver` (sort order 6).
+      - 4 interactive tabs:
+        1. **الهياكل وأوامر الأشغال:** 4 telemetry cards (Total facilities, Open work orders, Urgent emergencies, Completed orders), search and category/priority filters, work orders ledger, Add Work Order modal, Add Facility modal, Mark Order Completed modal, and instant Print/PDF Bon de travail shortcuts.
+        2. **التدفئة المركزية والغلايات:** Mandatory safety protocol alert banner, heating logs table with pressure/temperature, safety valve and CO detector indicators, Record Heating Inspection modal, and instant Print/PDF Chaufferie PV shortcuts.
+        3. **باشات وخزانات الماء الشروب:** Storage capacity overview, residual chlorine PPM tracking, potability badges, Record Tank Disinfection modal, and instant Print/PDF Water Hygiene Register shortcuts.
+        4. **عدادات الطاقة واستهلاك المرافق:** Energy & water expense KPI cards in DZD, active meters cards, quarterly utility bills ledger with previous/current indices, Record Bill modal, Register Meter modal, and instant Print/PDF Annual Energy Balance Sheet shortcuts.
+- [x] **Tri-Lingual Localization & Automated Verification:**
+      - Complete tri-lingual dictionary populated in `lang/ar.json`, `lang/en.json`, and `lang/fr.json` verified by `LocalizationCompletenessTest` (2 passed, 7 assertions).
+      - 19 comprehensive feature tests in `tests/Feature/SchoolMaintenanceTest.php` passing 100% green (78 assertions).
+      - Strict role navigation tailoring verified in `RoleNavigationTailoringTest.php` (6 tests, 132 assertions).
+      - Schema integrity verified by `sajel:health-check`: `[PASS] schema: All required tables present (97)`.
+      - Code style verified with `vendor/bin/pint`.
+
+
 
 
 
