@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Enums\InventoryCategory;
 use App\Enums\InventoryCondition;
+use App\Enums\InventoryRecolementStatus;
 use App\Models\InventoryAllocation;
 use App\Models\InventoryItem;
+use App\Models\InventoryRecolement;
 use App\Models\InventoryReform;
 use App\Models\SchoolSetting;
 use Illuminate\Support\Facades\DB;
@@ -225,6 +227,98 @@ class SchoolInventoryService
     }
 
     /**
+     * Generate official inventory verification / recolement reference (المنشور 143/97).
+     * Format: REC/{Year}/{Sequential Number 3-digits} (e.g. REC/2026/001).
+     */
+    public function generateRecolementNumber(?int $year = null): string
+    {
+        $year = $year ?? (int) now(config('app.timezone', 'Africa/Algiers'))->year;
+        $count = InventoryRecolement::whereYear('created_at', $year)->count() + 1;
+        $seq = str_pad((string) $count, 3, '0', STR_PAD_LEFT);
+
+        return "REC/{$year}/{$seq}";
+    }
+
+    /**
+     * Record room/lab periodic inventory verification (Récolement et Conformité).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function recordRecolement(array $data): InventoryRecolement
+    {
+        if (empty($data['recolement_number'])) {
+            $data['recolement_number'] = $this->generateRecolementNumber();
+        }
+
+        if (empty($data['recolement_date'])) {
+            $data['recolement_date'] = now(config('app.timezone', 'Africa/Algiers'))->format('Y-m-d');
+        }
+
+        return DB::transaction(function () use ($data) {
+            $recolement = InventoryRecolement::create($data);
+
+            if ($recolement->allocation_id) {
+                $isConformed = ($recolement->status === InventoryRecolementStatus::Conformed) || ($recolement->missing_count === 0 && $recolement->damaged_count === 0);
+                InventoryAllocation::where('id', $recolement->allocation_id)->update([
+                    'condition_verified' => $isConformed,
+                ]);
+            }
+
+            return $recolement;
+        });
+    }
+
+    /**
+     * Assemble printable data for Custody Handover Voucher (سند تسليم واستلام العهدة المدرسية والمكتبية والمخبرية - A4 Portrait).
+     *
+     * @return array<string, mixed>
+     */
+    public function assembleCustodyVoucherData(InventoryAllocation $allocation): array
+    {
+        $allocation->loadMissing(['responsibleUser', 'recordedBy']);
+
+        $items = InventoryItem::active()
+            ->where('location_name', $allocation->room_name)
+            ->orderBy('category')
+            ->orderBy('inventory_number')
+            ->get();
+
+        $itemsByCategory = $items->groupBy(fn ($item) => $item->category->label());
+
+        return [
+            'allocation' => $allocation,
+            'items' => $items,
+            'itemsByCategory' => $itemsByCategory,
+            'totalQuantity' => $items->sum('quantity'),
+            'totalValue' => $items->sum(fn ($i) => ($i->acquisition_cost ?? 0) * ($i->quantity ?? 1)),
+            'school' => SchoolSetting::current(),
+            'generatedAt' => now(config('app.timezone', 'Africa/Algiers')),
+        ];
+    }
+
+    /**
+     * Assemble printable data for Periodic Inventory Conformity Card (بطاقة ومحضر المطابقة والمعاينة السنوية - A4 Landscape).
+     *
+     * @return array<string, mixed>
+     */
+    public function assembleRecolementData(InventoryRecolement $recolement): array
+    {
+        $recolement->loadMissing(['allocation', 'auditor', 'witness', 'recordedBy']);
+
+        $items = InventoryItem::active()
+            ->where('location_name', $recolement->room_name)
+            ->orderBy('inventory_number')
+            ->get();
+
+        return [
+            'recolement' => $recolement,
+            'items' => $items,
+            'school' => SchoolSetting::current(),
+            'generatedAt' => now(config('app.timezone', 'Africa/Algiers')),
+        ];
+    }
+
+    /**
      * Telemetry & KPI statistics for the Inventory Cockpit.
      *
      * @return array<string, mixed>
@@ -236,15 +330,29 @@ class SchoolInventoryService
         $totalItems = $activeItems->sum('quantity');
         $totalValue = $activeItems->sum(fn ($i) => ($i->acquisition_cost ?? 0) * ($i->quantity ?? 1));
         $scientificCount = $activeItems->where('category', InventoryCategory::ScientificLab)->sum('quantity');
+        $furnitureCount = $activeItems->where('category', InventoryCategory::Furniture)->sum('quantity');
+        $audiovisualCount = $activeItems->where('category', InventoryCategory::AudiovisualIt)->sum('quantity');
         $reformedCount = InventoryItem::reformed()->count();
         $damagedCount = $activeItems->where('condition', InventoryCondition::Damaged)->count();
+
+        $recolementCount = InventoryRecolement::count();
+        $conformedCount = InventoryRecolement::where('status', InventoryRecolementStatus::Conformed)->count();
+        $discrepancyCount = InventoryRecolement::whereIn('status', [
+            InventoryRecolementStatus::Discrepancy,
+            InventoryRecolementStatus::UnderInvestigation,
+        ])->count();
 
         return [
             'totalItems' => $totalItems,
             'totalValue' => round($totalValue, 2),
             'scientificCount' => $scientificCount,
+            'furnitureCount' => $furnitureCount,
+            'audiovisualCount' => $audiovisualCount,
             'reformedCount' => $reformedCount,
             'damagedCount' => $damagedCount,
+            'recolementCount' => $recolementCount,
+            'conformedCount' => $conformedCount,
+            'discrepancyCount' => $discrepancyCount,
         ];
     }
 }

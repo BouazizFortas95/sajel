@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\InventoryReformStatus;
 use App\Models\InventoryAllocation;
 use App\Models\InventoryItem;
+use App\Models\InventoryRecolement;
 use App\Models\InventoryReform;
 use App\Models\User;
 use App\Services\SchoolInventoryService;
@@ -21,7 +22,7 @@ class SchoolInventoryHub extends Page
 
     protected static ?int $navigationSort = 3;
 
-    public string $activeTab = 'ledger'; // ledger | allocations | reforms
+    public string $activeTab = 'ledger'; // ledger | allocations | recolements | reforms
 
     // Ledger filters & search
     public string $search = '';
@@ -66,9 +67,42 @@ class SchoolInventoryHub extends Page
 
     public string $allocationRoomType = 'classroom';
 
+    public string $allocationCustodyNature = 'general';
+
     public ?int $allocationResponsibleId = null;
 
     public string $allocationNotes = '';
+
+    // Modal state: New Recolement & Periodic Verification
+    public bool $isRecolementModalOpen = false;
+
+    public ?int $recolementAllocationId = null;
+
+    public string $recolementRoomName = '';
+
+    public string $recolementRoomType = 'classroom';
+
+    public string $recolementDate = '';
+
+    public ?int $recolementAuditorId = null;
+
+    public ?int $recolementWitnessId = null;
+
+    public int $recolementTheoreticalCount = 0;
+
+    public int $recolementVerifiedCount = 0;
+
+    public int $recolementConformCount = 0;
+
+    public int $recolementMissingCount = 0;
+
+    public int $recolementSurplusCount = 0;
+
+    public int $recolementDamagedCount = 0;
+
+    public string $recolementStatus = 'conformed';
+
+    public string $recolementFindings = '';
 
     // Modal state: New Reform Minutes
     public bool $isReformModalOpen = false;
@@ -87,6 +121,7 @@ class SchoolInventoryHub extends Page
         $today = now(config('app.timezone', 'Africa/Algiers'))->format('Y-m-d');
         $this->itemAcquisitionDate = $today;
         $this->reformDate = $today;
+        $this->recolementDate = $today;
     }
 
     public static function canAccess(): bool
@@ -205,12 +240,14 @@ class SchoolInventoryHub extends Page
         $this->validate([
             'allocationRoomName' => 'required|string|max:255',
             'allocationRoomType' => 'required|string',
+            'allocationCustodyNature' => 'required|string',
         ]);
 
         $service = app(SchoolInventoryService::class);
         $service->recordAllocation([
             'room_name' => $this->allocationRoomName,
             'room_type' => $this->allocationRoomType,
+            'custody_nature' => $this->allocationCustodyNature,
             'responsible_user_id' => $this->allocationResponsibleId,
             'notes' => $this->allocationNotes,
             'signed_at' => now(config('app.timezone', 'Africa/Algiers')),
@@ -219,10 +256,11 @@ class SchoolInventoryHub extends Page
 
         $this->closeAllocationModal();
         $this->allocationRoomName = '';
+        $this->allocationCustodyNature = 'general';
         $this->allocationNotes = '';
 
         Notification::make()
-            ->title(__('تم إنشاء وتوثيق بطاقة التخصيص بنجاح'))
+            ->title(__('تم إنشاء وتوثيق بطاقة التخصيص والعهدة بنجاح'))
             ->success()
             ->send();
     }
@@ -230,6 +268,82 @@ class SchoolInventoryHub extends Page
     public function getAllocationsProperty()
     {
         return InventoryAllocation::with(['responsibleUser', 'recordedBy'])
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    // ─── Recolement Actions ─────────────────────────────────────
+
+    public function openRecolementModal(?int $allocationId = null): void
+    {
+        $this->isRecolementModalOpen = true;
+        if ($allocationId) {
+            $alloc = InventoryAllocation::find($allocationId);
+            if ($alloc) {
+                $this->recolementAllocationId = $alloc->id;
+                $this->recolementRoomName = $alloc->room_name;
+                $this->recolementRoomType = $alloc->room_type;
+                $this->recolementWitnessId = $alloc->responsible_user_id;
+
+                $itemsCount = InventoryItem::active()->where('location_name', $alloc->room_name)->count();
+                $this->recolementTheoreticalCount = $itemsCount;
+                $this->recolementVerifiedCount = $itemsCount;
+                $this->recolementConformCount = $itemsCount;
+                $this->recolementMissingCount = 0;
+                $this->recolementSurplusCount = 0;
+                $this->recolementDamagedCount = 0;
+            }
+        }
+    }
+
+    public function closeRecolementModal(): void
+    {
+        $this->isRecolementModalOpen = false;
+    }
+
+    public function saveRecolement(): void
+    {
+        $this->validate([
+            'recolementRoomName' => 'required|string|max:255',
+            'recolementDate' => 'required|date',
+            'recolementTheoreticalCount' => 'required|integer|min:0',
+            'recolementVerifiedCount' => 'required|integer|min:0',
+            'recolementConformCount' => 'required|integer|min:0',
+        ]);
+
+        $service = app(SchoolInventoryService::class);
+        $service->recordRecolement([
+            'allocation_id' => $this->recolementAllocationId,
+            'room_name' => $this->recolementRoomName,
+            'room_type' => $this->recolementRoomType,
+            'recolement_date' => $this->recolementDate,
+            'auditor_id' => $this->recolementAuditorId ?? Auth::id(),
+            'witness_id' => $this->recolementWitnessId,
+            'theoretical_count' => $this->recolementTheoreticalCount,
+            'verified_count' => $this->recolementVerifiedCount,
+            'conform_count' => $this->recolementConformCount,
+            'missing_count' => $this->recolementMissingCount,
+            'surplus_count' => $this->recolementSurplusCount,
+            'damaged_count' => $this->recolementDamagedCount,
+            'status' => $this->recolementStatus,
+            'findings' => $this->recolementFindings,
+            'recorded_by' => Auth::id(),
+        ]);
+
+        $this->closeRecolementModal();
+        $this->recolementRoomName = '';
+        $this->recolementFindings = '';
+        $this->recolementAllocationId = null;
+
+        Notification::make()
+            ->title(__('تم توثيق محضر المطابقة والمعاينة السنوية بنجاح'))
+            ->success()
+            ->send();
+    }
+
+    public function getRecolementsProperty()
+    {
+        return InventoryRecolement::with(['allocation', 'auditor', 'witness', 'recordedBy'])
             ->orderByDesc('id')
             ->get();
     }

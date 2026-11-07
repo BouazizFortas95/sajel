@@ -795,6 +795,26 @@ Route::get('/{locale}/print/inventory/reform/{reform}/pdf', [SchoolInventoryCont
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.inventory.reform-pv.pdf');
 
+Route::get('/{locale}/print/inventory/allocation/{allocation}/custody', [SchoolInventoryController::class, 'printCustodyVoucher'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.inventory.custody-voucher');
+
+Route::get('/{locale}/print/inventory/allocation/{allocation}/custody/pdf', [SchoolInventoryController::class, 'printCustodyVoucherPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.inventory.custody-voucher.pdf');
+
+Route::get('/{locale}/print/inventory/recolement/{recolement}', [SchoolInventoryController::class, 'printRecolement'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.inventory.recolement');
+
+Route::get('/{locale}/print/inventory/recolement/{recolement}/pdf', [SchoolInventoryController::class, 'printRecolementPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.inventory.recolement.pdf');
+
 // ─── School Budget & Public Accounting (Phase 49) ───────────────────────────
 Route::get('/{locale}/print/budget/ledger/{fiscalYear?}', [SchoolBudgetController::class, 'printBudgetLedger'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))

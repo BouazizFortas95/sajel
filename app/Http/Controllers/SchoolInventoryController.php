@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\InventoryAllocation;
+use App\Models\InventoryRecolement;
 use App\Models\InventoryReform;
 use App\Models\User;
 use App\Services\SchoolInventoryService;
@@ -190,6 +191,122 @@ class SchoolInventoryController extends Controller
                     echo $this->printReformPv($request, $locale, $reform)->render();
                 },
                 "inventory-reform-{$reform->id}.html",
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
+        }
+    }
+
+    // ─── Custody Handover Voucher Print ─────────────────────────
+
+    public function printCustodyVoucher(
+        Request $request,
+        string $locale,
+        InventoryAllocation $allocation
+    ): View {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->canManageSchoolInventory(), 403);
+
+        $data = $this->service->assembleCustodyVoucherData($allocation);
+
+        return view('print.inventory-custody-voucher', $data);
+    }
+
+    public function printCustodyVoucherPdf(
+        Request $request,
+        string $locale,
+        InventoryAllocation $allocation,
+        BrowsershotFactory $browsershot
+    ): StreamedResponse|Response {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->canManageSchoolInventory(), 403);
+
+        $filename = "inventory-custody-{$allocation->id}.pdf";
+        $data = $this->service->assembleCustodyVoucherData($allocation);
+
+        try {
+            $pdf = $browsershot
+                ->fromView('print.inventory-custody-voucher', $data)
+                ->portrait()
+                ->generate();
+
+            if (! $pdf) {
+                throw new \RuntimeException('Browsershot PDF generation failed');
+            }
+
+            return response()->streamDownload(
+                function () use ($pdf): void {
+                    echo $pdf;
+                },
+                $filename,
+                [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => "inline; filename=\"{$filename}\"",
+                ]
+            );
+        } catch (Throwable) {
+            return response()->streamDownload(
+                function () use ($request, $locale, $allocation): void {
+                    echo $this->printCustodyVoucher($request, $locale, $allocation)->render();
+                },
+                "inventory-custody-{$allocation->id}.html",
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
+        }
+    }
+
+    // ─── Periodic Recolement & Verification Print ───────────────
+
+    public function printRecolement(
+        Request $request,
+        string $locale,
+        InventoryRecolement $recolement
+    ): View {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->canManageSchoolInventory(), 403);
+
+        $data = $this->service->assembleRecolementData($recolement);
+
+        return view('print.inventory-recolement-sheet', $data);
+    }
+
+    public function printRecolementPdf(
+        Request $request,
+        string $locale,
+        InventoryRecolement $recolement,
+        BrowsershotFactory $browsershot
+    ): StreamedResponse|Response {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->canManageSchoolInventory(), 403);
+
+        $filename = "inventory-recolement-{$recolement->id}.pdf";
+        $data = $this->service->assembleRecolementData($recolement);
+
+        try {
+            $pdf = $browsershot
+                ->fromView('print.inventory-recolement-sheet', $data)
+                ->landscape()
+                ->generate();
+
+            if (! $pdf) {
+                throw new \RuntimeException('Browsershot PDF generation failed');
+            }
+
+            return response()->streamDownload(
+                function () use ($pdf): void {
+                    echo $pdf;
+                },
+                $filename,
+                [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => "inline; filename=\"{$filename}\"",
+                ]
+            );
+        } catch (Throwable) {
+            return response()->streamDownload(
+                function () use ($request, $locale, $recolement): void {
+                    echo $this->printRecolement($request, $locale, $recolement)->render();
+                },
+                "inventory-recolement-{$recolement->id}.html",
                 ['Content-Type' => 'text/html; charset=UTF-8']
             );
         }
