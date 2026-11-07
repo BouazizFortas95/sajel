@@ -17,5 +17,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(MiddleSchoolDatabaseSeeder::class);
         $this->call(RoleProfilesSeeder::class);
+        $this->call(ComprehensiveSchoolEcosystemSeeder::class);
     }
 }
