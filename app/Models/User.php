@@ -156,11 +156,23 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(PedagogicalPlanReceipt::class, 'user_id');
     }
 
+    public function evaluationWorkReceipts(): HasMany
+    {
+        return $this->hasMany(EvaluationWorkReceipt::class, 'user_id');
+    }
+
     public function currentPlanReceipt(): HasOne
     {
         $currentYear = SchoolSetting::current()?->academic_year ?? '2026-2027';
 
         return $this->hasOne(PedagogicalPlanReceipt::class, 'user_id')->where('academic_year', $currentYear);
+    }
+
+    public function currentEvaluationReceipt(): HasOne
+    {
+        $currentYear = SchoolSetting::current()?->academic_year ?? '2026-2027';
+
+        return $this->hasOne(EvaluationWorkReceipt::class, 'user_id')->where('academic_year', $currentYear);
     }
 
     /**

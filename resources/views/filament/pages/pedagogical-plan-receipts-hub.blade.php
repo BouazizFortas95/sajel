@@ -66,22 +66,13 @@
                     </div>
                 </div>
                 <div class="mt-3 flex flex-wrap gap-2">
-                    <a href="{{ route('print.pedagogical-plan-receipts', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubjectId, 'layout' => 'separate']) }}" target="_blank"
+                    <a href="{{ route('print.pedagogical-plan-receipts', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubjectId]) }}" target="_blank"
                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition">
                         <x-filament::icon icon="heroicon-o-printer" class="w-4 h-4" />
-                        {{ $selectedSubjectId ? 'طباعة المادة (صفحتين)' : 'طباعة (كل مادة في صفحة)' }}
+                        {{ $selectedSubjectId ? 'طباعة المادة' : 'طباعة جميع المواد (كل مادة في صفحة)' }}
                     </a>
 
-                    @if(! $selectedSubjectId)
-                        <a href="{{ route('print.pedagogical-plan-receipts', ['locale' => app()->getLocale(), 'layout' => 'continuous']) }}" target="_blank"
-                           class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-xs font-bold transition"
-                           title="طباعة جميع الجداول بتدفق مدمج">
-                            <x-filament::icon icon="heroicon-o-document-text" class="w-4 h-4" />
-                            طباعة مدمجة
-                        </a>
-                    @endif
-
-                    <a href="{{ route('print.pedagogical-plan-receipts.pdf', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubjectId, 'layout' => 'separate']) }}" target="_blank"
+                    <a href="{{ route('print.pedagogical-plan-receipts.pdf', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubjectId]) }}" target="_blank"
                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition">
                         <x-filament::icon icon="heroicon-o-arrow-down-tray" class="w-4 h-4" />
                         PDF

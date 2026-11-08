@@ -187,13 +187,14 @@ class PedagogicalPlanReceiptTest extends TestCase
         $response->assertDontSee('مادة: الرياضيات');
     }
 
-    public function test_print_route_renders_continuous_layout_option(): void
+    public function test_print_route_renders_each_subject_on_dedicated_page(): void
     {
         $response = $this->actingAs($this->principal)
-            ->get('/ar/print/pedagogical-plan-receipts?layout=continuous');
+            ->get('/ar/print/pedagogical-plan-receipts');
 
         $response->assertSuccessful();
-        $response->assertSee('عرض مدمج');
+        $response->assertSee('subject-page');
+        $response->assertSee('وثيقة استلام المخططات السنوية والشهرية');
     }
 
     public function test_print_route_forbidden_to_teacher(): void

@@ -281,26 +281,28 @@
             box-sizing: border-box;
         }
 
-        /* When every subject is on its own separate page */
+        /* Every subject on its own dedicated page (كل مادة في صفحة مستقلة) */
         .subject-page {
-            min-height: 190mm;
-            padding: 10mm 12mm;
+            min-height: 185mm;
+            padding: 8mm 12mm;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            page-break-before: always;
+            break-before: page;
             page-break-after: always;
             break-after: page;
+            page-break-inside: avoid;
+            break-inside: avoid;
             box-sizing: border-box;
+            background: #ffffff;
+            margin-bottom: 20px;
         }
 
         .subject-page:last-child {
             page-break-after: auto;
             break-after: auto;
-        }
-
-        /* Continuous mode (دمج المواد المتتابعة) */
-        .continuous-container {
-            padding: 10mm 12mm;
+            margin-bottom: 0;
         }
 
         .content-header {
@@ -402,17 +404,17 @@
         }
 
         .col-name {
-            width: 18%;
+            width: 19%;
             text-align: right !important;
             padding-right: 8px !important;
             font-family: 'Amiri', serif;
-            font-size: 10.5pt;
+            font-size: 13pt;
             font-weight: 700;
             color: #0f172a;
         }
 
         .col-annual {
-            width: 9%;
+            width: 8.5%;
             background-color: #f8fafc;
         }
 
@@ -426,21 +428,22 @@
             text-align: right !important;
             padding-right: 6px !important;
             color: #334155;
+            font-family: 'Amiri', serif;
         }
 
-        /* Submission Box & Date Styling */
+        /* Submission Box & Date Styling on ONE single line */
         .check-container {
-            display: flex;
-            flex-direction: column;
+            display: inline-flex;
+            flex-direction: row;
             align-items: center;
             justify-content: center;
-            gap: 1px;
-            min-height: 28px;
+            gap: 3px;
+            white-space: nowrap;
         }
 
         .check-mark {
             display: inline-block;
-            font-size: 13pt;
+            font-size: 11pt;
             font-weight: 900;
             line-height: 1;
         }
@@ -451,7 +454,7 @@
 
         .check-mark.empty {
             color: #94a3b8;
-            font-size: 11pt;
+            font-size: 10pt;
             font-weight: 400;
         }
 
@@ -464,7 +467,7 @@
         }
 
         .submission-date.muted {
-            color: #cbd5e1;
+            display: none;
         }
 
         /* Signatures Clean Footer */
@@ -526,22 +529,39 @@
                 display: none !important;
             }
             .cover-page {
-                height: 190mm;
+                min-height: 185mm;
                 page-break-after: always;
                 break-after: page;
+                page-break-inside: avoid;
+                break-inside: avoid;
             }
             .subject-page {
-                min-height: 190mm;
-                height: 190mm;
+                page-break-before: always;
+                break-before: page;
                 page-break-after: always;
                 break-after: page;
+                page-break-inside: avoid;
+                break-inside: avoid;
+                min-height: auto;
+                height: auto;
             }
             .subject-page:last-child {
                 page-break-after: auto;
                 break-after: auto;
             }
+            .ledger-table {
+                page-break-inside: auto;
+            }
+            .ledger-table thead {
+                display: table-header-group !important;
+            }
             .ledger-table tr {
-                page-break-inside: avoid;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            .ministerial-footer-clean {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
             }
         }
     </style>
@@ -562,26 +582,15 @@
             @endforeach
         </select>
 
-        <!-- Layout Mode Toggle (كل مادة في صفحة vs عرض مدمج) -->
-        @if ($layout === 'continuous')
-            <a href="{{ route('print.pedagogical-plan-receipts', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubject?->id, 'layout' => 'separate']) }}" class="btn-action btn-mode">
-                📑 تفعيل: كل مادة في صفحة مستقلة
-            </a>
-        @else
-            <a href="{{ route('print.pedagogical-plan-receipts', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubject?->id, 'layout' => 'continuous']) }}" class="btn-action btn-mode">
-                📄 تفعيل: عرض مدمج للمواد
-            </a>
-        @endif
-
         <button onclick="window.print()" class="btn-action btn-print">
             🖨 طباعة الوثيقة
         </button>
 
-        <a href="{{ route('print.pedagogical-plan-receipts.pdf', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubject?->id, 'layout' => $layout]) }}" class="btn-action btn-pdf">
+        <a href="{{ route('print.pedagogical-plan-receipts.pdf', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubject?->id]) }}" class="btn-action btn-pdf">
             📄 تحميل PDF
         </a>
 
-        <a href="{{ route('print.pedagogical-plan-receipts.word', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubject?->id, 'layout' => $layout]) }}" class="btn-action btn-word">
+        <a href="{{ route('print.pedagogical-plan-receipts.word', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubject?->id]) }}" class="btn-action btn-word">
             📘 تصدير Word (.docx)
         </a>
 
@@ -640,13 +649,11 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- الصفحة الثانية وما بعدها: الجداول حسب المواد -->
+        <!-- الصفحة الثانية وما بعدها: كل مادة في صفحة مستقلة -->
         <!-- ========================================== -->
-        @if ($pagePerSubject)
-            <!-- النمط المقترح المفضل: كل مادة في صفحة مستقلة كاملة مع تأشيراتها -->
-            @foreach ($groupedTeachers as $subjectName => $teachers)
-                @php $teacherIndex = 1; @endphp
-                <div class="content-page subject-page">
+        @foreach ($groupedTeachers as $subjectName => $teachers)
+            @php $teacherIndex = 1; @endphp
+            <div class="content-page subject-page">
                     
                     <!-- ترويسة صفحة المادة -->
                     <div class="content-header">
@@ -758,110 +765,11 @@
 
                 </div>
             @endforeach
-        @else
-            <!-- النمط المدمج المستمر (جميع المواد متتابعة) -->
-            <div class="content-page continuous-container">
-                <div class="content-header">
-                    <div class="content-header-right">
-                        {{ $school->school_name ?? 'متوسطة حي 900 مسكن' }} | مديرية التربية لولاية {{ $school->municipality_name ?? 'المغير' }}
-                    </div>
-                    <div class="content-header-center">
-                        وثيقة استلام المخططات والتدرجات البيداغوجية السنوية والشهرية (عرض مدمج)
-                    </div>
-                    <div class="content-header-left">
-                        السنة الدراسية: {{ $academic_year }}
-                    </div>
-                </div>
 
-                @php $globalCounter = 1; @endphp
+    </div>
 
-                @foreach ($groupedTeachers as $subjectName => $teachers)
-                    <div class="subject-section" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 16px;">
-                        <div class="subject-badge-bar">
-                            <span>مادة: <strong>{{ $subjectName }}</strong></span>
-                            <span class="subject-count">{{ $teachers->count() }} أساتذة</span>
-                        </div>
-
-                        <table class="ledger-table">
-                            <thead>
-                                <tr>
-                                    <th rowspan="2" class="col-num">الرقم</th>
-                                    <th rowspan="2" class="col-name">اسم ولقب الأستاذ</th>
-                                    <th rowspan="2" class="col-annual">المخطط السنوي</th>
-                                    <th colspan="9">المخططات والتدرجات الشهرية</th>
-                                    <th rowspan="2" class="col-notes">ملاحظات</th>
-                                </tr>
-                                <tr>
-                                    @foreach ($months as $monthKey => $monthLabel)
-                                        <th class="col-month">{{ $monthLabel }}</th>
-                                    @endforeach
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($teachers as $teacher)
-                                    @php
-                                        $receipt = $teacher->pedagogicalPlanReceipts->first();
-                                    @endphp
-                                    <tr>
-                                        <td class="col-num">{{ $globalCounter++ }}</td>
-                                        <td class="col-name">
-                                            {{ $teacher->name }}
-                                            @if ($teacher->secondarySubject)
-                                                <div style="font-size: 7.5pt; font-family: 'Cairo', sans-serif; color: #0284c7; font-weight: normal;">
-                                                    + {{ $teacher->secondarySubject->name }}
-                                                </div>
-                                            @endif
-                                        </td>
-                                        <td class="col-annual">
-                                            <div class="check-container">
-                                                @if ($receipt && $receipt->annual_plan_submitted)
-                                                    <span class="check-mark checked">✔</span>
-                                                    <span class="submission-date">
-                                                        {{ $receipt->annual_plan_date ? \Carbon\Carbon::parse($receipt->annual_plan_date)->format('d/m') : 'تم' }}
-                                                    </span>
-                                                @else
-                                                    <span class="check-mark empty">□</span>
-                                                    <span class="submission-date muted">—</span>
-                                                @endif
-                                            </div>
-                                        </td>
-                                        @foreach ($months as $monthKey => $monthLabel)
-                                            @php
-                                                $isSub = $receipt ? $receipt->isMonthSubmitted($monthKey) : false;
-                                                $subDate = $receipt ? $receipt->getMonthDate($monthKey) : null;
-                                            @endphp
-                                            <td class="col-month">
-                                                <div class="check-container">
-                                                    @if ($isSub)
-                                                        <span class="check-mark checked">✔</span>
-                                                        <span class="submission-date">
-                                                            {{ $subDate ? \Carbon\Carbon::parse($subDate)->format('d/m') : 'تم' }}
-                                                        </span>
-                                                    @else
-                                                        <span class="check-mark empty">□</span>
-                                                    @endif
-                                                </div>
-                                            </td>
-                                        @endforeach
-                                        <td class="col-notes">
-                                            {{ $receipt?->notes ?: '—' }}
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endforeach
-
-                <div class="ministerial-footer-clean" style="margin-top: 25px;">
-                    <div class="footer-principal-block">
-                        <div class="footer-date">{{ $school->municipality_name ?? 'المغير' }} في:</div>
-                        <div class="footer-title">مدير المؤسسة</div>
-                    </div>
-                </div>
-
-            </div>
-        @endif
+</body>
+</html>
 
     </div>
 

@@ -157,18 +157,6 @@ class PedagogicalPlanReceiptsHub extends Page
                 ->url(fn () => route('print.pedagogical-plan-receipts', [
                     'locale' => app()->getLocale(),
                     'subject_id' => $this->selectedSubjectId,
-                    'layout' => 'separate',
-                ]))
-                ->openUrlInNewTab(),
-
-            Action::make('printContinuous')
-                ->label('طباعة مدمجة لجميع المواد')
-                ->icon('heroicon-o-document-text')
-                ->color('gray')
-                ->visible(fn () => empty($this->selectedSubjectId))
-                ->url(fn () => route('print.pedagogical-plan-receipts', [
-                    'locale' => app()->getLocale(),
-                    'layout' => 'continuous',
                 ]))
                 ->openUrlInNewTab(),
 

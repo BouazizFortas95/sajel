@@ -262,6 +262,7 @@ class PedagogicalPlanReceiptService
         $monthsReversed = array_reverse(PedagogicalPlanReceipt::MONTHS, true); // May down to September for RTL
 
         $phpWord = new PhpWord;
+        $phpWord->getCompatibility()->setOoxmlVersion(15);
         $phpWord->setDefaultFontName('Cairo');
         $phpWord->setDefaultFontSize(9.5);
         $phpWord->setDefaultParagraphStyle([
@@ -356,17 +357,9 @@ class PedagogicalPlanReceiptService
         // ----------------------------------------------------
         // Page 2+: Unified 13-Column RTL Tables (الصفحة الثانية وما بعدها)
         // ----------------------------------------------------
-        $isFirstSubject = true;
-
         foreach ($groupedTeachers as $subjectName => $teachers) {
-            if ($isFirstSubject) {
-                $section->addPageBreak();
-                $isFirstSubject = false;
-            } elseif ($pagePerSubject) {
-                $section->addPageBreak();
-            } else {
-                $section->addTextBreak(1);
-            }
+            // Every subject starts on its own dedicated page (كل مادة في صفحة مستقلة)
+            $section->addPageBreak();
 
             // Unified 13-column subject table
             $table = $section->addTable([
@@ -383,7 +376,7 @@ class PedagogicalPlanReceiptService
             ]);
 
             // Row 1: Header (Left to Right visually: Left = Year, Center = Title, Right = School)
-            $r1 = $table->addRow();
+            $r1 = $table->addRow(null, ['tblHeader' => true, 'cantSplit' => true]);
             // Left: Year (cols 1-4: 2500 + 3x900 = 5200 twips)
             $r1Left = $r1->addCell(5200, ['gridSpan' => 4, 'bgColor' => 'F8FAFC']);
             $r1Left->addText('السنة الدراسية: '.$year, ['name' => 'Cairo', 'size' => 9.5, 'bold' => true, 'rtl' => true], ['alignment' => Jc::END, 'bidi' => true]);
@@ -397,77 +390,96 @@ class PedagogicalPlanReceiptService
             $r1Right->addText(($school?->school_name ?? 'متوسطة حي 900 مسكن').' | '.($school?->municipality_name ?? 'المغير'), ['name' => 'Amiri', 'size' => 10, 'bold' => true, 'rtl' => true], ['alignment' => Jc::START, 'bidi' => true]);
 
             // Row 2: Subject Banner (full 13 cols = 15400 twips)
-            $r2 = $table->addRow();
+            $r2 = $table->addRow(null, ['tblHeader' => true, 'cantSplit' => true]);
             $bCell = $r2->addCell(15400, ['gridSpan' => 13, 'bgColor' => '1E3A8A']);
             $bCell->addText('المادة: '.$subjectName.' ('.$teachers->count().' أساتذة)', ['name' => 'Cairo', 'size' => 11, 'bold' => true, 'color' => 'FFFFFF', 'rtl' => true], ['alignment' => Jc::START, 'bidi' => true]);
 
             // Row 3: Column Headers (Row 1 of Ledger)
-            // Left to Right: [ملاحظات: 2500] [المخططات الشهرية: 8100] [المخطط السنوي: 1400] [اسم الأستاذ: 2800] [الرقم: 600]
-            $r3 = $table->addRow();
+            // Left to Right: [ملاحظات: 2500] [المخططات الشهرية: 8100] [المخطط السنوي: 1300] [اسم الأستاذ: 2900] [الرقم: 600]
+            $r3 = $table->addRow(null, ['tblHeader' => true, 'cantSplit' => true]);
             $r3->addCell(2500, ['vMerge' => 'restart', 'bgColor' => 'E2E8F0'])->addText('ملاحظات', ['name' => 'Cairo', 'size' => 8.5, 'bold' => true, 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
             $r3->addCell(8100, ['gridSpan' => 9, 'bgColor' => 'E2E8F0'])->addText('المخططات والتدرجات الشهرية', ['name' => 'Cairo', 'size' => 9, 'bold' => true, 'color' => '1E3A8A', 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
-            $r3->addCell(1400, ['vMerge' => 'restart', 'bgColor' => 'E2E8F0'])->addText('المخطط السنوي', ['name' => 'Cairo', 'size' => 8.5, 'bold' => true, 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
-            $r3->addCell(2800, ['vMerge' => 'restart', 'bgColor' => 'E2E8F0'])->addText('اسم ولقب الأستاذ', ['name' => 'Amiri', 'size' => 10, 'bold' => true, 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
+            $r3->addCell(1300, ['vMerge' => 'restart', 'bgColor' => 'E2E8F0'])->addText('المخطط السنوي', ['name' => 'Cairo', 'size' => 8.5, 'bold' => true, 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
+            $r3->addCell(2900, ['vMerge' => 'restart', 'bgColor' => 'E2E8F0'])->addText('اسم ولقب الأستاذ', ['name' => 'Amiri', 'size' => 11, 'bold' => true, 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
             $r3->addCell(600, ['vMerge' => 'restart', 'bgColor' => 'E2E8F0'])->addText('الرقم', ['name' => 'Cairo', 'size' => 8.5, 'bold' => true, 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
 
             // Row 4: Column Headers (Row 2 of Ledger - Months from May down to September)
-            $r4 = $table->addRow();
+            $r4 = $table->addRow(null, ['tblHeader' => true, 'cantSplit' => true]);
             $r4->addCell(2500, ['vMerge' => 'continue']);
             foreach ($monthsReversed as $mKey => $mLabel) {
                 $r4->addCell(900, ['bgColor' => 'F1F5F9'])->addText($mLabel, ['name' => 'Cairo', 'size' => 8, 'bold' => true, 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
             }
-            $r4->addCell(1400, ['vMerge' => 'continue']);
-            $r4->addCell(2800, ['vMerge' => 'continue']);
+            $r4->addCell(1300, ['vMerge' => 'continue']);
+            $r4->addCell(2900, ['vMerge' => 'continue']);
             $r4->addCell(600, ['vMerge' => 'continue']);
 
             // Teacher Data Rows
             $tIdx = 1;
             foreach ($teachers as $teacher) {
                 $receipt = $teacher->pedagogicalPlanReceipts->first();
-                $dRow = $table->addRow();
+                $dRow = $table->addRow(null, ['cantSplit' => true]);
 
                 // Leftmost: ملاحظات
                 $dRow->addCell(2500, ['noWrap' => false])->addText($receipt?->notes ?? '', ['name' => 'Amiri', 'size' => 8.5, 'rtl' => true], ['alignment' => Jc::START, 'bidi' => true]);
 
-                // Months (May down to September)
+                // Months (May down to September) on ONE line
                 foreach ($monthsReversed as $mKey => $mLabel) {
-                    $mCell = $dRow->addCell(900, ['noWrap' => false]);
+                    $mCell = $dRow->addCell(900, ['noWrap' => true]);
                     $isSub = $receipt ? $receipt->isMonthSubmitted($mKey) : false;
                     $mDate = $receipt ? $receipt->getMonthDate($mKey) : null;
 
+                    $mRun = $mCell->addTextRun([
+                        'alignment' => Jc::CENTER,
+                        'bidi' => true,
+                        'spaceBefore' => 0,
+                        'spaceAfter' => 0,
+                        'lineHeight' => 1.0,
+                    ]);
+
                     if ($isSub) {
-                        $mCell->addText('##CB_ON##', ['name' => 'MS Gothic', 'size' => 10, 'bold' => true, 'color' => '15803D', 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
+                        $mRun->addText('##CB_ON##', ['name' => 'MS Gothic', 'size' => 10, 'bold' => true, 'color' => '15803D', 'rtl' => true]);
+                        $mRun->addText(' ');
                         if ($mDate) {
-                            $mCell->addText('##DATE_VAL:'.Carbon::parse($mDate)->format('d/m').'##', ['name' => 'Cairo', 'size' => 7.5, 'bold' => true, 'color' => '0369A1', 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
+                            $mRun->addText('##DATE_VAL:'.Carbon::parse($mDate)->format('d/m').'##', ['name' => 'Cairo', 'size' => 7, 'bold' => true, 'color' => '0369A1', 'rtl' => true]);
                         } else {
-                            $mCell->addText('##DATE_EMPTY##', ['name' => 'Cairo', 'size' => 7, 'color' => '94A3B8', 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
+                            $mRun->addText('##DATE_EMPTY##', ['name' => 'Cairo', 'size' => 7, 'color' => '94A3B8', 'rtl' => true]);
                         }
                     } else {
                         // Placeholder markers replaced by interactive Content Controls in post-processing
-                        $mCell->addText('##CB_OFF##', ['name' => 'MS Gothic', 'size' => 11, 'bold' => true, 'color' => '475569', 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
-                        $mCell->addText('##DATE_EMPTY##', ['name' => 'Cairo', 'size' => 7, 'color' => '94A3B8', 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
+                        $mRun->addText('##CB_OFF##', ['name' => 'MS Gothic', 'size' => 11, 'bold' => true, 'color' => '475569', 'rtl' => true]);
+                        $mRun->addText(' ');
+                        $mRun->addText('##DATE_EMPTY##', ['name' => 'Cairo', 'size' => 7, 'color' => '94A3B8', 'rtl' => true]);
                     }
                 }
 
-                // المخطط السنوي
-                $annualCell = $dRow->addCell(1400, ['noWrap' => false]);
+                // المخطط السنوي on ONE line
+                $annualCell = $dRow->addCell(1300, ['noWrap' => true]);
+                $aRun = $annualCell->addTextRun([
+                    'alignment' => Jc::CENTER,
+                    'bidi' => true,
+                    'spaceBefore' => 0,
+                    'spaceAfter' => 0,
+                    'lineHeight' => 1.0,
+                ]);
                 if ($receipt && $receipt->annual_plan_submitted) {
-                    $annualCell->addText('##CB_ON##', ['name' => 'MS Gothic', 'size' => 10, 'bold' => true, 'color' => '15803D', 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
+                    $aRun->addText('##CB_ON##', ['name' => 'MS Gothic', 'size' => 10, 'bold' => true, 'color' => '15803D', 'rtl' => true]);
+                    $aRun->addText(' ');
                     if ($receipt->annual_plan_date) {
-                        $annualCell->addText('##DATE_VAL:'.Carbon::parse($receipt->annual_plan_date)->format('d/m').'##', ['name' => 'Cairo', 'size' => 7.5, 'bold' => true, 'color' => '0369A1', 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
+                        $aRun->addText('##DATE_VAL:'.Carbon::parse($receipt->annual_plan_date)->format('d/m').'##', ['name' => 'Cairo', 'size' => 7, 'bold' => true, 'color' => '0369A1', 'rtl' => true]);
                     } else {
-                        $annualCell->addText('##DATE_EMPTY##', ['name' => 'Cairo', 'size' => 7, 'color' => '94A3B8', 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
+                        $aRun->addText('##DATE_EMPTY##', ['name' => 'Cairo', 'size' => 7, 'color' => '94A3B8', 'rtl' => true]);
                     }
                 } else {
-                    $annualCell->addText('##CB_OFF##', ['name' => 'MS Gothic', 'size' => 11, 'bold' => true, 'color' => '475569', 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
-                    $annualCell->addText('##DATE_EMPTY##', ['name' => 'Cairo', 'size' => 7, 'color' => '94A3B8', 'rtl' => true], ['alignment' => Jc::CENTER, 'bidi' => true]);
+                    $aRun->addText('##CB_OFF##', ['name' => 'MS Gothic', 'size' => 11, 'bold' => true, 'color' => '475569', 'rtl' => true]);
+                    $aRun->addText(' ');
+                    $aRun->addText('##DATE_EMPTY##', ['name' => 'Cairo', 'size' => 7, 'color' => '94A3B8', 'rtl' => true]);
                 }
 
-                // اسم ولقب الأستاذ
-                $nameCell = $dRow->addCell(2800, ['noWrap' => false]);
-                $nameCell->addText($teacher->name, ['name' => 'Amiri', 'size' => 10, 'bold' => true, 'rtl' => true], ['alignment' => Jc::START, 'bidi' => true]);
+                // اسم ولقب الأستاذ (بحجم خط واضح وبارز 13pt)
+                $nameCell = $dRow->addCell(2900, ['noWrap' => false]);
+                $nameCell->addText($teacher->name, ['name' => 'Amiri', 'size' => 13, 'bold' => true, 'color' => '0F172A', 'rtl' => true], ['alignment' => Jc::START, 'bidi' => true]);
                 if ($teacher->secondarySubject) {
-                    $nameCell->addText('+ '.$teacher->secondarySubject->name, ['name' => 'Cairo', 'size' => 7.5, 'color' => '0284C7', 'rtl' => true], ['alignment' => Jc::START, 'bidi' => true]);
+                    $nameCell->addText('+ '.$teacher->secondarySubject->name, ['name' => 'Cairo', 'size' => 8, 'bold' => true, 'color' => '0284C7', 'rtl' => true], ['alignment' => Jc::START, 'bidi' => true]);
                 }
 
                 // Rightmost: الرقم
@@ -483,7 +495,7 @@ class PedagogicalPlanReceiptService
                 'borderSize' => 0,
                 'borderColor' => 'FFFFFF',
             ]);
-            $sRow = $sigTable->addRow();
+            $sRow = $sigTable->addRow(null, ['cantSplit' => true]);
 
             // Left cell: Principal Signature Spot (موقع تأشيرة مدير المؤسسة على نفس استقامة التعامد)
             $principalCell = $sRow->addCell(4500, ['borderSize' => 0, 'borderColor' => 'FFFFFF']);
@@ -561,7 +573,7 @@ class PedagogicalPlanReceiptService
                     .'<w:r>'
                         .'<w:rPr>'
                             .'<w:rFonts w:ascii="MS Gothic" w:eastAsia="MS Gothic" w:hAnsi="MS Gothic" w:hint="eastAsia"/>'
-                            .'<w:sz w:val="24"/>'
+                            .'<w:sz w:val="20"/>'
                             .$colorXml
                         .'</w:rPr>'
                         .'<w:t>'.$symbol.'</w:t>'
@@ -590,7 +602,7 @@ class PedagogicalPlanReceiptService
                     .'<w:r>'
                         .'<w:rPr>'
                             .'<w:rFonts w:ascii="Cairo" w:hAnsi="Cairo" w:cs="Cairo"/>'
-                            .'<w:sz w:val="15"/>'
+                            .'<w:sz w:val="14"/>'
                             .$colorXml
                         .'</w:rPr>'
                         .'<w:t xml:space="preserve">'.$display.'</w:t>'
@@ -667,6 +679,15 @@ class PedagogicalPlanReceiptService
 
             $zip->addFromString('word/settings.xml', $settingsXml);
         }
+
+        // Set docProps/app.xml to identify document as native modern Word (eliminates Word Compatibility warning)
+        $appXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            .'<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">'
+            .'<Template>Normal.dotm</Template>'
+            .'<Application>Microsoft Office Word</Application>'
+            .'<AppVersion>16.0000</AppVersion>'
+            .'</Properties>';
+        $zip->addFromString('docProps/app.xml', $appXml);
 
         $zip->close();
     }

@@ -6,6 +6,7 @@ use App\Http\Controllers\ClassCouncilDeliberationController;
 use App\Http\Controllers\CounselingController;
 use App\Http\Controllers\DisciplinaryCouncilController;
 use App\Http\Controllers\DownloadPedagogicalMemoPdfController;
+use App\Http\Controllers\EvaluationWorkReceiptController;
 use App\Http\Controllers\ExamTimetableController;
 use App\Http\Controllers\InspectionReportController;
 use App\Http\Controllers\InstitutionalBilanController;
@@ -246,6 +247,29 @@ Route::get('/print/pedagogical-plan-receipts', function () {
 
 Route::get('/print/pedagogical-plan-receipts/word', function () {
     return redirect()->route('print.pedagogical-plan-receipts.word', ['locale' => app()->getLocale()]);
+})->middleware('auth');
+
+Route::get('/{locale}/print/evaluation-work-receipts', [EvaluationWorkReceiptController::class, 'print'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.evaluation-work-receipts');
+
+Route::get('/{locale}/print/evaluation-work-receipts/pdf', [EvaluationWorkReceiptController::class, 'pdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.evaluation-work-receipts.pdf');
+
+Route::get('/{locale}/print/evaluation-work-receipts/word', [EvaluationWorkReceiptController::class, 'word'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.evaluation-work-receipts.word');
+
+Route::get('/print/evaluation-work-receipts', function () {
+    return redirect()->route('print.evaluation-work-receipts', ['locale' => app()->getLocale()]);
+})->middleware('auth');
+
+Route::get('/print/evaluation-work-receipts/word', function () {
+    return redirect()->route('print.evaluation-work-receipts.word', ['locale' => app()->getLocale()]);
 })->middleware('auth');
 
 Route::get('/{locale}/parent/students/{student}', [ParentPortalController::class, 'portal'])
