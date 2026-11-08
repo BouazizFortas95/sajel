@@ -169,8 +169,11 @@ class PedagogicalPlanReceiptTest extends TestCase
         $response->assertSee('ماي');
         $response->assertSee('ملاحظات');
         $response->assertSee('بالراشد فيروز');
-        $response->assertSee('تأشيرة ناظر الدروس');
-        $response->assertSee('تأشيرة وختم مدير المؤسسة');
+        $response->assertSee('مدير المؤسسة');
+        $response->assertDontSee('أحمد بوزقاق');
+        $response->assertDontSee('00-0000-0001');
+        $response->assertDontSee('Procès-Verbal');
+        $response->assertDontSee('تأشيرة ناظر الدروس');
     }
 
     public function test_print_route_renders_single_subject_mode_on_two_pages(): void
@@ -240,6 +243,37 @@ class PedagogicalPlanReceiptTest extends TestCase
         $disposition = (string) $response->headers->get('content-disposition');
         $this->assertStringContainsString('.docx', $disposition);
         $this->assertStringContainsString('subject-'.$this->arabic->id, $disposition);
+    }
+
+    public function test_word_export_contains_interactive_checkboxes_and_date_controls(): void
+    {
+        $service = app(PedagogicalPlanReceiptService::class);
+        $docxPath = $service->generateWordDocx();
+
+        $this->assertFileExists($docxPath);
+
+        $zip = new \ZipArchive;
+        $this->assertTrue($zip->open($docxPath));
+        $xml = $zip->getFromName('word/document.xml');
+        $settingsXml = $zip->getFromName('word/settings.xml');
+        $zip->close();
+        @unlink($docxPath);
+
+        $this->assertNotFalse($xml);
+        // Verify w14 namespace for interactive checkboxes
+        $this->assertStringContainsString('xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"', $xml);
+        // Verify native interactive checkbox SDT
+        $this->assertStringContainsString('<w14:checkbox>', $xml);
+        $this->assertStringContainsString('<w14:checkedState', $xml);
+        // Verify native interactive date SDT
+        $this->assertStringContainsString('<w:date>', $xml);
+        $this->assertStringContainsString('<w:dateFormat w:val="dd/MM"/>', $xml);
+
+        // Verify modern Word compatibilityMode=15 to prevent Compatibility Checker dialog
+        $this->assertNotFalse($settingsXml);
+        $this->assertStringContainsString('w:name="compatibilityMode"', $settingsXml);
+        $this->assertStringContainsString('w:val="15"', $settingsXml);
+        $this->assertStringNotContainsString('w:val="12"', $settingsXml);
     }
 
     public function test_word_export_route_forbidden_for_teacher(): void

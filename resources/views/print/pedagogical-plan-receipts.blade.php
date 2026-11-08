@@ -146,26 +146,18 @@
             break-after: page;
             position: relative;
             background: #ffffff;
-            border: 4px double #1e3a8a;
             box-sizing: border-box;
-        }
-
-        .cover-inner-border {
-            border: 1px solid #94a3b8;
-            height: 100%;
-            padding: 12mm 16mm;
+            padding: 12mm 18mm;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            position: relative;
         }
 
         .cover-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            border-bottom: 2px solid #0f172a;
-            padding-bottom: 12px;
+            padding-bottom: 0;
         }
 
         .cover-republic {
@@ -198,12 +190,13 @@
             min-width: 240px;
         }
 
-        .cover-emblem-box {
+        .cover-doc-meta {
             text-align: left;
             min-width: 240px;
             font-family: 'Cairo', sans-serif;
             font-size: 10pt;
-            color: #64748b;
+            color: #475569;
+            line-height: 1.5;
         }
 
         .cover-main-body {
@@ -214,30 +207,20 @@
 
         .doc-title-wrapper {
             display: inline-block;
-            border: 3px double #1e3a8a;
-            padding: 18px 45px;
-            background-color: #f8fafc;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.08);
+            border: 2px solid #1e3a8a;
+            padding: 24px 60px;
+            background-color: #ffffff;
+            width: 80%;
+            box-sizing: border-box;
         }
 
         .doc-title-ar {
             font-family: 'Amiri', serif;
-            font-size: 26pt;
+            font-size: 28pt;
             font-weight: 700;
             color: #0f172a;
             margin: 0;
             letter-spacing: 0.5px;
-        }
-
-        .doc-title-fr {
-            font-family: 'Cairo', sans-serif;
-            font-size: 12pt;
-            font-weight: 600;
-            color: #1e3a8a;
-            margin: 8px 0 0 0;
-            letter-spacing: 1px;
-            text-transform: uppercase;
         }
 
         .doc-badge {
@@ -249,32 +232,32 @@
         }
 
         .doc-subject-highlight {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 4px 18px;
-            background-color: #1e3a8a;
-            color: #ffffff;
-            border-radius: 9999px;
+            display: block;
+            margin-top: 12px;
             font-family: 'Cairo', sans-serif;
-            font-size: 12pt;
-            font-weight: 800;
+            font-size: 15pt;
+            font-weight: 700;
+            color: #1e3a8a;
         }
 
         .cover-footer {
-            border-top: 2px solid #0f172a;
-            padding-top: 12px;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
+            padding-bottom: 8px;
         }
 
         .academic-year-box {
-            margin: 0 auto;
             text-align: center;
             border: 2px solid #1e3a8a;
             background: #ffffff;
-            padding: 6px 28px;
-            border-radius: 6px;
+            padding: 8px 45px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 16pt;
+            font-weight: 800;
+            color: #0f172a;
+            display: inline-block;
+            min-width: 320px;
         }
 
         .academic-year-label {
@@ -484,40 +467,40 @@
             color: #cbd5e1;
         }
 
-        /* Signatures Footer */
-        .signatures-area {
-            margin-top: 10px;
+        /* Signatures Clean Footer */
+        .ministerial-footer-clean {
+            margin-top: 15px;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             page-break-inside: avoid;
             break-inside: avoid;
         }
 
-        .sig-card {
-            border: 1px solid #1e3a8a;
-            border-radius: 4px;
-            width: 32%;
-            min-height: 75px;
-            padding: 6px 10px;
-            background: #ffffff;
+        .footer-principal-block {
             text-align: center;
-            display: flex;
+            min-width: 220px;
+            display: inline-flex;
             flex-direction: column;
-            justify-content: space-between;
+            align-items: center;
         }
 
-        .sig-title {
+        .footer-date {
             font-family: 'Cairo', sans-serif;
-            font-size: 9.5pt;
-            font-weight: 800;
-            color: #1e3a8a;
-            border-bottom: 1px dashed #cbd5e1;
-            padding-bottom: 3px;
+            font-size: 11pt;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+            text-align: center;
         }
 
-        .sig-name {
+        .footer-title {
             font-family: 'Amiri', serif;
-            font-size: 10pt;
+            font-size: 14pt;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0;
+            text-align: center;
+        }
             font-weight: 700;
             color: #0f172a;
             margin-top: auto;
@@ -612,61 +595,47 @@
         <!-- الصفحة الأولى: صفحة رئيسية (Official Cover) -->
         <!-- ========================================== -->
         <div class="cover-page">
-            <div class="cover-inner-border">
-                
-                <!-- رأس الصفحة الأولى: الجمهورية والوزارة والمديرية والمؤسسة -->
-                <div class="cover-header">
-                    <!-- يمين: مديرية التربية والمؤسسة -->
-                    <div class="cover-school-meta">
-                        <div><strong>مديرية التربية لولاية:</strong> {{ $school->municipality_name ?? 'المغير' }}</div>
-                        <div><strong>المؤسسة:</strong> {{ $school->school_name ?? 'متوسطة حي 900 مسكن' }}</div>
-                        <div style="font-size: 10pt; color: #64748b; margin-top: 2px;">الرمز الإداري: {{ $school->school_code ?? '00-0000-0001' }}</div>
-                    </div>
-
-                    <!-- وسط: الجمهورية والوزارة -->
-                    <div class="cover-republic">
-                        <div class="republic-title">الجمهورية الجزائرية الديمقراطية الشعبية</div>
-                        <div class="ministry-title">وزارة التربية الوطنية</div>
-                    </div>
-
-                    <!-- يسار: السجل والأرشيف -->
-                    <div class="cover-emblem-box">
-                        <div><strong>سجل الرقمنة والمتابعة البيداغوجية</strong></div>
-                        <div>وثيقة رسمية للإدارة التربوية</div>
-                        <div>تاريخ الإصدار: {{ $printed_at }}</div>
-                    </div>
+            <!-- رأس الصفحة الأولى: الجمهورية والوزارة والمديرية والمؤسسة -->
+            <div class="cover-header">
+                <!-- يمين: مديرية التربية والمؤسسة -->
+                <div class="cover-school-meta">
+                    <div><strong>مديرية التربية لولاية:</strong> {{ $school->municipality_name ?? 'المغير' }}</div>
+                    <div><strong>المؤسسة:</strong> {{ $school->school_name ?? 'متوسطة حي 900 مسكن' }}</div>
                 </div>
 
-                <!-- وسط الصفحة الأولى: اسم الوثيقة بخط عريض -->
-                <div class="cover-main-body">
-                    <div class="doc-title-wrapper">
-                        <h1 class="doc-title-ar">وثيقة استلام المخططات السنوية والشهرية</h1>
-                        <div class="doc-title-fr">Procès-Verbal de Réception des Plans et Progressions Pédagogiques</div>
-                        
-                        @if ($selectedSubject)
-                            <div class="doc-subject-highlight">
-                                مادة: {{ $selectedSubject->name }}
-                            </div>
-                        @else
-                            <div class="doc-badge">سجل المتابعة والتأشير الإداري لتدرجات ومخططات السادة أساتذة التعليم المتوسط</div>
-                        @endif
-                    </div>
+                <!-- وسط: الجمهورية والوزارة -->
+                <div class="cover-republic">
+                    <div class="republic-title">الجمهورية الجزائرية الديمقراطية الشعبية</div>
+                    <div class="ministry-title">وزارة التربية الوطنية</div>
                 </div>
 
-                <!-- أسفل الصفحة الأولى في الوسط: تحديد السنة الدراسية -->
-                <div class="cover-footer">
-                    <div style="width: 200px;"></div>
+                <!-- يسار: السجل وتاريخ الإصدار -->
+                <div class="cover-doc-meta">
+                    <div><strong>سجل المتابعة البيداغوجية</strong></div>
+                    <div>تاريخ الإصدار: {{ $printed_at }}</div>
+                </div>
+            </div>
+
+            <!-- وسط الصفحة الأولى: اسم الوثيقة بخط عريض -->
+            <div class="cover-main-body">
+                <div class="doc-title-wrapper">
+                    <h1 class="doc-title-ar">وثيقة استلام المخططات السنوية والشهرية</h1>
                     
-                    <div class="academic-year-box">
-                        <div class="academic-year-label">السنة الدراسية</div>
-                        <div class="academic-year-value">{{ $academic_year }}</div>
-                    </div>
-
-                    <div style="width: 200px; text-align: left; font-family: 'Amiri', serif; font-size: 11pt; color: #334155;">
-                        <div><strong>مدير المؤسسة:</strong> {{ $school->principal_name ?? 'أحمد بوزقاق' }}</div>
-                    </div>
+                    @if ($selectedSubject)
+                        <div class="doc-subject-highlight">
+                            مادة: {{ $selectedSubject->name }}
+                        </div>
+                    @else
+                        <div class="doc-badge">سجل المتابعة والتأشير الإداري لتدرجات ومخططات السادة أساتذة التعليم المتوسط</div>
+                    @endif
                 </div>
+            </div>
 
+            <!-- أسفل الصفحة الأولى في الوسط: تحديد السنة الدراسية -->
+            <div class="cover-footer">
+                <div class="academic-year-box">
+                    السنة الدراسية: {{ $academic_year }}
+                </div>
             </div>
         </div>
 
@@ -762,7 +731,8 @@
                                                             {{ $subDate ? \Carbon\Carbon::parse($subDate)->format('d/m') : 'تم' }}
                                                         </span>
                                                     @else
-                                                        <span class="check-mark empty">□</span>
+                                                        <span class="check-mark empty">☐</span>
+                                                        <span class="submission-date placeholder">.. / ..</span>
                                                     @endif
                                                 </div>
                                             </td>
@@ -778,24 +748,11 @@
                         </table>
                     </div>
 
-                    <!-- ذيل التأشيرات والأختام الرسمية المخصص لصفحة كل مادة -->
-                    <div class="signatures-area">
-                        <div class="sig-card">
-                            <div class="sig-title">تأشيرة ناظر الدروس</div>
-                            <div class="sig-name">السيد(ة): ........................................</div>
-                            <div class="sig-date">التاريخ: ...... / ...... / 2026 م</div>
-                        </div>
-
-                        <div class="sig-card">
-                            <div class="sig-title">ملاحظات وقرارات الإدارة</div>
-                            <div class="sig-name">مادة: {{ $subjectName }}</div>
-                            <div class="sig-date">حُرِّر بـ {{ $school->municipality_name ?? 'المغير' }} في: {{ $printed_at }}</div>
-                        </div>
-
-                        <div class="sig-card">
-                            <div class="sig-title">تأشيرة وختم مدير المؤسسة</div>
-                            <div class="sig-name">{{ $school->principal_name ?? 'أحمد بوزقاق' }}</div>
-                            <div class="sig-date">الختم والتوقيع الرسمي</div>
+                    <!-- ذيل التوقيع الوزاري النظيف لصفحة كل مادة -->
+                    <div class="ministerial-footer-clean">
+                        <div class="footer-principal-block">
+                            <div class="footer-date">{{ $school->municipality_name ?? 'المغير' }} في:</div>
+                            <div class="footer-title">مدير المؤسسة</div>
                         </div>
                     </div>
 
@@ -896,23 +853,10 @@
                     </div>
                 @endforeach
 
-                <div class="signatures-area" style="margin-top: 20px;">
-                    <div class="sig-card">
-                        <div class="sig-title">تأشيرة ناظر الدروس</div>
-                        <div class="sig-name">السيد(ة): ........................................</div>
-                        <div class="sig-date">التاريخ: ...... / ...... / 2026 م</div>
-                    </div>
-
-                    <div class="sig-card">
-                        <div class="sig-title">ملاحظات وقرارات الإدارة</div>
-                        <div class="sig-name">سجل المتابعة البيداغوجية المعتمد</div>
-                        <div class="sig-date">حُرِّر بـ {{ $school->municipality_name ?? 'المغير' }} في: {{ $printed_at }}</div>
-                    </div>
-
-                    <div class="sig-card">
-                        <div class="sig-title">تأشيرة وختم مدير المؤسسة</div>
-                        <div class="sig-name">{{ $school->principal_name ?? 'أحمد بوزقاق' }}</div>
-                        <div class="sig-date">الختم والتوقيع الرسمي</div>
+                <div class="ministerial-footer-clean" style="margin-top: 25px;">
+                    <div class="footer-principal-block">
+                        <div class="footer-date">{{ $school->municipality_name ?? 'المغير' }} في:</div>
+                        <div class="footer-title">مدير المؤسسة</div>
                     </div>
                 </div>
 
