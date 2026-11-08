@@ -17,7 +17,7 @@ class SajelHealthCheckCommand extends Command
         'schedules', 'daily_logs', 'attendances', 'assessments', 'grades', 'pedagogical_memos',
         'curriculum_domains', 'curriculum_sequences', 'curriculum_resources', 'labs',
         'lab_stations', 'lab_seating_plans', 'behavior_observations', 'active_learning_strategies',
-        'pedagogical_remediations', 'pedagogical_meetings', 'school_holidays', 'school_settings',
+        'pedagogical_remediations', 'pedagogical_meetings', 'pedagogical_plan_receipts', 'school_holidays', 'school_settings',
         'inspection_reports', 'teacher_absences', 'textbooks', 'student_textbook_loans',
         'student_transfers', 'disciplinary_records', 'school_census_records',
         'student_orientations', 'student_counseling_profiles', 'counseling_sessions',

@@ -151,6 +151,18 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(OfficialMail::class, 'assigned_to')->orderByDesc('mail_date');
     }
 
+    public function pedagogicalPlanReceipts(): HasMany
+    {
+        return $this->hasMany(PedagogicalPlanReceipt::class, 'user_id');
+    }
+
+    public function currentPlanReceipt(): HasOne
+    {
+        $currentYear = SchoolSetting::current()?->academic_year ?? '2026-2027';
+
+        return $this->hasOne(PedagogicalPlanReceipt::class, 'user_id')->where('academic_year', $currentYear);
+    }
+
     /**
      * Compute General Seniority (الأقدمية العامة في الوظيفة العمومية)
      */

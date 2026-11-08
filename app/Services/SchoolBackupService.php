@@ -40,6 +40,7 @@ class SchoolBackupService
         'grades',
         'behavior_observations',
         'pedagogical_remediations',
+        'pedagogical_plan_receipts',
         'inspection_reports',
         'teacher_absences',
         'textbooks',

@@ -14,6 +14,7 @@ use App\Http\Controllers\OfficialReportController;
 use App\Http\Controllers\OrientationController;
 use App\Http\Controllers\ParentPortalController;
 use App\Http\Controllers\PedagogicalCouncilController;
+use App\Http\Controllers\PedagogicalPlanReceiptController;
 use App\Http\Controllers\PrintAssessmentController;
 use App\Http\Controllers\PrintDailyLogsController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
@@ -223,6 +224,20 @@ Route::get('/{locale}/print/inspection-reports/{inspectionReport}/pdf', [Inspect
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.inspection-report.pdf');
+
+Route::get('/{locale}/print/pedagogical-plan-receipts', [PedagogicalPlanReceiptController::class, 'print'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.pedagogical-plan-receipts');
+
+Route::get('/{locale}/print/pedagogical-plan-receipts/pdf', [PedagogicalPlanReceiptController::class, 'pdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.pedagogical-plan-receipts.pdf');
+
+Route::get('/print/pedagogical-plan-receipts', function () {
+    return redirect()->route('print.pedagogical-plan-receipts', ['locale' => app()->getLocale()]);
+})->middleware('auth');
 
 Route::get('/{locale}/parent/students/{student}', [ParentPortalController::class, 'portal'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
