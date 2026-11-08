@@ -200,21 +200,25 @@ class PedagogicalPlanReceiptService
     }
 
     /**
-     * Assemble full printable dataset conforming to the 2-page Algerian ministerial model.
+     * Assemble full printable dataset conforming to the Algerian ministerial model.
      */
-    public function assemblePrintData(?int $subjectId = null, ?string $academicYear = null): array
+    public function assemblePrintData(?int $subjectId = null, ?string $academicYear = null, string $layout = 'separate'): array
     {
         $year = $academicYear ?: $this->getCurrentAcademicYear();
         $school = SchoolSetting::current();
         $groupedTeachers = $this->getTeachersGroupedBySubject($subjectId, $year);
 
         $selectedSubject = $subjectId ? Subject::find($subjectId) : null;
+        $allSubjects = Subject::orderBy('name')->get();
 
         return [
             'school' => $school,
             'academic_year' => $year,
             'groupedTeachers' => $groupedTeachers,
             'selectedSubject' => $selectedSubject,
+            'allSubjects' => $allSubjects,
+            'layout' => $layout,
+            'pagePerSubject' => ($layout !== 'continuous'),
             'months' => PedagogicalPlanReceipt::MONTHS,
             'stats' => $this->getSummaryStats($year),
             'printed_at' => now()->locale('ar')->isoFormat('LL'),
@@ -224,9 +228,9 @@ class PedagogicalPlanReceiptService
     /**
      * Generate PDF binary using Browsershot.
      */
-    public function generatePdf(?int $subjectId = null, ?string $academicYear = null): string
+    public function generatePdf(?int $subjectId = null, ?string $academicYear = null, string $layout = 'separate'): string
     {
-        $data = $this->assemblePrintData($subjectId, $academicYear);
+        $data = $this->assemblePrintData($subjectId, $academicYear, $layout);
         $html = view('print.pedagogical-plan-receipts', $data)->render();
 
         return BrowsershotFactory::html($html)

@@ -144,14 +144,31 @@ class PedagogicalPlanReceiptsHub extends Page
      */
     protected function getHeaderActions(): array
     {
+        $subject = $this->selectedSubjectId ? Subject::find($this->selectedSubjectId) : null;
+        $printLabel = $subject
+            ? "طباعة وثيقة مادة {$subject->name} (صفحتين)"
+            : 'طباعة جميع المواد (كل مادة في صفحة)';
+
         return [
-            Action::make('print')
-                ->label('معاينة وطباعة الوثيقة (صفحتين)')
+            Action::make('printSeparate')
+                ->label($printLabel)
                 ->icon('heroicon-o-printer')
                 ->color('primary')
                 ->url(fn () => route('print.pedagogical-plan-receipts', [
                     'locale' => app()->getLocale(),
                     'subject_id' => $this->selectedSubjectId,
+                    'layout' => 'separate',
+                ]))
+                ->openUrlInNewTab(),
+
+            Action::make('printContinuous')
+                ->label('طباعة مدمجة لجميع المواد')
+                ->icon('heroicon-o-document-text')
+                ->color('gray')
+                ->visible(fn () => empty($this->selectedSubjectId))
+                ->url(fn () => route('print.pedagogical-plan-receipts', [
+                    'locale' => app()->getLocale(),
+                    'layout' => 'continuous',
                 ]))
                 ->openUrlInNewTab(),
 
@@ -162,6 +179,7 @@ class PedagogicalPlanReceiptsHub extends Page
                 ->url(fn () => route('print.pedagogical-plan-receipts.pdf', [
                     'locale' => app()->getLocale(),
                     'subject_id' => $this->selectedSubjectId,
+                    'layout' => 'separate',
                 ]))
                 ->openUrlInNewTab(),
 

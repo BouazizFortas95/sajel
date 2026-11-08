@@ -173,6 +173,26 @@ class PedagogicalPlanReceiptTest extends TestCase
         $response->assertSee('تأشيرة وختم مدير المؤسسة');
     }
 
+    public function test_print_route_renders_single_subject_mode_on_two_pages(): void
+    {
+        $response = $this->actingAs($this->principal)
+            ->get('/ar/print/pedagogical-plan-receipts?subject_id='.$this->arabic->id.'&layout=separate');
+
+        $response->assertSuccessful();
+        $response->assertSee('مادة: اللغة العربية');
+        $response->assertSee('بالراشد فيروز');
+        $response->assertDontSee('مادة: الرياضيات');
+    }
+
+    public function test_print_route_renders_continuous_layout_option(): void
+    {
+        $response = $this->actingAs($this->principal)
+            ->get('/ar/print/pedagogical-plan-receipts?layout=continuous');
+
+        $response->assertSuccessful();
+        $response->assertSee('عرض مدمج');
+    }
+
     public function test_print_route_forbidden_to_teacher(): void
     {
         $this->actingAs($this->teacher)

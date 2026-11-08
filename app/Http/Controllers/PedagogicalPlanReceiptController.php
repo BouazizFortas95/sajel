@@ -23,8 +23,9 @@ class PedagogicalPlanReceiptController extends Controller
 
         $subjectId = $request->query('subject_id') ? (int) $request->query('subject_id') : null;
         $academicYear = $request->query('academic_year');
+        $layout = $request->query('layout', 'separate');
 
-        $data = $service->assemblePrintData($subjectId, $academicYear);
+        $data = $service->assemblePrintData($subjectId, $academicYear, $layout);
 
         return view('print.pedagogical-plan-receipts', $data);
     }
@@ -41,10 +42,12 @@ class PedagogicalPlanReceiptController extends Controller
 
         $subjectId = $request->query('subject_id') ? (int) $request->query('subject_id') : null;
         $academicYear = $request->query('academic_year');
+        $layout = $request->query('layout', 'separate');
 
         try {
-            $pdf = $service->generatePdf($subjectId, $academicYear);
-            $filename = 'recepisse-plans-pedagogiques-'.now()->format('Ymd').'.pdf';
+            $pdf = $service->generatePdf($subjectId, $academicYear, $layout);
+            $subjectSuffix = $subjectId ? '-subject-'.$subjectId : '-all-subjects';
+            $filename = 'recepisse-plans-pedagogiques'.$subjectSuffix.'-'.now()->format('Ymd').'.pdf';
 
             return response()->streamDownload(
                 fn () => print ($pdf),
@@ -53,7 +56,7 @@ class PedagogicalPlanReceiptController extends Controller
             );
         } catch (\Throwable $e) {
             // Fallback to direct print view if headless browser is not available in environment
-            $data = $service->assemblePrintData($subjectId, $academicYear);
+            $data = $service->assemblePrintData($subjectId, $academicYear, $layout);
 
             return view('print.pedagogical-plan-receipts', $data);
         }

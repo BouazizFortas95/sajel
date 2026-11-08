@@ -56,16 +56,32 @@
             <!-- Official Print Preview Action -->
             <div class="p-4 rounded-xl border border-amber-200 dark:border-amber-900/50 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 shadow-sm flex flex-col justify-between">
                 <div>
-                    <div class="text-xs font-bold text-amber-800 dark:text-amber-400">الوثيقة النموذجية الرسمية</div>
-                    <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">وثيقة وزارية معتمدة من صفحتين (صفحة رئيسية + جداول المواد)</div>
+                    <div class="text-xs font-bold text-amber-800 dark:text-amber-400">الوثيقة النموذجية الرسمية للطباعة</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                        @if ($selectedSubjectId)
+                            طباعة الغلاف الرسمي + جدول مادة محددة (صفحتان)
+                        @else
+                            صفحة الغلاف + كل مادة في صفحة مستقلة (الخيار المقترح)
+                        @endif
+                    </div>
                 </div>
-                <div class="mt-3 flex gap-2">
-                    <a href="{{ route('print.pedagogical-plan-receipts', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubjectId]) }}" target="_blank"
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <a href="{{ route('print.pedagogical-plan-receipts', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubjectId, 'layout' => 'separate']) }}" target="_blank"
                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition">
                         <x-filament::icon icon="heroicon-o-printer" class="w-4 h-4" />
-                        معاينة الطباعة
+                        {{ $selectedSubjectId ? 'طباعة المادة (صفحتين)' : 'طباعة (كل مادة في صفحة)' }}
                     </a>
-                    <a href="{{ route('print.pedagogical-plan-receipts.pdf', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubjectId]) }}" target="_blank"
+
+                    @if(! $selectedSubjectId)
+                        <a href="{{ route('print.pedagogical-plan-receipts', ['locale' => app()->getLocale(), 'layout' => 'continuous']) }}" target="_blank"
+                           class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-xs font-bold transition"
+                           title="طباعة جميع الجداول بتدفق مدمج">
+                            <x-filament::icon icon="heroicon-o-document-text" class="w-4 h-4" />
+                            طباعة مدمجة
+                        </a>
+                    @endif
+
+                    <a href="{{ route('print.pedagogical-plan-receipts.pdf', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubjectId, 'layout' => 'separate']) }}" target="_blank"
                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition">
                         <x-filament::icon icon="heroicon-o-arrow-down-tray" class="w-4 h-4" />
                         PDF
@@ -131,6 +147,19 @@
                             {{ $teachers->count() }} أساتذة
                         </span>
                     </div>
+
+                    @php
+                        $firstSubjectId = $teachers->first()?->primary_subject_id;
+                    @endphp
+                    @if ($firstSubjectId)
+                        <div class="flex items-center gap-2">
+                            <a href="{{ route('print.pedagogical-plan-receipts', ['locale' => app()->getLocale(), 'subject_id' => $firstSubjectId, 'layout' => 'separate']) }}" target="_blank"
+                               class="inline-flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-xs font-bold transition shadow-2xs border border-gray-200 dark:border-gray-700">
+                                <x-filament::icon icon="heroicon-o-printer" class="w-3.5 h-3.5 text-primary-600" />
+                                <span>طباعة مادة {{ $subjectName }} (صفحتين)</span>
+                            </a>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Interactive Ledger Table -->
@@ -241,3 +270,4 @@
 
     </div>
 </x-filament-panels::page>
+
