@@ -10,6 +10,7 @@ use App\Models\EducationalInstitution;
 use App\Models\PlatformSetting;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\DatabaseSwitchService;
 use App\Services\PlatformSettingsService;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
@@ -111,6 +112,20 @@ class DeveloperDashboardStats extends Component
             ->body(implode(' | ', $results))
             ->success()
             ->send();
+    }
+
+    public function switchDatabase(?string $target = null): void
+    {
+        $service = app(DatabaseSwitchService::class);
+        $result = $service->switch($target);
+
+        Notification::make()
+            ->title(__('تم تبديل قاعدة البيانات'))
+            ->body($result['message'])
+            ->success()
+            ->send();
+
+        $this->mount();
     }
 
     public function toggleMaintenance(): void
@@ -249,6 +264,7 @@ class DeveloperDashboardStats extends Component
             'wilayasDistribution' => $wilayasDistribution,
             'previewInstitutions' => $previewInstitutions,
             'availableWilayas' => $availableWilayas,
+            'dbStatus' => app(DatabaseSwitchService::class)->getStatus(),
             'createInstitutionUrl' => EducationalInstitutionResource::getUrl('create'),
             'registryUrl' => EducationalInstitutionResource::getUrl('index'),
             'usersUrl' => UserResource::getUrl('index'),

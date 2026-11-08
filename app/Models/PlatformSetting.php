@@ -151,6 +151,14 @@ class PlatformSetting extends Model
     }
 
     /**
+     * Alias for purgeCache for consistency across setting models.
+     */
+    public static function flushCache(): void
+    {
+        self::purgeCache();
+    }
+
+    /**
      * Public URL for the platform logo.
      */
     public function getLogoUrl(): ?string

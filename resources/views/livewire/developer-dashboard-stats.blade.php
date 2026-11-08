@@ -26,6 +26,28 @@
                         {{ $user->name }} ({{ __('المطور / مسؤول النظام') }})
                     </span>
                     <span>·</span>
+                    @if ($dbStatus['is_clean'])
+                        <span class="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-950/70 px-2 py-0.5 font-bold text-amber-300 shadow-sm">
+                            <x-filament::icon icon="heroicon-o-circle-stack" class="h-3.5 w-3.5 text-amber-400" />
+                            {{ __('قاعدة البيانات:') }} {{ __('النظيفة (Clean)') }}
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-950/70 px-2 py-0.5 font-bold text-emerald-300 shadow-sm">
+                            <x-filament::icon icon="heroicon-o-circle-stack" class="h-3.5 w-3.5 text-emerald-400" />
+                            {{ __('قاعدة البيانات:') }} {{ __('التجريبية الشاملة (Seeded)') }}
+                        </span>
+                    @endif
+                    <span>·</span>
+                    <button
+                        type="button"
+                        wire:click="switchDatabase"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-indigo-400/50 bg-indigo-500/30 px-2.5 py-1 text-xs font-bold text-white transition hover:bg-indigo-500/50 shadow-sm"
+                        title="{{ __('التحويل بين قاعدتي البيانات (Clean / Seeded)') }}"
+                    >
+                        <x-filament::icon icon="heroicon-o-arrow-path-rounded-square" class="h-3.5 w-3.5 text-amber-300" />
+                        <span>{{ __('تبديل قاعدة البيانات (Switch DB)') }}</span>
+                    </button>
+                    <span>·</span>
                     <span class="inline-flex items-center gap-1">
                         <x-filament::icon icon="heroicon-o-server" class="h-3.5 w-3.5 text-emerald-400" />
                         PHP {{ $telemetry['php_version'] }} · {{ strtoupper($telemetry['db_driver']) }} ({{ $telemetry['db_tables_count'] }} {{ __('جدول') }})
@@ -744,6 +766,78 @@
                         <x-filament::icon icon="heroicon-o-archive-box" class="h-4 w-4 text-indigo-500 mb-1" />
                         <span>{{ __('الأرشيف والبريد الإداري') }}</span>
                     </a>
+                </div>
+            </div>
+
+            {{-- Database Mode Switcher Card --}}
+            <div class="rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 space-y-4 md:col-span-2">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                        <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <x-filament::icon icon="heroicon-o-circle-stack" class="h-5 w-5 text-indigo-600" />
+                            <span>{{ __('إدارة والتحويل بين قواعد البيانات (Dual Database Engine)') }}</span>
+                        </h3>
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            {{ __('يتيح لك النظام التبديل الفوري بين قاعدة البيانات التجريبية الشاملة (المملوءة بالبيانات الواقعية) وقاعدة البيانات النظيفة (الفارغة للمطور فقط).') }}
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        @if ($dbStatus['is_clean'])
+                            <span class="rounded-xl bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300">
+                                ● {{ __('الوضع الحالي:') }} {{ __('قاعدة البيانات النظيفة (Clean)') }}
+                            </span>
+                        @else
+                            <span class="rounded-xl bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                                ● {{ __('الوضع الحالي:') }} {{ __('قاعدة البيانات التجريبية (Seeded)') }}
+                            </span>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+                    <div class="rounded-xl bg-gray-50 p-3 dark:bg-gray-800/60">
+                        <span class="text-gray-400 block text-[11px]">{{ __('حجم قاعدة البيانات النشطة:') }}</span>
+                        <span class="text-base font-bold text-gray-900 dark:text-white">{{ $dbStatus['files']['active']['size_mb'] }} MB</span>
+                    </div>
+
+                    <div class="rounded-xl bg-gray-50 p-3 dark:bg-gray-800/60">
+                        <span class="text-gray-400 block text-[11px]">{{ __('المستخدمون في القاعدة النشطة:') }}</span>
+                        <span class="text-base font-bold text-gray-900 dark:text-white">{{ $dbStatus['users_count'] }} {{ __('مستخدم') }}</span>
+                    </div>
+
+                    <div class="rounded-xl bg-gray-50 p-3 dark:bg-gray-800/60">
+                        <span class="text-gray-400 block text-[11px]">{{ __('التلاميذ المسجلون حالياً:') }}</span>
+                        <span class="text-base font-bold text-emerald-600 dark:text-emerald-400">{{ $dbStatus['students_count'] }} {{ __('تلميذ') }}</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                    <div class="text-[11px] text-gray-500">
+                        {{ __('يمكنك أيضاً التبديل عبر التيرمينال بكتابة: ') }} <code class="font-mono bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-indigo-600 dark:text-indigo-400">php artisan sajel:switch-db</code> {{ __('أو بمجرد قول "switch db" في المحادثة.') }}
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        @if ($dbStatus['is_clean'])
+                            <button
+                                type="button"
+                                wire:click="switchDatabase('seeded')"
+                                class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-emerald-700 transition"
+                            >
+                                <x-filament::icon icon="heroicon-o-arrow-path" class="h-4 w-4" />
+                                <span>{{ __('التحويل إلى قاعدة البيانات التجريبية الشاملة (Seeded)') }}</span>
+                            </button>
+                        @else
+                            <button
+                                type="button"
+                                wire:click="switchDatabase('clean')"
+                                class="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-amber-700 transition"
+                            >
+                                <x-filament::icon icon="heroicon-o-arrow-path" class="h-4 w-4" />
+                                <span>{{ __('التحويل إلى قاعدة البيانات النظيفة (Clean — مطور فقط)') }}</span>
+                            </button>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

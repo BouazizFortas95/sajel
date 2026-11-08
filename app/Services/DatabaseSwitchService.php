@@ -1,0 +1,274 @@
+<?php
+
+namespace App\Services;
+
+use App\Enums\Role;
+use App\Models\PlatformSetting;
+use App\Models\SchoolSetting;
+use App\Models\User;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+
+class DatabaseSwitchService
+{
+    public const MODE_SEEDED = 'seeded';
+
+    public const MODE_CLEAN = 'clean';
+
+    public function activeDbPath(): string
+    {
+        return database_path('database.sqlite');
+    }
+
+    public function cleanDbPath(): string
+    {
+        return database_path('database_clean.sqlite');
+    }
+
+    public function seededDbPath(): string
+    {
+        return database_path('database_seeded.sqlite');
+    }
+
+    public function stateMarkerPath(): string
+    {
+        return database_path('.active_db');
+    }
+
+    /**
+     * Get the active database mode ('seeded' or 'clean').
+     */
+    public function getActiveMode(): string
+    {
+        if (File::exists($this->stateMarkerPath())) {
+            $mode = trim(File::get($this->stateMarkerPath()));
+            if (in_array($mode, [self::MODE_SEEDED, self::MODE_CLEAN], true)) {
+                return $mode;
+            }
+        }
+
+        // Auto-detect if marker file is missing
+        try {
+            $userCount = DB::table('users')->count();
+            $studentCount = Schema::hasTable('students') ? DB::table('students')->count() : 0;
+
+            $detected = ($userCount <= 1 && $studentCount === 0) ? self::MODE_CLEAN : self::MODE_SEEDED;
+            File::put($this->stateMarkerPath(), $detected);
+
+            return $detected;
+        } catch (\Throwable) {
+            return self::MODE_SEEDED;
+        }
+    }
+
+    public function isClean(): bool
+    {
+        return $this->getActiveMode() === self::MODE_CLEAN;
+    }
+
+    public function isSeeded(): bool
+    {
+        return $this->getActiveMode() === self::MODE_SEEDED;
+    }
+
+    /**
+     * Switch database between 'clean' and 'seeded'.
+     *
+     * @return array{success: bool, from: string, to: string, message: string}
+     */
+    public function switch(?string $targetMode = null): array
+    {
+        $currentMode = $this->getActiveMode();
+
+        // Determine destination mode
+        $newMode = match ($targetMode) {
+            self::MODE_CLEAN => self::MODE_CLEAN,
+            self::MODE_SEEDED => self::MODE_SEEDED,
+            default => ($currentMode === self::MODE_SEEDED ? self::MODE_CLEAN : self::MODE_SEEDED),
+        };
+
+        // Ensure both source templates exist
+        $this->ensureSourceDatabasesExist();
+
+        // Persist current active changes back to its profile first
+        if (File::exists($this->activeDbPath())) {
+            if ($currentMode === self::MODE_SEEDED) {
+                File::copy($this->activeDbPath(), $this->seededDbPath());
+            } else {
+                File::copy($this->activeDbPath(), $this->cleanDbPath());
+            }
+        }
+
+        // Apply new database
+        if ($newMode === self::MODE_CLEAN) {
+            File::copy($this->cleanDbPath(), $this->activeDbPath());
+            File::put($this->stateMarkerPath(), self::MODE_CLEAN);
+            $message = __('تم التحويل إلى قاعدة البيانات النظيفة (فارغة — مطور وإعدادات المنصة فقط).');
+        } else {
+            File::copy($this->seededDbPath(), $this->activeDbPath());
+            File::put($this->stateMarkerPath(), self::MODE_SEEDED);
+            $message = __('تم التحويل إلى قاعدة البيانات التجريبية الشاملة (مملوءة بالبيانات الواقعية).');
+        }
+
+        // Reconnect and flush caches
+        $this->flushCachesAndReconnect();
+
+        return [
+            'success' => true,
+            'from' => $currentMode,
+            'to' => $newMode,
+            'message' => $message,
+        ];
+    }
+
+    /**
+     * Ensure both database_seeded.sqlite and database_clean.sqlite exist.
+     */
+    public function ensureSourceDatabasesExist(): void
+    {
+        // 1. If seeded does not exist, copy current active
+        if (! File::exists($this->seededDbPath()) && File::exists($this->activeDbPath())) {
+            File::copy($this->activeDbPath(), $this->seededDbPath());
+        }
+
+        // 2. If clean does not exist, initialize it
+        if (! File::exists($this->cleanDbPath())) {
+            $this->resetCleanDb();
+        }
+    }
+
+    /**
+     * Reset and recreate database_clean.sqlite with all migrations and only Developer + Settings.
+     */
+    public function resetCleanDb(): void
+    {
+        // Create empty file
+        File::put($this->cleanDbPath(), '');
+
+        // Run migrations on sqlite_clean
+        Artisan::call('migrate', [
+            '--database' => 'sqlite_clean',
+            '--force' => true,
+        ]);
+
+        // Seed Developer user
+        DB::connection('sqlite_clean')->table('users')->insert([
+            'name' => 'مطور المنصة',
+            'email' => 'dev@sajel.test',
+            'password' => Hash::make('password'),
+            'role' => Role::Developer->value,
+            'email_verified_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Seed Platform Settings
+        DB::connection('sqlite_clean')->table('platform_settings')->insert([
+            'platform_name' => 'سَجِّل — Sajel',
+            'platform_slogan' => 'المنظومة الرقمية الشاملة لإدارة وتسيير المؤسسات التربوية',
+            'meta_description' => 'منصة الرقمنة الشاملة للمؤسسات التعليمية الجزائرية',
+            'primary_color' => '#d97706',
+            'developer_name' => 'مطور المنصة',
+            'developer_organization' => 'فريق التطوير والرقمنة',
+            'developer_website' => 'https://sajel.dev',
+            'developer_support_email' => 'support@sajel.dev',
+            'version_tag' => 'v2.0.0-DZ',
+            'footer_copyright_text' => 'جميع الحقوق محفوظة © 2026 — منصة سجّل الرقمية',
+            'is_maintenance_mode' => 0,
+            'enable_public_registration' => 0,
+            'announcement_active' => 0,
+            'enable_ai_assistant' => 1,
+            'ai_default_model' => 'gemini-2.0-flash',
+            'max_file_upload_mb' => 20,
+            'session_lifetime_minutes' => 120,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Seed basic School Setting
+        DB::connection('sqlite_clean')->table('school_settings')->insert([
+            'school_name' => 'المؤسسة التربوية النموذجية',
+            'directorate_name' => 'مديرية التربية الوطنية',
+            'academic_year' => '2026-2027',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Seed basic Educational Institution
+        DB::connection('sqlite_clean')->table('educational_institutions')->insert([
+            'name' => 'المؤسسة التربوية النموذجية',
+            'code' => '00-0000-0001',
+            'stage' => 'middle',
+            'directorate_name' => 'مديرية التربية الوطنية',
+            'status' => 'active',
+            'is_current' => 1,
+            'academic_year' => '2026-2027',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
+     * Flush caches and reconnect database.
+     */
+    public function flushCachesAndReconnect(): void
+    {
+        DB::purge('sqlite');
+        DB::reconnect('sqlite');
+
+        SchoolSetting::flushCache();
+        PlatformSetting::flushCache();
+
+        try {
+            Artisan::call('cache:clear');
+        } catch (\Throwable) {
+            // Safe fallback
+        }
+    }
+
+    /**
+     * Get database status summary.
+     *
+     * @return array<string, mixed>
+     */
+    public function getStatus(): array
+    {
+        $mode = $this->getActiveMode();
+
+        $activeSize = File::exists($this->activeDbPath()) ? round(File::size($this->activeDbPath()) / (1024 * 1024), 2) : 0;
+        $cleanSize = File::exists($this->cleanDbPath()) ? round(File::size($this->cleanDbPath()) / (1024 * 1024), 2) : 0;
+        $seededSize = File::exists($this->seededDbPath()) ? round(File::size($this->seededDbPath()) / (1024 * 1024), 2) : 0;
+
+        $userCount = 0;
+        $studentCount = 0;
+        $tableCount = 0;
+
+        try {
+            $userCount = DB::table('users')->count();
+            $studentCount = Schema::hasTable('students') ? DB::table('students')->count() : 0;
+            $tableCount = count(Schema::getTableListing(null));
+        } catch (\Throwable) {
+            // Ignore DB read failure during switch
+        }
+
+        return [
+            'mode' => $mode,
+            'mode_label' => $mode === self::MODE_CLEAN
+                ? 'قاعدة البيانات النظيفة (فارغة — مطور وإعدادات أساسية فقط)'
+                : 'قاعدة البيانات التجريبية الشاملة (مملوءة بالبيانات الواقعية)',
+            'is_clean' => $mode === self::MODE_CLEAN,
+            'is_seeded' => $mode === self::MODE_SEEDED,
+            'users_count' => $userCount,
+            'students_count' => $studentCount,
+            'tables_count' => $tableCount,
+            'files' => [
+                'active' => ['path' => $this->activeDbPath(), 'size_mb' => $activeSize],
+                'clean' => ['path' => $this->cleanDbPath(), 'size_mb' => $cleanSize],
+                'seeded' => ['path' => $this->seededDbPath(), 'size_mb' => $seededSize],
+            ],
+        ];
+    }
+}

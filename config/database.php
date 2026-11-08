@@ -44,6 +44,30 @@ return [
             'transaction_mode' => 'DEFERRED',
         ],
 
+        'sqlite_clean' => [
+            'driver' => 'sqlite',
+            'url' => env('DB_URL'),
+            'database' => database_path('database_clean.sqlite'),
+            'prefix' => '',
+            'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+            'busy_timeout' => null,
+            'journal_mode' => null,
+            'synchronous' => null,
+            'transaction_mode' => 'DEFERRED',
+        ],
+
+        'sqlite_seeded' => [
+            'driver' => 'sqlite',
+            'url' => env('DB_URL'),
+            'database' => database_path('database_seeded.sqlite'),
+            'prefix' => '',
+            'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+            'busy_timeout' => null,
+            'journal_mode' => null,
+            'synchronous' => null,
+            'transaction_mode' => 'DEFERRED',
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),
