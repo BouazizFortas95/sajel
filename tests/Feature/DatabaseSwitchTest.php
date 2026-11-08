@@ -69,6 +69,15 @@ class DatabaseSwitchTest extends TestCase
         $platform = DB::table('platform_settings')->first();
         $this->assertNotNull($platform);
 
+        // Foundational reference data exists in clean DB
+        $this->assertEquals(14, DB::table('subjects')->count());
+        $this->assertEquals(3, DB::table('education_phases')->count());
+        $this->assertEquals(12, DB::table('levels')->count());
+        $this->assertGreaterThan(0, DB::table('school_holidays')->count());
+        $this->assertGreaterThan(0, DB::table('active_learning_strategies')->count());
+        $this->assertEquals(0, DB::table('classrooms')->count());
+        $this->assertEquals(0, DB::table('schedules')->count());
+
         // 2. Switch back to Seeded
         $this->artisan('sajel:switch-db', ['mode' => 'seeded'])
             ->assertSuccessful()

@@ -2,14 +2,12 @@
 
 namespace App\Services;
 
-use App\Enums\Role;
 use App\Models\PlatformSetting;
 use App\Models\SchoolSetting;
-use App\Models\User;
+use Database\Seeders\FoundationalReferenceDataSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
 class DatabaseSwitchService
@@ -93,8 +91,8 @@ class DatabaseSwitchService
         // Ensure both source templates exist
         $this->ensureSourceDatabasesExist();
 
-        // Persist current active changes back to its profile first
-        if (File::exists($this->activeDbPath())) {
+        // Persist current active changes back to its profile only when switching to a different mode
+        if ($currentMode !== $newMode && File::exists($this->activeDbPath())) {
             if ($currentMode === self::MODE_SEEDED) {
                 File::copy($this->activeDbPath(), $this->seededDbPath());
             } else {
@@ -141,7 +139,7 @@ class DatabaseSwitchService
     }
 
     /**
-     * Reset and recreate database_clean.sqlite with all migrations and only Developer + Settings.
+     * Reset and recreate database_clean.sqlite with all migrations and only foundational reference data.
      */
     public function resetCleanDb(): void
     {
@@ -154,61 +152,8 @@ class DatabaseSwitchService
             '--force' => true,
         ]);
 
-        // Seed Developer user
-        DB::connection('sqlite_clean')->table('users')->insert([
-            'name' => 'مطور المنصة',
-            'email' => 'dev@sajel.test',
-            'password' => Hash::make('password'),
-            'role' => Role::Developer->value,
-            'email_verified_at' => now(),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // Seed Platform Settings
-        DB::connection('sqlite_clean')->table('platform_settings')->insert([
-            'platform_name' => 'سَجِّل — Sajel',
-            'platform_slogan' => 'المنظومة الرقمية الشاملة لإدارة وتسيير المؤسسات التربوية',
-            'meta_description' => 'منصة الرقمنة الشاملة للمؤسسات التعليمية الجزائرية',
-            'primary_color' => '#d97706',
-            'developer_name' => 'مطور المنصة',
-            'developer_organization' => 'فريق التطوير والرقمنة',
-            'developer_website' => 'https://sajel.dev',
-            'developer_support_email' => 'support@sajel.dev',
-            'version_tag' => 'v2.0.0-DZ',
-            'footer_copyright_text' => 'جميع الحقوق محفوظة © 2026 — منصة سجّل الرقمية',
-            'is_maintenance_mode' => 0,
-            'enable_public_registration' => 0,
-            'announcement_active' => 0,
-            'enable_ai_assistant' => 1,
-            'ai_default_model' => 'gemini-2.0-flash',
-            'max_file_upload_mb' => 20,
-            'session_lifetime_minutes' => 120,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // Seed basic School Setting
-        DB::connection('sqlite_clean')->table('school_settings')->insert([
-            'school_name' => 'المؤسسة التربوية النموذجية',
-            'directorate_name' => 'مديرية التربية الوطنية',
-            'academic_year' => '2026-2027',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // Seed basic Educational Institution
-        DB::connection('sqlite_clean')->table('educational_institutions')->insert([
-            'name' => 'المؤسسة التربوية النموذجية',
-            'code' => '00-0000-0001',
-            'stage' => 'middle',
-            'directorate_name' => 'مديرية التربية الوطنية',
-            'status' => 'active',
-            'is_current' => 1,
-            'academic_year' => '2026-2027',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        // Seed foundational reference data (Developer, Platform settings, Subjects, Phases, Levels, Holidays, Strategies)
+        (new FoundationalReferenceDataSeeder)->run('sqlite_clean');
     }
 
     /**
