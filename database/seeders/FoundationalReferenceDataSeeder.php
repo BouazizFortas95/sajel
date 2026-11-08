@@ -31,6 +31,311 @@ class FoundationalReferenceDataSeeder extends Seeder
     ];
 
     /**
+     * Faculty teachers of متوسطة حي 900 مسكن.
+     */
+    public const TEACHERS = [
+        // 1. اللغة العربية (8 أساتذة)
+        [
+            'name' => 'بالراشد فيروز',
+            'email' => 'fayrouz.belrached@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة العربية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'شتيوي نجلاء',
+            'email' => 'nedjla.chtioui@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة العربية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'بن مصباح منى',
+            'email' => 'mouna.benmesbah@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة العربية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'بوزويد ياسمينة',
+            'email' => 'yasmina.bouzouid@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة العربية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'كعبش ليلى',
+            'email' => 'leila.kaabache@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة العربية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'علوش مريم',
+            'email' => 'meriem.allouche@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة العربية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'طيبات سامية',
+            'email' => 'samia.taibat@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة العربية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'هلال كنزة',
+            'email' => 'kenza.hellal@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة العربية',
+            'secondary_subject' => null,
+        ],
+
+        // 2. التربية الإسلامية (أستاذتان)
+        [
+            'name' => 'بلحول مسعودة',
+            'email' => 'messaouda.belhaoul@sajel.test',
+            'gender' => 'female',
+            'subject' => 'التربية الإسلامية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'دباخ إيمان',
+            'email' => 'imen.debbakh@sajel.test',
+            'gender' => 'female',
+            'subject' => 'التربية الإسلامية',
+            'secondary_subject' => null,
+        ],
+
+        // 3. اللغة الفرنسية (6 أستاذات)
+        [
+            'name' => 'بوحنيك كنزة',
+            'email' => 'kenza.bouhanik@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة الفرنسية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'تيتش ابتسام',
+            'email' => 'ibtissam.titech@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة الفرنسية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'بالراشد خولة',
+            'email' => 'khaoula.belrached@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة الفرنسية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'صوفي آسيا',
+            'email' => 'assia.soufi@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة الفرنسية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'بوجلال صبرينال',
+            'email' => 'sabrinal.boujellal@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة الفرنسية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'لبوز زينب',
+            'email' => 'zineb.lebbouz@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة الفرنسية',
+            'secondary_subject' => null,
+        ],
+
+        // 4. اللغة الإنجليزية (5 أساتذة)
+        [
+            'name' => 'البار حدة',
+            'email' => 'hadda.elbar@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة الإنجليزية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'جنيدي فتحي',
+            'email' => 'fethi.djenidi@sajel.test',
+            'gender' => 'male',
+            'subject' => 'اللغة الإنجليزية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'بوشمال ابتسام',
+            'email' => 'ibtissam.bouchemal@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة الإنجليزية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'خالدي سهيلة',
+            'email' => 'souhila.khaldi@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة الإنجليزية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'بن عامر نورهان',
+            'email' => 'nourhane.benameur@sajel.test',
+            'gender' => 'female',
+            'subject' => 'اللغة الإنجليزية',
+            'secondary_subject' => null,
+        ],
+
+        // 5. علوم اجتماعية: التاريخ والجغرافيا + التربية المدنية (3 أستاذات)
+        [
+            'name' => 'صالحي نرجس',
+            'email' => 'nardjes.salhi@sajel.test',
+            'gender' => 'female',
+            'subject' => 'التاريخ والجغرافيا',
+            'secondary_subject' => 'التربية المدنية',
+        ],
+        [
+            'name' => 'شماخي سمية',
+            'email' => 'somia.chammakhi@sajel.test',
+            'gender' => 'female',
+            'subject' => 'التاريخ والجغرافيا',
+            'secondary_subject' => 'التربية المدنية',
+        ],
+        [
+            'name' => 'لهرم هدى',
+            'email' => 'houda.lahrem@sajel.test',
+            'gender' => 'female',
+            'subject' => 'التاريخ والجغرافيا',
+            'secondary_subject' => 'التربية المدنية',
+        ],
+
+        // 6. الرياضيات (7 أساتذة)
+        [
+            'name' => 'برومكي وصال',
+            'email' => 'wissal.broumki@sajel.test',
+            'gender' => 'female',
+            'subject' => 'الرياضيات',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'بالرمضان محمد',
+            'email' => 'mohamed.belremdane@sajel.test',
+            'gender' => 'male',
+            'subject' => 'الرياضيات',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'خضراوي سولاف',
+            'email' => 'soulaf.khadraoui@sajel.test',
+            'gender' => 'female',
+            'subject' => 'الرياضيات',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'لعلمي مشيرة',
+            'email' => 'mouchira.lalami@sajel.test',
+            'gender' => 'female',
+            'subject' => 'الرياضيات',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'لعيمش خميسي',
+            'email' => 'khemisti.laimeche@sajel.test',
+            'gender' => 'male',
+            'subject' => 'الرياضيات',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'مسعودي حدة',
+            'email' => 'hadda.messaoudi@sajel.test',
+            'gender' => 'female',
+            'subject' => 'الرياضيات',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'بولغمان نور الهدى',
+            'email' => 'nour.boulghmane@sajel.test',
+            'gender' => 'female',
+            'subject' => 'الرياضيات',
+            'secondary_subject' => 'الإعلام الآلي', // مادة ثانية اختيارية
+        ],
+
+        // 7. علوم الطبيعة والحياة (3 أستاذات)
+        [
+            'name' => 'بدرة فطيمة',
+            'email' => 'fatima.badra@sajel.test',
+            'gender' => 'female',
+            'subject' => 'علوم الطبيعة والحياة',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'فقيري فاطمة',
+            'email' => 'fatima.fakiri@sajel.test',
+            'gender' => 'female',
+            'subject' => 'علوم الطبيعة والحياة',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'برجوح منيرة',
+            'email' => 'mounira.berdjouh@sajel.test',
+            'gender' => 'female',
+            'subject' => 'علوم الطبيعة والحياة',
+            'secondary_subject' => null,
+        ],
+
+        // 8. العلوم الفيزيائية والتكنولوجيا (3 أستاذات)
+        [
+            'name' => 'عباس سلمى',
+            'email' => 'salma.abbas@sajel.test',
+            'gender' => 'female',
+            'subject' => 'العلوم الفيزيائية والتكنولوجيا',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'فرطاس أميرة فريال',
+            'email' => 'amira.fortas@sajel.test',
+            'gender' => 'female',
+            'subject' => 'العلوم الفيزيائية والتكنولوجيا',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'لهويمل حميدة',
+            'email' => 'hamida.lahouimel@sajel.test',
+            'gender' => 'female',
+            'subject' => 'العلوم الفيزيائية والتكنولوجيا',
+            'secondary_subject' => null,
+        ],
+
+        // 9. التربية البدنية والرياضية (أستاذان)
+        [
+            'name' => 'بن عيسى علاء الدين',
+            'email' => 'alaa.benaissa@sajel.test',
+            'gender' => 'male',
+            'subject' => 'التربية البدنية والرياضية',
+            'secondary_subject' => null,
+        ],
+        [
+            'name' => 'بالراشد صلاح الدين',
+            'email' => 'salah.belrached@sajel.test',
+            'gender' => 'male',
+            'subject' => 'التربية البدنية والرياضية',
+            'secondary_subject' => null,
+        ],
+
+        // 10. الإعلام الآلي (أستاذ + أستاذة بمادة ثانية اختيارية)
+        [
+            'name' => 'فرطاس بوعزيز',
+            'email' => 'bouaziz.fortas@sajel.test',
+            'gender' => 'male',
+            'subject' => 'الإعلام الآلي',
+            'secondary_subject' => null,
+        ],
+    ];
+
+    /**
      * Run the foundational database seeds on the specified connection.
      */
     public function run(?string $connection = null): void
@@ -77,29 +382,53 @@ class FoundationalReferenceDataSeeder extends Seeder
             ]
         );
 
-        // 3. School Settings
+        // 3. School Settings - متوسطة حي 900 مسكن
         $db->table('school_settings')->updateOrInsert(
             ['id' => 1],
             [
-                'school_name' => 'المؤسسة التربوية النموذجية',
-                'directorate_name' => 'مديرية التربية الوطنية',
+                'school_name' => 'متوسطة حي 900 مسكن',
+                'directorate_name' => 'مديرية التربية لولاية المغير',
+                'municipality_name' => 'المغير',
+                'academic_year' => '2026-2027',
+                'principal_name' => 'أحمد بوزقاق',
+                'school_code' => '00-0000-0001',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+
+        // 4. Base Educational Institution - متوسطة حي 900 مسكن
+        $db->table('educational_institutions')->updateOrInsert(
+            ['code' => '00-0000-0001'],
+            [
+                'name' => 'متوسطة حي 900 مسكن',
+                'code' => '00-0000-0001',
+                'stage' => 'middle',
+                'directorate_name' => 'مديرية التربية لولاية المغير',
+                'wilaya' => 'المغير',
+                'municipality' => 'المغير',
+                'principal_name' => 'أحمد بوزقاق',
+                'email' => 'bouazizfortas07@gmail.com',
+                'address' => 'حي 900 مسكن - الأحياء المدمجة',
+                'capacity' => 600,
+                'regime' => 'externat',
+                'status' => 'active',
+                'is_current' => 1,
                 'academic_year' => '2026-2027',
                 'created_at' => $now,
                 'updated_at' => $now,
             ]
         );
 
-        // 4. Base Educational Institution
-        $db->table('educational_institutions')->updateOrInsert(
-            ['code' => '00-0000-0001'],
+        // 4.1 Principal User - أحمد بوزقاق
+        $db->table('users')->updateOrInsert(
+            ['email' => 'principal@sajel.test'],
             [
-                'name' => 'المؤسسة التربوية النموذجية',
-                'code' => '00-0000-0001',
-                'stage' => 'middle',
-                'directorate_name' => 'مديرية التربية الوطنية',
-                'status' => 'active',
-                'is_current' => 1,
-                'academic_year' => '2026-2027',
+                'name' => 'أحمد بوزقاق',
+                'password' => Hash::make('password'),
+                'role' => Role::Principal->value,
+                'statutory_grade' => 'مدير متوسطة',
+                'email_verified_at' => $now,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]
@@ -336,6 +665,35 @@ class FoundationalReferenceDataSeeder extends Seeder
             $db->table('active_learning_strategies')->updateOrInsert(
                 ['slug' => $strategy['slug']],
                 $strategy + ['created_at' => $now, 'updated_at' => $now]
+            );
+        }
+
+        // 9. Faculty Teachers of متوسطة حي 900 مسكن (40 أساتذة)
+        $subjectMap = $db->table('subjects')->pluck('id', 'name')->toArray();
+
+        foreach (self::TEACHERS as $index => $teacherData) {
+            $regNum = sprintf('ENS-2026-%04d', $index + 1);
+            $primarySubjectId = $subjectMap[$teacherData['subject']] ?? null;
+            $secondarySubjectId = ! empty($teacherData['secondary_subject'])
+                ? ($subjectMap[$teacherData['secondary_subject']] ?? null)
+                : null;
+
+            $db->table('users')->updateOrInsert(
+                ['email' => $teacherData['email']],
+                [
+                    'name' => $teacherData['name'],
+                    'password' => Hash::make('password'),
+                    'role' => Role::Teacher->value,
+                    'gender' => $teacherData['gender'] ?? null,
+                    'primary_subject_id' => $primarySubjectId,
+                    'secondary_subject_id' => $secondarySubjectId,
+                    'weekly_hours_limit' => 22,
+                    'registration_number' => $regNum,
+                    'statutory_grade' => 'أستاذ التعليم المتوسط',
+                    'email_verified_at' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
             );
         }
     }

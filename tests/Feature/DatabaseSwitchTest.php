@@ -57,7 +57,9 @@ class DatabaseSwitchTest extends TestCase
             ->expectsOutputToContain('CLEAN');
 
         $this->assertTrue($service->isClean());
-        $this->assertEquals(1, DB::table('users')->count());
+        $this->assertGreaterThanOrEqual(42, DB::table('users')->count());
+        $this->assertEquals(40, DB::table('users')->where('role', 'teacher')->count());
+        $this->assertEquals('متوسطة حي 900 مسكن', DB::table('school_settings')->value('school_name'));
         $this->assertEquals(0, DB::table('students')->count());
 
         // Developer exists in clean DB

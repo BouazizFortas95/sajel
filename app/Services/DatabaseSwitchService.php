@@ -50,10 +50,10 @@ class DatabaseSwitchService
 
         // Auto-detect if marker file is missing
         try {
-            $userCount = DB::table('users')->count();
             $studentCount = Schema::hasTable('students') ? DB::table('students')->count() : 0;
+            $classroomCount = Schema::hasTable('classrooms') ? DB::table('classrooms')->count() : 0;
 
-            $detected = ($userCount <= 1 && $studentCount === 0) ? self::MODE_CLEAN : self::MODE_SEEDED;
+            $detected = ($studentCount === 0 && $classroomCount === 0) ? self::MODE_CLEAN : self::MODE_SEEDED;
             File::put($this->stateMarkerPath(), $detected);
 
             return $detected;
