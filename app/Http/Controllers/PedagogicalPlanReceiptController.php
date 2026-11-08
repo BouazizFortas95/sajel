@@ -61,4 +61,27 @@ class PedagogicalPlanReceiptController extends Controller
             return view('print.pedagogical-plan-receipts', $data);
         }
     }
+
+    /**
+     * Download official Microsoft Word (.docx) document.
+     */
+    public function word(Request $request, string $locale, PedagogicalPlanReceiptService $service): Response
+    {
+        $user = Auth::user();
+        if (! $user || ! ($user->isLeadership() || $user->isAdmin() || $user->isPrincipal() || $user->isCensor() || $user->isDeveloper())) {
+            abort(403, 'غير مصرح بتحميل وثيقة استلام المخططات والتدرجات البيداغوجية.');
+        }
+
+        $subjectId = $request->query('subject_id') ? (int) $request->query('subject_id') : null;
+        $academicYear = $request->query('academic_year');
+        $layout = $request->query('layout', 'separate');
+
+        $docxFile = $service->generateWordDocx($subjectId, $academicYear, $layout);
+        $subjectSuffix = $subjectId ? '-subject-'.$subjectId : '-all-subjects';
+        $filename = 'recepisse-plans-pedagogiques'.$subjectSuffix.'-'.now()->format('Ymd').'.docx';
+
+        return response()->download($docxFile, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ])->deleteFileAfterSend(true);
+    }
 }

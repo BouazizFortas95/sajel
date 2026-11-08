@@ -88,6 +88,14 @@
             background-color: #059669;
         }
 
+        .btn-word {
+            background-color: #2563eb;
+            color: #ffffff;
+        }
+        .btn-word:hover {
+            background-color: #1d4ed8;
+        }
+
         .btn-mode {
             background-color: #334155;
             color: #f1f5f9;
@@ -588,6 +596,10 @@
 
         <a href="{{ route('print.pedagogical-plan-receipts.pdf', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubject?->id, 'layout' => $layout]) }}" class="btn-action btn-pdf">
             📄 تحميل PDF
+        </a>
+
+        <a href="{{ route('print.pedagogical-plan-receipts.word', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubject?->id, 'layout' => $layout]) }}" class="btn-action btn-word">
+            📘 تصدير Word (.docx)
         </a>
 
         <a href="{{ url('/admin/pedagogical-plan-receipts') }}" class="btn-action btn-back">

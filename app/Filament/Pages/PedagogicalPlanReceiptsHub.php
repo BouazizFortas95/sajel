@@ -183,6 +183,17 @@ class PedagogicalPlanReceiptsHub extends Page
                 ]))
                 ->openUrlInNewTab(),
 
+            Action::make('word')
+                ->label('تصدير Word (.docx)')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('info')
+                ->url(fn () => route('print.pedagogical-plan-receipts.word', [
+                    'locale' => app()->getLocale(),
+                    'subject_id' => $this->selectedSubjectId,
+                    'layout' => 'separate',
+                ]))
+                ->openUrlInNewTab(),
+
             Action::make('bulkAnnual')
                 ->label('تأكيد استلام المخطط السنوي للجميع')
                 ->icon('heroicon-o-check-badge')

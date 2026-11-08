@@ -86,6 +86,12 @@
                         <x-filament::icon icon="heroicon-o-arrow-down-tray" class="w-4 h-4" />
                         PDF
                     </a>
+
+                    <a href="{{ route('print.pedagogical-plan-receipts.word', ['locale' => app()->getLocale(), 'subject_id' => $selectedSubjectId, 'layout' => 'separate']) }}" target="_blank"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition">
+                        <x-filament::icon icon="heroicon-o-arrow-down-tray" class="w-4 h-4" />
+                        Word (.docx)
+                    </a>
                 </div>
             </div>
         </div>
@@ -157,6 +163,11 @@
                                class="inline-flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-xs font-bold transition shadow-2xs border border-gray-200 dark:border-gray-700">
                                 <x-filament::icon icon="heroicon-o-printer" class="w-3.5 h-3.5 text-primary-600" />
                                 <span>طباعة مادة {{ $subjectName }} (صفحتين)</span>
+                            </a>
+                            <a href="{{ route('print.pedagogical-plan-receipts.word', ['locale' => app()->getLocale(), 'subject_id' => $firstSubjectId, 'layout' => 'separate']) }}" target="_blank"
+                               class="inline-flex items-center gap-1 px-2 py-1 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-700 dark:text-blue-400 rounded-lg text-xs font-bold transition shadow-2xs border border-gray-200 dark:border-gray-700" title="تصدير مادة {{ $subjectName }} كملف Word">
+                                <x-filament::icon icon="heroicon-o-arrow-down-tray" class="w-3.5 h-3.5 text-blue-600" />
+                                <span>Word</span>
                             </a>
                         </div>
                     @endif

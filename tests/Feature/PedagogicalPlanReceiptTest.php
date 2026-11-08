@@ -217,4 +217,35 @@ class PedagogicalPlanReceiptTest extends TestCase
             'notes' => 'تمت المراجعة والمطابقة',
         ]);
     }
+
+    public function test_word_export_route_downloads_docx_for_leadership(): void
+    {
+        $response = $this->actingAs($this->principal)
+            ->get('/ar/print/pedagogical-plan-receipts/word');
+
+        $response->assertSuccessful();
+        $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        $disposition = (string) $response->headers->get('content-disposition');
+        $this->assertStringContainsString('.docx', $disposition);
+        $this->assertStringContainsString('recepisse-plans-pedagogiques-all-subjects', $disposition);
+    }
+
+    public function test_word_export_route_downloads_docx_for_single_subject(): void
+    {
+        $response = $this->actingAs($this->principal)
+            ->get('/ar/print/pedagogical-plan-receipts/word?subject_id='.$this->arabic->id);
+
+        $response->assertSuccessful();
+        $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        $disposition = (string) $response->headers->get('content-disposition');
+        $this->assertStringContainsString('.docx', $disposition);
+        $this->assertStringContainsString('subject-'.$this->arabic->id, $disposition);
+    }
+
+    public function test_word_export_route_forbidden_for_teacher(): void
+    {
+        $this->actingAs($this->teacher)
+            ->get('/ar/print/pedagogical-plan-receipts/word')
+            ->assertForbidden();
+    }
 }

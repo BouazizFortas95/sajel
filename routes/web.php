@@ -235,8 +235,17 @@ Route::get('/{locale}/print/pedagogical-plan-receipts/pdf', [PedagogicalPlanRece
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.pedagogical-plan-receipts.pdf');
 
+Route::get('/{locale}/print/pedagogical-plan-receipts/word', [PedagogicalPlanReceiptController::class, 'word'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.pedagogical-plan-receipts.word');
+
 Route::get('/print/pedagogical-plan-receipts', function () {
     return redirect()->route('print.pedagogical-plan-receipts', ['locale' => app()->getLocale()]);
+})->middleware('auth');
+
+Route::get('/print/pedagogical-plan-receipts/word', function () {
+    return redirect()->route('print.pedagogical-plan-receipts.word', ['locale' => app()->getLocale()]);
 })->middleware('auth');
 
 Route::get('/{locale}/parent/students/{student}', [ParentPortalController::class, 'portal'])
