@@ -60,4 +60,3 @@ class ImpersonationController extends Controller
         return redirect()->route('filament.auth.pages.dashboard', ['locale' => $locale]);
     }
 }
-

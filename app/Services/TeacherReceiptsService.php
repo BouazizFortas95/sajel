@@ -136,4 +136,3 @@ class TeacherReceiptsService
             ->pdf();
     }
 }
-

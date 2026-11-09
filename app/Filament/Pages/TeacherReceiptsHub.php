@@ -155,4 +155,3 @@ class TeacherReceiptsHub extends Page
         ]);
     }
 }
-

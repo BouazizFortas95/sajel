@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AttendanceStatus;
 use App\Enums\DailyLogStatus;
 use App\Enums\LessonPhaseType;
+use App\Services\DailyLogEvaluationWorkSyncService;
 use Carbon\CarbonInterface;
 use Database\Factories\DailyLogFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -50,6 +51,19 @@ class DailyLog extends Model
             'status' => DailyLogStatus::class,
             'reviewed_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(function (DailyLog $dailyLog): void {
+            if ($dailyLog->isCompleted()) {
+                try {
+                    app(DailyLogEvaluationWorkSyncService::class)->sync($dailyLog);
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
+        });
     }
 
     public function schedule(): BelongsTo

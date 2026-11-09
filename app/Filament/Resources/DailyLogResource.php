@@ -13,6 +13,7 @@ use App\Models\DailyLog;
 use App\Models\Schedule;
 use App\Models\User;
 use App\Services\AiLessonPlannerService;
+use App\Services\DailyLogEvaluationWorkSyncService;
 use App\Services\DailyLogRegisterService;
 use Carbon\Carbon;
 use Closure;
@@ -285,6 +286,25 @@ class DailyLogResource extends Resource
                                             ->label(__('عنوان الحصة'))
                                             ->required()
                                             ->maxLength(255)
+                                            ->live(onBlur: true)
+                                            ->helperText(function (Get $get): ?string {
+                                                $title = $get('title');
+                                                if (blank($title)) {
+                                                    return null;
+                                                }
+
+                                                $tempLog = new DailyLog([
+                                                    'title' => $title,
+                                                    'date' => $get('date'),
+                                                    'homework' => $get('homework'),
+                                                ]);
+
+                                                $type = app(DailyLogEvaluationWorkSyncService::class)->detectEvaluationType($tempLog);
+
+                                                return $type
+                                                    ? '💡 ربط ذكي مكتشف: سيتم اعتماد وتأشير هذه الحصة تلقائياً كـ «'.app(DailyLogEvaluationWorkSyncService::class)->getLabel($type).'» في سجلك التقويمي المعتمد عند إنجازها.'
+                                                    : null;
+                                            })
                                             ->suffixAction(static::generateLessonPlanAction())
                                             ->columnSpanFull(),
 
@@ -886,6 +906,29 @@ class DailyLogResource extends Resource
                         ? $record->schedule?->group?->name
                         : null)
                     ->placeholder('—'),
+
+                Tables\Columns\TextColumn::make('evaluation_work')
+                    ->label(__('العمل التقويمي'))
+                    ->getStateUsing(function (DailyLog $record): ?string {
+                        $type = app(DailyLogEvaluationWorkSyncService::class)->detectEvaluationType($record);
+
+                        return $type ? app(DailyLogEvaluationWorkSyncService::class)->getLabel($type) : null;
+                    })
+                    ->badge()
+                    ->color('amber')
+                    ->icon('heroicon-o-document-check')
+                    ->tooltip(function (DailyLog $record): ?string {
+                        $type = app(DailyLogEvaluationWorkSyncService::class)->detectEvaluationType($record);
+                        if (! $type) {
+                            return null;
+                        }
+
+                        return $record->isCompleted()
+                            ? __('مؤشَّر تلقائياً في السجل التقويمي')
+                            : __('سيتم التأشير في السجل التقويمي فور تأكيد الإنجاز');
+                    })
+                    ->placeholder('—')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('curriculum_resource')
                     ->label(__('المورد المعرفي'))

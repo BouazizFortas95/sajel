@@ -64,4 +64,3 @@ class SendPedagogicalReceiptRemindersCommand extends Command
         return self::SUCCESS;
     }
 }
-
