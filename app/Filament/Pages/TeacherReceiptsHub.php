@@ -139,6 +139,28 @@ class TeacherReceiptsHub extends Page
                     'year' => $this->academicYear,
                 ]))
                 ->openUrlInNewTab(),
+
+            Action::make('dossierWord')
+                ->label('ملف التفتيش التربوي (Word)')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('amber')
+                ->url(fn () => route('print.teacher-inspection-dossier.word', [
+                    'locale' => app()->getLocale(),
+                    'user' => $effectiveId,
+                    'year' => $this->academicYear,
+                ]))
+                ->openUrlInNewTab(),
+
+            Action::make('dossierPdf')
+                ->label('ملف التفتيش التربوي (PDF)')
+                ->icon('heroicon-o-academic-cap')
+                ->color('info')
+                ->url(fn () => route('print.teacher-inspection-dossier.pdf', [
+                    'locale' => app()->getLocale(),
+                    'user' => $effectiveId,
+                    'year' => $this->academicYear,
+                ]))
+                ->openUrlInNewTab(),
         ];
     }
 

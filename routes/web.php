@@ -41,6 +41,7 @@ use App\Http\Controllers\StudentMobilityController;
 use App\Http\Controllers\StudentReportCardController;
 use App\Http\Controllers\StudentStationController;
 use App\Http\Controllers\TeacherAbsenceController;
+use App\Http\Controllers\TeacherInspectionDossierController;
 use App\Http\Controllers\TeacherPortfolioController;
 use App\Http\Controllers\TeacherReceiptsPrintController;
 use App\Http\Controllers\TextbookInventoryController;
@@ -274,20 +275,51 @@ Route::get('/print/evaluation-work-receipts/word', function () {
     return redirect()->route('print.evaluation-work-receipts.word', ['locale' => app()->getLocale()]);
 })->middleware('auth');
 
+Route::get('/{locale}/print/teacher-receipts/{user}/pdf', [TeacherReceiptsPrintController::class, 'pdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class]);
+
+Route::get('/{locale}/print/teacher-receipts/pdf/{user?}', [TeacherReceiptsPrintController::class, 'pdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-receipts.pdf');
+
+Route::get('/{locale}/print/teacher-receipts/{user}/word', [TeacherReceiptsPrintController::class, 'word'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class]);
+
+Route::get('/{locale}/print/teacher-receipts/word/{user?}', [TeacherReceiptsPrintController::class, 'word'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-receipts.word');
+
 Route::get('/{locale}/print/teacher-receipts/{user?}', [TeacherReceiptsPrintController::class, 'print'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.teacher-receipts');
 
-Route::get('/{locale}/print/teacher-receipts/{user?}/pdf', [TeacherReceiptsPrintController::class, 'pdf'])
+Route::get('/{locale}/print/teacher-inspection-dossier/{user}/pdf', [TeacherInspectionDossierController::class, 'pdf'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
-    ->middleware(['auth', SetFilamentLocale::class])
-    ->name('print.teacher-receipts.pdf');
+    ->middleware(['auth', SetFilamentLocale::class]);
 
-Route::get('/{locale}/print/teacher-receipts/{user?}/word', [TeacherReceiptsPrintController::class, 'word'])
+Route::get('/{locale}/print/teacher-inspection-dossier/pdf/{user?}', [TeacherInspectionDossierController::class, 'pdf'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
-    ->name('print.teacher-receipts.word');
+    ->name('print.teacher-inspection-dossier.pdf');
+
+Route::get('/{locale}/print/teacher-inspection-dossier/{user}/word', [TeacherInspectionDossierController::class, 'word'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class]);
+
+Route::get('/{locale}/print/teacher-inspection-dossier/word/{user?}', [TeacherInspectionDossierController::class, 'word'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-inspection-dossier.word');
+
+Route::get('/{locale}/print/teacher-inspection-dossier/{user?}', [TeacherInspectionDossierController::class, 'print'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-inspection-dossier');
 
 Route::post('/{locale}/impersonate/leave', [ImpersonationController::class, 'leave'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))

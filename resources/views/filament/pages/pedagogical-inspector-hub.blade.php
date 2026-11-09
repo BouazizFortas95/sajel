@@ -212,6 +212,7 @@
                                 <th class="p-3 text-center">{{ __('الزيارات التفتيشية') }}</th>
                                 <th class="p-3 text-center">{{ __('معدل النقطة') }}</th>
                                 <th class="p-3 text-center">{{ __('آخر زيارة') }}</th>
+                                <th class="p-3 text-center">{{ __('ملف التفتيش') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -239,10 +240,38 @@
                                             <span class="text-gray-400 text-[11px]">{{ __('لم تسجل زيارة') }}</span>
                                         @endif
                                     </td>
+                                    <td class="p-3 text-center">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <a
+                                                href="{{ route('print.teacher-inspection-dossier', ['locale' => app()->getLocale(), 'user' => $sc['teacher']->id]) }}"
+                                                target="_blank"
+                                                title="{{ __('معاينة وطباعة ملف التفتيش') }}"
+                                                class="inline-flex items-center p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 transition"
+                                            >
+                                                <x-heroicon-o-printer class="w-4 h-4" />
+                                            </a>
+                                            <a
+                                                href="{{ route('print.teacher-inspection-dossier.word', ['locale' => app()->getLocale(), 'user' => $sc['teacher']->id]) }}"
+                                                target="_blank"
+                                                title="{{ __('تصدير ملف التفتيش Word') }}"
+                                                class="inline-flex items-center p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:hover:bg-amber-900/60 dark:text-amber-300 transition"
+                                            >
+                                                <x-heroicon-o-arrow-down-tray class="w-4 h-4" />
+                                            </a>
+                                            <a
+                                                href="{{ route('print.teacher-inspection-dossier.pdf', ['locale' => app()->getLocale(), 'user' => $sc['teacher']->id]) }}"
+                                                target="_blank"
+                                                title="{{ __('تحميل ملف التفتيش PDF') }}"
+                                                class="inline-flex items-center p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 dark:text-blue-300 transition"
+                                            >
+                                                <x-heroicon-o-document-arrow-down class="w-4 h-4" />
+                                            </a>
+                                        </div>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="p-6 text-center text-gray-400">{{ __('لا يوجد أساتذة مسجلون.') }}</td>
+                                    <td colspan="9" class="p-6 text-center text-gray-400">{{ __('لا يوجد أساتذة مسجلون.') }}</td>
                                 </tr>
                             @endforelse
                         </tbody>

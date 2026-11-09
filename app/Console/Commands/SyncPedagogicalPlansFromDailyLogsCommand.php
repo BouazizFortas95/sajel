@@ -60,4 +60,3 @@ class SyncPedagogicalPlansFromDailyLogsCommand extends Command
         return self::SUCCESS;
     }
 }
-
