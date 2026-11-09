@@ -6,6 +6,7 @@ use App\Models\PedagogicalPlanReceipt;
 use App\Models\SchoolSetting;
 use App\Models\Subject;
 use App\Services\AdministrativeArchiveService;
+use App\Services\DailyLogPedagogicalPlanSyncService;
 use App\Services\PedagogicalPlanReceiptService;
 use App\Services\PedagogicalReceiptReminderService;
 use Filament\Actions\Action;
@@ -236,6 +237,24 @@ class PedagogicalPlanReceiptsHub extends Page
 
                     Notification::make()
                         ->title("تم تحديث تأشير المخطط الشهري لـ {$count} أستاذ بنجاح")
+                        ->success()
+                        ->send();
+                }),
+
+            Action::make('syncFromDailyLogs')
+                ->label('مزامنة مع دفتر النصوص')
+                ->icon('heroicon-o-arrow-path')
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading('مزامنة المخططات والتدرجات آلياً مع دفتر النصوص')
+                ->modalDescription('سيقوم النظام بفحص حصص دفتر النصوص المنجزة للأساتذة واعتماد المخططات والتدرجات الشهرية المؤشرة والمنجزة تلقائياً وفق وتيرة الحصص.')
+                ->action(function (): void {
+                    $service = app(DailyLogPedagogicalPlanSyncService::class);
+                    $results = $service->bulkSync(null, $this->academicYear);
+
+                    Notification::make()
+                        ->title('تمت المزامنة الذكية مع دفتر النصوص بنجاح')
+                        ->body("تم فحص {$results['teachers_count']} أستاذ، وتأشير {$results['synced_months']} مخططاً شهرياً و {$results['synced_annual']} مخططاً سنوياً.")
                         ->success()
                         ->send();
                 }),

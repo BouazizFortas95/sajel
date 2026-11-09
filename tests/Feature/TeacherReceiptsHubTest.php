@@ -13,6 +13,7 @@ use App\Services\TeacherReceiptsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
+use ZipArchive;
 
 class TeacherReceiptsHubTest extends TestCase
 {
@@ -198,5 +199,76 @@ class TeacherReceiptsHubTest extends TestCase
         $response->assertSuccessful();
         $response->assertSee('الأستاذة مريم علوش');
     }
-}
 
+    public function test_teacher_can_download_their_own_word_receipt(): void
+    {
+        $response = $this->actingAs($this->teacher1)
+            ->get(route('print.teacher-receipts.word', [
+                'locale' => 'ar',
+                'user' => $this->teacher1->id,
+            ]));
+
+        $response->assertSuccessful();
+        $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        $this->assertStringContainsString('recepisse-pedagogique', (string) $response->headers->get('content-disposition'));
+    }
+
+    public function test_word_export_contains_valid_docx_and_interactive_controls(): void
+    {
+        PedagogicalPlanReceipt::create([
+            'user_id' => $this->teacher1->id,
+            'academic_year' => '2026-2027',
+            'annual_plan_submitted' => true,
+            'annual_plan_date' => '2026-09-15',
+            'september_submitted' => true,
+            'september_date' => '2026-09-25',
+        ]);
+
+        EvaluationWorkReceipt::create([
+            'user_id' => $this->teacher1->id,
+            'academic_year' => '2026-2027',
+            'diagnostic_test_submitted' => true,
+            'diagnostic_test_date' => '2026-09-20',
+            'quiz_1_submitted' => true,
+            'quiz_1_date' => '2026-10-28',
+        ]);
+
+        $service = app(TeacherReceiptsService::class);
+        $wordContent = $service->generateWord($this->teacher1);
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'test_docx_').'.docx';
+        file_put_contents($tempFile, $wordContent);
+
+        $zip = new ZipArchive;
+        $this->assertTrue($zip->open($tempFile) === true, 'Failed opening generated DOCX file.');
+
+        $documentXml = $zip->getFromName('word/document.xml');
+        $this->assertNotEmpty($documentXml);
+        $this->assertStringContainsString('w14:checkbox', $documentXml);
+        $this->assertStringContainsString('w:date', $documentXml);
+        $this->assertStringContainsString('الأستاذ أحمد بلخير', $documentXml);
+
+        $settingsXml = $zip->getFromName('word/settings.xml');
+        $this->assertNotEmpty($settingsXml);
+        $this->assertStringContainsString('compatibilityMode', $settingsXml);
+        $this->assertStringContainsString('w:val="15"', $settingsXml);
+
+        $zip->close();
+        @unlink($tempFile);
+    }
+
+    public function test_teacher_cannot_download_another_teacher_word_receipt(): void
+    {
+        $response = $this->actingAs($this->teacher1)
+            ->get(route('print.teacher-receipts.word', [
+                'locale' => 'ar',
+                'user' => $this->teacher2->id,
+            ]));
+
+        $response->assertSuccessful();
+        // Resolves to teacher1's name in filename
+        $disposition = (string) $response->headers->get('content-disposition');
+        $this->assertStringContainsString(str_replace(' ', '_', $this->teacher1->name), rawurldecode($disposition));
+        $this->assertStringNotContainsString(str_replace(' ', '_', $this->teacher2->name), rawurldecode($disposition));
+    }
+}

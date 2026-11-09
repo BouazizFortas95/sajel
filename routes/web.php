@@ -284,6 +284,11 @@ Route::get('/{locale}/print/teacher-receipts/{user?}/pdf', [TeacherReceiptsPrint
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.teacher-receipts.pdf');
 
+Route::get('/{locale}/print/teacher-receipts/{user?}/word', [TeacherReceiptsPrintController::class, 'word'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-receipts.word');
+
 Route::post('/{locale}/impersonate/leave', [ImpersonationController::class, 'leave'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])

@@ -70,4 +70,30 @@ class TeacherReceiptsPrintController extends Controller
             ['Content-Type' => 'application/pdf']
         );
     }
+
+    /**
+     * Download official individual receipt voucher as Word document (.docx).
+     */
+    public function word(
+        Request $request,
+        string $locale,
+        ?User $user = null,
+        ?TeacherReceiptsService $service = null
+    ): StreamedResponse {
+        $service = $service ?? app(TeacherReceiptsService::class);
+        $teacher = $this->resolveTeacher($request, $user);
+        $academicYear = $request->query('year');
+
+        $wordContent = $service->generateWord($teacher, $academicYear);
+        $fileName = sprintf('recepisse-pedagogique-%s.docx', str_replace(' ', '_', $teacher->name));
+
+        return response()->streamDownload(
+            fn () => print ($wordContent),
+            $fileName,
+            [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            ]
+        );
+    }
 }

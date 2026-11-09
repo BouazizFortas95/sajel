@@ -6,6 +6,7 @@ use App\Enums\AttendanceStatus;
 use App\Enums\DailyLogStatus;
 use App\Enums\LessonPhaseType;
 use App\Services\DailyLogEvaluationWorkSyncService;
+use App\Services\DailyLogPedagogicalPlanSyncService;
 use Carbon\CarbonInterface;
 use Database\Factories\DailyLogFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -59,6 +60,12 @@ class DailyLog extends Model
             if ($dailyLog->isCompleted()) {
                 try {
                     app(DailyLogEvaluationWorkSyncService::class)->sync($dailyLog);
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+
+                try {
+                    app(DailyLogPedagogicalPlanSyncService::class)->sync($dailyLog);
                 } catch (\Throwable $e) {
                     report($e);
                 }

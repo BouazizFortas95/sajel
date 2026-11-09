@@ -355,6 +355,117 @@
                 @endif
             </div>
 
+            <!-- SECTION 3: وتيرة إنجاز المنهاج والتقدم الميداني في التعلمات -->
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <div class="flex flex-col gap-2 border-b border-gray-100 pb-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-700">
+                    <div class="flex items-center gap-3">
+                        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+                            <x-filament::icon icon="heroicon-o-chart-bar" class="h-5 w-5" />
+                        </span>
+                        <div>
+                            <h3 class="text-base font-bold text-gray-900 dark:text-white">
+                                وتيرة إنجاز المنهاج والتقدم الميداني في التعلمات
+                            </h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                رصد آلي مباشر من واقع حصص دفتر النصوص والموارد المعرفية المنجزة
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                            <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            مزامنة آنية مع دفتر النصوص
+                        </span>
+                        <span class="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                            نسبة إنجاز المنهاج: {{ $curriculumPercentage ?? 0 }}%
+                        </span>
+                    </div>
+                </div>
+
+                <!-- KPI Cards for Curriculum -->
+                <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div class="rounded-xl border border-purple-100 bg-purple-50/50 p-4 dark:border-purple-900/40 dark:bg-purple-950/20">
+                        <span class="text-xs font-bold text-purple-900 dark:text-purple-200">نسبة التقدم العامة</span>
+                        <div class="mt-2 flex items-baseline gap-2">
+                            <span class="text-2xl font-black text-purple-700 dark:text-purple-300">{{ $curriculumPercentage ?? 0 }}%</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">من إجمالي الموارد</span>
+                        </div>
+                        <div class="mt-3 w-full bg-purple-200/60 rounded-full h-2 dark:bg-purple-900/50">
+                            <div class="bg-purple-600 h-2 rounded-full transition-all duration-500" style="width: {{ min(100, $curriculumPercentage ?? 0) }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-800/60">
+                        <span class="text-xs font-bold text-gray-700 dark:text-gray-200">الموارد المعرفية المنجزة</span>
+                        <div class="mt-2 flex items-baseline gap-2">
+                            <span class="text-2xl font-black text-gray-900 dark:text-white">{{ $completedCurriculumResources ?? 0 }}</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">/ {{ $totalCurriculumResources ?? 0 }} موارداً مسجلاً</span>
+                        </div>
+                        <p class="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+                            {{ ($totalCurriculumResources ?? 0) > 0 ? 'متبقي ' . (($totalCurriculumResources ?? 0) - ($completedCurriculumResources ?? 0)) . ' موارداً خلال الموسم' : 'لا توجد موارد معرفية مسجلة' }}
+                        </p>
+                    </div>
+
+                    <div class="rounded-xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-800/60">
+                        <span class="text-xs font-bold text-gray-700 dark:text-gray-200">المقاطع التعليمية المكتملة</span>
+                        <div class="mt-2 flex items-baseline gap-2">
+                            <span class="text-2xl font-black text-gray-900 dark:text-white">{{ $completedCurriculumSequences ?? 0 }}</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">/ {{ $totalCurriculumSequences ?? 0 }} مقطعاً بيداغوجياً</span>
+                        </div>
+                        <p class="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+                            المقطع يكتمل بإنهاء كافة موارده
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Classes breakdown table if available -->
+                @if(isset($curriculumOverview) && $curriculumOverview->isNotEmpty())
+                    <div class="mt-4 overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+                        <table class="w-full text-right text-xs">
+                            <thead class="bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                <tr>
+                                    <th class="px-4 py-2.5 font-bold">القسم المسند</th>
+                                    <th class="px-4 py-2.5 font-bold">المستوى</th>
+                                    <th class="px-4 py-2.5 font-bold text-center">الموارد المنجزة</th>
+                                    <th class="px-4 py-2.5 font-bold text-center">المقاطع المكتملة</th>
+                                    <th class="px-4 py-2.5 font-bold text-center">نسبة الإنجاز</th>
+                                    <th class="px-4 py-2.5 font-bold">مؤشر التقدم</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                                @foreach($curriculumOverview as $row)
+                                    <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
+                                        <td class="px-4 py-2.5 font-semibold text-gray-900 dark:text-white">
+                                            {{ $row['classroom']->name }}
+                                        </td>
+                                        <td class="px-4 py-2.5 text-gray-600 dark:text-gray-400">
+                                            {{ $row['level']?->name ?? '—' }}
+                                        </td>
+                                        <td class="px-4 py-2.5 text-center font-bold text-gray-900 dark:text-white">
+                                            {{ $row['completed_resources'] }} / {{ $row['total_resources'] }}
+                                        </td>
+                                        <td class="px-4 py-2.5 text-center text-gray-600 dark:text-gray-300">
+                                            {{ $row['completed_sequences'] }} / {{ $row['total_sequences'] }}
+                                        </td>
+                                        <td class="px-4 py-2.5 text-center">
+                                            <span class="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-bold text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
+                                                {{ $row['percentage'] }}%
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-2.5">
+                                            <div class="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700 max-w-xs">
+                                                <div class="bg-purple-600 h-1.5 rounded-full" style="width: {{ min(100, $row['percentage']) }}%"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+
             <!-- Informational Notice -->
             <div class="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-500 dark:border-gray-700 dark:bg-gray-800/40 dark:text-gray-400">
                 <x-filament::icon icon="heroicon-o-information-circle" class="h-5 w-5 shrink-0 text-gray-400" />

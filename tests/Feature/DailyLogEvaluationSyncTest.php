@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\DailyLogStatus;
 use App\Enums\Role;
+use App\Filament\Resources\DailyLogResource\Pages\ListDailyLogs;
 use App\Models\DailyLog;
 use App\Models\EvaluationWorkReceipt;
 use App\Models\Schedule;
@@ -13,6 +14,7 @@ use App\Models\User;
 use App\Services\DailyLogEvaluationWorkSyncService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class DailyLogEvaluationSyncTest extends TestCase
@@ -195,7 +197,7 @@ class DailyLogEvaluationSyncTest extends TestCase
 
         $this->actingAs($this->teacher);
 
-        \Livewire\Livewire::test(\App\Filament\Resources\DailyLogResource\Pages\ListDailyLogs::class)
+        Livewire::test(ListDailyLogs::class)
             ->assertCanSeeTableRecords([$quizLog])
             ->assertTableColumnExists('evaluation_work');
     }

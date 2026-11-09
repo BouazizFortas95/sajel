@@ -14,6 +14,7 @@ use App\Models\Schedule;
 use App\Models\User;
 use App\Services\AiLessonPlannerService;
 use App\Services\DailyLogEvaluationWorkSyncService;
+use App\Services\DailyLogPedagogicalPlanSyncService;
 use App\Services\DailyLogRegisterService;
 use Carbon\Carbon;
 use Closure;
@@ -299,11 +300,17 @@ class DailyLogResource extends Resource
                                                     'homework' => $get('homework'),
                                                 ]);
 
-                                                $type = app(DailyLogEvaluationWorkSyncService::class)->detectEvaluationType($tempLog);
+                                                $evalType = app(DailyLogEvaluationWorkSyncService::class)->detectEvaluationType($tempLog);
+                                                if ($evalType) {
+                                                    return '💡 ربط ذكي مكتشف: سيتم اعتماد وتأشير هذه الحصة تلقائياً كـ «'.app(DailyLogEvaluationWorkSyncService::class)->getLabel($evalType).'» في سجلك التقويمي المعتمد عند إنجازها.';
+                                                }
 
-                                                return $type
-                                                    ? '💡 ربط ذكي مكتشف: سيتم اعتماد وتأشير هذه الحصة تلقائياً كـ «'.app(DailyLogEvaluationWorkSyncService::class)->getLabel($type).'» في سجلك التقويمي المعتمد عند إنجازها.'
-                                                    : null;
+                                                $planType = app(DailyLogPedagogicalPlanSyncService::class)->detectPlanType($tempLog);
+                                                if ($planType) {
+                                                    return '💡 ربط ذكي مكتشف: سيتم اعتماد وتأشير هذه الحصة تلقائياً كـ «'.app(DailyLogPedagogicalPlanSyncService::class)->getLabel($planType).'» في سجل المخططات والتدرجات البيداغوجية عند إنجازها.';
+                                                }
+
+                                                return null;
                                             })
                                             ->suffixAction(static::generateLessonPlanAction())
                                             ->columnSpanFull(),
@@ -926,6 +933,29 @@ class DailyLogResource extends Resource
                         return $record->isCompleted()
                             ? __('مؤشَّر تلقائياً في السجل التقويمي')
                             : __('سيتم التأشير في السجل التقويمي فور تأكيد الإنجاز');
+                    })
+                    ->placeholder('—')
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('pedagogical_plan')
+                    ->label(__('المخطط البيداغوجي'))
+                    ->getStateUsing(function (DailyLog $record): ?string {
+                        $planType = app(DailyLogPedagogicalPlanSyncService::class)->detectPlanType($record);
+
+                        return $planType ? app(DailyLogPedagogicalPlanSyncService::class)->getLabel($planType) : null;
+                    })
+                    ->badge()
+                    ->color('info')
+                    ->icon('heroicon-o-calendar-days')
+                    ->tooltip(function (DailyLog $record): ?string {
+                        $planType = app(DailyLogPedagogicalPlanSyncService::class)->detectPlanType($record);
+                        if (! $planType) {
+                            return null;
+                        }
+
+                        return $record->isCompleted()
+                            ? __('مؤشَّر تلقائياً في سجل المخططات')
+                            : __('سيتم التأشير في سجل المخططات فور تأكيد الإنجاز');
                     })
                     ->placeholder('—')
                     ->toggleable(),

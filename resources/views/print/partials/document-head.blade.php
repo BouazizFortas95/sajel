@@ -165,87 +165,142 @@
 
         .doc-header-grid {
             display: grid;
-            grid-template-columns: 1fr 1.35fr 1fr;
+            grid-template-columns: 1fr 1.4fr 1fr;
             gap: 0;
             align-items: stretch;
         }
 
         .doc-header-col {
-            padding: 10px 12px;
+            padding: 8px 12px;
         }
 
         .doc-header-col + .doc-header-col {
             border-inline-start: 1px solid #1a237e;
         }
 
-        .doc-header-republic {
-            color: #1a237e;
-            font-size: 10pt;
-            font-weight: 700;
-            line-height: 1.5;
-        }
-
-        .doc-header-republic .ministry {
-            color: #334155;
-            font-weight: 700;
-        }
-
-        .doc-header-republic .directorate {
-            margin-top: 3px;
-            color: #1a237e;
-            font-size: 10.5pt;
-            font-weight: 700;
-        }
-
         .doc-header-school {
-            text-align: center;
+            text-align: right;
+            font-family: 'Amiri', 'Cairo', serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .doc-school-name {
+            font-family: 'Amiri', serif;
             color: #1a237e;
-            font-size: 13pt;
+            font-size: 13.5pt;
             font-weight: 700;
             line-height: 1.3;
         }
 
         .doc-school-meta {
+            margin-top: 3px;
+            color: #64748b;
+            font-family: 'Cairo', sans-serif;
+            font-size: 8.5pt;
+            font-weight: 600;
+        }
+
+        .doc-header-republic {
+            font-family: 'Amiri', serif;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .doc-header-republic .republic-name {
+            color: #0f172a;
+            font-size: 12.5pt;
+            font-weight: 700;
+            line-height: 1.4;
+            white-space: nowrap;
+        }
+
+        .doc-header-republic .ministry {
             margin-top: 2px;
+            color: #1a237e;
+            font-size: 11pt;
+            font-weight: 700;
+            line-height: 1.3;
+            white-space: nowrap;
+        }
+
+        .doc-header-republic .directorate {
+            margin-top: 2px;
+            color: #334155;
+            font-size: 10pt;
+            font-weight: 700;
+            line-height: 1.3;
+            white-space: nowrap;
+        }
+
+        .doc-header-meta {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 5px;
+            font-family: 'Cairo', sans-serif;
+            color: #475569;
+            font-size: 8.5pt;
+            line-height: 1.4;
+            text-align: right;
+        }
+
+        .doc-header-meta .meta-row {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .doc-header-meta .meta-label {
             color: #64748b;
             font-size: 8.5pt;
             font-weight: 600;
         }
 
-        .doc-header-meta {
-            color: #475569;
-            font-size: 8.5pt;
-            font-weight: 600;
-            line-height: 1.6;
+        .doc-header-meta .meta-value {
+            color: #0f172a;
+            font-size: 9pt;
+            font-weight: 700;
         }
 
         .doc-header-meta strong {
-            display: block;
             color: #0f172a;
-            font-size: 10pt;
+            font-size: 9pt;
+        }
+
+        .doc-title-wrapper {
+            text-align: center;
+            margin-top: 8px;
+            margin-bottom: 8px;
         }
 
         .doc-title-banner {
-            margin-top: 6px;
-            border: 2px solid #1a237e;
-            border-radius: 4px;
+            display: inline-block;
+            border: 1.5px solid #1a237e;
+            border-radius: 6px;
             background: #f0f4fa;
-            padding: 4px 14px;
+            padding: 4px 24px;
             color: #1a237e;
             text-align: center;
-            font-size: 12.5pt;
+            font-family: 'Amiri', serif;
+            font-size: 13pt;
             font-weight: 700;
             letter-spacing: 0;
-            text-shadow: none;
+            line-height: 1.4;
+            white-space: nowrap;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
         .doc-subtitle {
-            margin-top: 3px;
-            color: #475569;
-            font-size: 8.5pt;
+            margin-top: 4px;
+            color: #1e3a8a;
+            font-family: 'Cairo', sans-serif;
+            font-size: 9.5pt;
             font-weight: 600;
         }
 
@@ -886,12 +941,7 @@
     <main class="document-sheet" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
         <header class="doc-header">
             <div class="doc-header-grid">
-                <div class="doc-header-col doc-header-republic">
-                    <p>{{ __('الجمهورية الجزائرية الديمقراطية الشعبية') }}</p>
-                    <p class="ministry">{{ __('وزارة التربية الوطنية') }}</p>
-                    <p class="directorate">{{ $schoolSetting->directorate_name }}</p>
-                </div>
-
+                <!-- 1. Right: School Information -->
                 <div class="doc-header-col doc-header-school">
                     <p class="doc-school-name">{{ $schoolSetting->school_name }}</p>
                     <p class="doc-school-meta">
@@ -900,24 +950,43 @@
                             · {{ __('الرقم الميكانيكي') }}: <span dir="ltr">{{ $schoolSetting->school_code }}</span>
                         @endif
                     </p>
-                    <div class="doc-title-banner">{{ $printTitle }}</div>
-                    @if ($printSubtitle)
-                        <p class="doc-subtitle">{{ $printSubtitle }}</p>
-                    @endif
                 </div>
 
+                <!-- 2. Center: Republic, Ministry, Directorate -->
+                <div class="doc-header-col doc-header-republic">
+                    <p class="republic-name">{{ __('الجمهورية الجزائرية الديمقراطية الشعبية') }}</p>
+                    <p class="ministry">{{ __('وزارة التربية الوطنية') }}</p>
+                    <p class="directorate">{{ $schoolSetting->directorate_name }}</p>
+                </div>
+
+                <!-- 3. Left: Academic Year, Date, Reference -->
                 <div class="doc-header-col doc-header-meta">
-                    <p>{{ __('السنة الدراسية') }}</p>
-                    <strong>{{ $printAcademicYear }}</strong>
-                    <p>{{ __('تاريخ الإصدار') }}</p>
-                    <strong>{{ now(config('app.timezone', 'Africa/Algiers'))->format('Y-m-d') }}</strong>
-                    <p>{{ $printReference }}</p>
-                    @if ($printMeta)
-                        <strong>{{ $printMeta }}</strong>
-                    @endif
+                    <div class="meta-row">
+                        <span class="meta-label">{{ __('السنة الدراسية') }}:</span>
+                        <strong class="meta-value"><span dir="ltr">{{ $printAcademicYear }}</span></strong>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">{{ __('تاريخ الإصدار') }}:</span>
+                        <strong class="meta-value"><span dir="ltr">{{ now(config('app.timezone', 'Africa/Algiers'))->format('Y-m-d') }}</span></strong>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">{{ $printReference }}@if ($printMeta):@endif</span>
+                        @if ($printMeta)
+                            <strong class="meta-value">{{ $printMeta }}</strong>
+                        @endif
+                    </div>
                 </div>
             </div>
         </header>
+
+        @if ($printTitle)
+            <div class="doc-title-wrapper">
+                <div class="doc-title-banner">{{ $printTitle }}</div>
+                @if ($printSubtitle)
+                    <p class="doc-subtitle">{{ $printSubtitle }}</p>
+                @endif
+            </div>
+        @endif
 
         @if ($printAutoPrint)
             <script>

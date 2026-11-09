@@ -163,4 +163,3 @@ class ImpersonationTest extends TestCase
         $dashboardResponse->assertSee('إنهاء المعاينة والعودة لحسابي');
     }
 }
-

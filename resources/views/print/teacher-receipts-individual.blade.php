@@ -4,7 +4,6 @@
 
 @include('print.partials.document-head', [
     'printTitle' => 'كشف وضعية استلام وتأشير المخططات والأعمال التقويمية',
-    'printSubtitle' => $teacher->name . ' — ' . ($teacher->primarySubject?->name ?? 'الأستاذ(ة)'),
     'printAcademicYear' => $academicYear,
     'printReference' => 'سجل المتابعة البيداغوجية',
     'printMeta' => 'نسخة الأستاذ الرسمية',
@@ -13,26 +12,29 @@
 ])
 
 <div class="space-y-5" dir="rtl" style="font-family: 'Amiri', 'Cairo', serif; margin-top: 10px;">
-    <!-- Teacher Identity Banner -->
-    <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 16px; margin-bottom: 16px;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 11pt;">
-            <tr>
-                <td style="padding: 4px; width: 35%;">
-                    <span style="color: #64748b; font-weight: bold;">اسم ولقب الأستاذ:</span>
-                    <span style="font-weight: bold; color: #0f172a; font-size: 12pt;">{{ $teacher->name }}</span>
-                </td>
-                <td style="padding: 4px; width: 35%;">
-                    <span style="color: #64748b; font-weight: bold;">المادة المقررة:</span>
-                    <span style="font-weight: bold; color: #0f172a;">{{ $teacher->primarySubject?->name ?? 'غير محدد' }}</span>
-                </td>
-                <td style="padding: 4px; width: 30%; text-align: left;">
-                    <span style="color: #64748b; font-weight: bold;">نسبة الامتثال العام:</span>
-                    <span style="display: inline-block; font-weight: bold; background-color: #1e3a8a; color: #ffffff; padding: 2px 10px; border-radius: 9999px;">
-                        {{ $overallPercentage }}% ({{ $totalSubmitted }}/{{ $totalItems }})
-                    </span>
-                </td>
-            </tr>
-        </table>
+    <!-- Teacher Identity Banner (Full Single Line) -->
+    <div style="background-color: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 7px 18px; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap; font-family: 'Cairo', 'Amiri', serif;">
+            <!-- 1. Teacher Name (Right) -->
+            <div style="display: inline-flex; align-items: baseline; gap: 6px;">
+                <span style="color: #64748b; font-weight: 700; font-size: 9.5pt;">اسم ولقب الأستاذ:</span>
+                <span style="color: #0f172a; font-size: 13pt; font-weight: 700; font-family: 'Amiri', serif;">{{ $teacher->name }}</span>
+            </div>
+
+            <!-- 2. Subject (Center) -->
+            <div style="display: inline-flex; align-items: baseline; gap: 6px;">
+                <span style="color: #64748b; font-weight: 700; font-size: 9.5pt;">المادة المقررة:</span>
+                <span style="color: #1e3a8a; font-size: 11pt; font-weight: 700;">{{ $teacher->primarySubject?->name ?? 'غير محدد' }}</span>
+            </div>
+
+            <!-- 3. Compliance Rate (Left) -->
+            <div style="display: inline-flex; align-items: center; gap: 8px;">
+                <span style="color: #64748b; font-weight: 700; font-size: 9.5pt;">نسبة الامتثال العام:</span>
+                <span style="display: inline-block; background-color: #1e3a8a; color: #ffffff; padding: 2px 10px; border-radius: 9999px; font-weight: 700; font-size: 9pt; font-family: 'Cairo', sans-serif;">
+                    {{ $overallPercentage }}% ({{ $totalSubmitted }}/{{ $totalItems }})
+                </span>
+            </div>
+        </div>
     </div>
 
     <!-- Section 1: المخططات والتدرجات البيداغوجية -->
@@ -205,7 +207,7 @@
     <!-- Official Certification Footer -->
     <div style="margin-top: 35px; padding-top: 15px; border-top: 1.5px dashed #94a3b8;">
         <div style="font-size: 11pt; font-weight: bold; margin-bottom: 25px; text-align: left;">
-            حرر بـ {{ $schoolSetting?->municipality_name ?? 'المغير' }} في: {{ now()->translatedFormat('d F Y') }}
+            حرر بـ {{ $schoolSetting?->municipality_name ?? 'المغير' }} في: {{ now()->locale('ar')->translatedFormat('d F Y') }}
         </div>
 
         <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 11.5pt;">

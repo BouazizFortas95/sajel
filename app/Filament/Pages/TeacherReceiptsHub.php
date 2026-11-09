@@ -128,6 +128,17 @@ class TeacherReceiptsHub extends Page
                     'year' => $this->academicYear,
                 ]))
                 ->openUrlInNewTab(),
+
+            Action::make('word')
+                ->label('تصدير كشف رسمي (Word)')
+                ->icon('heroicon-o-document-text')
+                ->color('gray')
+                ->url(fn () => route('print.teacher-receipts.word', [
+                    'locale' => app()->getLocale(),
+                    'user' => $effectiveId,
+                    'year' => $this->academicYear,
+                ]))
+                ->openUrlInNewTab(),
         ];
     }
 
