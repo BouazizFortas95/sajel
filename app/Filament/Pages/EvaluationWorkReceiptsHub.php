@@ -6,6 +6,7 @@ use App\Models\SchoolSetting;
 use App\Models\Subject;
 use App\Services\AdministrativeArchiveService;
 use App\Services\EvaluationWorkReceiptService;
+use App\Services\PedagogicalReceiptReminderService;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
@@ -225,6 +226,47 @@ class EvaluationWorkReceiptsHub extends Page
 
                     Notification::make()
                         ->title("تم تحديث التأشير لـ {$count} أستاذ بنجاح")
+                        ->success()
+                        ->send();
+                }),
+
+            Action::make('sendReminders')
+                ->label('إرسال تذكير بمواضيع التقويم')
+                ->icon('heroicon-o-bell-alert')
+                ->color('danger')
+                ->form([
+                    Forms\Components\Select::make('itemKey')
+                        ->label('العمل التقويمي المطلوب تسليمه')
+                        ->required()
+                        ->options([
+                            'diagnostic_test' => 'اختبار كشف المستوى',
+                            'homework_1' => 'الواجب المنزلي (1)',
+                            'homework_2' => 'الواجب المنزلي (2)',
+                            'homework_3' => 'الواجب المنزلي (3)',
+                            'quiz_1' => 'موضوع الفرض المحروس (1)',
+                            'quiz_2' => 'موضوع الفرض المحروس (2)',
+                            'quiz_3' => 'موضوع الفرض المحروس (3)',
+                            'exam_1' => 'موضوع وسلالم اختبار الفصل الأول',
+                            'exam_2' => 'موضوع وسلالم اختبار الفصل الثاني',
+                            'exam_3' => 'موضوع وسلالم اختبار الفصل الثالث',
+                        ])
+                        ->default('quiz_1'),
+                    Forms\Components\Textarea::make('customMessage')
+                        ->label('رسالة توجيهية إضافية (اختياري)')
+                        ->placeholder('مثال: نذكركم بوجوب إيداع مواضيع الفروض وسلالم التصحيح النموذجي قبل نهاية الأسبوع.'),
+                ])
+                ->action(function (array $data): void {
+                    $reminderService = app(PedagogicalReceiptReminderService::class);
+                    $count = $reminderService->sendBulkReminders(
+                        $data['itemKey'],
+                        $this->selectedSubjectId,
+                        $this->academicYear,
+                        $data['customMessage'] ?? null
+                    );
+
+                    Notification::make()
+                        ->title("تم إرسال إشعار تذكيري لـ {$count} أستاذ بنجاح")
+                        ->body($count > 0 ? 'وصل التنبيه للأساتذة في صندوق الإشعارات العلوي بحساباتهم.' : 'جميع الأساتذة المعنيين قد سلموا هذا العمل بالفعل.')
                         ->success()
                         ->send();
                 }),

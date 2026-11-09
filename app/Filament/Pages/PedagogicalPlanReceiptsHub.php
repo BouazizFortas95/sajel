@@ -7,6 +7,7 @@ use App\Models\SchoolSetting;
 use App\Models\Subject;
 use App\Services\AdministrativeArchiveService;
 use App\Services\PedagogicalPlanReceiptService;
+use App\Services\PedagogicalReceiptReminderService;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
@@ -235,6 +236,48 @@ class PedagogicalPlanReceiptsHub extends Page
 
                     Notification::make()
                         ->title("تم تحديث تأشير المخطط الشهري لـ {$count} أستاذ بنجاح")
+                        ->success()
+                        ->send();
+                }),
+
+            Action::make('sendReminders')
+                ->label('إرسال تذكير للمتأخرين')
+                ->icon('heroicon-o-bell-alert')
+                ->color('danger')
+                ->form([
+                    Forms\Components\Select::make('itemKey')
+                        ->label('نوع المخطط المطلوب تسليمه')
+                        ->required()
+                        ->options([
+                            'annual_plan' => 'المخطط السنوي المعتمد',
+                            'monthly_plan' => 'تدرج الشهر الجاري',
+                            'september' => 'تدرج شهر سبتمبر',
+                            'october' => 'تدرج شهر أكتوبر',
+                            'november' => 'تدرج شهر نوفمبر',
+                            'december' => 'تدرج شهر ديسمبر',
+                            'january' => 'تدرج شهر جانفي',
+                            'february' => 'تدرج شهر فيفري',
+                            'march' => 'تدرج شهر مارس',
+                            'april' => 'تدرج شهر أفريل',
+                            'may' => 'تدرج شهر ماي',
+                        ])
+                        ->default('monthly_plan'),
+                    Forms\Components\Textarea::make('customMessage')
+                        ->label('رسالة توجيهية إضافية (اختياري)')
+                        ->placeholder('مثال: يُرجى تسليم التدرج قبل نهاية الأسبوع الحالي لدى ناظر الدروس.'),
+                ])
+                ->action(function (array $data): void {
+                    $reminderService = app(PedagogicalReceiptReminderService::class);
+                    $count = $reminderService->sendBulkReminders(
+                        $data['itemKey'],
+                        $this->selectedSubjectId,
+                        $this->academicYear,
+                        $data['customMessage'] ?? null
+                    );
+
+                    Notification::make()
+                        ->title("تم إرسال إشعار تذكيري لـ {$count} أستاذ بنجاح")
+                        ->body($count > 0 ? 'وصل التنبيه للأساتذة في صندوق الإشعارات العلوي بحساباتهم.' : 'جميع الأساتذة المعنيين قد سلموا هذا المخطط بالفعل.')
                         ->success()
                         ->send();
                 }),
