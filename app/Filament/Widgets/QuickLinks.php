@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Filament\Pages\EvaluationWorkReceiptsHub;
 use App\Filament\Pages\MySchedule;
 use App\Filament\Pages\PedagogicalPlanReceiptsHub;
+use App\Filament\Pages\TeacherReceiptsHub;
 use App\Filament\Resources\ClassroomResource;
 use App\Filament\Resources\DailyLogResource;
 use App\Filament\Resources\EducationPhaseResource;
@@ -60,6 +61,16 @@ class QuickLinks extends Widget
                 'description' => __('حصصك اليومية والوصول المباشر لسجلاتها'),
                 'icon' => 'calendar',
                 'url' => MySchedule::getUrl(),
+            ];
+        }
+
+        // Teacher Personal Receipts Tracking
+        if (TeacherReceiptsHub::canAccess() && auth()->user()?->isTeacher()) {
+            $links[] = [
+                'label' => __('متابعة مخططاتي وأعمالي'),
+                'description' => __('حالة تأشير المخططات السنوية والشهرية والأعمال التقويمية'),
+                'icon' => 'clipboard',
+                'url' => TeacherReceiptsHub::getUrl(),
             ];
         }
 

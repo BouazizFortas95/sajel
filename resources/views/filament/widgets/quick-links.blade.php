@@ -6,6 +6,7 @@
         'palette' => 'heroicon-o-swatch',
         'users' => 'heroicon-o-users',
         'academic' => 'heroicon-o-academic-cap',
+        'clipboard' => 'heroicon-o-clipboard-document-check',
         'user-group' => 'heroicon-o-user-group',
         'building' => 'heroicon-o-building-office-2',
     ];

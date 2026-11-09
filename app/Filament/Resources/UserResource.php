@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\Role;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
+use App\Services\ImpersonationService;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -200,6 +201,20 @@ class UserResource extends Resource
                     ->options(Role::groupedOptions()),
             ])
             ->actions([
+                Tables\Actions\Action::make('impersonate')
+                    ->label(__('معاينة كأستاذ'))
+                    ->icon('heroicon-o-arrow-right-end-on-rectangle')
+                    ->color('warning')
+                    ->visible(fn (User $record): bool => app(ImpersonationService::class)->canImpersonate(auth()->user()) &&
+                        app(ImpersonationService::class)->canBeImpersonated($record)
+                    )
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (User $record): string => __('معاينة المنصة بصفتك الأستاذ: :name', ['name' => $record->name]))
+                    ->modalDescription(__('ستنتقل فوراً إلى واجهة الأستاذ بكامل جداول حصصه ودفتر نصوصه وكشوفاته. يمكنك في أي وقت إنهاء المعاينة والعودة لحسابك الأصلي عبر الشريط العلوي.'))
+                    ->action(function (User $record): void {
+                        app(ImpersonationService::class)->impersonate($record);
+                        redirect(route('filament.auth.pages.dashboard', ['locale' => app()->getLocale()]));
+                    }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->visible(fn (User $record): bool => $record->id !== auth()->id()),

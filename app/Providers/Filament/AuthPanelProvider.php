@@ -78,6 +78,10 @@ class AuthPanelProvider extends PanelProvider
             ])
             ->renderHook(
                 PanelsRenderHook::BODY_START,
+                fn () => view('filament.partials.impersonation-banner'),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
                 fn () => view('filament.partials.platform-announcement'),
             )
             ->renderHook(

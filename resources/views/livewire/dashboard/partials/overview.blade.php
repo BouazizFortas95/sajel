@@ -66,6 +66,70 @@
 
 @if (\App\Filament\Widgets\PedagogicalReceiptsComplianceWidget::canView())
     @livewire(\App\Filament\Widgets\PedagogicalReceiptsComplianceWidget::class)
+
+    @if (auth()->user()?->isDeveloper() || auth()->user()?->isPrincipal())
+        <div class="rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50/70 via-white to-purple-50/40 p-4 shadow-sm dark:border-indigo-900/40 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900" dir="rtl">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                        <x-filament::icon icon="heroicon-o-arrow-right-end-on-rectangle" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-900 dark:text-white">
+                            {{ __('معاينة تجربة الأستاذ (وضع المحاكاة الفنية)') }}
+                        </h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            {{ __('تقمص دور أي أستاذ لمعاينة جداوله، تحضير دروسه، كشوفاته، ودفتر نصوصه.') }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <a
+                        href="{{ \App\Filament\Resources\UserResource::getUrl() }}?tableFilters[role][value]={{ \App\Enums\Role::Teacher->value }}"
+                        class="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700"
+                    >
+                        <x-filament::icon icon="heroicon-o-users" class="h-4 w-4" />
+                        {{ __('اختيار أستاذ للمعاينة') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    @endif
+@elseif (auth()->user()?->isTeacher() && \App\Filament\Pages\TeacherReceiptsHub::canAccess())
+    @php
+        $teacherReceiptService = app(\App\Services\TeacherReceiptsService::class);
+        $tData = $teacherReceiptService->viewData(auth()->user());
+    @endphp
+    <div class="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50/70 via-white to-slate-50 p-4 shadow-sm dark:border-gray-700 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900" dir="rtl">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                    <x-filament::icon icon="heroicon-o-clipboard-document-check" class="h-5 w-5" />
+                </span>
+                <div>
+                    <h3 class="text-sm font-bold text-gray-900 dark:text-white">
+                        {{ __('متابعة مخططاتك وأعمالك التقويمية') }}
+                    </h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ __('نسبة التأشير الإداري المعتمد: ') }}
+                        <strong class="text-blue-700 dark:text-blue-400">{{ $tData['overallPercentage'] }}%</strong>
+                        ({{ $tData['totalSubmitted'] }} {{ __('من') }} {{ $tData['totalItems'] }} {{ __('وثيقة مؤشرة') }})
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <a
+                    href="{{ \App\Filament\Pages\TeacherReceiptsHub::getUrl() }}"
+                    class="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700"
+                >
+                    {{ __('معاينة كشف التأشير المفصل') }}
+                    <x-filament::icon icon="heroicon-o-arrow-left" class="h-3.5 w-3.5" />
+                </a>
+            </div>
+        </div>
+    </div>
 @endif
 
 <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">

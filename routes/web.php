@@ -8,6 +8,7 @@ use App\Http\Controllers\DisciplinaryCouncilController;
 use App\Http\Controllers\DownloadPedagogicalMemoPdfController;
 use App\Http\Controllers\EvaluationWorkReceiptController;
 use App\Http\Controllers\ExamTimetableController;
+use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\InspectionReportController;
 use App\Http\Controllers\InstitutionalBilanController;
 use App\Http\Controllers\OfficialExamCenterController;
@@ -41,6 +42,7 @@ use App\Http\Controllers\StudentReportCardController;
 use App\Http\Controllers\StudentStationController;
 use App\Http\Controllers\TeacherAbsenceController;
 use App\Http\Controllers\TeacherPortfolioController;
+use App\Http\Controllers\TeacherReceiptsPrintController;
 use App\Http\Controllers\TextbookInventoryController;
 use App\Http\Middleware\SetFilamentLocale;
 use App\Models\SchoolSetting;
@@ -271,6 +273,30 @@ Route::get('/print/evaluation-work-receipts', function () {
 Route::get('/print/evaluation-work-receipts/word', function () {
     return redirect()->route('print.evaluation-work-receipts.word', ['locale' => app()->getLocale()]);
 })->middleware('auth');
+
+Route::get('/{locale}/print/teacher-receipts/{user?}', [TeacherReceiptsPrintController::class, 'print'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-receipts');
+
+Route::get('/{locale}/print/teacher-receipts/{user?}/pdf', [TeacherReceiptsPrintController::class, 'pdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-receipts.pdf');
+
+Route::post('/{locale}/impersonate/leave', [ImpersonationController::class, 'leave'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('impersonate.leave');
+
+Route::get('/{locale}/impersonate/leave', [ImpersonationController::class, 'leave'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class]);
+
+Route::post('/{locale}/impersonate/{user}', [ImpersonationController::class, 'start'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('impersonate.start');
 
 Route::get('/{locale}/parent/students/{student}', [ParentPortalController::class, 'portal'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
