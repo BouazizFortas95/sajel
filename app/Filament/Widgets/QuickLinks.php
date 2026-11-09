@@ -2,7 +2,9 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\EvaluationWorkReceiptsHub;
 use App\Filament\Pages\MySchedule;
+use App\Filament\Pages\PedagogicalPlanReceiptsHub;
 use App\Filament\Resources\ClassroomResource;
 use App\Filament\Resources\DailyLogResource;
 use App\Filament\Resources\EducationPhaseResource;
@@ -87,6 +89,26 @@ class QuickLinks extends Widget
                 'description' => __('جدولك الأسبوعي'),
                 'icon' => 'calendar',
                 'url' => ScheduleResource::getUrl(),
+            ];
+        }
+
+        // Pedagogical Plan Receipts
+        if (PedagogicalPlanReceiptsHub::canAccess()) {
+            $links[] = [
+                'label' => __('المخططات والتدرجات'),
+                'description' => __('سجل استلام وتأشير المخططات السنوية والشهرية'),
+                'icon' => 'calendar',
+                'url' => PedagogicalPlanReceiptsHub::getUrl(),
+            ];
+        }
+
+        // Evaluation Work Receipts
+        if (EvaluationWorkReceiptsHub::canAccess()) {
+            $links[] = [
+                'label' => __('تسليم الأعمال التقويمية'),
+                'description' => __('سجل استلام كشف المستوى والواجبات والفروض والاختبارات'),
+                'icon' => 'academic',
+                'url' => EvaluationWorkReceiptsHub::getUrl(),
             ];
         }
 

@@ -85,4 +85,3 @@ class EvaluationWorkReceiptController extends Controller
         ])->deleteFileAfterSend(true);
     }
 }
-

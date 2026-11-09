@@ -4,11 +4,14 @@ namespace Tests\Feature;
 
 use App\Enums\Role;
 use App\Filament\Pages\EvaluationWorkReceiptsHub;
+use App\Models\EvaluationWorkReceipt;
 use App\Models\SchoolSetting;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\AdministrativeArchiveService;
 use App\Services\EvaluationWorkReceiptService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 use ZipArchive;
@@ -248,5 +251,50 @@ class EvaluationWorkReceiptTest extends TestCase
 
         $zip->close();
         @unlink($tempDocx);
+    }
+
+    public function test_livewire_bulk_evaluation_work_action(): void
+    {
+        Livewire::actingAs($this->principal)
+            ->test(EvaluationWorkReceiptsHub::class)
+            ->assertSuccessful()
+            ->callAction('bulkEvaluationWork', [
+                'itemKey' => 'quiz_1',
+                'date' => '2026-10-25',
+                'submitted' => true,
+            ]);
+
+        $this->assertDatabaseHas('evaluation_work_receipts', [
+            'user_id' => $this->teacher->id,
+            'quiz_1_submitted' => true,
+        ]);
+
+        $receipt = EvaluationWorkReceipt::where('user_id', $this->teacher->id)->first();
+        $this->assertEquals('2026-10-25', $receipt->quiz_1_date->format('Y-m-d'));
+    }
+
+    public function test_archive_pedagogical_receipt_register_for_evaluations(): void
+    {
+        Storage::fake('public');
+
+        $archiveService = app(AdministrativeArchiveService::class);
+        $dummyPdf = '%PDF-1.4 mock evaluation content';
+
+        $result = $archiveService->archivePedagogicalReceiptRegister(
+            'evaluations',
+            $dummyPdf,
+            '2026-2027',
+            'اللغة العربية'
+        );
+
+        $this->assertNotEmpty($result['mail_number']);
+        $this->assertNotEmpty($result['relative_path']);
+        Storage::disk('public')->assertExists($result['relative_path']);
+
+        $this->assertDatabaseHas('official_mails', [
+            'mail_number' => $result['mail_number'],
+            'status' => 'archived',
+            'attachment_path' => $result['relative_path'],
+        ]);
     }
 }

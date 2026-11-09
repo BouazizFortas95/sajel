@@ -64,6 +64,10 @@
     @endif
 </div>
 
+@if (\App\Filament\Widgets\PedagogicalReceiptsComplianceWidget::canView())
+    @livewire(\App\Filament\Widgets\PedagogicalReceiptsComplianceWidget::class)
+@endif
+
 <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
     <section class="flex h-full flex-col rounded-2xl border border-amber-100 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
         <header class="border-b border-amber-100 px-5 py-4 dark:border-gray-700">

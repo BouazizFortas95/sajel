@@ -106,4 +106,3 @@ class EvaluationWorkReceipt extends Model
         return $val ? (is_string($val) ? $val : $val->format('Y-m-d')) : null;
     }
 }
-

@@ -145,6 +145,39 @@ class PedagogicalPlanReceiptService
     }
 
     /**
+     * Bulk mark monthly plan submission for multiple teachers.
+     */
+    public function bulkMarkMonthlyPlan(
+        array $userIds,
+        string $monthKey,
+        bool $submitted,
+        ?string $date = null,
+        ?string $academicYear = null
+    ): int {
+        $year = $academicYear ?: $this->getCurrentAcademicYear();
+        $targetDate = $submitted ? ($date ?: now()->format('Y-m-d')) : null;
+        $count = 0;
+
+        $monthKey = strtolower($monthKey);
+        $subCol = $monthKey.'_submitted';
+        $dateCol = $monthKey.'_date';
+
+        foreach ($userIds as $userId) {
+            $receipt = PedagogicalPlanReceipt::firstOrNew([
+                'user_id' => $userId,
+                'academic_year' => $year,
+            ]);
+
+            $receipt->{$subCol} = $submitted;
+            $receipt->{$dateCol} = $targetDate;
+            $receipt->save();
+            $count++;
+        }
+
+        return $count;
+    }
+
+    /**
      * Toggle director or censor visa.
      */
     public function toggleVisa(int $userId, string $role, bool $signed, ?string $academicYear = null): PedagogicalPlanReceipt

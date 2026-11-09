@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\PedagogicalReceiptsComplianceWidget;
 use App\Filament\Widgets\QuickLinks;
 use App\Filament\Widgets\UnloggedSessionsWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
@@ -35,6 +36,7 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
+            PedagogicalReceiptsComplianceWidget::class,
             UnloggedSessionsWidget::class,
             QuickLinks::class,
         ];

@@ -9,6 +9,7 @@ use App\Models\SchoolSetting;
 use App\Models\StaffInstallation;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class AdministrativeArchiveService
 {
@@ -212,6 +213,54 @@ class AdministrativeArchiveService
                 ->whereNotNull('response_deadline')
                 ->where('response_deadline', '<', now()->toDateString())
                 ->count(),
+        ];
+    }
+
+    /**
+     * Archive an official pedagogical receipt register (PDF) into the school administrative archive.
+     *
+     * @return array{mail: OfficialMail, relative_path: string, mail_number: string}
+     */
+    public function archivePedagogicalReceiptRegister(
+        string $registerType,
+        string $pdfBinary,
+        string $academicYear,
+        ?string $subjectName = null
+    ): array {
+        $setting = SchoolSetting::current();
+        $typeLabel = $registerType === 'plans'
+            ? 'سجل استلام وتأشير المخططات والتدرجات البيداغوجية'
+            : 'سجل تسليم الأعمال والوثائق التقويمية';
+
+        $subjectSuffix = $subjectName ? " لمادة {$subjectName}" : ' لجميع المواد التعليمية';
+        $fullSubject = "أرشيف رسمي: {$typeLabel}{$subjectSuffix} للسنة الدراسية {$academicYear}";
+
+        $cleanYear = str_replace(['/', '\\'], '-', $academicYear);
+        $fileName = sprintf('%s_%s_%s.pdf', $registerType, $cleanYear, now()->format('Ymd_His'));
+        $relativePath = "archives/pedagogical/{$cleanYear}/{$fileName}";
+
+        Storage::disk('public')->put($relativePath, $pdfBinary);
+
+        $mailNumber = $this->generateMailNumber(OfficialMailType::Outgoing);
+
+        $mail = OfficialMail::create([
+            'mail_number' => $mailNumber,
+            'mail_type' => OfficialMailType::Outgoing->value,
+            'mail_date' => now()->toDateString(),
+            'sender_name' => $setting?->school_name ?? 'إدارة المؤسسة',
+            'recipient_name' => 'الأرشيف الإداري والتربوي الداخلي للمؤسسة',
+            'subject' => $fullSubject,
+            'reference_number' => 'ARCH-PED-'.now()->format('Ymd'),
+            'attachment_path' => $relativePath,
+            'status' => 'archived',
+            'notes' => 'نسخة رقمية مؤرشفة ومعتمدة صادرة من منظومة سجل المتابعة البيداغوجية بتاريخ '.now()->translatedFormat('d F Y H:i'),
+            'recorded_by' => Auth::id(),
+        ]);
+
+        return [
+            'mail' => $mail,
+            'relative_path' => $relativePath,
+            'mail_number' => $mailNumber,
         ];
     }
 }

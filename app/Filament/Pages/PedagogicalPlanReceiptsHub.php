@@ -5,8 +5,10 @@ namespace App\Filament\Pages;
 use App\Models\PedagogicalPlanReceipt;
 use App\Models\SchoolSetting;
 use App\Models\Subject;
+use App\Services\AdministrativeArchiveService;
 use App\Services\PedagogicalPlanReceiptService;
 use Filament\Actions\Action;
+use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
@@ -190,6 +192,87 @@ class PedagogicalPlanReceiptsHub extends Page
                 ->modalHeading('تأكيد استلام المخططات السنوية')
                 ->modalDescription('هل ترغب في تأشير وتأكيد استلام المخطط السنوي لجميع الأساتذة المعروضين بتاريخ اليوم؟')
                 ->action(fn () => $this->bulkConfirmAnnualPlans()),
+
+            Action::make('bulkMonthly')
+                ->label('تأشير جماعي للمخطط الشهري')
+                ->icon('heroicon-o-calendar-days')
+                ->color('info')
+                ->form([
+                    Forms\Components\Select::make('monthKey')
+                        ->label('الشهر المستهدف')
+                        ->required()
+                        ->options([
+                            'september' => 'سبتمبر',
+                            'october' => 'أكتوبر',
+                            'november' => 'نوفمبر',
+                            'december' => 'ديسمبر',
+                            'january' => 'جانفي',
+                            'february' => 'فيفري',
+                            'march' => 'مارس',
+                            'april' => 'أفريل',
+                            'may' => 'ماي',
+                        ])
+                        ->default(app(PedagogicalPlanReceiptService::class)->getCurrentAcademicMonthKey()),
+                    Forms\Components\DatePicker::make('date')
+                        ->label('تاريخ الاستلام والتأشير')
+                        ->required()
+                        ->default(now()->toDateString()),
+                    Forms\Components\Toggle::make('submitted')
+                        ->label('تأكيد الاستلام والتأشير (إلغاء التفعيل للإلغاء)')
+                        ->default(true),
+                ])
+                ->action(function (array $data): void {
+                    $service = app(PedagogicalPlanReceiptService::class);
+                    $teachers = $service->getTeachersWithReceipts($this->selectedSubjectId, $this->academicYear);
+                    $userIds = $teachers->pluck('id')->all();
+                    $count = $service->bulkMarkMonthlyPlan(
+                        $userIds,
+                        $data['monthKey'],
+                        (bool) $data['submitted'],
+                        $data['date'],
+                        $this->academicYear
+                    );
+
+                    Notification::make()
+                        ->title("تم تحديث تأشير المخطط الشهري لـ {$count} أستاذ بنجاح")
+                        ->success()
+                        ->send();
+                }),
+
+            Action::make('archiveToArchive')
+                ->label('أرشفة في سجل المؤسسة')
+                ->icon('heroicon-o-archive-box-arrow-down')
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalHeading('أرشفة الوثيقة في الأرشيف الإداري والتربوي')
+                ->modalDescription('هل ترغب في حفظ نسخة رقمية رسمية معتمدة بصيغة PDF وتوثيقها برقم قيد رسمي داخل الأرشيف الإداري للمؤسسة؟')
+                ->action(function (): void {
+                    try {
+                        $planService = app(PedagogicalPlanReceiptService::class);
+                        $archiveService = app(AdministrativeArchiveService::class);
+                        $subject = $this->selectedSubjectId ? Subject::find($this->selectedSubjectId) : null;
+
+                        $pdfContent = $planService->generatePdf($this->selectedSubjectId, $this->academicYear, 'separate');
+                        $res = $archiveService->archivePedagogicalReceiptRegister(
+                            'plans',
+                            $pdfContent,
+                            $this->academicYear ?? $planService->getCurrentAcademicYear(),
+                            $subject?->name
+                        );
+
+                        Notification::make()
+                            ->title('تمت أرشفة الوثيقة في سجل المؤسسة بنجاح')
+                            ->body("رقم القيد الرسمي للأرشيف: {$res['mail_number']}")
+                            ->success()
+                            ->send();
+                    } catch (\Throwable $e) {
+                        Notification::make()
+                            ->title('تعذر إتمام الأرشفة')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
         ];
     }
 

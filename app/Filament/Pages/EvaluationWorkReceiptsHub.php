@@ -4,8 +4,10 @@ namespace App\Filament\Pages;
 
 use App\Models\SchoolSetting;
 use App\Models\Subject;
+use App\Services\AdministrativeArchiveService;
 use App\Services\EvaluationWorkReceiptService;
 use Filament\Actions\Action;
+use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
@@ -180,14 +182,87 @@ class EvaluationWorkReceiptsHub extends Page
                 ]))
                 ->openUrlInNewTab(),
 
-            Action::make('bulkDiagnostic')
-                ->label('تأكيد استلام اختبار كشف المستوى للجميع')
-                ->icon('heroicon-o-check-badge')
+            Action::make('bulkEvaluationWork')
+                ->label('تأشير جماعي للأعمال التقويمية')
+                ->icon('heroicon-o-check-circle')
                 ->color('warning')
+                ->form([
+                    Forms\Components\Select::make('itemKey')
+                        ->label('نوع العمل التقويمي')
+                        ->required()
+                        ->options([
+                            'diagnostic_test' => 'اختبار كشف المستوى',
+                            'homework_1' => 'الواجب المنزلي رقم 01',
+                            'homework_2' => 'الواجب المنزلي رقم 02',
+                            'homework_3' => 'الواجب المنزلي رقم 03',
+                            'quiz_1' => 'الفرض المحروس رقم 01',
+                            'quiz_2' => 'الفرض المحروس رقم 02',
+                            'quiz_3' => 'الفرض المحروس رقم 03',
+                            'exam_1' => 'اختبار الفصل الأول',
+                            'exam_2' => 'اختبار الفصل الثاني',
+                            'exam_3' => 'اختبار الفصل الثالث',
+                        ])
+                        ->default('diagnostic_test'),
+                    Forms\Components\DatePicker::make('date')
+                        ->label('تاريخ الاستلام والتأشير')
+                        ->required()
+                        ->default(now()->toDateString()),
+                    Forms\Components\Toggle::make('submitted')
+                        ->label('تأكيد الاستلام والتأشير (إلغاء التفعيل للإلغاء)')
+                        ->default(true),
+                ])
+                ->action(function (array $data): void {
+                    $service = app(EvaluationWorkReceiptService::class);
+                    $teachers = $service->getTeachersWithReceipts($this->selectedSubjectId, $this->academicYear);
+                    $userIds = $teachers->pluck('id')->all();
+                    $count = $service->bulkMarkItem(
+                        $userIds,
+                        $data['itemKey'],
+                        (bool) $data['submitted'],
+                        $data['date'],
+                        $this->academicYear
+                    );
+
+                    Notification::make()
+                        ->title("تم تحديث التأشير لـ {$count} أستاذ بنجاح")
+                        ->success()
+                        ->send();
+                }),
+
+            Action::make('archiveToArchive')
+                ->label('أرشفة في سجل المؤسسة')
+                ->icon('heroicon-o-archive-box-arrow-down')
+                ->color('gray')
                 ->requiresConfirmation()
-                ->modalHeading('تأكيد استلام اختبار كشف المستوى')
-                ->modalDescription('هل ترغب في تسجيل استلام اختبار كشف المستوى لجميع الأساتذة المعروضين بتاريخ اليوم؟')
-                ->action(fn () => $this->bulkConfirmDiagnostic()),
+                ->modalHeading('أرشفة الوثيقة في الأرشيف الإداري والتربوي')
+                ->modalDescription('هل ترغب في حفظ نسخة رقمية رسمية معتمدة بصيغة PDF وتوثيقها برقم قيد رسمي داخل الأرشيف الإداري للمؤسسة؟')
+                ->action(function (): void {
+                    try {
+                        $evalService = app(EvaluationWorkReceiptService::class);
+                        $archiveService = app(AdministrativeArchiveService::class);
+                        $subject = $this->selectedSubjectId ? Subject::find($this->selectedSubjectId) : null;
+
+                        $pdfContent = $evalService->generatePdf($this->selectedSubjectId, $this->academicYear, 'separate');
+                        $res = $archiveService->archivePedagogicalReceiptRegister(
+                            'evaluations',
+                            $pdfContent,
+                            $this->academicYear ?? $evalService->getCurrentAcademicYear(),
+                            $subject?->name
+                        );
+
+                        Notification::make()
+                            ->title('تمت أرشفة الوثيقة في سجل المؤسسة بنجاح')
+                            ->body("رقم القيد الرسمي للأرشيف: {$res['mail_number']}")
+                            ->success()
+                            ->send();
+                    } catch (\Throwable $e) {
+                        Notification::make()
+                            ->title('تعذر إتمام الأرشفة')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
         ];
     }
 

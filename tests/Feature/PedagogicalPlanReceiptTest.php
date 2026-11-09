@@ -4,11 +4,15 @@ namespace Tests\Feature;
 
 use App\Enums\Role;
 use App\Filament\Pages\PedagogicalPlanReceiptsHub;
+use App\Filament\Widgets\PedagogicalReceiptsComplianceWidget;
+use App\Models\PedagogicalPlanReceipt;
 use App\Models\SchoolSetting;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\AdministrativeArchiveService;
 use App\Services\PedagogicalPlanReceiptService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -282,5 +286,84 @@ class PedagogicalPlanReceiptTest extends TestCase
         $this->actingAs($this->teacher)
             ->get('/ar/print/pedagogical-plan-receipts/word')
             ->assertForbidden();
+    }
+
+    public function test_bulk_mark_monthly_plan(): void
+    {
+        $service = app(PedagogicalPlanReceiptService::class);
+        $t2 = User::factory()->create([
+            'role' => Role::Teacher->value,
+            'primary_subject_id' => $this->arabic->id,
+        ]);
+
+        $count = $service->bulkMarkMonthlyPlan([$this->teacher->id, $t2->id], 'october', true, '2026-10-15');
+        $this->assertEquals(2, $count);
+
+        $this->assertDatabaseHas('pedagogical_plan_receipts', [
+            'user_id' => $this->teacher->id,
+            'october_submitted' => true,
+        ]);
+        $this->assertDatabaseHas('pedagogical_plan_receipts', [
+            'user_id' => $t2->id,
+            'october_submitted' => true,
+        ]);
+
+        $receipt = PedagogicalPlanReceipt::where('user_id', $this->teacher->id)->first();
+        $this->assertEquals('2026-10-15', $receipt->october_date->format('Y-m-d'));
+    }
+
+    public function test_livewire_bulk_monthly_action(): void
+    {
+        Livewire::actingAs($this->principal)
+            ->test(PedagogicalPlanReceiptsHub::class)
+            ->assertSuccessful()
+            ->callAction('bulkMonthly', [
+                'monthKey' => 'november',
+                'date' => '2026-11-05',
+                'submitted' => true,
+            ]);
+
+        $this->assertDatabaseHas('pedagogical_plan_receipts', [
+            'user_id' => $this->teacher->id,
+            'november_submitted' => true,
+        ]);
+
+        $receipt = PedagogicalPlanReceipt::where('user_id', $this->teacher->id)->first();
+        $this->assertEquals('2026-11-05', $receipt->november_date->format('Y-m-d'));
+    }
+
+    public function test_archive_pedagogical_receipt_register(): void
+    {
+        Storage::fake('public');
+
+        $archiveService = app(AdministrativeArchiveService::class);
+        $dummyPdf = '%PDF-1.4 mock content';
+
+        $result = $archiveService->archivePedagogicalReceiptRegister(
+            'plans',
+            $dummyPdf,
+            '2026-2027',
+            'اللغة العربية'
+        );
+
+        $this->assertNotEmpty($result['mail_number']);
+        $this->assertNotEmpty($result['relative_path']);
+        Storage::disk('public')->assertExists($result['relative_path']);
+
+        $this->assertDatabaseHas('official_mails', [
+            'mail_number' => $result['mail_number'],
+            'status' => 'archived',
+            'attachment_path' => $result['relative_path'],
+        ]);
+    }
+
+    public function test_pedagogical_receipts_compliance_widget_renders(): void
+    {
+        Livewire::actingAs($this->principal)
+            ->test(PedagogicalReceiptsComplianceWidget::class)
+            ->assertSuccessful()
+            ->assertSee('متابعة استلام وتأشير المخططات والأعمال التقويمية')
+            ->assertSee('سجل المخططات والتدرجات البيداغوجية')
+            ->assertSee('سجل تسليم الأعمال التقويمية');
     }
 }
