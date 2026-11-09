@@ -97,4 +97,3 @@ class TeacherInspectionDossierController extends Controller
         );
     }
 }
-

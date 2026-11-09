@@ -140,6 +140,16 @@ class PedagogicalReceiptReminderTest extends TestCase
         $this->assertEquals(1, $this->teacher2->notifications()->count());
     }
 
+    public function test_artisan_command_with_auto_flag_reminds_for_due_calendar_deliverables(): void
+    {
+        $this->artisan('pedagogical:send-reminders', ['--auto' => true])
+            ->assertSuccessful();
+
+        // Should have sent notifications for pending active deliverables
+        $this->assertGreaterThanOrEqual(1, $this->teacher1->notifications()->count());
+        $this->assertGreaterThanOrEqual(1, $this->teacher2->notifications()->count());
+    }
+
     public function test_livewire_action_send_reminders_on_plan_hub(): void
     {
         Livewire::actingAs($this->principal)
