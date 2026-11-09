@@ -11,6 +11,7 @@ use App\Models\Schedule;
 use App\Models\Subject;
 use App\Models\User;
 use Closure;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TimePicker;
@@ -22,6 +23,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class ScheduleResource extends Resource
@@ -242,6 +244,24 @@ class ScheduleResource extends Resource
                             })
                             ->rule(fn (Get $get, ?Schedule $record): Closure => self::noOverlapRule($get, $record)),
                     ]),
+
+                Section::make(__('صلاحية وفترة سريان التوقيت'))
+                    ->description(__('حدد تاريخ بداية العمل بهذا التوزيع الزمني وتاريخ إنهائه أو إقصائه عند اعتماد توقيت بديل.'))
+                    ->columns(2)
+                    ->schema([
+                        DatePicker::make('valid_from')
+                            ->label(__('تاريخ بداية تطبيق التوقيت'))
+                            ->placeholder(__('بداية الموسم الدراسي'))
+                            ->native(false)
+                            ->rule(fn (Get $get, ?Schedule $record): Closure => self::noOverlapRule($get, $record)),
+
+                        DatePicker::make('valid_until')
+                            ->label(__('تاريخ نهاية التوقيت (الإقصاء / الانتهاء)'))
+                            ->placeholder(__('حتى إشعار آخر (ساري المفعول)'))
+                            ->native(false)
+                            ->afterOrEqual('valid_from')
+                            ->rule(fn (Get $get, ?Schedule $record): Closure => self::noOverlapRule($get, $record)),
+                    ]),
             ]);
     }
 
@@ -261,6 +281,8 @@ class ScheduleResource extends Resource
             $start = $get('start_time');
             $end = $get('end_time');
             $day = $get('day_of_week');
+            $validFrom = $get('valid_from');
+            $validUntil = $get('valid_until');
 
             if (blank($teacherId) || blank($start) || blank($end) || blank($day)) {
                 return;
@@ -274,12 +296,15 @@ class ScheduleResource extends Resource
                 return;
             }
 
+            $fromDate = filled($validFrom) ? Carbon::parse($validFrom)->toDateString() : null;
+            $untilDate = filled($validUntil) ? Carbon::parse($validUntil)->toDateString() : null;
+
             $overlaps = Schedule::query()
                 ->where('user_id', $teacherId)
                 ->where('day_of_week', $day instanceof DayOfWeek ? $day->value : $day)
                 ->when($record?->exists, fn (Builder $query): Builder => $query->whereKeyNot($record->getKey()))
-                ->get(['id', 'start_time', 'end_time'])
-                ->contains(function (Schedule $existing) use ($start, $end): bool {
+                ->get(['id', 'start_time', 'end_time', 'valid_from', 'valid_until'])
+                ->contains(function (Schedule $existing) use ($start, $end, $fromDate, $untilDate): bool {
                     $existingStart = $existing->start_time?->format('H:i');
                     $existingEnd = $existing->end_time?->format('H:i');
 
@@ -289,11 +314,17 @@ class ScheduleResource extends Resource
 
                     // Half-open interval comparison: back-to-back slots
                     // (09:00-10:00 after 08:00-09:00) do not overlap.
-                    return $existingStart < $end && $existingEnd > $start;
+                    $timeOverlaps = ($existingStart < $end && $existingEnd > $start);
+                    if (! $timeOverlaps) {
+                        return false;
+                    }
+
+                    // Check if date intervals overlap. If validity periods don't overlap, it's allowed!
+                    return $existing->overlapsDateRange($fromDate, $untilDate);
                 });
 
             if ($overlaps) {
-                $fail(__('هذا التوقيت يتقاطع مع حصة أخرى لنفس المعلم في نفس اليوم.'));
+                $fail(__('هذا التوقيت يتقاطع مع حصة سارية أخرى لنفس المعلم في نفس اليوم وفترة الصلاحية.'));
             }
         };
     }
@@ -384,6 +415,30 @@ class ScheduleResource extends Resource
                 Tables\Columns\TextColumn::make('group.name')
                     ->label(__('المجموعة'))
                     ->placeholder(__('القسم كاملاً')),
+
+                Tables\Columns\TextColumn::make('valid_from')
+                    ->label(__('بداية السريان'))
+                    ->date('d/m/Y')
+                    ->placeholder(__('بداية الموسم'))
+                    ->toggleable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('valid_until')
+                    ->label(__('تاريخ الإقصاء'))
+                    ->date('d/m/Y')
+                    ->placeholder(__('مستمر'))
+                    ->toggleable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('validity_status')
+                    ->label(__('حالة التوقيت'))
+                    ->badge()
+                    ->state(fn (Schedule $record): string => $record->validityStatusLabel())
+                    ->color(fn (Schedule $record): string => match (true) {
+                        $record->isExpired() => 'danger',
+                        $record->isUpcoming() => 'info',
+                        default => 'success',
+                    }),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('day_of_week')
@@ -393,13 +448,59 @@ class ScheduleResource extends Resource
                 Tables\Filters\SelectFilter::make('subject_id')
                     ->label(__('المادة'))
                     ->relationship('subject', 'name'),
+
+                Tables\Filters\SelectFilter::make('validity_status')
+                    ->label(__('حالة التوقيت'))
+                    ->options([
+                        'active' => __('ساري المفعول حالياً'),
+                        'expired' => __('منتهي / مقصى'),
+                        'upcoming' => __('مستقبلي (لم يبدأ بعد)'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return match ($data['value'] ?? null) {
+                            'active' => $query->currentlyActive(),
+                            'expired' => $query->expired(),
+                            'upcoming' => $query->upcoming(),
+                            default => $query,
+                        };
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('deprecate')
+                    ->label(__('إقصاء التوقيت'))
+                    ->icon('heroicon-o-no-symbol')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading(__('إقصاء وإنهاء العمل بهذا التوقيت'))
+                    ->modalDescription(__('حدد تاريخ نهاية العمل بهذه الحصة حتى لا تظهر في التوزيعات اللاحقة مع الاحتفاظ بأرشيفها وسجلاتها السابقة.'))
+                    ->form([
+                        DatePicker::make('valid_until')
+                            ->label(__('تاريخ نهاية التوقيت (الإقصاء)'))
+                            ->default(today()->toDateString())
+                            ->required(),
+                    ])
+                    ->action(function (Schedule $record, array $data): void {
+                        $record->update(['valid_until' => $data['valid_until']]);
+                    }),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('deprecateBulk')
+                        ->label(__('إقصاء الحصص المحددة'))
+                        ->icon('heroicon-o-no-symbol')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->form([
+                            DatePicker::make('valid_until')
+                                ->label(__('تاريخ إقصاء / نهاية العمل بالتوقيت'))
+                                ->default(today()->toDateString())
+                                ->required(),
+                        ])
+                        ->action(function (Collection $records, array $data): void {
+                            $records->each(fn (Schedule $s) => $s->update(['valid_until' => $data['valid_until']]));
+                        }),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);

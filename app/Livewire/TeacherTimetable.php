@@ -126,10 +126,15 @@ class TeacherTimetable extends Component
             return new Collection;
         }
 
+        $dates = $this->currentWeekDates;
+        $weekStart = reset($dates) ?: today()->toDateString();
+        $weekEnd = end($dates) ?: today()->toDateString();
+
         return Schedule::query()
             ->with(['subject', 'classroom', 'group.classroom'])
             ->forTeacher($user)
             ->whereIn('day_of_week', self::SCHOOL_DAYS)
+            ->activeBetween($weekStart, $weekEnd)
             ->get();
     }
 

@@ -102,4 +102,3 @@ class SeedMiddleSchoolClassroomsCommand extends Command
         return self::SUCCESS;
     }
 }
-

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\DayOfWeek;
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Database\Factories\ScheduleFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,6 +28,8 @@ class Schedule extends Model
         'day_of_week',
         'start_time',
         'end_time',
+        'valid_from',
+        'valid_until',
     ];
 
     /**
@@ -37,6 +41,8 @@ class Schedule extends Model
             'day_of_week' => DayOfWeek::class,
             'start_time' => 'datetime:H:i',
             'end_time' => 'datetime:H:i',
+            'valid_from' => 'date',
+            'valid_until' => 'date',
         ];
     }
 
@@ -83,6 +89,142 @@ class Schedule extends Model
     public function scopeOnDay(Builder $query, DayOfWeek $day): Builder
     {
         return $query->where('day_of_week', $day->value);
+    }
+
+    public function scopeActiveOn(Builder $query, CarbonInterface|string $date): Builder
+    {
+        $d = $date instanceof CarbonInterface ? $date->toDateString() : (string) $date;
+
+        return $query
+            ->where(function (Builder $q) use ($d): void {
+                $q->whereNull('valid_from')
+                    ->orWhere('valid_from', '<=', $d);
+            })
+            ->where(function (Builder $q) use ($d): void {
+                $q->whereNull('valid_until')
+                    ->orWhere('valid_until', '>=', $d);
+            });
+    }
+
+    public function scopeActiveBetween(Builder $query, CarbonInterface|string $start, CarbonInterface|string $end): Builder
+    {
+        $s = $start instanceof CarbonInterface ? $start->toDateString() : (string) $start;
+        $e = $end instanceof CarbonInterface ? $end->toDateString() : (string) $end;
+
+        return $query
+            ->where(function (Builder $q) use ($e): void {
+                $q->whereNull('valid_from')
+                    ->orWhere('valid_from', '<=', $e);
+            })
+            ->where(function (Builder $q) use ($s): void {
+                $q->whereNull('valid_until')
+                    ->orWhere('valid_until', '>=', $s);
+            });
+    }
+
+    public function scopeCurrentlyActive(Builder $query): Builder
+    {
+        return $this->scopeActiveOn($query, today());
+    }
+
+    public function scopeExpired(Builder $query, ?CarbonInterface $reference = null): Builder
+    {
+        $ref = ($reference ?? today())->toDateString();
+
+        return $query->whereNotNull('valid_until')->where('valid_until', '<', $ref);
+    }
+
+    public function scopeUpcoming(Builder $query, ?CarbonInterface $reference = null): Builder
+    {
+        $ref = ($reference ?? today())->toDateString();
+
+        return $query->whereNotNull('valid_from')->where('valid_from', '>', $ref);
+    }
+
+    public function isActiveOn(CarbonInterface|string $date): bool
+    {
+        $d = $date instanceof CarbonInterface ? $date->copy()->startOfDay() : Carbon::parse($date)->startOfDay();
+
+        if ($this->valid_from && $this->valid_from->startOfDay()->isAfter($d)) {
+            return false;
+        }
+
+        if ($this->valid_until && $this->valid_until->startOfDay()->isBefore($d)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function isCurrentlyActive(): bool
+    {
+        return $this->isActiveOn(today());
+    }
+
+    public function isExpired(?CarbonInterface $reference = null): bool
+    {
+        if ($this->valid_until === null) {
+            return false;
+        }
+
+        $ref = ($reference ?? today())->startOfDay();
+
+        return $this->valid_until->startOfDay()->isBefore($ref);
+    }
+
+    public function isUpcoming(?CarbonInterface $reference = null): bool
+    {
+        if ($this->valid_from === null) {
+            return false;
+        }
+
+        $ref = ($reference ?? today())->startOfDay();
+
+        return $this->valid_from->startOfDay()->isAfter($ref);
+    }
+
+    public function overlapsDateRange(?string $from, ?string $until): bool
+    {
+        $existingFrom = $this->valid_from?->toDateString();
+        $existingUntil = $this->valid_until?->toDateString();
+
+        $fromValid = ($existingUntil === null || $from === null || $from <= $existingUntil);
+        $untilValid = ($until === null || $existingFrom === null || $existingFrom <= $until);
+
+        return $fromValid && $untilValid;
+    }
+
+    public function validityStatusLabel(): string
+    {
+        if ($this->isExpired()) {
+            return __('منتهي الصلاحية / مقصى');
+        }
+
+        if ($this->isUpcoming()) {
+            return __('مستقبلي (يبدأ لاحقاً)');
+        }
+
+        return __('ساري المفعول');
+    }
+
+    public function validityPeriodLabel(): string
+    {
+        if ($this->valid_from && $this->valid_until) {
+            return __('من :from إلى :until', [
+                'from' => $this->valid_from->format('Y-m-d'),
+                'until' => $this->valid_until->format('Y-m-d'),
+            ]);
+        }
+
+        if ($this->valid_from) {
+            return __('ابتداءً من :from', ['from' => $this->valid_from->format('Y-m-d')]);
+        }
+
+        if ($this->valid_until) {
+            return __('حتى :until', ['until' => $this->valid_until->format('Y-m-d')]);
+        }
+
+        return __('دائم وساري المفعول');
     }
 
     /**

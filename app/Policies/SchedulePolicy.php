@@ -37,16 +37,16 @@ class SchedulePolicy
 
     public function create(User $user): bool
     {
-        return $user->isPrincipal() || $user->isCensor() || $user->role === Role::Admin;
+        return $user->isTeacher() || $user->isPrincipal() || $user->isCensor() || $user->role === Role::Admin;
     }
 
     public function update(User $user, Schedule $schedule): bool
     {
-        return $user->isPrincipal() || $user->isCensor() || $user->role === Role::Admin;
+        return $schedule->user_id === $user->id || $user->isPrincipal() || $user->isCensor() || $user->role === Role::Admin;
     }
 
     public function delete(User $user, Schedule $schedule): bool
     {
-        return $user->isPrincipal() || $user->isCensor() || $user->role === Role::Admin;
+        return $schedule->user_id === $user->id || $user->isPrincipal() || $user->isCensor() || $user->role === Role::Admin;
     }
 }

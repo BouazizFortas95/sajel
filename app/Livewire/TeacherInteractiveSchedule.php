@@ -66,6 +66,7 @@ class TeacherInteractiveSchedule extends Component
             $day = DayOfWeek::tryFrom($this->selectedDay);
             if ($day) {
                 $query->onDay($day);
+                $query->activeOn($this->selectedDate);
             }
         }
 

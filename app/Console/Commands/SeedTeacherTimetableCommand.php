@@ -19,6 +19,8 @@ class SeedTeacherTimetableCommand extends Command
     protected $signature = 'sajel:seed-teacher-timetable
                             {--teacher=فرطاس بوعزيز : Teacher name or part of name}
                             {--subject=الإعلام الآلي : Subject name}
+                            {--from=2026-09-20 : Effective start date (valid_from)}
+                            {--until= : Deprecation or end date (valid_until)}
                             {--clear : Clear existing schedules for this teacher before seeding}';
 
     /**
@@ -208,6 +210,9 @@ class SeedTeacherTimetableCommand extends Command
         $createdCount = 0;
         $tableData = [];
 
+        $validFrom = $this->option('from') ?: null;
+        $validUntil = $this->option('until') ?: null;
+
         foreach (self::SESSIONS as $index => $sessionDef) {
             $normalizedName = preg_replace('/\s+/', '', $sessionDef['classroom']);
             $classroom = $classrooms->get($normalizedName);
@@ -223,12 +228,14 @@ class SeedTeacherTimetableCommand extends Command
                     'user_id' => $teacher->id,
                     'day_of_week' => $sessionDef['day']->value,
                     'start_time' => $sessionDef['start'],
+                    'valid_from' => $validFrom,
                 ],
                 [
                     'subject_id' => $subject->id,
                     'classroom_id' => $classroom->id,
                     'group_id' => null,
                     'end_time' => $sessionDef['end'],
+                    'valid_until' => $validUntil,
                 ]
             );
 
@@ -240,11 +247,13 @@ class SeedTeacherTimetableCommand extends Command
                 "{$sessionDef['start']} - {$sessionDef['end']}",
                 $classroom->name,
                 $subject->name,
+                $schedule->valid_from?->format('Y-m-d') ?? '—',
+                $schedule->valid_until?->format('Y-m-d') ?? 'مستمر',
             ];
         }
 
         $this->table(
-            ['ID', 'اليوم', 'الحصة', 'التوقيت', 'القسم', 'المادة'],
+            ['ID', 'اليوم', 'الحصة', 'التوقيت', 'القسم', 'المادة', 'تاريخ السريان', 'تاريخ الإقصاء'],
             $tableData
         );
 
@@ -253,4 +262,3 @@ class SeedTeacherTimetableCommand extends Command
         return self::SUCCESS;
     }
 }
-
