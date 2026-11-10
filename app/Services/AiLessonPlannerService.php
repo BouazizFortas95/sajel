@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\AiLessonPlannerException;
+use App\Models\ActiveLearningStrategy;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -28,12 +29,17 @@ class AiLessonPlannerService
      * and renders immediately, without a page reload. Dehydration strips
      * the keys again before the value is persisted as JSON.
      *
-     * @return array{type: string, data: array{competence: string, lesson_phases: array<string, array{phase_name: string, content: string}>}}
+     * @return array{type: string, data: array{competence: string, lesson_phases: array<string, array{phase_name: string, strategy: ?string, content: string}>}}
      *
      * @throws AiLessonPlannerException
      */
-    public function generateLessonPlan(string $topic, string $subject, string $level, ?string $locale = null): array
-    {
+    public function generateLessonPlan(
+        string $topic,
+        string $subject,
+        string $level,
+        ?string $locale = null,
+        ?string $preferredStrategy = null,
+    ): array {
         $requestedLocale = $locale ?? app()->getLocale();
         $locale = in_array($requestedLocale, ['ar', 'en', 'fr'], true)
             ? $requestedLocale
@@ -41,14 +47,18 @@ class AiLessonPlannerService
 
         $plan = $this->normalizePlan(
             $this->decodePlan(
-                $this->requestPlan($this->buildPrompt($topic, $subject, $level, $locale), $locale),
+                $this->requestPlan($this->buildPrompt($topic, $subject, $level, $locale, $preferredStrategy), $locale),
             ),
         );
 
         $lessonPhases = [];
 
         foreach ($plan['lesson_phases'] as $phase) {
-            $lessonPhases[(string) Str::uuid()] = $phase;
+            $lessonPhases[(string) Str::uuid()] = [
+                'phase_name' => $phase['phase_name'],
+                'strategy' => $phase['strategy'] ?? null,
+                'content' => $phase['content'],
+            ];
         }
 
         return [
@@ -104,13 +114,27 @@ class AiLessonPlannerService
         ];
 
         foreach ($models as $index => $model) {
-            $response = $this->post(
-                $this->http()
-                    ->baseUrl((string) config('ai.gemini.base_url'))
-                    ->withHeaders(['x-goog-api-key' => $key]),
-                'models/'.$model.':generateContent',
-                $payload,
-            );
+            try {
+                $response = $this->post(
+                    $this->http()
+                        ->baseUrl((string) config('ai.gemini.base_url'))
+                        ->withHeaders(['x-goog-api-key' => $key]),
+                    'models/'.$model.':generateContent',
+                    $payload,
+                );
+            } catch (AiLessonPlannerException $exception) {
+                if (isset($models[$index + 1])) {
+                    Log::warning('AI lesson planner connection failed on model, falling back.', [
+                        'primary_model' => $model,
+                        'fallback_model' => $models[$index + 1],
+                        'error' => $exception->getMessage(),
+                    ]);
+
+                    continue;
+                }
+
+                throw $exception;
+            }
 
             $lastResponse = $response;
 
@@ -168,7 +192,7 @@ class AiLessonPlannerService
     protected function shouldUseFallback(Response $response, array $models, int $index): bool
     {
         return isset($models[$index + 1])
-            && in_array($response->status(), [500, 502, 503, 504], true);
+            && in_array($response->status(), [404, 429, 500, 502, 503, 504], true);
     }
 
     /**
@@ -276,50 +300,93 @@ class AiLessonPlannerService
     }
 
     /**
+     * Active learning strategies available in Algerian middle schools.
+     *
+     * @return list<string>
+     */
+    protected function activeLearningStrategies(): array
+    {
+        try {
+            $strategies = ActiveLearningStrategy::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->pluck('name')
+                ->all();
+
+            if (! empty($strategies)) {
+                return $strategies;
+            }
+        } catch (Throwable) {
+            // Table might not exist yet or in isolated test environments
+        }
+
+        return [
+            'التفكير — المشاركة — العرض (Think-Pair-Share)',
+            'بطاقة الخروج (Exit Ticket)',
+            'الجِيجسو (Jigsaw)',
+            'المشي في المعرض (Gallery Walk)',
+            'القرعة العشوائية (Random Picker)',
+            'التعليم بالأقران (Peer Instruction)',
+            'الخرائط المفاهيمية والذهنية (Mind / Concept Mapping)',
+            'لعب الأدوار (Role Play)',
+            'حل المشكلات والتعلم بالاكتشاف (PBL)',
+            'العصف الذهني المنظم (Brainstorming)',
+        ];
+    }
+
+    /**
      * Build a localized prompt for the exact JSON contract Filament expects.
      */
-    protected function buildPrompt(string $topic, string $subject, string $level, string $locale): string
+    protected function buildPrompt(string $topic, string $subject, string $level, string $locale, ?string $preferredStrategy = null): string
     {
-        [$role, $lesson, $competence, $stages, $practicalContent, $plainText, $instructionHeading, $jsonInstruction, $competenceLabel, $phaseLabel, $contentLabel, $unknown] = match ($locale) {
+        $strategiesList = implode(', ', $this->activeLearningStrategies());
+
+        [$role, $lesson, $competence, $stages, $practicalContent, $activeLearning, $plainText, $instructionHeading, $jsonInstruction, $competenceLabel, $phaseLabel, $strategyLabel, $contentLabel, $unknown] = match ($locale) {
             'en' => [
-                'You are an Algerian middle-school pedagogical inspector and an expert in competency-based teaching and the official curriculum.',
+                'You are an Algerian middle-school pedagogical inspector and an expert in competency-based teaching, active learning strategies, and the official curriculum.',
                 'Write a complete lesson plan in clear, age-appropriate English for subject ":subject", level ":level", on the topic ":topic".',
                 'Write the target competence in one clear sentence that includes an action, knowledge, and context.',
                 'Divide the lesson into 3 to 6 stages in chronological order (for example: warm-up, guided learning, practice, and assessment).',
                 'Give practical teacher-facing content for each stage, including instructions, questions, activities, and a suggested duration in minutes.',
+                'Apply learner-centered active learning strategies (such as: '.$strategiesList.'). In each stage, specify the strategy used in the "strategy" field.'.($preferredStrategy ? ' Emphasize applying the strategy: '.$preferredStrategy.'.' : ''),
                 'Do not use HTML or Markdown; write plain English and use line breaks where helpful.',
                 'Instructions:',
                 'Return only a valid JSON object, without any additional explanation, using exactly this structure:',
                 'Target competence',
                 'Stage name',
+                'Active learning strategy used in this stage (e.g. Think-Pair-Share)',
                 'Stage content',
                 'unspecified',
             ],
             'fr' => [
-                'Vous êtes un inspecteur pédagogique algérien du cycle moyen, expert en approche par compétences et en programmes officiels.',
+                'Vous êtes un inspecteur pédagogique algérien du cycle moyen, expert en approche par compétences, stratégies d’apprentissage actif et programmes officiels.',
                 'Rédigez un plan de leçon complet en français clair et adapté à l’âge des élèves pour la matière « :subject », le niveau « :level » et le thème « :topic ».',
                 'Formulez la compétence visée en une phrase claire comprenant une action, un savoir et un contexte.',
                 'Divisez la leçon en 3 à 6 étapes dans l’ordre chronologique (par exemple : mise en situation, construction des apprentissages, réinvestissement et évaluation).',
                 'Pour chaque étape, proposez un contenu pratique destiné à l’enseignant : consignes, questions, activités et durée suggérée en minutes.',
+                'Mettez en œuvre des stratégies d’apprentissage actif (ex. : '.$strategiesList.'). Pour chaque étape, précisez la stratégie retenue dans le champ « strategy ».'.($preferredStrategy ? ' Mettez particulièrement l’accent sur : '.$preferredStrategy.'.' : ''),
                 'N’utilisez ni HTML ni Markdown ; rédigez en français courant et utilisez des sauts de ligne si nécessaire.',
                 'Consignes :',
                 'Retournez uniquement un objet JSON valide, sans explication supplémentaire, en respectant exactement cette structure :',
                 'Compétence visée',
                 'Nom de l’étape',
+                'Stratégie d’apprentissage actif appliquée (ex. Jigsaw)',
                 'Contenu de l’étape',
                 'non précisé',
             ],
             default => [
-                'أنت مفتش تربوي جزائري في التعليم المتوسط، خبير في المقاربة بالكفاءات والمناهج الرسمية.',
+                'أنت مفتش تربوي جزائري في التعليم المتوسط، خبير في المقاربة بالكفاءات، استراتيجيات التعلم النشط، والمناهج الرسمية.',
                 'حرّر مخطط تحضير كامل بالعربية الفصحى المبسّطة لمادة «:subject» ومستوى «:level» حول الموضوع «:topic».',
                 'اكتب الكفاءة المستهدفة في جملة واحدة واضحة تتضمن الفعل والمعرفة والسياق.',
                 'قسّم سير الدرس إلى 3 إلى 6 مراحل بيداغوجية مرتّبة زمنياً (مثل: وضعية الانطلاق، بناء التعلمات، استثمار المكتسبات، التقويم).',
                 'اكتب في كل مرحلة محتوى عملياً للمدرّس: تعليمات، أسئلة، نشاطات، مع الإشارة إلى المدة المقترحة بالدقائق.',
+                'وظّف استراتيجيات التعلم النشط (مثل: '.$strategiesList.'). اذكر الاستراتيجية المعتمدة في حقل "strategy" لكل مرحلة لجعل التلميذ فاعلاً ومحوراً للعملية التعليمية.'.($preferredStrategy ? ' ركّز خصوصاً على توظيف استراتيجية: '.$preferredStrategy.'.' : ''),
                 'لا تستعمل وسوم HTML ولا تنسيق Markdown؛ اكتب نصاً عربياً عادياً مع فواصل أسطر عند الحاجة.',
                 'التعليمات:',
                 'أعد النتيجة على شكل كائن JSON صالح فقط، دون أي شرح إضافي، بهذه البنية بالضبط:',
                 'نص الكفاءة المستهدفة',
                 'اسم المرحلة',
+                'استراتيجية التعلم النشط المطبقة (مثل: التفكير — المشاركة — العرض)',
                 'محتوى المرحلة',
                 'غير محدد',
             ],
@@ -341,13 +408,14 @@ class AiLessonPlannerService
         - {$competence}
         - {$stages}
         - {$practicalContent}
+        - {$activeLearning}
         - {$plainText}
         - {$jsonInstruction}
 
         {
           "competence": "{$competenceLabel}",
           "lesson_phases": [
-            { "phase_name": "{$phaseLabel}", "content": "{$contentLabel}" }
+            { "phase_name": "{$phaseLabel}", "strategy": "{$strategyLabel}", "content": "{$contentLabel}" }
           ]
         }
         PROMPT;
@@ -360,10 +428,22 @@ class AiLessonPlannerService
      */
     protected function planSchema(string $locale): array
     {
-        [$competenceDescription, $phasesDescription] = match ($locale) {
-            'en' => ['Target competence in one sentence.', 'Lesson stages in chronological order.'],
-            'fr' => ['Compétence visée en une phrase.', 'Étapes de la leçon dans l’ordre chronologique.'],
-            default => ['الكفاءة المستهدفة في جملة واحدة.', 'مراحل سير الدرس بالترتيب الزمني.'],
+        [$competenceDescription, $phasesDescription, $strategyDescription] = match ($locale) {
+            'en' => [
+                'Target competence in one sentence.',
+                'Lesson stages in chronological order.',
+                'Active learning strategy applied in this stage (e.g. Think-Pair-Share, Exit Ticket, Jigsaw).',
+            ],
+            'fr' => [
+                'Compétence visée en une phrase.',
+                'Étapes de la leçon dans l’ordre chronologique.',
+                'Stratégie d’apprentissage actif appliquée à cette étape (ex. Jigsaw, Billet de sortie).',
+            ],
+            default => [
+                'الكفاءة المستهدفة في جملة واحدة.',
+                'مراحل سير الدرس بالترتيب الزمني.',
+                'استراتيجية التعلم النشط المطبقة في هذه المرحلة (مثل: التفكير — المشاركة — العرض، بطاقة الخروج).',
+            ],
         };
 
         return [
@@ -380,6 +460,10 @@ class AiLessonPlannerService
                         'type' => 'OBJECT',
                         'properties' => [
                             'phase_name' => ['type' => 'STRING'],
+                            'strategy' => [
+                                'type' => 'STRING',
+                                'description' => $strategyDescription,
+                            ],
                             'content' => ['type' => 'STRING'],
                         ],
                         'required' => ['phase_name', 'content'],
@@ -442,7 +526,7 @@ class AiLessonPlannerService
      * Validate and clean the decoded plan.
      *
      * @param  array<string, mixed>  $plan
-     * @return array{competence: string, lesson_phases: list<array{phase_name: string, content: string}>}
+     * @return array{competence: string, lesson_phases: list<array{phase_name: string, strategy: ?string, content: string}>}
      *
      * @throws AiLessonPlannerException
      */
@@ -457,6 +541,7 @@ class AiLessonPlannerService
 
             // "name" is accepted as a fallback for providers that drift from the schema.
             $name = trim((string) ($phase['phase_name'] ?? $phase['name'] ?? ''));
+            $strategy = trim((string) ($phase['strategy'] ?? $phase['active_learning_strategy'] ?? ''));
             $content = trim((string) ($phase['content'] ?? ''));
 
             if ($name === '' || $content === '') {
@@ -465,6 +550,7 @@ class AiLessonPlannerService
 
             $lessonPhases[] = [
                 'phase_name' => $name,
+                'strategy' => $strategy !== '' ? $strategy : null,
                 'content' => $content,
             ];
         }

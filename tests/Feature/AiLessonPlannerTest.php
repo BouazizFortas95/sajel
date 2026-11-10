@@ -27,6 +27,7 @@ class AiLessonPlannerTest extends TestCase
         app()->setLocale('ar');
         config()->set('ai.provider', 'gemini');
         config()->set('ai.gemini.key', 'test-gemini-key');
+        config()->set('ai.gemini.model', 'gemini-3.8-flash');
         config()->set('ai.retry_times', 2);
         config()->set('ai.retry_delay', 0);
     }
@@ -366,5 +367,67 @@ class AiLessonPlannerTest extends TestCase
         Http::assertNothingSent();
 
         Notification::assertNotified(__('الحصة غير متاحة'));
+    }
+
+    public function test_it_incorporates_active_learning_strategies_in_prompt_and_result(): void
+    {
+        $planWithStrategy = [
+            'competence' => 'يميز التلميذ بين أنواع الزوايا.',
+            'lesson_phases' => [
+                [
+                    'phase_name' => 'وضعية الانطلاق',
+                    'strategy' => 'العصف الذهني المنظم',
+                    'content' => 'مراجعة شفهية للزوايا في الحياة اليومية.',
+                ],
+                [
+                    'phase_name' => 'بناء التعلمات',
+                    'strategy' => 'التفكير — المشاركة — العرض',
+                    'content' => 'رسم الزوايا وقياسها في مجموعات ثنائية.',
+                ],
+            ],
+        ];
+
+        $this->fakeGemini(json_encode($planWithStrategy, JSON_UNESCAPED_UNICODE));
+
+        $block = app(AiLessonPlannerService::class)->generateLessonPlan(
+            topic: 'الزوايا',
+            subject: 'الرياضيات',
+            level: 'السنة الأولى متوسط',
+            preferredStrategy: 'التفكير — المشاركة — العرض',
+        );
+
+        $this->assertSame('lesson_structure', $block['type']);
+        $phases = array_values($block['data']['lesson_phases']);
+        $this->assertSame('العصف الذهني المنظم', $phases[0]['strategy']);
+        $this->assertSame('التفكير — المشاركة — العرض', $phases[1]['strategy']);
+
+        Http::assertSent(fn (Request $request): bool => str_contains($request['contents'][0]['parts'][0]['text'], 'استراتيجيات التعلم النشط')
+            && str_contains($request['contents'][0]['parts'][0]['text'], 'التفكير — المشاركة — العرض'));
+    }
+
+    public function test_filament_action_supports_selecting_preferred_strategy(): void
+    {
+        $teacher = User::factory()->create();
+        $subject = Subject::factory()->create(['name' => 'الرياضيات']);
+        $schedule = Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'subject_id' => $subject->id,
+        ]);
+
+        $this->fakeGemini(json_encode($this->plan(), JSON_UNESCAPED_UNICODE));
+        $this->actingAs($teacher);
+
+        Livewire::test(CreateDailyLog::class)
+            ->fillForm([
+                'schedule_id' => $schedule->id,
+                'title' => 'درس الكسور',
+            ])
+            ->callFormComponentAction('title', 'generateLessonPlan', data: [
+                'preferred_strategy' => 'الجِيجسو',
+            ])
+            ->assertOk()
+            ->assertHasNoFormErrors();
+
+        Http::assertSent(fn (Request $request): bool => str_contains($request['contents'][0]['parts'][0]['text'], 'الجِيجسو'));
     }
 }

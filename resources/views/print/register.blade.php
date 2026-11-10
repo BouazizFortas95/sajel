@@ -1,716 +1,395 @@
 @php
     $schoolSetting = $schoolSetting ?? \App\Models\SchoolSetting::current();
     $isRtl = app()->getLocale() === 'ar';
+    $register = $activeRegister ?? ($registers->first() ?? null);
+    $classroom = $register['classroom'] ?? null;
+    $registerLogs = $register['logs'] ?? collect();
+    $phase = $register['phase'] ?? null;
+    $groups = $register['groups'] ?? collect();
+    $assignments = $register['teachers'] ?? collect();
+    $periodFrom = $register['from'] ?? null;
+    $periodTo = $register['to'] ?? null;
+    $registerCount = $register['count'] ?? 0;
+    $activeClassroomId = $activeClassroomId ?? ($classroom?->id ?? null);
 @endphp
-<!DOCTYPE html>
-<html dir="{{ $isRtl ? 'rtl' : 'ltr' }}" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ __('دفتر النصوص الرسمي') }} — {{ $teacherName }}</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+@include('print.partials.document-head', [
+    'printTitle' => __('دفتر النصوص الرسمي'),
+    'printSubtitle' => __('القسم: :classroom (:level)', [
+        'classroom' => $classroom?->name ?? '—',
+        'level' => $register['levelName'] ?? '—',
+    ]),
+    'printOrientation' => 'portrait',
+    'printAcademicYear' => $register['academicYear'] ?? $schoolSetting->academic_year,
+    'printReference' => __('المرجع'),
+    'printMeta' => __('دفتر نصوص القسم'),
+    'printAutoPrint' => $autoPrint ?? true,
+])
 
-    @unless ($inlineCss ?? false)
-        @vite('resources/css/app.css')
-    @endunless
-
-    <style>
-        * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-
-        @page {
-            size: A4 portrait;
-            margin: 10mm;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            font-family: 'Cairo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
-        }
-
-        .screen-canvas {
-            background-color: #f4efe6;
-            background-image:
-                radial-gradient(70rem 42rem at 50% -12%, rgba(245, 158, 11, .16), transparent 62%),
-                linear-gradient(to left, rgba(120, 53, 15, .035) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(120, 53, 15, .035) 1px, transparent 1px);
-            background-size: auto, 32px 32px, 32px 32px;
-        }
-
-        .register-sheet {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .register-sheet-content {
-            display: flex;
-            flex: 1 1 auto;
-            flex-direction: column;
-        }
-
-        .register-sheet .signatures {
-            margin-top: auto;
-        }
-
-        .book-paper {
-            background-color: #fffdf8;
-            background-image:
-                radial-gradient(42rem 26rem at 100% 0%, rgba(245, 158, 11, .10), transparent 58%),
-                linear-gradient(to left, rgba(146, 64, 14, .045) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(146, 64, 14, .045) 1px, transparent 1px);
-            background-size: auto, 24px 24px, 24px 24px;
-        }
-
-        .register-table {
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-
-        .register-table thead th:first-child {
-            border-top-right-radius: 1rem;
-        }
-
-        .register-table thead th:last-child {
-            border-top-left-radius: 1rem;
-        }
-
-        .register-table tbody tr:last-child td:first-child {
-            border-bottom-right-radius: 1rem;
-        }
-
-        .register-table tbody tr:last-child td:last-child {
-            border-bottom-left-radius: 1rem;
-        }
-
-        .rich-text {
-            font-size: 10.5px;
-            line-height: 1.8;
-        }
-
-        .rich-text > :first-child {
-            margin-top: 0;
-        }
-
-        .rich-text > :last-child {
-            margin-bottom: 0;
-        }
-
-        .rich-text p {
-            margin: 0 0 .4rem;
-            orphans: 3;
-            widows: 3;
-        }
-
-        .rich-text p:last-child {
-            margin-bottom: 0;
-        }
-
-        .rich-text h2,
-        .rich-text h3,
-        .rich-text h4 {
-            margin: .55rem 0 .3rem;
-            font-weight: 800;
-            line-height: 1.5;
-        }
-
-        .rich-text h2 {
-            color: #78350f;
-            font-size: 12px;
-        }
-
-        .rich-text h3 {
-            display: inline-block;
-            padding: .1rem .4rem .1rem .45rem;
-            border-inline-start: 3px solid #f59e0b;
-            border-radius: .35rem;
-            background: linear-gradient(90deg, rgba(254, 243, 199, .85), rgba(254, 243, 199, .12));
-            color: #92400e;
-            font-size: 11px;
-        }
-
-        .rich-text h4 {
-            color: #b45309;
-            font-size: 10.5px;
-        }
-
-        .rich-text ul,
-        .rich-text ol {
-            margin: .25rem 0 .45rem;
-            padding-inline-start: 1.15rem;
-        }
-
-        .rich-text ul {
-            list-style: disc;
-        }
-
-        .rich-text ol {
-            list-style: decimal;
-        }
-
-        .rich-text li {
-            margin-bottom: .15rem;
-            padding-inline-start: .1rem;
-        }
-
-        .rich-text li::marker {
-            color: #d97706;
-            font-weight: 700;
-        }
-
-        .rich-text strong {
-            color: #78350f;
-            font-weight: 800;
-        }
-
-        .rich-text blockquote {
-            margin: .4rem 0;
-            padding: .35rem .55rem;
-            border-inline-start: 3px solid #fcd34d;
-            border-radius: .35rem;
-            background: rgba(255, 251, 235, .9);
-            color: #57534e;
-        }
-
-        @media print {
-            html,
-            body {
-                background: #ffffff !important;
-            }
-
-            .screen-canvas {
-                background: #ffffff !important;
-            }
-
-            .no-print {
-                display: none !important;
-            }
-
-            .register-sheet {
-                break-after: page;
-                page-break-after: always;
-            }
-
-            .register-sheet:last-child {
-                break-after: auto;
-                page-break-after: auto;
-            }
-
-            .register-sheet {
-                width: auto !important;
-                max-width: none !important;
-                min-height: 276mm !important;
-                margin: 0 !important;
-                border-radius: 0 !important;
-                box-shadow: none !important;
-            }
-
-            thead {
-                display: table-header-group;
-            }
-
-            .signatures {
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
-        }
-    </style>
-</head>
-<body class="screen-canvas min-h-screen text-slate-800 antialiased">
     @php
-        $allowedTags = '<p><br><strong><em><u><s><ul><ol><li><h2><h3><h4><blockquote>';
-
-        $filamentColorMap = [
-            'primary' => '#d97706',
-            'secondary' => '#64748b',
-            'success' => '#16a34a',
-            'danger' => '#dc2626',
-            'warning' => '#d97706',
-            'info' => '#0284c7',
-            'gray' => '#64748b',
-            'slate' => '#475569',
-        ];
-
-        $subjectColor = static function (?string $color) use ($filamentColorMap): string {
-            $color = trim((string) $color);
-
-            if ($color === '') {
-                return '#d97706';
-            }
-
-            if (preg_match('/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i', $color, $matches) === 1) {
-                $hex = strtolower($matches[1]);
-
-                if (strlen($hex) === 3) {
-                    $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+        $extractCompetence = static function (\App\Models\DailyLog $log): ?string {
+            if (is_array($log->content_data)) {
+                foreach ($log->content_data as $block) {
+                    if (($block['type'] ?? '') === 'lesson_structure' && filled($block['data']['competence'] ?? null)) {
+                        return (string) $block['data']['competence'];
+                    }
                 }
-
-                return '#'.$hex;
             }
 
-            return $filamentColorMap[strtolower($color)] ?? '#d97706';
+            if (filled($log->actual_content) && preg_match('/<h3[^>]*>.*?الكفاءة المستهدفة.*?<\/h3>\s*<p[^>]*>(.*?)<\/p>/uis', (string) $log->actual_content, $m)) {
+                return trim(strip_tags($m[1]));
+            }
+
+            return null;
         };
 
-        $subjectTextColor = static function (string $hex): string {
-            $hex = ltrim($hex, '#');
-
-            if (strlen($hex) !== 6) {
-                return '#ffffff';
+        $cleanContent = static function (\App\Models\DailyLog $log, string $title, ?string $competence): string {
+            $content = (string) $log->actual_content;
+            if (blank($content)) {
+                return '';
             }
 
-            $channels = array_map(
-                static fn (string $channel): float => hexdec($channel) / 255,
-                str_split($hex, 2),
-            );
+            // Remove redundant title and competence if present
+            $content = preg_replace('/<h2[^>]*>\s*'.preg_quote($title, '/').'\s*<\/h2>/ui', '', $content);
+            if ($competence) {
+                $content = preg_replace('/<h3[^>]*>.*?(?:الكفاءة المستهدفة|Target competency|Compétence visée).*?<\/h3>\s*<p[^>]*>.*?<\/p>/uis', '', $content);
+            }
 
-            $linear = array_map(
-                static fn (float $channel): float => $channel <= 0.03928
-                    ? $channel / 12.92
-                    : (($channel + 0.055) / 1.055) ** 2.4,
-                $channels,
-            );
+            return trim($content);
+        };
 
-            $luminance = (0.2126 * $linear[0]) + (0.7152 * $linear[1]) + (0.0722 * $linear[2]);
+        $extractStrategies = static function (\App\Models\DailyLog $log): array {
+            $strategies = [];
 
-            return $luminance > 0.46 ? '#1e293b' : '#ffffff';
+            if (is_array($log->content_data)) {
+                foreach ($log->content_data as $block) {
+                    $phases = $block['data']['lesson_phases'] ?? $block['data']['phases'] ?? [];
+                    if (is_array($phases)) {
+                        foreach ($phases as $p) {
+                            if (! is_array($p)) {
+                                continue;
+                            }
+                            $strat = $p['strategy'] ?? null;
+                            if (filled($strat)) {
+                                if (is_numeric($strat)) {
+                                    $name = \App\Models\ActiveLearningStrategy::query()->find($strat)?->name;
+                                    if ($name) {
+                                        $strategies[] = $name;
+                                    }
+                                } else {
+                                    $strategies[] = (string) $strat;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (filled($log->actual_content)) {
+                if (preg_match_all('/(?:class="strategy-badge"[^>]*>|استراتيجية:\s*)([^\s<][^<]*?)(?:<\/span>|<|$)/uis', (string) $log->actual_content, $m)) {
+                    foreach ($m[1] as $val) {
+                        $cleaned = trim(strip_tags(str_replace('استراتيجية:', '', $val)));
+                        if ($cleaned !== '') {
+                            $strategies[] = $cleaned;
+                        }
+                    }
+                }
+            }
+
+            return array_values(array_unique(array_filter($strategies)));
         };
     @endphp
 
-    {{-- Browser-only toolbar: never printed and never included in the PDF. --}}
-    <div class="no-print sticky top-0 z-50 border-b border-amber-200/80 bg-[#fffdf8]/90 shadow-sm backdrop-blur print:hidden">
-        <div class="mx-auto flex max-w-[210mm] flex-col items-stretch justify-between gap-3 px-4 py-3 sm:flex-row sm:items-center">
-            <div class="flex items-center gap-3">
-                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-lg font-black text-white shadow-md shadow-amber-500/25">
-                    س
-                </span>
-                <div>
-                    <p class="text-sm font-black text-slate-900">{{ __('معاينة دفتر النصوص') }}</p>
-                    <p class="mt-0.5 text-[11px] font-semibold text-slate-500">{{ __('دفتر مستقل لكل قسم — جاهز للطباعة أو الحفظ كـ PDF') }}</p>
-                </div>
-            </div>
+    <style>
+        .strategy-badge {
+            display: inline-block;
+            font-size: 7pt;
+            font-weight: 600;
+            color: #1e40af;
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 1px 5px;
+            border-radius: 3px;
+            margin-inline-start: 5px;
+            vertical-align: middle;
+            font-family: 'Cairo', sans-serif;
+        }
 
-            <button
-                type="button"
-                onclick="window.print()"
-                class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-extrabold text-white shadow-lg shadow-amber-500/25 transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
-            >
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231a1.125 1.125 0 0 1-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z"/>
-                </svg>
-                {{ __('طباعة / حفظ PDF') }}
-            </button>
+        .phase-heading {
+            display: inline-block;
+            color: #1a237e;
+            font-weight: 700;
+            font-family: 'Cairo', sans-serif;
+            font-size: 8.5pt;
+            margin-top: 4px;
+            margin-bottom: 1px;
+            border-bottom: 1.5px solid #93c5fd;
+            padding-bottom: 1px;
+        }
+
+        .rich-content h2,
+        .rich-content h3 {
+            display: none !important;
+        }
+
+        .rich-content h4 {
+            display: inline-block;
+            color: #1a237e;
+            font-weight: 700;
+            font-family: 'Cairo', sans-serif;
+            font-size: 8.5pt;
+            margin: 4px 0 1px;
+            border-bottom: 1.5px solid #93c5fd;
+            padding-bottom: 1px;
+        }
+
+        .rich-content p {
+            margin: 0 0 5px;
+            color: #1e293b;
+            font-size: 9pt;
+            line-height: 1.55;
+            font-family: 'Amiri', serif;
+        }
+
+        .rich-content ul, .rich-content ol {
+            margin: 2px 0 5px;
+            padding-inline-start: 16px;
+        }
+    </style>
+
+    {{-- Classroom Switcher Tabs for Multiple Classrooms (Screen Only) --}}
+    @if ($registers->count() > 1)
+        <div class="no-print" style="margin-bottom: 8px; padding: 4px 8px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; align-items: center; gap: 6px; overflow-x: auto;">
+            <span style="font-size: 8pt; font-weight: bold; color: #475569; font-family: 'Cairo', sans-serif; white-space: nowrap;">
+                {{ __('الأقسام:') }}
+            </span>
+            @foreach ($registers as $reg)
+                @php
+                    $regClass = $reg['classroom'];
+                    $isActive = ($regClass?->id ?? null) === $activeClassroomId;
+                    $tabUrl = route('print.register', array_filter([
+                        'classroom_id' => $regClass?->id,
+                        'ids' => request()->input('ids'),
+                    ]));
+                @endphp
+                <a
+                    href="{{ $tabUrl }}"
+                    style="text-decoration: none; padding: 2px 8px; border-radius: 3px; font-size: 8pt; font-family: 'Cairo', sans-serif; font-weight: bold; white-space: nowrap; {{ $isActive ? 'background: #1a237e; color: #fff;' : 'background: #fff; color: #1a237e; border: 1px solid #cbd5e1;' }}"
+                >
+                    {{ $regClass?->name ?? __('قسم غير محدد') }}
+                    <span style="font-size: 7pt; opacity: 0.85;">({{ $reg['count'] }})</span>
+                </a>
+            @endforeach
+        </div>
+    @endif
+
+    {{-- ==================== 1. Standard Identity Card ==================== --}}
+    <div class="identity-card" style="margin-top: 6px; margin-bottom: 8px;">
+        <div class="identity-grid">
+            <div class="identity-item">
+                <span class="identity-label">{{ __('المستوى الدراسي') }}</span>
+                <p class="identity-value">{{ $register['levelName'] ?? '—' }}</p>
+            </div>
+            <div class="identity-item">
+                <span class="identity-label">{{ __('القسم') }}</span>
+                <p class="identity-value">{{ $classroom?->name ?? '—' }}</p>
+            </div>
+            <div class="identity-item">
+                <span class="identity-label">{{ __('الأفواج التربوية') }}</span>
+                <p class="identity-value">
+                    @if ($groups->isNotEmpty())
+                        {{ $groups->pluck('name')->implode(' / ') }}
+                    @else
+                        {{ __('كامل القسم') }}
+                    @endif
+                </p>
+            </div>
+            <div class="identity-item">
+                <span class="identity-label">{{ __('الأستاذ(ة) والمادة') }}</span>
+                <p class="identity-value">
+                    {{ $teacherName }}
+                    @if ($primarySubject = ($assignments->first()['subject']?->name ?? null))
+                        — <span style="color: #1a237e;">{{ $primarySubject }}</span>
+                    @endif
+                </p>
+            </div>
         </div>
     </div>
 
-    <main class="mx-auto w-[210mm] max-w-[calc(100%-1.5rem)] space-y-6 print:w-auto print:max-w-none print:space-y-0">
-        @foreach ($registers as $register)
-            @php
-                $classroom = $register['classroom'];
-                $registerLogs = $register['logs'];
-                $phase = $register['phase'];
-                $groups = $register['groups'];
-                $assignments = $register['teachers'];
-                $periodFrom = $register['from'];
-                $periodTo = $register['to'];
-                $registerCount = $register['count'];
-                $registerTitleId = 'classroom-register-title-'.$loop->index;
-            @endphp
+    {{-- ==================== 2. Sessions Table Section ==================== --}}
+    <div class="section-heading" style="margin-top: 8px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="section-title" style="margin: 0; font-size: 10pt; font-weight: bold; color: #1a237e; font-family: 'Cairo', sans-serif; display: inline-flex; align-items: center; gap: 6px;">
+            <span style="display: inline-block; width: 3px; height: 12px; background: #1a237e; border-radius: 1px;"></span>
+            {{ __('سجل الحصص المنجزة') }}
+            @if ($periodFrom && $periodTo)
+                <span style="font-size: 8pt; font-weight: normal; color: #64748b;">
+                    ({{ __('الفترة:') }} <span dir="ltr">{{ $periodFrom->format('Y/m/d') }}</span> {{ __('إلى') }} <span dir="ltr">{{ $periodTo->format('Y/m/d') }}</span>)
+                </span>
+            @endif
+        </h3>
+        <span class="badge" style="background: #e2e8f0; color: #1e293b; font-size: 8pt; font-weight: bold; padding: 2px 8px; border-radius: 4px; font-family: 'Cairo', sans-serif;">
+            {{ __('إجمالي الحصص: :count', ['count' => $registerCount]) }}
+        </span>
+    </div>
 
-            <section
-                id="classroom-register-{{ $classroom?->getKey() ?? 'unassigned' }}-{{ $loop->index }}"
-                class="register-sheet book-paper relative min-h-[277mm] overflow-hidden rounded-[26px] border-4 border-double border-amber-500/80 p-[7mm] shadow-2xl shadow-amber-900/10 print:my-0 print:w-auto print:max-w-none print:rounded-none print:p-[4mm] print:shadow-none {{ ! $loop->last ? 'break-after-page' : '' }}"
-                aria-labelledby="{{ $registerTitleId }}"
-            >
-                <div class="pointer-events-none absolute inset-[3mm] rounded-[18px] border border-dashed border-amber-300/80 print:inset-[2mm]"></div>
-                <div class="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-l from-amber-300 via-amber-500 to-amber-700"></div>
-
-                <div class="register-sheet-content relative">
-                    {{-- ==================== Tier A: general official information ==================== --}}
-                    <header class="relative overflow-hidden rounded-2xl border border-amber-200/90 bg-white/75 shadow-sm">
-                        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-l from-amber-300 via-amber-500 to-amber-700"></div>
-
-                        <div class="grid grid-cols-[1fr_1.25fr_1fr] gap-3 p-4">
-                            {{-- Right / start: institutional context --}}
-                            <div class="text-start">
-                                <p class="text-[8px] font-extrabold tracking-wide text-amber-700/80">{{ __('المعلومات العامة الرسمية') }}</p>
-
-                                <div class="mt-2 space-y-1.5">
-                                    <div>
-                                        <p class="text-[8px] font-semibold text-slate-400">{{ __('مديرية التربية') }}</p>
-                                        <p class="text-[9px] font-bold leading-4 text-slate-700">{{ $schoolSetting->directorate_name }}</p>
-                                    </div>
-
-                                    <div>
-                                        <p class="text-[8px] font-semibold text-slate-400">{{ __('المؤسسة التربوية / متوسطة') }}</p>
-                                        <p class="text-[9px] font-bold leading-4 text-slate-700">{{ $schoolSetting->school_name }}</p>
-                                        @if ($schoolSetting->municipality_name)
-                                            <p class="text-[8px] font-semibold text-slate-500">{{ __('البلدية') }}: {{ $schoolSetting->municipality_name }}</p>
-                                        @endif
-                                        @if ($schoolSetting->school_code)
-                                            <p class="text-[8px] font-semibold text-slate-500">{{ __('الرقم الميكانيكي') }}: <span dir="ltr">{{ $schoolSetting->school_code }}</span></p>
-                                        @endif
-                                        <div class="mt-1 border-b border-dotted border-amber-300"></div>
-                                    </div>
-
-                                    <div>
-                                        <p class="text-[8px] font-semibold text-slate-400">{{ __('السنة الدراسية') }}</p>
-                                        <p class="text-[10px] font-extrabold leading-4 text-slate-800">{{ $register['academicYear'] ?? $schoolSetting->academic_year }}</p>
-                                    </div>
-
-                                    <div>
-                                        <p class="text-[8px] font-semibold text-slate-400">{{ __('الطور التعليمي') }}</p>
-                                        <p class="text-[10px] font-extrabold leading-4 text-slate-800">{{ $phase?->name ?? __('التعليم المتوسط') }}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Center: republic and document title --}}
-                            <div class="border-x border-amber-200/70 px-3 text-center">
-                                <p class="text-[10px] font-extrabold tracking-wide text-slate-900">{{ __('الجمهورية الجزائرية الديمقراطية الشعبية') }}</p>
-                                <p class="mt-0.5 text-[8px] font-semibold text-slate-500">{{ __('وزارة التربية الوطنية') }}</p>
-
-                                <h1
-                                    id="{{ $registerTitleId }}"
-                                    class="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-gradient-to-l from-amber-500 to-amber-600 px-4 py-1.5 text-[17px] font-black tracking-wide text-white shadow-md shadow-amber-500/20"
-                                >
-                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/>
-                                    </svg>
-                                    {{ __('دفتر النصوص الرسمي') }}
-                                </h1>
-
-                                <p class="mt-1.5 text-[8.5px] font-bold text-amber-800/80">{{ __('السجل الرسمي للحصص المنجزة الخاص بالقسم') }}</p>
-                            </div>
-
-                            {{-- Left / end: document control and period --}}
-                            <div class="text-end">
-                                <p class="text-[8px] font-extrabold tracking-wide text-amber-700/80">{{ __('بيانات الوثيقة') }}</p>
-
-                                <div class="mt-2 space-y-1.5">
-                                    <div>
-                                        <p class="text-[8px] font-semibold text-slate-400">{{ __('الفترة الزمنية') }}</p>
-                                        <p class="text-[9px] font-extrabold leading-4 text-slate-800">
-                                            {{ __('من') }} <span dir="ltr" class="tabular-nums">{{ $periodFrom?->format('Y/m/d') ?? '—' }}</span>
-                                            {{ __('إلى') }} <span dir="ltr" class="tabular-nums">{{ $periodTo?->format('Y/m/d') ?? '—' }}</span>
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p class="text-[8px] font-semibold text-slate-400">{{ __('تاريخ الاستخراج') }}</p>
-                                        <p class="text-[9px] font-extrabold leading-4 text-slate-800">{{ now()->format('Y/m/d') }}</p>
-                                    </div>
-
-                                    <div>
-                                        <span class="inline-flex rounded-full bg-slate-900 px-2.5 py-1 text-[9px] font-extrabold text-white shadow-sm">
-                                            {{ __('إجمالي الحصص المنجزة: :count', ['count' => $registerCount]) }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+    <table class="report-table" style="width: 100%; border-collapse: collapse; font-size: 9pt; border: 1.5px solid #1a237e;">
+        <thead>
+            <tr style="background-color: #1a237e; color: #ffffff;">
+                <th style="width: 12%; border: 1px solid #3b82f6; padding: 6px 4px; text-align: center; font-size: 8.5pt;">{{ __('التاريخ والتوقيت') }}</th>
+                <th style="width: 31%; border: 1px solid #3b82f6; padding: 6px 6px; text-align: start; font-size: 8.5pt;">{{ __('الموضوع والنشاط التعليمي') }}</th>
+                <th style="width: 44%; border: 1px solid #3b82f6; padding: 6px 6px; text-align: start; font-size: 8.5pt;">{{ __('سيرورة التعلمات والمحتوى المنجز فعلياً') }}</th>
+                <th style="width: 13%; border: 1px solid #3b82f6; padding: 6px 4px; text-align: center; font-size: 8.5pt;">{{ __('الواجبات وتأشيرة الأستاذ') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse ($registerLogs as $log)
+                @php
+                    $schedule = $log->schedule;
+                    $rowSubject = $schedule?->subject;
+                    $rowTeacher = $schedule?->user;
+                    $rowGroup = $schedule?->group;
+                    $rowDay = $schedule?->day_of_week;
+                    $weekdayLabel = $rowDay instanceof \App\Enums\DayOfWeek ? $rowDay->label() : '—';
+                    $competence = $extractCompetence($log);
+                    $flowHtml = $cleanContent($log, $log->title, $competence);
+                @endphp
+                <tr style="background-color: {{ $loop->even ? '#f8fafc' : '#ffffff' }};">
+                    {{-- 1. Date & Time --}}
+                    <td style="border: 1px solid #cbd5e1; padding: 6px 4px; text-align: center; vertical-align: top; font-family: 'Cairo', sans-serif;">
+                        <span style="display: inline-block; background: #e0f2fe; color: #0369a1; font-weight: bold; padding: 1px 5px; border-radius: 3px; font-size: 8pt;">
+                            {{ $log->date?->format('Y/m/d') ?? '—' }}
+                        </span>
+                        <div style="font-weight: bold; color: #0f172a; font-size: 8.5pt; margin-top: 2px;">
+                            {{ $weekdayLabel }}
                         </div>
-                    </header>
-
-                    {{-- ==================== Tier B: class identity and assigned teachers ==================== --}}
-                    <section class="mt-3 grid grid-cols-2 gap-3 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4">
-                        <div class="col-span-2 flex items-center justify-between gap-3 border-b border-amber-200/70 pb-2">
-                            <span class="rounded-full border border-amber-200 bg-white/80 px-2.5 py-0.5 text-[8px] font-extrabold text-amber-800">{{ __('هوية القسم') }}</span>
-                            <p class="text-[9px] font-extrabold tracking-wide text-amber-900/80">{{ __('بطاقة الهوية الخاصة بالقسم والأساتذة المسندين') }}</p>
-                        </div>
-
-                        {{-- Right / start: high-emphasis class identity --}}
-                        <div class="text-start">
-                            <div class="flex items-end justify-start gap-3">
-                                <div class="text-start">
-                                    <p class="text-[9px] font-bold text-slate-500">{{ __('المستوى الدراسي') }}</p>
-                                    <p class="mt-0.5 text-[11px] font-extrabold text-slate-800">{{ $register['levelName'] ?? '—' }}</p>
-                                </div>
-
-                                <div class="text-start">
-                                    <p class="text-[9px] font-bold text-slate-500">{{ __('القسم') }}</p>
-                                    <span class="mt-0.5 inline-flex rounded-2xl bg-slate-900 px-5 py-2 text-2xl font-black tracking-wide text-white shadow-md shadow-slate-900/15">
-                                        {{ $classroom?->name ?? '—' }}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="mt-2">
-                                <p class="text-[9px] font-bold text-slate-500">{{ __('الأفواج التربوية') }}</p>
-                                <div class="mt-1 flex flex-wrap justify-start gap-1.5">
-                                    @forelse ($groups as $group)
-                                        <span class="rounded-full border border-amber-200 bg-white/80 px-2 py-0.5 text-[9px] font-bold text-slate-600">{{ $group->name }}</span>
-                                    @empty
-                                        <span class="rounded-full border border-amber-200 bg-white/80 px-2 py-0.5 text-[9px] font-bold text-slate-600">{{ __('كامل القسم') }}</span>
-                                    @endforelse
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Left / end: assigned teachers and subjects --}}
-                        <div class="border-s border-amber-200/80 ps-3">
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="rounded-full bg-slate-900 px-2 py-0.5 text-[8px] font-extrabold text-white">{{ $assignments->count() }}</span>
-                                <p class="text-[9px] font-extrabold text-amber-900/80">{{ __('الأساتذة المتدخلون والمواد المسندة') }}</p>
-                            </div>
-
-                            <div class="mt-2 space-y-1">
-                                @forelse ($assignments as $assignment)
-                                    @php
-                                        $assignmentTeacher = $assignment['teacher'];
-                                        $assignmentSubject = $assignment['subject'];
-                                        $assignmentColor = $subjectColor($assignmentSubject?->color);
-                                        $assignmentForeground = $subjectTextColor($assignmentColor);
-                                    @endphp
-
-                                    <div class="flex items-center justify-between gap-2 rounded-lg border border-amber-200/80 bg-white/85 px-2 py-1.5">
-                                        <div class="min-w-0 text-start">
-                                            <p class="truncate text-[9px] font-extrabold text-slate-800">{{ $assignmentTeacher?->name ?? __('غير محدد') }}</p>
-
-                                            @if ($assignmentSubject?->name)
-                                                <span
-                                                    class="mt-0.5 inline-flex max-w-full items-center truncate rounded px-1.5 py-0.5 text-[8px] font-extrabold"
-                                                    style="background-color: {{ $assignmentColor }}; color: {{ $assignmentForeground }};"
-                                                >
-                                                    {{ $assignmentSubject->name }}
-                                                </span>
-                                            @else
-                                                <span class="text-[8px] font-semibold text-slate-400">—</span>
-                                            @endif
-                                        </div>
-
-                                        <span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-extrabold text-amber-900">{{ __(':count حصة', ['count' => $assignment['count']]) }}</span>
-                                    </div>
-                                @empty
-                                    <p class="text-[9px] font-semibold text-slate-400">{{ __('لا توجد حصص مسجلة.') }}</p>
-                                @endforelse
-                            </div>
-                        </div>
-                    </section>
-
-                    {{-- ==================== Class register entries ==================== --}}
-                    <section class="mt-5">
-                        <div class="mb-2 flex items-center justify-between gap-3">
-                            <h2 class="flex items-center gap-2 text-xs font-black text-slate-800">
-                                <span class="h-2 w-2 rounded-full bg-amber-500"></span>
-                                {{ __('سجل الحصص المنجزة — :classroom', ['classroom' => $classroom?->name ?? __('قسم غير محدد')]) }}
-                            </h2>
-                            <span class="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[9px] font-bold text-amber-800">
-                                {{ __(':count سجل', ['count' => $registerCount]) }}
-                            </span>
-                        </div>
-
-                        {{-- overflow stays visible so the table can fragment cleanly across A4 pages. --}}
-                        <div class="overflow-visible rounded-2xl border border-amber-200 bg-white/60 shadow-sm">
-                            <table class="register-table w-full table-fixed text-start text-[11px]">
-                                <thead>
-                                    <tr class="bg-slate-900 text-white">
-                                        <th class="w-[12%] border-b-2 border-amber-400 border-e border-white/10 px-2.5 py-3 text-center text-[9px] font-extrabold">
-                                            {{ __('التاريخ والتوقيت') }}
-                                        </th>
-                                        <th class="w-[21%] border-b-2 border-amber-400 border-e border-white/10 px-2.5 py-3 text-[9px] font-extrabold">
-                                            {{ __('المادة والأستاذ(ة) والفوج') }}
-                                        </th>
-                                        <th class="w-[18%] border-b-2 border-amber-400 border-e border-white/10 px-2.5 py-3 text-[9px] font-extrabold">
-                                            {{ __('عنوان الدرس') }}
-                                        </th>
-                                        <th class="w-[32%] border-b-2 border-amber-400 border-e border-white/10 px-2.5 py-3 text-[9px] font-extrabold">
-                                            {{ __('المحتوى المنجز (سيرورة الحصة)') }}
-                                        </th>
-                                        <th class="w-[17%] border-b-2 border-amber-400 px-2.5 py-3 text-[9px] font-extrabold">
-                                            {{ __('الواجب والملاحظات') }}
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse ($registerLogs as $log)
-                                        @php
-                                            $schedule = $log->schedule;
-                                            $rowSubject = $schedule?->subject;
-                                            $rowTeacher = $schedule?->user;
-                                            $rowGroup = $schedule?->group;
-                                            $rowClassroom = $schedule?->classroom ?? $rowGroup?->classroom ?? $classroom;
-                                            $rowSubjectColor = $subjectColor($rowSubject?->color);
-                                            $rowSubjectForeground = $subjectTextColor($rowSubjectColor);
-                                            $rowDay = $schedule?->day_of_week;
-                                            $weekdayLabel = $rowDay instanceof \App\Enums\DayOfWeek ? $rowDay->label() : '—';
-                                            $hasHomework = filled($log->homework);
-                                            $hasObservations = filled($log->observations);
-                                        @endphp
-
-                                        <tr class="register-entry {{ $loop->even ? 'bg-amber-50/35' : 'bg-white/80' }} align-top">
-                                            <td class="border-b border-e border-amber-100 px-2.5 py-3">
-                                                <div class="inline-flex items-center rounded-md bg-amber-100 px-2 py-1 text-[10px] font-bold text-amber-900">
-                                                    {{ $log->date?->format('Y/m/d') ?? '—' }}
-                                                </div>
-
-                                                <p class="mt-1 text-[9px] font-extrabold text-amber-800">
-                                                    {{ $weekdayLabel }}
-                                                </p>
-
-                                                @if ($schedule?->start_time)
-                                                    <div class="mt-1 inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white/80 px-2 py-0.5 text-[9px] font-semibold text-slate-600">
-                                                        <svg class="h-3 w-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                                                        </svg>
-                                                        <span dir="ltr" class="tabular-nums">
-                                                            {{ $schedule->start_time->format('H:i') }}
-                                                            @if ($schedule->end_time)
-                                                                — {{ $schedule->end_time->format('H:i') }}
-                                                            @endif
-                                                        </span>
-                                                    </div>
-                                                @endif
-                                            </td>
-
-                                            <td class="border-b border-e border-amber-100 px-2.5 py-3">
-                                                @if ($rowSubject?->name)
-                                                    <span
-                                                        class="inline-flex max-w-full items-center rounded-md border px-2 py-1 text-[9px] font-extrabold leading-4 shadow-sm"
-                                                        style="background-color: {{ $rowSubjectColor }}; border-color: {{ $rowSubjectColor }}; color: {{ $rowSubjectForeground }};"
-                                                    >
-                                                        {{ $rowSubject->name }}
-                                                    </span>
-                                                @endif
-
-                                                <p class="mt-1 text-[9px] font-semibold leading-4 text-slate-600">
-                                                    {{ __('الأستاذ(ة)') }}:
-                                                    <span class="font-extrabold text-slate-800">{{ $rowTeacher?->name ?? '—' }}</span>
-                                                </p>
-
-                                                <p class="mt-0.5 rounded-md border border-amber-100 bg-amber-50/70 px-1.5 py-0.5 text-[8px] font-bold text-amber-900">
-                                                    @if ($rowGroup)
-                                                        {{ $rowClassroom?->name ?? $classroom?->name ?? '—' }} — {{ $rowGroup->name }}
-                                                    @else
-                                                        {{ __('كامل القسم: :classroom', ['classroom' => $rowClassroom?->name ?? $classroom?->name ?? '—']) }}
-                                                    @endif
-                                                </p>
-                                            </td>
-
-                                            <td class="border-b border-e border-amber-100 px-2.5 py-3">
-                                                <div class="flex items-start gap-2">
-                                                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-amber-500 shadow-sm shadow-amber-500/40"></span>
-                                                    <span class="font-extrabold leading-6 text-slate-900">{{ $log->title }}</span>
-                                                </div>
-                                            </td>
-
-                                            <td class="border-b border-e border-amber-100 px-2.5 py-3">
-                                                @if (filled($log->actual_content))
-                                                    <div class="rich-text text-slate-700">
-                                                        @if (\Illuminate\Support\Str::contains((string) $log->actual_content, ['<p', '<br', '<div', '<ul', '<ol', '<strong', '<h', '<span']))
-                                                            {!! strip_tags((string) $log->actual_content, $allowedTags) !!}
-                                                        @else
-                                                            {!! nl2br(e($log->actual_content)) !!}
-                                                        @endif
-                                                    </div>
-                                                @else
-                                                    <span class="inline-flex rounded-md bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-400">—</span>
-                                                @endif
-
-                                                @if ($log->isReviewed())
-                                                    <div class="mt-2 rounded-lg border border-emerald-300 bg-emerald-50 px-2 py-1.5 text-[9px] text-emerald-950">
-                                                        <p class="font-extrabold">
-                                                            {{ __('تأشيرة الإدارة') }}: {{ $log->reviewer?->name ?? '—' }}
-                                                            — {{ __('التاريخ') }}: {{ $log->reviewed_at?->format('Y-m-d') }}
-                                                        </p>
-                                                        @if (filled($log->admin_notes))
-                                                            <p class="mt-1 whitespace-pre-line font-semibold">
-                                                                {{ __('ملاحظات الإدارة / التوجيه التربوي') }}: {{ $log->admin_notes }}
-                                                            </p>
-                                                        @endif
-                                                    </div>
-                                                @endif
-                                            </td>
-
-                                            <td class="border-b border-amber-100 px-2.5 py-3">
-                                                @if ($hasHomework)
-                                                    <div class="rounded-lg border border-amber-100 bg-amber-50/60 px-2.5 py-2">
-                                                        <p class="text-[8px] font-extrabold text-amber-800">{{ __('الواجب') }}</p>
-                                                        <p class="mt-0.5 text-[10px] font-semibold leading-5 text-slate-700">
-                                                            {!! nl2br(e($log->homework)) !!}
-                                                        </p>
-                                                    </div>
-                                                @endif
-
-                                                @if ($hasObservations)
-                                                    <div class="mt-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
-                                                        <p class="text-[8px] font-extrabold text-slate-500">{{ __('ملاحظات') }}</p>
-                                                        <p class="mt-0.5 text-[10px] font-semibold leading-5 text-slate-600">
-                                                            {!! nl2br(e($log->observations)) !!}
-                                                        </p>
-                                                    </div>
-                                                @endif
-
-                                                @unless ($hasHomework || $hasObservations)
-                                                    <span class="inline-flex rounded-md bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-400">—</span>
-                                                @endunless
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="5" class="px-4 py-10 text-center">
-                                                <div class="mx-auto flex max-w-sm flex-col items-center gap-2 rounded-2xl border border-dashed border-amber-300 bg-amber-50/70 px-6 py-8">
-                                                    <span class="grid h-12 w-12 place-items-center rounded-2xl bg-amber-500 text-xl font-black text-white shadow-md shadow-amber-500/25">س</span>
-                                                    <p class="text-sm font-extrabold text-amber-900">{{ __('لا توجد سجلات منجزة مطابقة للاختيار.') }}</p>
-                                                    <p class="text-[10px] font-semibold text-amber-700/70">{{ __('اختر سجلات منجزة ثم أعد إنشاء الدفتر.') }}</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
-
-                    {{-- ==================== Official signatures ==================== --}}
-                    <footer class="signatures mt-5 break-inside-avoid">
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="rounded-xl border border-dashed border-amber-300 bg-white/70 p-3 text-center shadow-sm">
-                                <p class="text-[10px] font-extrabold text-amber-900">{{ __('إمضاء الأستاذ(ة)') }}</p>
-                                <div class="mt-8 border-t border-dotted border-slate-400"></div>
-                                <p class="mt-1 text-[8px] font-semibold text-slate-400">{{ __('التاريخ') }}</p>
-                            </div>
-
-                            <div class="rounded-xl border border-dashed border-amber-300 bg-white/70 p-3 text-center shadow-sm">
-                                <p class="text-[10px] font-extrabold text-amber-900">{{ __('تأشيرة السيد(ة) المدير(ة)') }}</p>
-                                @if ($schoolSetting->principal_name)
-                                    <p class="mt-0.5 text-[9px] font-bold text-slate-600">{{ $schoolSetting->principal_name }}</p>
+                        @if ($schedule?->start_time)
+                            <div style="font-size: 7.5pt; color: #64748b; margin-top: 1px;" dir="ltr">
+                                {{ $schedule->start_time->format('H:i') }}
+                                @if ($schedule->end_time)
+                                    — {{ $schedule->end_time->format('H:i') }}
                                 @endif
-                                <div class="mt-8 border-t border-dotted border-slate-400"></div>
-                                <p class="mt-1 text-[8px] font-semibold text-slate-400">{{ __('الختم والإمضاء') }}</p>
                             </div>
-
-                            <div class="rounded-xl border border-dashed border-amber-300 bg-white/70 p-3 text-center shadow-sm">
-                                <p class="text-[10px] font-extrabold text-amber-900">{{ __('تأشيرة السيد(ة) المفتش(ة)') }}</p>
-                                <div class="mt-8 border-t border-dotted border-slate-400"></div>
-                                <p class="mt-1 text-[8px] font-semibold text-slate-400">{{ __('الختم والإمضاء') }}</p>
+                        @endif
+                        @if ($rowGroup)
+                            <div style="font-size: 7pt; font-weight: bold; color: #1a237e; background: #f1f5f9; padding: 1px 3px; border-radius: 2px; margin-top: 2px; display: inline-block;">
+                                {{ $rowGroup->name }}
                             </div>
-                        </div>
+                        @endif
+                    </td>
 
-                        <div class="mt-3 flex items-center justify-between gap-3 border-t border-dashed border-amber-200 pt-2 text-[8px] font-semibold text-slate-400">
-                            <span class="inline-flex items-center gap-1.5">
-                                <span class="grid h-4 w-4 place-items-center rounded bg-amber-500 text-[8px] font-black text-white">س</span>
-                                {{ __('دفتر قسم :classroom — وثيقة رسمية من منصة سجِّل', ['classroom' => $classroom?->name ?? '—']) }}
+                    {{-- 2. Topic & Competence --}}
+                    <td style="border: 1px solid #cbd5e1; padding: 6px 8px; vertical-align: top;">
+                        <strong style="color: #0f172a; font-size: 9.5pt; font-family: 'Cairo', sans-serif; display: block; line-height: 1.35;">
+                            {{ $log->title }}
+                        </strong>
+
+                        @if ($competence)
+                            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-inline-start: 3px solid #16a34a; padding: 3px 6px; border-radius: 2px; margin-top: 4px; font-size: 7.5pt; line-height: 1.35; font-family: 'Cairo', sans-serif;">
+                                <span style="color: #166534; font-weight: bold; display: block;">🎯 {{ __('الكفاءة المستهدفة:') }}</span>
+                                <span style="color: #14532d;">{{ $competence }}</span>
+                            </div>
+                        @endif
+
+                        @php
+                            $strategies = $extractStrategies($log);
+                        @endphp
+                        @if (! empty($strategies))
+                            <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-inline-start: 3px solid #2563eb; padding: 3px 6px; border-radius: 2px; margin-top: 4px; font-size: 7.5pt; line-height: 1.35; font-family: 'Cairo', sans-serif;">
+                                <span style="color: #1e40af; font-weight: bold; display: block;">⚡ {{ __('استراتيجيات التعلم النشط:') }}</span>
+                                <div style="display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px;">
+                                    @foreach ($strategies as $strat)
+                                        <span style="display: inline-block; background: #ffffff; color: #1d4ed8; border: 1px solid #93c5fd; padding: 1px 5px; border-radius: 2px; font-weight: 600; font-size: 7pt;">
+                                            {{ $strat }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    </td>
+
+                    {{-- 3. Delivered Content Flow --}}
+                    <td style="border: 1px solid #cbd5e1; padding: 6px 8px; vertical-align: top;">
+                        @if (filled($flowHtml))
+                            <div class="rich-content">
+                                {!! strip_tags($flowHtml, '<p><br><strong><b><em><u><ul><ol><li><h4><h5><span>') !!}
+                            </div>
+                        @else
+                            <span style="color: #94a3b8; font-style: italic; font-size: 8pt;">{{ __('لم يُسجل محتوى تفصيلي.') }}</span>
+                        @endif
+
+                        @if ($log->isReviewed())
+                            <div style="margin-top: 4px; padding: 2px 6px; background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 2px; font-size: 7.5pt; color: #065f46; font-family: 'Cairo', sans-serif;">
+                                <strong>✓ {{ __('تأشيرة الإدارة') }}:</strong> {{ $log->reviewer?->name ?? '—' }} ({{ $log->reviewed_at?->format('Y/m/d') }})
+                                @if (filled($log->admin_notes))
+                                    — <span>{{ $log->admin_notes }}</span>
+                                @endif
+                            </div>
+                        @endif
+                    </td>
+
+                    {{-- 4. Homework & Teacher Visa --}}
+                    <td style="border: 1px solid #cbd5e1; padding: 6px 4px; vertical-align: top; font-family: 'Cairo', sans-serif;">
+                        @if (filled($log->homework))
+                            <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-inline-start: 2px solid #d97706; padding: 2px 4px; border-radius: 2px; margin-bottom: 3px; font-size: 7.5pt; line-height: 1.25;">
+                                <strong style="color: #92400e; display: block;">{{ __('الواجب:') }}</strong>
+                                <span style="color: #78350f;">{!! nl2br(e($log->homework)) !!}</span>
+                            </div>
+                        @endif
+
+                        @if (filled($log->observations))
+                            <div style="font-size: 7pt; color: #64748b; margin-bottom: 3px;">
+                                <strong>{{ __('ملاحظات:') }}</strong> {{ $log->observations }}
+                            </div>
+                        @endif
+
+                        <div style="margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 2px; text-align: center;">
+                            <span style="font-size: 7pt; font-weight: bold; color: #1a237e; display: block;">
+                                {{ __('تأشيرة الأستاذ') }}
                             </span>
-                            <span>{{ now()->format('Y/m/d — H:i') }}</span>
+                            <span style="font-size: 6.5pt; color: #64748b;">
+                                {{ $log->date?->format('Y/m/d') }}
+                            </span>
                         </div>
-                    </footer>
-                </div>
-            </section>
-        @endforeach
-    </main>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 20px; color: #64748b; font-family: 'Cairo', sans-serif;">
+                        {{ __('لا توجد سجلات منجزة مسجلة لهذا القسم.') }}
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
 
-    @if ($autoPrint ?? true)
-        <script>
-            window.addEventListener('load', () => {
-                window.setTimeout(() => window.print(), 300);
-            });
-        </script>
-    @endif
+    {{-- ==================== 3. Standard Signatures Grid ==================== --}}
+    <div class="signature-grid" style="margin-top: 12px;">
+        <div class="signature-box">
+            <strong>{{ __('إمضاء الأستاذ(ة)') }}</strong>
+            <span style="font-weight: bold; color: #0f172a; margin-top: 2px;">{{ $teacherName }}</span>
+            <div class="signature-line"></div>
+            <small style="font-size: 7pt; color: #94a3b8;">{{ __('التاريخ والإمضاء') }}</small>
+        </div>
+        <div class="signature-box">
+            <strong>{{ __('تأشيرة السيد(ة) مدير(ة) المؤسسة') }}</strong>
+            <span style="font-weight: bold; color: #0f172a; margin-top: 2px;">{{ $schoolSetting->principal_name ?: __('مدير المؤسسة') }}</span>
+            <div class="signature-line"></div>
+            <small style="font-size: 7pt; color: #94a3b8;">{{ __('المعاينة، الختم والتاريخ') }}</small>
+        </div>
+        <div class="signature-box">
+            <strong>{{ __('تأشيرة السيد(ة) المفتش(ة)') }}</strong>
+            <span style="color: #64748b; margin-top: 2px;">{{ __('مفتشية التعليم المتوسط') }}</span>
+            <div class="signature-line"></div>
+            <small style="font-size: 7pt; color: #94a3b8;">{{ __('التوجيهات التربوية، الختم والتاريخ') }}</small>
+        </div>
+    </div>
+
+    {{-- ==================== 4. Standard Footer ==================== --}}
+    <p class="doc-footer" style="margin-top: 8px; border-top: 1px solid #cbd5e1; padding-top: 3px; font-size: 7.5pt; color: #64748b; display: flex; justify-content: space-between;">
+        <span>{{ __('دفتر النصوص الرسمي — قسم :classroom', ['classroom' => $classroom?->name ?? '—']) }} | {{ $schoolSetting->school_name }} | {{ $register['academicYear'] ?? $schoolSetting->academic_year }}</span>
+        <span dir="ltr">{{ now()->format('Y-m-d H:i') }}</span>
+    </p>
+
+</main>
 </body>
 </html>

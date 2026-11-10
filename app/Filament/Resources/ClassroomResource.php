@@ -121,6 +121,13 @@ class ClassroomResource extends Resource
                     ->relationship('level', 'name'),
             ])
             ->actions([
+                Tables\Actions\Action::make('printRegister')
+                    ->label(__('دفتر النصوص'))
+                    ->icon('heroicon-o-book-open')
+                    ->color('info')
+                    ->tooltip(__('معاينة وطباعة دفتر نصوص هذا القسم'))
+                    ->url(fn (Classroom $record): string => route('print.register', ['classroom_id' => $record->id]))
+                    ->openUrlInNewTab(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

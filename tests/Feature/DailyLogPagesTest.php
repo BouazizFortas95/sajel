@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\DailyLogResource\Pages\CreateDailyLog;
+use App\Filament\Resources\DailyLogResource\Pages\EditDailyLog;
 use App\Models\DailyLog;
 use App\Models\Schedule;
 use App\Models\Subject;
@@ -41,6 +42,11 @@ class DailyLogPagesTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Confirm completion');
+
+        $schedule2 = Schedule::factory()->create(['user_id' => $user->id]);
+        $completedLog = DailyLog::factory()->completed()->create(['schedule_id' => $schedule2->id]);
+        Livewire::test(EditDailyLog::class, ['record' => $completedLog->id])
+            ->assertActionExists('printRegister');
     }
 
     public function test_create_page_prefills_the_schedule_from_the_query_string(): void

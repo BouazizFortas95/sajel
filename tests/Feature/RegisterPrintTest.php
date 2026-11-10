@@ -89,9 +89,8 @@ class RegisterPrintTest extends TestCase
             ->assertOk()
             ->assertSee('dir="ltr"', false)
             ->assertSee('lang="en"', false)
-            ->assertSee('Class register preview')
+            ->assertSee('Official class register')
             ->assertSee('Date and time')
-            ->assertSee('Subject, teacher and group')
             ->assertSee('Monday');
 
         $this->withSession(['locale' => 'fr'])
@@ -100,10 +99,39 @@ class RegisterPrintTest extends TestCase
             ->assertOk()
             ->assertSee('dir="ltr"', false)
             ->assertSee('lang="fr"', false)
-            ->assertSee('Aperçu du registre de classe')
+            ->assertSee('Registre de classe officiel')
             ->assertSee('Date et heure')
-            ->assertSee('Matière, enseignant(e) et groupe')
             ->assertSee('Lundi');
+    }
+
+    public function test_print_register_displays_one_classroom_at_a_time(): void
+    {
+        $teacher = User::factory()->create();
+        $classA = Classroom::factory()->create(['name' => '4 م 4']);
+        $classB = Classroom::factory()->create(['name' => '1 م 1']);
+
+        $logA = $this->createLog($teacher, classroom: $classA, title: 'درس رابعة متوسط');
+        $logB = $this->createLog($teacher, classroom: $classB, title: 'درس أولى متوسط');
+
+        // Requesting with classroom_id displays ONLY that classroom's register
+        $responseA = $this->actingAs($teacher)->get(route('print.register', [
+            'classroom_id' => $classA->id,
+        ]));
+
+        $responseA->assertOk()
+            ->assertSee('4 م 4')
+            ->assertSee('درس رابعة متوسط')
+            ->assertDontSee('درس أولى متوسط');
+
+        // Requesting for class B displays ONLY class B's register
+        $responseB = $this->actingAs($teacher)->get(route('print.register', [
+            'classroom_id' => $classB->id,
+        ]));
+
+        $responseB->assertOk()
+            ->assertSee('1 م 1')
+            ->assertSee('درس أولى متوسط')
+            ->assertDontSee('درس رابعة متوسط');
     }
 
     public function test_print_view_excludes_other_teachers_and_non_completed_logs(): void
@@ -210,6 +238,47 @@ class RegisterPrintTest extends TestCase
             ->set('selectedTableRecords', [$log->id])
             ->callTableBulkAction('downloadRegisterPdf', [$log])
             ->assertFileDownloaded('register.pdf', 'pdf-bytes', 'application/pdf');
+    }
+
+    public function test_print_row_action_is_visible_for_completed_log_and_hidden_for_planned(): void
+    {
+        $teacher = User::factory()->create();
+        $completed = $this->createLog($teacher, title: 'حصة منجزة', status: DailyLogStatus::Completed);
+        $planned = $this->createLog($teacher, title: 'حصة مخططة', status: DailyLogStatus::Planned);
+
+        $this->actingAs($teacher);
+
+        Livewire::test(ListDailyLogs::class)
+            ->assertTableActionExists('printRegister')
+            ->assertTableActionVisible('printRegister', $completed)
+            ->assertTableActionHidden('printRegister', $planned);
+    }
+
+    public function test_print_bulk_action_dispatches_window_open_script(): void
+    {
+        $teacher = User::factory()->create();
+        $completed = $this->createLog($teacher, title: 'حصة منجزة');
+
+        $this->actingAs($teacher);
+
+        $res = Livewire::test(ListDailyLogs::class)
+            ->assertTableBulkActionExists('printRegister')
+            ->set('selectedTableRecords', [$completed->id])
+            ->callTableBulkAction('printRegister', [$completed])
+            ->assertDispatched('deselectAllTableRecords');
+
+        $this->assertStringContainsString('print/daily-logs', $res->effects['xjs'][0]['expression'] ?? '');
+    }
+
+    public function test_header_action_renders_on_list_page_when_completed_logs_exist(): void
+    {
+        $teacher = User::factory()->create();
+        $this->createLog($teacher, status: DailyLogStatus::Completed);
+
+        $this->actingAs($teacher);
+
+        Livewire::test(ListDailyLogs::class)
+            ->assertActionExists('printRegister');
     }
 
     public function test_export_progress_widget_shows_progress_for_the_current_user(): void
@@ -440,6 +509,52 @@ class RegisterPrintTest extends TestCase
             ->assertSee('1 م 1')
             ->assertSee('المجموعة أ')
             ->assertSee('درس الفوج');
+    }
+
+    public function test_print_register_displays_active_learning_strategies(): void
+    {
+        $teacher = User::factory()->create();
+        $classroom = Classroom::factory()->create(['name' => '3 م 4']);
+        $subject = Subject::factory()->create(['name' => 'العلوم الفيزيائية']);
+
+        $log = $this->createLog($teacher, $classroom, $subject, [
+            'date' => '2026-11-08',
+            'title' => 'التيار الكهربائي المستمر',
+            'content_data' => [
+                [
+                    'type' => 'lesson_structure',
+                    'data' => [
+                        'competence' => 'يركب دارة كهربائية بسيطة ويقيس شدة التيار.',
+                        'lesson_phases' => [
+                            [
+                                'phase_name' => 'وضعية الانطلاق',
+                                'strategy' => 'العصف الذهني المنظم',
+                                'content' => 'مراجعة المكتسبات القبلية حول منابع التيار.',
+                            ],
+                            [
+                                'phase_name' => 'بناء التعلمات',
+                                'strategy' => 'التفكير — المشاركة — العرض',
+                                'content' => 'تجربة تركيب مقياس الأمبير في الدارة.',
+                            ],
+                            [
+                                'phase_name' => 'التقويم',
+                                'strategy' => 'بطاقة الخروج',
+                                'content' => 'سؤال تقويمي سريع حول وحدة قياس الشدة.',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'actual_content' => '<h4>وضعية الانطلاق <span class="strategy-badge">استراتيجية: العصف الذهني المنظم</span></h4><p>مراجعة المكتسبات القبلية.</p>',
+        ]);
+
+        $this->actingAs($teacher)
+            ->get(route('print.register', ['classroom_id' => $classroom->id]))
+            ->assertOk()
+            ->assertSee('استراتيجيات التعلم النشط:')
+            ->assertSee('العصف الذهني المنظم')
+            ->assertSee('التفكير — المشاركة — العرض')
+            ->assertSee('بطاقة الخروج');
     }
 
     private function createLog(

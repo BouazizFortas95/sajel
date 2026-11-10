@@ -46,6 +46,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 use Illuminate\Validation\ValidationException;
+use Livewire\Component;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
@@ -420,7 +421,7 @@ class DailyLogResource extends Resource
                                             ->label(__('المحتوى المنجز فعلياً'))
                                             ->columnSpanFull()
                                             ->visible(fn (Get $get): bool => $get('status') === DailyLogStatus::Completed->value)
-                                            ->required(fn (Get $get): bool => $get('status') === DailyLogStatus::Completed->value)
+                                            ->nullable()
                                             ->toolbarButtons([
                                                 'bold',
                                                 'italic',
@@ -482,14 +483,29 @@ class DailyLogResource extends Resource
             ->label(__('توليد التحضير بالذكاء الاصطناعي'))
             ->icon('heroicon-o-sparkles')
             ->color('primary')
-            ->tooltip(__('توليد بنية درس كاملة انطلاقاً من عنوان الحصة والمادة والقسم.'))
+            ->tooltip(__('توليد بنية درس كاملة موظفاً استراتيجيات التعلم النشط انطلاقاً من عنوان الحصة والمادة والقسم.'))
             ->requiresConfirmation(fn (Get $get): bool => filled($get('content_data')))
             ->modalHeading(__('توليد التحضير بالذكاء الاصطناعي'))
-            ->modalDescription(__('سيُستبدل المحتوى المخطط الحالي ببنية درس جديدة مقترحة من الذكاء الاصطناعي. يمكنك مراجعتها وتعديلها قبل الحفظ.'))
+            ->modalDescription(__('سيُستبدل المحتوى المخطط الحالي ببنية درس جديدة مقترحة من الذكاء الاصطناعي مع توظيف استراتيجيات التعلم النشط. يمكنك مراجعتها وتعديلها قبل الحفظ.'))
             ->modalSubmitActionLabel(__('توليد'))
-            ->action(function (Get $get, Set $set, AiLessonPlannerService $planner): void {
+            ->form([
+                Select::make('preferred_strategy')
+                    ->label(__('استراتيجية التعلم النشط المقترحة (اختياري)'))
+                    ->placeholder(__('دع الذكاء الاصطناعي يختار الاستراتيجيات الأنسب'))
+                    ->options(fn (): array => ActiveLearningStrategy::query()
+                        ->where('is_active', true)
+                        ->orderBy('sort_order')
+                        ->pluck('name', 'name')
+                        ->toArray())
+                    ->searchable()
+                    ->helperText(__('يمكنك تحديد استراتيجية معينة ترغب في تطبيقها في الحصة، أو ترك الخيار للذكاء الاصطناعي لاختيار الأنسب لموضوع الدرس ومستواه.')),
+            ])
+            ->action(function (array $data, Get $get, Set $set, AiLessonPlannerService $planner): void {
                 $title = trim((string) $get('title'));
                 $scheduleId = $get('schedule_id');
+                $preferredStrategy = filled($data['preferred_strategy'] ?? null)
+                    ? (string) $data['preferred_strategy']
+                    : null;
 
                 if ($title === '' || blank($scheduleId)) {
                     Notification::make()
@@ -527,6 +543,7 @@ class DailyLogResource extends Resource
                             ?? $schedule->group?->classroom?->level?->name
                             ?? '',
                         locale: app()->getLocale(),
+                        preferredStrategy: $preferredStrategy,
                     );
                 } catch (AiLessonPlannerException $exception) {
                     Notification::make()
@@ -584,6 +601,16 @@ class DailyLogResource extends Resource
                                 ->label(__('اسم المرحلة'))
                                 ->required(),
 
+                            Select::make('strategy')
+                                ->label(__('استراتيجية التعلم النشط'))
+                                ->placeholder(__('اختر استراتيجية (اختياري)...'))
+                                ->options(fn (): array => ActiveLearningStrategy::query()
+                                    ->where('is_active', true)
+                                    ->orderBy('sort_order')
+                                    ->pluck('name', 'name')
+                                    ->toArray())
+                                ->searchable(),
+
                             RichEditor::make('content')
                                 ->label(__('محتوى المرحلة'))
                                 ->toolbarButtons([
@@ -600,7 +627,9 @@ class DailyLogResource extends Resource
                         ->defaultItems(1)
                         ->reorderable()
                         ->collapsible()
-                        ->itemLabel(fn (array $state): ?string => $state['phase_name'] ?? null),
+                        ->itemLabel(fn (array $state): ?string => filled($state['phase_name'] ?? null)
+                            ? ($state['phase_name'].(filled($state['strategy'] ?? null) ? ' — ('.$state['strategy'].')' : ''))
+                            : null),
                 ])
                 ->columnSpanFull(),
 
@@ -739,11 +768,11 @@ class DailyLogResource extends Resource
             });
     }
 
-    protected static function generateActualContent(DailyLog $record): string
+    public static function generateActualContentFromData(string $title, ?array $contentData): string
     {
-        $html = ['<h2>'.e($record->title).'</h2>'];
+        $html = ['<h2>'.e($title).'</h2>'];
 
-        foreach ($record->content_data ?? [] as $block) {
+        foreach ($contentData ?? [] as $block) {
             if (! is_array($block)) {
                 continue;
             }
@@ -771,8 +800,21 @@ class DailyLogResource extends Resource
                         : $phaseType?->label()
                         ?? __('المرحلة').' '.($index + 1);
                     $content = $phase['content'] ?? $phase['description'] ?? null;
+                    $strategy = $phase['strategy'] ?? null;
+                    $strategyName = null;
+                    if (filled($strategy)) {
+                        if (is_numeric($strategy)) {
+                            $strategyName = ActiveLearningStrategy::query()->find($strategy)?->name ?? (string) $strategy;
+                        } else {
+                            $strategyName = (string) $strategy;
+                        }
+                    }
 
-                    $html[] = '<h4>'.e($name).'</h4>';
+                    if ($strategyName) {
+                        $html[] = '<h4>'.e($name).' <span class="strategy-badge">'.e(__('استراتيجية: :strategy', ['strategy' => $strategyName])).'</span></h4>';
+                    } else {
+                        $html[] = '<h4>'.e($name).'</h4>';
+                    }
 
                     if (is_scalar($content) && filled($content)) {
                         $html[] = '<p>'.nl2br(e(strip_tags((string) $content))).'</p>';
@@ -797,7 +839,15 @@ class DailyLogResource extends Resource
             }
         }
 
-        return implode("\n", $html);
+        return count($html) > 1 ? implode("\n", $html) : '';
+    }
+
+    public static function generateActualContent(DailyLog $record): string
+    {
+        return static::generateActualContentFromData(
+            title: (string) $record->title,
+            contentData: $record->content_data,
+        );
     }
 
     /**
@@ -1017,12 +1067,59 @@ class DailyLogResource extends Resource
             ->actions([
                 static::confirmCompletionTableAction(),
                 static::administrativeVisaTableAction(),
+                Tables\Actions\Action::make('printRegister')
+                    ->label(__('دفتر النصوص'))
+                    ->icon('heroicon-o-book-open')
+                    ->color('info')
+                    ->tooltip(__('معاينة الحصة في دفتر نصوص هذا القسم'))
+                    ->url(function (DailyLog $record): string {
+                        $classroomId = $record->schedule?->classroom_id
+                            ?? $record->schedule?->group?->classroom_id;
+
+                        return route('print.register', array_filter([
+                            'classroom_id' => $classroomId,
+                            'ids' => [$record->id],
+                        ]));
+                    })
+                    ->openUrlInNewTab()
+                    ->visible(fn (DailyLog $record): bool => $record->isCompleted()),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('printRegister')
+                        ->label(__('معاينة / طباعة دفتر النصوص'))
+                        ->icon('heroicon-o-printer')
+                        ->color('info')
+                        ->action(function (EloquentCollection $records, Component $livewire): void {
+                            $user = Auth::user();
+                            abort_unless($user instanceof User, 403);
+
+                            $register = app(DailyLogRegisterService::class);
+                            $logs = $register->completedLogs($records->modelKeys(), $user);
+
+                            if ($logs->isEmpty()) {
+                                Notification::make()
+                                    ->danger()
+                                    ->title(__('لا توجد سجلات منجزة مطابقة للاختيار.'))
+                                    ->send();
+
+                                return;
+                            }
+
+                            $firstClassroomId = $logs->first()?->schedule?->classroom_id
+                                ?? $logs->first()?->schedule?->group?->classroom_id;
+
+                            $url = route('print.register', array_filter([
+                                'classroom_id' => $firstClassroomId,
+                                'ids' => $logs->modelKeys(),
+                            ]));
+                            $livewire->js("window.open('{$url}', '_blank')");
+                        })
+                        ->deselectRecordsAfterCompletion(),
+
                     Tables\Actions\BulkAction::make('digitalVisa')
                         ->label(__('تأشير الدفتر رقمياً'))
                         ->icon('heroicon-o-check-badge')

@@ -67,12 +67,56 @@ class DailyLogRegisterService
     }
 
     /**
+     * Return completed logs for a specific classroom, optionally filtered by IDs.
+     *
+     * @param  array<int, int|string>|null  $ids
+     * @return Collection<int, DailyLog>
+     */
+    public function completedLogsForClassroom(
+        Classroom|int $classroom,
+        User $user,
+        ?array $ids = null,
+    ): Collection {
+        $classroomId = $classroom instanceof Classroom ? $classroom->id : $classroom;
+
+        $query = DailyLog::query()
+            ->with([
+                'schedule.user',
+                'schedule.subject',
+                'schedule.classroom.level.educationPhase',
+                'schedule.classroom.groups',
+                'schedule.group.classroom.level.educationPhase',
+                'schedule.group.classroom.groups',
+                'reviewer',
+            ])
+            ->where('status', DailyLogStatus::Completed->value)
+            ->where(function (Builder $q) use ($classroomId): void {
+                $q->whereHas('schedule', fn (Builder $s) => $s->where('classroom_id', $classroomId))
+                    ->orWhereHas('schedule.group', fn (Builder $g) => $g->where('classroom_id', $classroomId));
+            })
+            ->when(
+                ! $user->isAdmin(),
+                fn (Builder $query): Builder => $query->forTeacher($user),
+            )
+            ->orderBy('date')
+            ->orderBy('id');
+
+        if ($ids !== null && $ids !== []) {
+            $query->whereKey($this->normalizeIds($ids));
+        }
+
+        return $query->get();
+    }
+
+    /**
      * Build one standalone class-register sheet per resolved classroom.
      *
      * @param  Collection<int, DailyLog>  $logs
      * @return array{
      *     logs: Collection<int, DailyLog>,
      *     registers: \Illuminate\Support\Collection<int, array<string, mixed>>,
+     *     activeRegister: array<string, mixed>,
+     *     activeClassroomId: ?int,
      *     teacherName: string,
      *     academicYear: string,
      *     autoPrint: bool,
@@ -84,8 +128,21 @@ class DailyLogRegisterService
         User $user,
         bool $autoPrint = true,
         bool $inlineCss = false,
+        ?int $activeClassroomId = null,
     ): array {
         $registers = $this->registerSections($logs);
+
+        // Resolve which classroom section is active (only one is displayed at a time)
+        if ($activeClassroomId !== null) {
+            $filtered = $registers->first(
+                fn (array $r): bool => ($r['classroom']?->id ?? null) === $activeClassroomId
+            );
+            $activeRegister = $filtered ?? $registers->first();
+        } else {
+            $activeRegister = $registers->first();
+        }
+
+        $activeClassroomId = $activeRegister['classroom']?->id;
 
         $teacherNames = $logs
             ->pluck('schedule.user.name')
@@ -102,6 +159,8 @@ class DailyLogRegisterService
         return [
             'logs' => $logs,
             'registers' => $registers,
+            'activeRegister' => $activeRegister,
+            'activeClassroomId' => $activeClassroomId,
             'teacherName' => $teacherNames !== '' ? $teacherNames : $user->name,
             'academicYear' => $academicYears !== '' ? $academicYears : $this->currentAcademicYear(),
             'autoPrint' => $autoPrint,
@@ -118,7 +177,7 @@ class DailyLogRegisterService
      *
      * @param  Collection<int, DailyLog>  $logs
      */
-    public function pdfHtml(Collection $logs, User $user): string
+    public function pdfHtml(Collection $logs, User $user, ?int $activeClassroomId = null): string
     {
         $css = $this->compiledCss();
 
@@ -127,6 +186,7 @@ class DailyLogRegisterService
             user: $user,
             autoPrint: false,
             inlineCss: $css !== null,
+            activeClassroomId: $activeClassroomId,
         ))->render();
 
         return $css === null ? $html : $this->inlineCss($html, $css);
@@ -141,9 +201,9 @@ class DailyLogRegisterService
      *
      * @param  Collection<int, DailyLog>  $logs
      */
-    public function pdfResponse(Collection $logs, User $user): StreamedResponse
+    public function pdfResponse(Collection $logs, User $user, ?int $activeClassroomId = null): StreamedResponse
     {
-        $pdf = $this->browsershot($this->pdfHtml($logs, $user))->pdf();
+        $pdf = $this->browsershot($this->pdfHtml($logs, $user, $activeClassroomId))->pdf();
 
         return response()->streamDownload(
             function () use ($pdf): void {

@@ -56,6 +56,12 @@ class DailyLog extends Model
 
     protected static function booted(): void
     {
+        static::saving(function (DailyLog $dailyLog): void {
+            if ($dailyLog->isCompleted() && blank($dailyLog->actual_content)) {
+                $dailyLog->actual_content = $dailyLog->generateRegisterSummary();
+            }
+        });
+
         static::saved(function (DailyLog $dailyLog): void {
             if ($dailyLog->isCompleted()) {
                 try {
@@ -156,6 +162,11 @@ class DailyLog extends Model
         );
     }
 
+    public function scopeCompleted(Builder $query): Builder
+    {
+        return $query->where('status', DailyLogStatus::Completed->value);
+    }
+
     public function isPlanned(): bool
     {
         return $this->status === DailyLogStatus::Planned;
@@ -220,7 +231,7 @@ class DailyLog extends Model
             $data = $block['data'] ?? [];
 
             match ($type) {
-                'middle_school_lesson' => $this->appendMiddleSchoolLesson($lines, $data),
+                'middle_school_lesson', 'lesson_structure' => $this->appendMiddleSchoolLesson($lines, $data),
                 'general_lesson' => $this->appendGeneralLesson($lines, $data),
                 'warmup' => $this->appendWarmup($lines, $data),
                 default => null,
@@ -256,16 +267,22 @@ class DailyLog extends Model
             $lines[] = 'الموقف البيداغوجي: '.$data['pedagogical_situation'];
         }
 
-        foreach ($data['phases'] ?? [] as $index => $phase) {
-            $label = LessonPhaseType::tryFrom($phase['type'] ?? '')?->label() ?? 'مرحلة';
+        $phases = $data['lesson_phases'] ?? $data['phases'] ?? [];
+
+        foreach (is_array($phases) ? $phases : [] as $index => $phase) {
+            $label = (filled($phase['phase_name'] ?? null))
+                ? $phase['phase_name']
+                : (LessonPhaseType::tryFrom($phase['type'] ?? '')?->label() ?? 'مرحلة');
             $duration = filled($phase['duration'] ?? null) ? " ({$phase['duration']} د)" : '';
+            $content = $phase['content'] ?? $phase['description'] ?? '';
+            $strategy = (filled($phase['strategy'] ?? null) && $phase['strategy'] !== '') ? " [{$phase['strategy']}]" : '';
 
             $lines[] = sprintf(
                 'المرحلة %d — %s%s: %s',
                 $index + 1,
                 $label,
                 $duration,
-                trim(($phase['description'] ?? '').' '.($phase['strategy'] !== '' && filled($phase['strategy'] ?? null) ? "[{$phase['strategy']}]" : '')),
+                trim($content.$strategy),
             );
         }
     }

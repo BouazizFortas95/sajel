@@ -52,4 +52,16 @@ class CreateDailyLog extends CreateRecord
             'status' => DailyLogStatus::Planned->value,
         ]);
     }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        if (($data['status'] ?? null) === DailyLogStatus::Completed->value && blank($data['actual_content'] ?? null)) {
+            $data['actual_content'] = DailyLogResource::generateActualContentFromData(
+                title: (string) ($data['title'] ?? ''),
+                contentData: is_array($data['content_data'] ?? null) ? $data['content_data'] : [],
+            );
+        }
+
+        return $data;
+    }
 }

@@ -26,9 +26,9 @@ return [
     |
     */
 
-    'timeout' => (int) env('AI_TIMEOUT', 60),
+    'timeout' => (int) env('AI_TIMEOUT', 30),
 
-    'connect_timeout' => (int) env('AI_CONNECT_TIMEOUT', 10),
+    'connect_timeout' => (int) env('AI_CONNECT_TIMEOUT', 5),
 
     /*
     |--------------------------------------------------------------------------
@@ -41,7 +41,7 @@ return [
     |
     */
 
-    'retry_times' => (int) env('AI_RETRY_TIMES', 2),
+    'retry_times' => (int) env('AI_RETRY_TIMES', 1),
 
     'retry_delay' => (int) env('AI_RETRY_DELAY', 500),
 
@@ -60,8 +60,8 @@ return [
 
     'gemini' => [
         'key' => env('GEMINI_API_KEY'),
-        'model' => env('GEMINI_MODEL', 'gemini-3.8-flash'),
-        'fallback_model' => env('GEMINI_FALLBACK_MODEL', 'gemini-3.5-flash'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.5-flash'),
+        'fallback_model' => env('GEMINI_FALLBACK_MODEL', 'gemini-3.5-flash-lite'),
         'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
     ],
 

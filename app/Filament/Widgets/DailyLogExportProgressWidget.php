@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Filament\Exports\DailyLogExporter;
 use Filament\Actions\Exports\Models\Export;
 use Filament\Widgets\Widget;
+use Illuminate\Support\Facades\Artisan;
 
 class DailyLogExportProgressWidget extends Widget
 {
@@ -48,6 +49,21 @@ class DailyLogExportProgressWidget extends Widget
                 'total' => 0,
                 'percentage' => 0,
             ];
+        }
+
+        // In development environments without a persistent background queue daemon,
+        // automatically process pending export queue jobs on polling so the progress
+        // bar completes immediately without stalling at 0%.
+        if (app()->isLocal() && config('queue.default') === 'database') {
+            try {
+                Artisan::call('queue:work', [
+                    '--stop-when-empty' => true,
+                    '--max-time' => 3,
+                ]);
+                $export->refresh();
+            } catch (\Throwable $e) {
+                // If another worker is running or on error, continue gracefully
+            }
         }
 
         $total = max(1, (int) $export->total_rows);
