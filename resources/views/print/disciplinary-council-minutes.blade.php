@@ -39,7 +39,7 @@
 
         @page {
             size: A4 portrait;
-            margin: 10mm;
+            margin: 4mm 8mm 4mm 8mm !important;
         }
 
         body {
@@ -47,25 +47,29 @@
             background: #f8fafc;
             color: #0f172a;
             margin: 0;
-            padding: 15px;
-        }
-
-        .sheet-container {
-            max-width: 210mm;
-            margin: 0 auto;
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            padding: 12mm 15mm;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            padding: 8px 0;
         }
 
         .font-traditional {
             font-family: 'Amiri', serif;
         }
 
-        .double-border {
-            border: 3px double #0f172a;
+        .sheet-container {
+            width: 100%;
+            max-width: 196mm;
+            margin: 0 auto;
+            background: #ffffff;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        @media screen {
+            .sheet-container {
+                border: 1px solid #cbd5e1;
+                padding: 6mm 10mm !important;
+                border-radius: 8px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+            }
         }
 
         @media print {
@@ -83,71 +87,258 @@
                 display: none !important;
             }
         }
+
+        /* Header Grid */
+        .header-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1.4fr 1.1fr;
+            border-bottom: 1.5px solid #1e3a8a;
+            padding-bottom: 3px;
+            margin-bottom: 4px;
+            align-items: center;
+        }
+
+        /* Title Badge */
+        .title-badge-wrap {
+            text-align: center;
+            margin: 2px 0 5px 0;
+        }
+
+        .title-badge {
+            display: inline-block;
+            border: 1.5px solid #1e3a8a;
+            background: #eff6ff;
+            border-radius: 6px;
+            padding: 2px 20px;
+            text-align: center;
+        }
+
+        .title-main {
+            font-size: 11.5pt;
+            font-weight: 900;
+            color: #1e3a8a;
+            margin: 0;
+            line-height: 1.25;
+        }
+
+        .title-sub {
+            font-size: 6.5pt;
+            font-weight: 700;
+            color: #475569;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Opening text & Attendees */
+        .intro-box {
+            font-size: 7.5pt;
+            line-height: 1.35;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .attendees-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px 6px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 3px 6px;
+            margin-top: 2px;
+            font-size: 7pt;
+        }
+
+        /* Identity Table */
+        .identity-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 7.5pt;
+            border: 1.5px solid #1e3a8a;
+            background: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .identity-table th {
+            background: #f8fafc;
+            color: #1e3a8a;
+            font-weight: 700;
+            padding: 2px 5px;
+            border: 1px solid #cbd5e1;
+            text-align: right;
+            width: 16%;
+        }
+
+        .identity-table td {
+            padding: 2px 5px;
+            border: 1px solid #cbd5e1;
+            color: #0f172a;
+            font-weight: 600;
+        }
+
+        /* Section Cards */
+        .section-card {
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 3px 6px;
+            margin-bottom: 4px;
+            background: #ffffff;
+        }
+
+        .section-title {
+            font-size: 7.5pt;
+            font-weight: 800;
+            color: #1e3a8a;
+            margin-bottom: 1px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .section-content {
+            font-size: 7.5pt;
+            line-height: 1.35;
+            color: #0f172a;
+            white-space: pre-line;
+            background: #f8fafc;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #f1f5f9;
+        }
+
+        /* Decision Box */
+        .decision-box {
+            border: 1.5px solid #1e3a8a;
+            background: #fffbeb;
+            border-radius: 4px;
+            padding: 4px 6px;
+            margin-bottom: 4px;
+        }
+
+        .decision-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            border: 1px solid #fde68a;
+            border-radius: 4px;
+            padding: 3px 8px;
+            margin-top: 2px;
+        }
+
+        /* Signatures 4 Roles Grid */
+        .signatures-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 3px;
+            margin-bottom: 2px;
+            text-align: center;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .signature-col {
+            text-align: center;
+        }
+
+        .signature-role {
+            font-size: 7.5pt;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .signature-sub {
+            font-size: 6.5pt;
+            color: #475569;
+            font-weight: 600;
+            margin: 1px 0 0 0;
+        }
+
+        .signature-space {
+            height: 38px;
+        }
+
+        /* Footer */
+        .footer-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 2px;
+            font-size: 6.5pt;
+            color: #64748b;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body class="antialiased">
 
-    {{-- Screen Actions Bar --}}
-    <div class="no-print max-w-[210mm] mx-auto mb-4 flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-        <div class="flex items-center gap-2">
-            <span class="text-sm font-bold text-slate-800">📜 {{ __('محضر جلسة مجلس التأديب الرسمي') }}</span>
-            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">{{ $record->session_number ?? '—' }}</span>
+    {{-- Screen Action Bar --}}
+    <div class="no-print" style="max-width: 196mm; margin: 0 auto 10px auto; display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 6px 14px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-family: 'Cairo', sans-serif;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: 800; font-size: 9pt; color: #1e3a8a;">📜 {{ __('محضر جلسة مجلس التأديب الرسمي') }}</span>
+            <span style="font-size: 7.5pt; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 3px; font-weight: 700; font-family: monospace;">
+                {{ $record->session_number ?? '—' }}
+            </span>
+            <span style="font-size: 7.5pt; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 3px; font-weight: 700;">
+                {{ $student?->full_name }} — {{ $classroom?->name }}
+            </span>
         </div>
-        <div class="flex items-center gap-2">
-            <button onclick="window.print()" class="px-3.5 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer">
+        <div style="display: flex; gap: 6px;">
+            <button onclick="window.print()" style="cursor: pointer; background: #1e3a8a; color: #ffffff; border: none; padding: 3px 12px; border-radius: 4px; font-size: 8pt; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                 🖨️ {{ __('طباعة المحضر (A4)') }}
             </button>
-            <a href="{{ route('print.disciplinary.minutes.pdf', ['locale' => app()->getLocale(), 'record' => $record->id]) }}" class="px-3.5 py-1.5 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg shadow-sm transition flex items-center gap-1.5">
-                📥 {{ __('تحميل كملف PDF') }}
+            <a href="{{ route('print.disciplinary.minutes.pdf', ['locale' => app()->getLocale(), 'record' => $record->id]) }}" style="text-decoration: none; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 3px 12px; border-radius: 4px; font-size: 8pt; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                📥 {{ __('تحميل PDF') }}
             </a>
-            <a href="{{ route('print.disciplinary.notification', ['locale' => app()->getLocale(), 'record' => $record->id]) }}" class="px-3.5 py-1.5 text-xs font-bold text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-300 rounded-lg shadow-sm transition flex items-center gap-1.5">
+            <a href="{{ route('print.disciplinary.notification', ['locale' => app()->getLocale(), 'record' => $record->id]) }}" style="text-decoration: none; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 3px 12px; border-radius: 4px; font-size: 8pt; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                 📢 {{ __('إشعار الولي بالقرار') }}
             </a>
         </div>
     </div>
 
-    {{-- Printable Document --}}
+    {{-- Printable A4 Sheet --}}
     <div class="sheet-container">
 
-        {{-- Official Header --}}
-        <div class="text-center pb-3 border-b border-slate-200">
-            <h1 class="text-base font-extrabold text-slate-900 tracking-wide font-traditional">
-                {{ __('الجمهورية الجزائرية الديمقراطية الشعبية') }}
-            </h1>
-            <h2 class="text-sm font-bold text-slate-800 mt-0.5">
-                {{ __('وزارة التربية الوطنية') }}
-            </h2>
-            <div class="flex items-center justify-between text-xs text-slate-600 mt-2 px-2">
-                <div class="text-start">
-                    <p>{{ $schoolSetting?->directorate_name ?? __('مديرية التربية لولاية الجزائر وسط') }}</p>
-                    <p class="font-extrabold text-slate-900">{{ $schoolSetting?->school_name ?? __('متوسطة الشهيد العربي بن مهيدي') }}</p>
-                </div>
-                <div class="text-center font-mono">
-                    <p>{{ __('السنة الدراسية') }}: <strong>{{ $year }}</strong></p>
-                    <p class="text-[11px] text-slate-500">{{ __('جلسة رقم') }}: <strong>{{ $record->session_number ?? '—' }}</strong></p>
-                </div>
-                <div class="text-end font-mono">
-                    <p>{{ __('تاريخ الانعقاد') }}: <strong>{{ $formatDate($record->session_date) }}</strong></p>
-                    <p class="text-[11px] text-slate-500">{{ __('تاريخ الوقائع') }}: {{ $formatDate($record->incident_date) }}</p>
-                </div>
+        {{-- 1. Official National Republic Header --}}
+        <div class="header-grid">
+            <div style="text-align: right; line-height: 1.25;">
+                <p style="font-size: 7pt; color: #475569; margin: 0;">{{ $schoolSetting?->directorate_name ?? __('مديرية التربية') }}</p>
+                <p style="font-size: 9pt; font-weight: 800; color: #1e3a8a; margin: 1px 0 0 0;">{{ $schoolSetting?->school_name ?? __('المتوسطة') }}</p>
+                <p style="font-size: 6.5pt; color: #64748b; margin: 0;">{{ __('أمانة مجلس التأديب') }}</p>
+            </div>
+
+            <div style="text-align: center; line-height: 1.2;">
+                <p class="font-traditional" style="font-size: 10.5pt; font-weight: 700; color: #0f172a; margin: 0;">{{ __('الجمهورية الجزائرية الديمقراطية الشعبية') }}</p>
+                <p style="font-size: 8pt; font-weight: 700; color: #1e3a8a; margin: 1px 0 0 0;">{{ __('وزارة التربية الوطنية') }}</p>
+            </div>
+
+            <div style="text-align: left; font-size: 6.5pt; color: #475569; line-height: 1.3;">
+                <p style="margin: 0;">{{ __('السنة الدراسية:') }} <strong style="color: #0f172a;">{{ $year }}</strong></p>
+                <p style="margin: 0;">{{ __('جلسة رقم:') }} <strong style="color: #1e3a8a; font-family: monospace;">{{ $record->session_number ?? '—' }}</strong></p>
+                <p style="margin: 0;">{{ __('تاريخ الانعقاد:') }} <strong style="color: #0f172a;">{{ $formatDate($record->session_date) }}</strong></p>
             </div>
         </div>
 
-        {{-- Document Title --}}
-        <div class="my-5 text-center">
-            <div class="inline-block px-8 py-2 rounded-xl double-border bg-slate-50">
-                <h3 class="text-lg font-black text-slate-900 tracking-wider">
-                    {{ __('مَحْضَرُ اجْتِمَاعِ مَجْلِسِ التَّأْدِيبِ') }}
-                </h3>
-                <p class="text-[10px] font-bold text-slate-600 tracking-widest uppercase mt-0.5">
+        {{-- 2. Document Title Banner (Clean, no diacritics / tashkeel) --}}
+        <div class="title-badge-wrap">
+            <div class="title-badge">
+                <h1 class="title-main">
+                    {{ __('محضر اجتماع مجلس التأديب') }}
+                </h1>
+                <p class="title-sub">
                     Procès-Verbal de Réunion du Conseil de Discipline
                 </p>
             </div>
         </div>
 
-        {{-- Opening Intro & Council Members --}}
-        <div class="text-xs text-slate-800 leading-relaxed font-traditional mb-4">
-            <p>
+        {{-- 3. Opening Formula & Council Attendees --}}
+        <div class="intro-box">
+            <p style="margin: 0 0 2px 0;">
                 {{ __('في يوم :date، وعلى الساعة :time، اجتمع مجلس التأديب لمؤسسة :school برئاسة السيد(ة): :pres، وبحضور السادة الأعضاء القانونيين:', [
                     'date' => $record->session_date?->translatedFormat('l d F Y') ?? $formatDate($record->session_date),
                     'time' => $record->session_date?->format('H:i') ?? '10:00',
@@ -155,103 +346,91 @@
                     'pres' => $record->president?->name ?? ($schoolSetting?->director_name ?? __('مدير المؤسسة')),
                 ]) }}
             </p>
-            <div class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-sans text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+            <div class="attendees-grid">
                 @foreach ($councilAttendees as $att)
-                    <div class="flex items-center gap-1.5">
-                        <span class="text-emerald-600 font-bold">✓</span>
+                    <div style="display: flex; align-items: center; gap: 3px;">
+                        <span style="color: #059669; font-weight: 800;">✓</span>
                         <span>{{ $att }}</span>
                     </div>
                 @endforeach
             </div>
         </div>
 
-        {{-- Student Identification Box --}}
-        <div class="border border-slate-200 rounded-xl p-3.5 mb-4 bg-slate-50/60 text-xs">
-            <h4 class="font-bold text-slate-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <span>👤</span> {{ __('هوية التلميذ(ة) المحال على المجلس:') }}
-            </h4>
-            <div class="grid grid-cols-3 gap-2">
-                <div>
-                    <span class="text-slate-500">{{ __('الاسم واللقب') }}:</span>
-                    <strong class="text-sm font-extrabold text-slate-950 font-traditional">{{ $student?->full_name }}</strong>
-                </div>
-                <div>
-                    <span class="text-slate-500">{{ __('القسم والفوج') }}:</span>
-                    <strong class="text-amber-950 font-bold">{{ $classroom?->name ?? '—' }}</strong>
-                </div>
-                <div>
-                    <span class="text-slate-500">{{ __('تاريخ الازدياد') }}:</span>
-                    <strong class="font-mono">{{ $formatDate($student?->date_of_birth) }}</strong>
-                </div>
-                <div>
-                    <span class="text-slate-500">{{ __('رقم القيد والتسجيل') }}:</span>
-                    <strong class="font-mono">{{ $student?->matricule_number ?? $student?->registration_number ?? '—' }}</strong>
-                </div>
-                <div>
-                    <span class="text-slate-500">{{ __('حضور الولي') }}:</span>
-                    <strong class="{{ $record->guardian_attended ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold' }}">
-                        {{ $record->guardian_attended ? __('نعم (حضر مع التلميذ)') : __('غائب (رغم التبليغ القانوني)') }}
-                    </strong>
-                </div>
-                <div>
-                    <span class="text-slate-500">{{ __('التقرير المحال من طرف') }}:</span>
-                    <strong>{{ $record->reportedBy?->name ?? __('المستشار الرئيسي للتربية') }}</strong>
-                </div>
+        {{-- 4. Student Identification Box --}}
+        <table class="identity-table">
+            <tr>
+                <th>{{ __('الاسم واللقب') }}</th>
+                <td style="width: 25%; font-weight: 800; color: #1e3a8a;">{{ $student?->full_name }}</td>
+                <th>{{ __('القسم والفوج') }}</th>
+                <td style="font-weight: 700;">{{ $classroom?->name ?? '—' }}</td>
+                <th>{{ __('تاريخ الازدياد') }}</th>
+                <td style="font-family: monospace;">{{ $formatDate($student?->date_of_birth) }}</td>
+            </tr>
+            <tr>
+                <th>{{ __('رقم القيد والتسجيل') }}</th>
+                <td style="font-family: monospace;">{{ $student?->matricule_number ?? $student?->registration_number ?? '—' }}</td>
+                <th>{{ __('حضور ولي الأمر') }}</th>
+                <td>
+                    <span style="font-weight: 700; color: {{ $record->guardian_attended ? '#059669' : '#dc2626' }};">
+                        {{ $record->guardian_attended ? __('✅ نعم (حضر مع التلميذ)') : __('❌ غائب (رغم التبليغ القانوني)') }}
+                    </span>
+                </td>
+                <th>{{ __('التقرير المحال من طرف') }}</th>
+                <td>{{ $record->reportedBy?->name ?? __('المستشار الرئيسي للتربية') }}</td>
+            </tr>
+        </table>
+
+        {{-- 5. Facts & Incident Motives --}}
+        <div class="section-card">
+            <div class="section-title">
+                <span>⚠️</span> {{ __('1. عرض الوقائع والمخالفات المنسوبة أثناء الحصة:') }}
+            </div>
+            <div class="section-content font-traditional">
+                {{ $record->incident_description }}
             </div>
         </div>
 
-        {{-- Facts & Student Statement --}}
-        <div class="space-y-3 mb-4 text-xs">
-            <div class="border border-slate-200 rounded-xl p-3">
-                <h4 class="font-bold text-slate-900 mb-1 flex items-center gap-1.5">
-                    <span>⚠️</span> {{ __('1. عرض الوقائع والمخالفات المنسوبة:') }}
-                </h4>
-                <p class="font-traditional text-slate-800 leading-relaxed bg-slate-50 p-2.5 rounded border border-slate-100">
-                    {{ $record->incident_description }}
-                </p>
+        {{-- 6. Student & Guardian Statements --}}
+        <div class="section-card">
+            <div class="section-title">
+                <span>🗣️</span> {{ __('2. أقوال التلميذ(ة) ودفوعات ولي الأمر:') }}
             </div>
-
-            <div class="border border-slate-200 rounded-xl p-3">
-                <h4 class="font-bold text-slate-900 mb-1 flex items-center gap-1.5">
-                    <span>🗣️</span> {{ __('2. أقوال التلميذ(ة) ودفوعات ولي الأمر:') }}
-                </h4>
-                <p class="font-traditional text-slate-800 leading-relaxed bg-slate-50 p-2.5 rounded border border-slate-100 italic">
-                    {{ $record->student_statement ?: __('استمع المجلس لتوضيحات التلميذ الذي أقرّ بالوقائع وقدم اعتذاره لمجلس التأديب.') }}
-                </p>
+            <div class="section-content font-traditional" style="font-style: italic;">
+                {{ $record->student_statement ?: __('استمع المجلس لتوضيحات التلميذ(ة) الذي أقرّ بالوقائع وقدم اعتذاره لأعضاء مجلس التأديب.') }}
             </div>
         </div>
 
-        {{-- Secret Deliberation & Sanction Decision --}}
-        <div class="border-2 border-slate-900 rounded-xl p-4 mb-5 bg-amber-50/20">
-            <h4 class="font-extrabold text-sm text-slate-950 mb-2 flex items-center gap-1.5 font-traditional">
+        {{-- 7. Secret Deliberation & Sanction Decision --}}
+        <div class="decision-box">
+            <div class="section-title" style="color: #0f172a;">
                 <span>⚖️</span> {{ __('3. المداولة السرية وقرار مجلس التأديب:') }}
-            </h4>
-            <p class="text-xs text-slate-800 font-traditional leading-relaxed mb-3">
-                {{ __('بعد مغادرة التلميذ وولي أمره لقاعة الاجتماع، تداول أعضاء المجلس سرياً وفق أحكام القرار الوزاري المنظم للمجالس التأديبية والنظام الداخلي، وصوّت الأعضاء بالأغلبية على اتخاذ القرار التالي:') }}
+            </div>
+            <p style="font-size: 7pt; color: #334155; margin: 0 0 3px 0; line-height: 1.3;">
+                {{ __('بعد مغادرة التلميذ وولي أمره، تداول أعضاء المجلس سرياً وفق أحكام القرار الوزاري والنظام الداخلي، وصوّت الأعضاء بالأغلبية على اتخاذ القرار التالي:') }}
             </p>
 
-            <div class="bg-white p-3 rounded-lg border border-slate-300 flex items-center justify-between">
+            <div class="decision-inner">
                 <div>
-                    <span class="text-xs text-slate-500 font-bold block">{{ __('العقوبة التأديبية المتخذة:') }}</span>
-                    <strong class="text-base font-black text-rose-950 font-traditional">
+                    <span style="font-size: 6.5pt; color: #64748b; font-weight: 700; display: block;">{{ __('العقوبة التأديبية المقررة:') }}</span>
+                    <strong style="font-size: 9.5pt; font-weight: 900; color: #991b1b;">
                         {{ $record->decision?->label() ?? __('قيد المداولة') }}
                     </strong>
                 </div>
 
                 @if ($record->exclusion_days)
-                    <div class="text-end text-xs font-mono">
-                        <span class="bg-rose-100 text-rose-900 px-2.5 py-1 rounded-lg font-bold border border-rose-300">
+                    <div style="text-align: left; font-size: 7pt; font-family: monospace;">
+                        <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-weight: 800; border: 1px solid #fca5a5;">
                             {{ $record->exclusion_days }} {{ __('أيام إقصاء مؤقت') }}
                         </span>
-                        <p class="text-[10px] text-slate-500 mt-1">
-                            {{ __('من') }} {{ $formatDate($record->exclusion_start_date) }} {{ __('إلى') }} {{ $formatDate($record->exclusion_end_date) }}
-                        </p>
+                        <div style="font-size: 6.5pt; color: #64748b; margin-top: 1px;">
+                            {{ __('من:') }} {{ $formatDate($record->exclusion_start_date) }} {{ __('إلى:') }} {{ $formatDate($record->exclusion_end_date) }}
+                        </div>
                     </div>
                 @endif
 
                 @if ($record->compensation_amount)
-                    <div class="text-end text-xs font-mono">
-                        <span class="bg-purple-100 text-purple-900 px-2.5 py-1 rounded-lg font-bold border border-purple-300">
+                    <div style="text-align: left; font-size: 7pt; font-family: monospace;">
+                        <span style="background: #f3e8ff; color: #6b21a8; padding: 2px 8px; border-radius: 4px; font-weight: 800; border: 1px solid #d8b4fe;">
                             {{ number_format((float) $record->compensation_amount, 2) }} {{ __('دج تعويض مالي') }}
                         </span>
                     </div>
@@ -259,47 +438,44 @@
             </div>
 
             @if ($record->notes)
-                <p class="text-[11px] text-slate-600 mt-2 font-traditional">
-                    <strong>{{ __('توجيهات إضافية') }}:</strong> {{ $record->notes }}
-                </p>
+                <div style="font-size: 6.5pt; color: #475569; margin-top: 2px;">
+                    <strong>{{ __('ملاحظات وتوجيهات إضافية:') }}</strong> {{ $record->notes }}
+                </div>
             @endif
         </div>
 
-        {{-- Signatures Block (Council Members Table) --}}
-        <div class="border border-slate-300 rounded-xl overflow-hidden mb-4 text-xs">
-            <table class="w-full text-center">
-                <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-300 text-[11px]">
-                    <tr>
-                        <th class="p-2 border-e border-slate-300 w-1/4">{{ __('رئيس المجلس (المدير)') }}</th>
-                        <th class="p-2 border-e border-slate-300 w-1/4">{{ __('ناظر الدروس') }}</th>
-                        <th class="p-2 border-e border-slate-300 w-1/4">{{ __('مستشار التربية') }}</th>
-                        <th class="p-2 w-1/4">{{ __('ممثل الأساتذة والأولياء') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="h-16">
-                        <td class="p-2 border-e border-slate-300 align-bottom font-bold text-[10px]">
-                            {{ $schoolSetting?->director_name ?? __('المدير والختم') }}
-                        </td>
-                        <td class="p-2 border-e border-slate-300 align-bottom text-[10px] text-slate-400">
-                            {{ __('التوقيع') }}
-                        </td>
-                        <td class="p-2 border-e border-slate-300 align-bottom text-[10px] text-slate-400">
-                            {{ __('التوقيع') }}
-                        </td>
-                        <td class="p-2 align-bottom text-[10px] text-slate-400">
-                            {{ __('التوقيع') }}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        {{-- 8. Official Signatures (4 Council Roles, Open and Clean without Boxes) --}}
+        <div class="signatures-row">
+            <div class="signature-col">
+                <p class="signature-role">{{ __('رئيس المجلس (المدير)') }}</p>
+                <p class="signature-sub">{{ $schoolSetting?->principal_name ?? ($schoolSetting?->director_name ?? __('المدير والختم الرسمي')) }}</p>
+                <div class="signature-space"></div>
+            </div>
+
+            <div class="signature-col">
+                <p class="signature-role">{{ __('ناظر(ة) الدروس') }}</p>
+                <p class="signature-sub">{{ $schoolSetting?->censor_name ?? __('نظارة الدروس') }}</p>
+                <div class="signature-space"></div>
+            </div>
+
+            <div class="signature-col">
+                <p class="signature-role">{{ __('مستشار(ة) التربية') }}</p>
+                <p class="signature-sub">{{ $schoolSetting?->counselor_name ?? __('الاستشارة التربوية') }}</p>
+                <div class="signature-space"></div>
+            </div>
+
+            <div class="signature-col">
+                <p class="signature-role">{{ __('ممثل الأساتذة والأولياء') }}</p>
+                <p class="signature-sub">{{ __('أعضاء المجلس') }}</p>
+                <div class="signature-space"></div>
+            </div>
         </div>
 
-        {{-- Footer Notice --}}
-        <div class="flex items-center justify-between text-[9px] text-slate-400 font-mono pt-2 border-t border-slate-100">
-            <span>{{ __('منظومة سجل الرقمية لإدارة المتوسطة — محضر جلسة مجلس التأديب') }}</span>
+        {{-- Footer --}}
+        <div class="footer-line">
+            <span>{{ __('منظومة سجل الرقمية — محضر جلسة مجلس التأديب') }} | {{ $schoolSetting?->school_name }}</span>
             <span>Ref: PV-CD-{{ $record->id }}</span>
-            <span>{{ now()->format('Y-m-d H:i') }}</span>
+            <span dir="ltr">{{ now()->format('Y-m-d H:i') }}</span>
         </div>
 
     </div>
