@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\InfractionDegree;
 use App\Enums\Role;
 use App\Filament\Resources\BehaviorObservationResource\Pages\ListBehaviorObservations;
+use App\Filament\Resources\BehaviorObservationResource\Pages\TrashBehaviorObservations;
 use App\Filament\Resources\DailyLogResource;
 use App\Filament\Resources\DailyLogResource\Pages\ListDailyLogs;
 use App\Models\BehaviorObservation;
@@ -605,5 +606,54 @@ class BehaviorObservationResourceTest extends TestCase
             ->callTableAction('forceDelete', $observation);
 
         $this->assertDatabaseMissing('behavior_observations', ['id' => $observation->id]);
+    }
+
+    public function test_teacher_can_view_trash_page_and_undo_deletion(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $otherTeacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $student = Student::factory()->create();
+
+        // 1. Observation deleted by this teacher
+        $myObservation = BehaviorObservation::query()->create([
+            'student_id' => $student->id,
+            'category' => 'disciplinary',
+            'notes' => 'تقرير أستاذ أول للمحذوفات.',
+            'date' => today(),
+            'recorded_by_id' => $teacher->id,
+        ]);
+        $myObservation->sendToTrash($teacher, 'خطأ في اسم التلميذ');
+
+        // 2. Observation deleted by another teacher
+        $otherObservation = BehaviorObservation::query()->create([
+            'student_id' => $student->id,
+            'category' => 'negative',
+            'notes' => 'تقرير أستاذ آخر بالمحذوفات.',
+            'date' => today(),
+            'recorded_by_id' => $otherTeacher->id,
+        ]);
+        $otherObservation->sendToTrash($otherTeacher, 'مبرر آخر');
+
+        // 3. Teacher visits ListBehaviorObservations and sees viewTrash header action
+        Livewire::actingAs($teacher)
+            ->test(ListBehaviorObservations::class)
+            ->assertActionExists('viewTrash');
+
+        // 4. Teacher visits dedicated TrashBehaviorObservations page
+        Livewire::actingAs($teacher)
+            ->test(TrashBehaviorObservations::class)
+            ->assertCanSeeTableRecords([$myObservation])
+            ->assertCanNotSeeTableRecords([$otherObservation])
+            ->callTableAction('restore', $myObservation);
+
+        // 5. Verification: My observation is restored and active
+        $myObservation->refresh();
+        $this->assertFalse($myObservation->trashed());
+        $this->assertNull($myObservation->deleted_by_id);
+        $this->assertNull($myObservation->deletion_reason);
+
+        // 6. Other teacher's observation remains in trash
+        $otherObservation->refresh();
+        $this->assertTrue($otherObservation->trashed());
     }
 }

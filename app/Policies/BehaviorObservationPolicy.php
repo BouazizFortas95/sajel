@@ -64,11 +64,16 @@ class BehaviorObservationPolicy
 
     /**
      * Restore from trash.
-     * Reserved for administrative leadership and general supervisor.
+     * Reserved for administrative leadership, general supervisor,
+     * and the teacher who deleted or recorded the report (undo capability).
      */
     public function restore(User $user, BehaviorObservation $observation): bool
     {
-        return $user->isLeadership() || $user->isGeneralSupervisor();
+        if ($user->isLeadership() || $user->isGeneralSupervisor()) {
+            return true;
+        }
+
+        return $observation->deleted_by_id === $user->id || $observation->recorded_by_id === $user->id;
     }
 
     /**

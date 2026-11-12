@@ -789,23 +789,27 @@ class BehaviorObservationResource extends Resource
                             ->send();
                     }),
 
-                // RestoreAction: restores from trash
+                // RestoreAction: restores from trash (allows teacher to undo, and admin to approve restore)
                 Tables\Actions\RestoreAction::make()
-                    ->label(__('استرجاع التقرير'))
-                    ->modalHeading(__('استرجاع التقرير من سلة المحذوفات'))
-                    ->modalDescription(__('هل أنت متأكد من استرجاع هذا التقرير وإلغاء طلب الحذف وإعادته للسجلات النشطة؟'))
-                    ->modalSubmitActionLabel(__('تأكيد الاسترجاع'))
+                    ->label(__('تراجع عن الحذف'))
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->color('success')
+                    ->modalHeading(__('التراجع عن حذف التقرير'))
+                    ->modalDescription(__('هل أنت متأكد من التراجع عن حذف هذا التقرير وإعادته إلى قائمة التقارير النشطة؟'))
+                    ->modalSubmitActionLabel(__('تأكيد التراجع وإعادة التقرير'))
                     ->visible(fn (BehaviorObservation $record): bool => $record->trashed() && (
                         auth()->user()?->isLeadership() ||
                         auth()->user()?->isGeneralSupervisor() ||
-                        auth()->user()?->isAdmin()
+                        auth()->user()?->isAdmin() ||
+                        $record->deleted_by_id === auth()->id() ||
+                        $record->recorded_by_id === auth()->id()
                     ))
                     ->action(function (BehaviorObservation $record): void {
                         $record->restoreFromTrash();
 
                         Notification::make()
                             ->success()
-                            ->title(__('تم استرجاع التقرير بنجاح'))
+                            ->title(__('تم التراجع عن الحذف بنجاح'))
                             ->body(__('تمت إعادة التقرير إلى السجلات النشطة ومتابعة وضعه البيداغوجي.'))
                             ->send();
                     }),
@@ -841,8 +845,7 @@ class BehaviorObservationResource extends Resource
                         }),
 
                     Tables\Actions\RestoreBulkAction::make()
-                        ->label(__('استرجاع التقارير المحددة'))
-                        ->visible(fn (): bool => auth()->user()?->isLeadership() || auth()->user()?->isGeneralSupervisor() || auth()->user()?->isAdmin()),
+                        ->label(__('التراجع عن حذف التقارير المحددة')),
 
                     Tables\Actions\ForceDeleteBulkAction::make()
                         ->label(__('المصادقة على الحذف النهائي للمحدد'))
@@ -855,6 +858,7 @@ class BehaviorObservationResource extends Resource
     {
         return [
             'index' => Pages\ListBehaviorObservations::route('/'),
+            'trash' => Pages\TrashBehaviorObservations::route('/trash'),
             'create' => Pages\CreateBehaviorObservation::route('/create'),
             'edit' => Pages\EditBehaviorObservation::route('/{record}/edit'),
         ];
