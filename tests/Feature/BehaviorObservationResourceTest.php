@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\InfractionDegree;
 use App\Enums\Role;
+use App\Filament\Resources\BehaviorObservationResource\Pages\ListBehaviorObservations;
 use App\Filament\Resources\DailyLogResource;
 use App\Filament\Resources\DailyLogResource\Pages\ListDailyLogs;
 use App\Models\BehaviorObservation;
@@ -40,7 +41,91 @@ class BehaviorObservationResourceTest extends TestCase
         $this->actingAs($admin)
             ->get('/en/auth/behavior-observations')
             ->assertOk()
-            ->assertSee(__('تمت المعالجة'));
+            ->assertSee(__('معالجة داخلية بيداغوجية'));
+    }
+
+    public function test_administrative_action_select_column_updates_and_executes_directly(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $student = Student::factory()->create(['first_name' => 'طارق', 'last_name' => 'عباسي']);
+        $classroom = Classroom::factory()->create(['name' => '3 م 2']);
+        $group = Group::factory()->create(['classroom_id' => $classroom->id]);
+        $student->update(['group_id' => $group->id]);
+
+        $observation = BehaviorObservation::create([
+            'student_id' => $student->id,
+            'category' => 'disciplinary',
+            'notes' => 'عرقلة الشرح والتشويش داخل القسم.',
+            'date' => today(),
+            'is_followed_up' => false,
+        ]);
+
+        $this->assertEquals('pending', $observation->administrative_action);
+
+        // 1. Select guardian summons directly from SelectColumn
+        Livewire::actingAs($admin)
+            ->test(ListBehaviorObservations::class)
+            ->assertTableColumnExists('administrative_action')
+            ->call('updateTableColumnState', 'administrative_action', (string) $observation->getKey(), 'guardian_summons');
+
+        $fresh = $observation->fresh();
+        $this->assertTrue($fresh->hasGuardianSummons());
+        $this->assertTrue($fresh->is_followed_up);
+        $this->assertEquals('guardian_summons', $fresh->administrative_action);
+
+        // 2. Select disciplinary council directly from SelectColumn
+        Livewire::actingAs($admin)
+            ->test(ListBehaviorObservations::class)
+            ->call('updateTableColumnState', 'administrative_action', (string) $observation->getKey(), 'disciplinary_council');
+
+        $fresh = $observation->fresh();
+        $this->assertTrue($fresh->hasDisciplinaryRecord());
+        $this->assertEquals('disciplinary_council', $fresh->administrative_action);
+        $this->assertDatabaseHas('disciplinary_records', [
+            'id' => $fresh->disciplinary_record_id,
+            'student_id' => $student->id,
+        ]);
+
+        // 3. Select internal follow-up directly from SelectColumn
+        Livewire::actingAs($admin)
+            ->test(ListBehaviorObservations::class)
+            ->call('updateTableColumnState', 'administrative_action', (string) $observation->getKey(), 'internal_followup');
+
+        $fresh = $observation->fresh();
+        $this->assertTrue($fresh->is_followed_up);
+        $this->assertEquals('internal_followup', $fresh->administrative_action);
+
+        // 4. Reset to pending directly from SelectColumn
+        Livewire::actingAs($admin)
+            ->test(ListBehaviorObservations::class)
+            ->call('updateTableColumnState', 'administrative_action', (string) $observation->getKey(), 'pending');
+
+        $fresh = $observation->fresh();
+        $this->assertFalse($fresh->is_followed_up);
+        $this->assertEquals('pending', $fresh->administrative_action);
+    }
+
+    public function test_teacher_cannot_change_administrative_action_of_another_teachers_report(): void
+    {
+        $teacher1 = User::factory()->create(['role' => Role::Teacher->value]);
+        $teacher2 = User::factory()->create(['role' => Role::Teacher->value]);
+        $student = Student::factory()->create();
+
+        $observation = BehaviorObservation::create([
+            'student_id' => $student->id,
+            'recorded_by_id' => $teacher1->id,
+            'category' => 'disciplinary',
+            'notes' => 'مخالفة انضباطية.',
+            'date' => today(),
+            'is_followed_up' => false,
+        ]);
+
+        $test = Livewire::actingAs($teacher2)
+            ->test(ListBehaviorObservations::class);
+
+        $column = $test->instance()->getTable()->getColumn('administrative_action');
+        $column->record($observation);
+        $this->assertTrue($column->isDisabled());
     }
 
     public function test_student_incident_report_service_assembles_report_with_presets(): void

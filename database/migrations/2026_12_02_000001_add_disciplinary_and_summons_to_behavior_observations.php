@@ -15,9 +15,13 @@ return new class extends Migration
                 ->constrained('disciplinary_records')
                 ->nullOnDelete();
 
+            $table->string('administrative_action', 50)
+                ->default('pending')
+                ->after('is_followed_up');
+
             $table->date('guardian_summons_sent_at')
                 ->nullable()
-                ->after('is_followed_up');
+                ->after('administrative_action');
 
             $table->dateTime('guardian_summons_appointment_at')
                 ->nullable()
@@ -34,6 +38,7 @@ return new class extends Migration
         Schema::table('behavior_observations', function (Blueprint $table): void {
             $table->dropConstrainedForeignId('disciplinary_record_id');
             $table->dropColumn([
+                'administrative_action',
                 'guardian_summons_sent_at',
                 'guardian_summons_appointment_at',
                 'guardian_summons_notes',
@@ -41,4 +46,3 @@ return new class extends Migration
         });
     }
 };
-

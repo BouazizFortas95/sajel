@@ -28,6 +28,7 @@ use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -313,48 +314,61 @@ class BehaviorObservationResource extends Resource
                     ->date('Y-m-d')
                     ->sortable(),
 
-                TextColumn::make('administrative_status')
+                SelectColumn::make('administrative_action')
                     ->label(__('الإجراء الإداري'))
-                    ->badge()
-                    ->getStateUsing(function (BehaviorObservation $record): string {
-                        if ($record->hasDisciplinaryRecord()) {
-                            return __('محال لمجلس التأديب');
-                        }
-                        if ($record->hasGuardianSummons()) {
-                            return __('استدعاء الولي');
-                        }
-                        if ($record->is_followed_up) {
-                            return __('معالجة داخلية');
+                    ->options([
+                        'pending' => __('⏳ قيد المتابعة'),
+                        'internal_followup' => __('✅ معالجة داخلية بيداغوجية'),
+                        'guardian_summons' => __('✉️ استدعاء ولي الأمر'),
+                        'disciplinary_council' => __('⚖️ إحالة لمجلس التأديب'),
+                    ])
+                    ->selectablePlaceholder(false)
+                    ->rules(['required', 'in:pending,internal_followup,guardian_summons,disciplinary_council'])
+                    ->disabled(fn (BehaviorObservation $record): bool => auth()->user() && auth()->user()->isTeacher() && ! auth()->user()->isAdmin() && $record->recorded_by_id !== auth()->id())
+                    ->updateStateUsing(function (BehaviorObservation $record, string $state, DisciplinaryCouncilService $councilService): string {
+                        $result = $record->applyAdministrativeAction($state, auth()->user(), $councilService);
+
+                        $notification = Notification::make()
+                            ->title($result['title'])
+                            ->body($result['body']);
+
+                        if ($state === 'disciplinary_council') {
+                            $notification->danger();
+                        } elseif ($state === 'guardian_summons') {
+                            $notification->warning();
+                        } elseif ($state === 'internal_followup') {
+                            $notification->success();
+                        } else {
+                            $notification->info();
                         }
 
-                        return __('قيد المتابعة');
+                        $actions = [];
+                        if (! empty($result['print_url'])) {
+                            $actions[] = NotificationAction::make('print')
+                                ->label($state === 'disciplinary_council' ? __('طباعة استدعاء المجلس (A4)') : __('طباعة الاستدعاء (A4)'))
+                                ->url($result['print_url'])
+                                ->openUrlInNewTab();
+                        }
+                        if (! empty($result['pdf_url'])) {
+                            $actions[] = NotificationAction::make('pdf')
+                                ->label(__('تحميل PDF'))
+                                ->url($result['pdf_url']);
+                        }
+                        if ($state === 'disciplinary_council') {
+                            $actions[] = NotificationAction::make('hub')
+                                ->label(__('مركز مجلس التأديب'))
+                                ->url(DisciplinaryCouncilHub::getUrl());
+                        }
+
+                        if (! empty($actions)) {
+                            $notification->actions($actions)->persistent();
+                        }
+
+                        $notification->send();
+
+                        return $state;
                     })
-                    ->color(function (BehaviorObservation $record): string {
-                        if ($record->hasDisciplinaryRecord()) {
-                            return 'danger';
-                        }
-                        if ($record->hasGuardianSummons()) {
-                            return 'warning';
-                        }
-                        if ($record->is_followed_up) {
-                            return 'success';
-                        }
-
-                        return 'gray';
-                    })
-                    ->icon(function (BehaviorObservation $record): string {
-                        if ($record->hasDisciplinaryRecord()) {
-                            return 'heroicon-o-scale';
-                        }
-                        if ($record->hasGuardianSummons()) {
-                            return 'heroicon-o-envelope';
-                        }
-                        if ($record->is_followed_up) {
-                            return 'heroicon-o-check-circle';
-                        }
-
-                        return 'heroicon-o-clock';
-                    }),
+                    ->width('215px'),
             ])
             ->defaultSort('date', 'desc')
             ->filters([
