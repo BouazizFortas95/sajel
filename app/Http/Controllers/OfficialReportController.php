@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BehaviorObservation;
 use App\Models\Classroom;
 use App\Models\Group;
 use App\Models\Subject;
 use App\Services\OfficialReportService;
+use App\Services\StudentIncidentReportService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -106,6 +108,53 @@ class OfficialReportController extends Controller
             $reports->transcriptViewData($request->user(), $classroom, $group, $subject, $from, $to),
             'كشف-النقاط-'.now()->format('Y-m-d').'.pdf',
             landscape: true,
+        );
+    }
+
+    public function studentBehaviorReport(
+        Request $request,
+        string $locale,
+        BehaviorObservation $behaviorObservation,
+        StudentIncidentReportService $reportService,
+    ): View {
+        $user = $request->user();
+        if ($user->isTeacher() && ! $user->isAdmin()) {
+            abort_unless(
+                $behaviorObservation->recorded_by_id === $user->id
+                || $behaviorObservation->schedule?->user_id === $user->id,
+                403
+            );
+        }
+
+        return view('print.student-behavior-report', $reportService->viewData(
+            $behaviorObservation,
+            $user,
+            autoPrint: $request->boolean('autoprint', true),
+        ));
+    }
+
+    public function studentBehaviorReportPdf(
+        Request $request,
+        string $locale,
+        BehaviorObservation $behaviorObservation,
+        StudentIncidentReportService $reportService,
+        OfficialReportService $reports,
+    ): StreamedResponse {
+        $user = $request->user();
+        if ($user->isTeacher() && ! $user->isAdmin()) {
+            abort_unless(
+                $behaviorObservation->recorded_by_id === $user->id
+                || $behaviorObservation->schedule?->user_id === $user->id,
+                403
+            );
+        }
+
+        return $this->pdf(
+            $reports,
+            'print.student-behavior-report',
+            $reportService->viewData($behaviorObservation, $user, autoPrint: false),
+            'تقرير-تلميذ-'.($behaviorObservation->student?->full_name ?: $behaviorObservation->id).'-'.now()->format('Y-m-d').'.pdf',
+            landscape: false,
         );
     }
 

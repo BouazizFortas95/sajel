@@ -19,7 +19,7 @@ class BehaviorObservation extends Model
     }
 
     protected $fillable = [
-        'student_id', 'schedule_id', 'category', 'notes', 'date', 'observed_by', 'is_followed_up',
+        'student_id', 'schedule_id', 'recorded_by_id', 'category', 'notes', 'date', 'observed_by', 'is_followed_up',
         'follow_up_notes',
     ];
 

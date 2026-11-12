@@ -388,6 +388,16 @@ Route::get('/{locale}/print/grade-transcript/pdf', [OfficialReportController::cl
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.grade-transcript.pdf');
 
+Route::get('/{locale}/print/student-behavior-reports/{behaviorObservation}', [OfficialReportController::class, 'studentBehaviorReport'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.student-behavior-report');
+
+Route::get('/{locale}/print/student-behavior-reports/{behaviorObservation}/pdf', [OfficialReportController::class, 'studentBehaviorReportPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.student-behavior-report.pdf');
+
 Route::get('/{locale}/print/pedagogical-memos/{memo}/pdf', DownloadPedagogicalMemoPdfController::class)
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])

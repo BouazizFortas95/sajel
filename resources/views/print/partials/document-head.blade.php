@@ -184,20 +184,42 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            gap: 2px;
         }
 
         .doc-school-name {
             font-family: 'Amiri', serif;
             color: #1a237e;
-            font-size: 13.5pt;
+            font-size: 13pt;
             font-weight: 700;
             line-height: 1.3;
+            margin-bottom: 2px;
         }
 
         .doc-school-meta {
-            margin-top: 3px;
-            color: #64748b;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
             font-family: 'Cairo', sans-serif;
+            font-size: 8.5pt;
+            line-height: 1.35;
+        }
+
+        .doc-header-school .meta-row {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .doc-header-school .meta-label {
+            color: #64748b;
+            font-size: 8.5pt;
+            font-weight: 600;
+        }
+
+        .doc-header-school .meta-value {
+            color: #0f172a;
             font-size: 8.5pt;
             font-weight: 600;
         }
@@ -893,7 +915,7 @@
             }
 
             .doc-header-school {
-                text-align: center !important;
+                text-align: start !important;
             }
 
             .identity-grid {
@@ -944,12 +966,24 @@
                 <!-- 1. Right: School Information -->
                 <div class="doc-header-col doc-header-school">
                     <p class="doc-school-name">{{ $schoolSetting->school_name }}</p>
-                    <p class="doc-school-meta">
-                        {{ $schoolSetting->municipality_name ?: __('المؤسسة التربوية') }}
+                    <div class="doc-school-meta">
+                        <div class="meta-row">
+                            <span class="meta-label">{{ __('الطور التعليمي') }}:</span>
+                            <span class="meta-value">{{ __('التعليم المتوسط') }}</span>
+                        </div>
                         @if ($schoolSetting->school_code)
-                            · {{ __('الرقم الميكانيكي') }}: <span dir="ltr">{{ $schoolSetting->school_code }}</span>
+                            <div class="meta-row">
+                                <span class="meta-label">{{ __('الرقم الميكانيكي') }}:</span>
+                                <strong class="meta-value" dir="ltr" style="font-family: 'Cairo', monospace; font-weight: 700; white-space: nowrap;">{{ $schoolSetting->school_code }}</strong>
+                            </div>
                         @endif
-                    </p>
+                        @if ($schoolSetting->municipality_name && ! str_contains((string) $schoolSetting->directorate_name, (string) $schoolSetting->municipality_name))
+                            <div class="meta-row">
+                                <span class="meta-label">{{ __('البلدية') }}:</span>
+                                <span class="meta-value">{{ $schoolSetting->municipality_name }}</span>
+                            </div>
+                        @endif
+                    </div>
                 </div>
 
                 <!-- 2. Center: Republic, Ministry, Directorate -->

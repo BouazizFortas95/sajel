@@ -8,20 +8,25 @@ use App\Exceptions\AiLessonPlannerException;
 use App\Filament\Resources\DailyLogResource\Pages;
 use App\Filament\Resources\DailyLogResource\RelationManagers\AttendancesRelationManager;
 use App\Models\ActiveLearningStrategy;
+use App\Models\BehaviorObservation;
 use App\Models\CurriculumResource;
 use App\Models\DailyLog;
 use App\Models\Schedule;
+use App\Models\Student;
 use App\Models\User;
 use App\Services\AiLessonPlannerService;
 use App\Services\DailyLogEvaluationWorkSyncService;
 use App\Services\DailyLogPedagogicalPlanSyncService;
 use App\Services\DailyLogRegisterService;
+use App\Services\StudentIncidentReportService;
 use Carbon\Carbon;
 use Closure;
 use Filament\Actions;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Builder;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
@@ -33,6 +38,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -416,6 +422,9 @@ class DailyLogResource extends Resource
                             ->icon('heroicon-o-check-badge')
                             ->schema([
                                 Section::make(__('الأداء الفعلي في القسم'))
+                                    ->headerActions([
+                                        static::studentReportFormAction(),
+                                    ])
                                     ->schema([
                                         RichEditor::make('actual_content')
                                             ->label(__('المحتوى المنجز فعلياً'))
@@ -919,6 +928,167 @@ class DailyLogResource extends Resource
             });
     }
 
+    /**
+     * Modal form schema for writing a ready-made student report during classroom management.
+     *
+     * @return array<int, mixed>
+     */
+    private static function studentReportModalForm(?DailyLog $record): array
+    {
+        $service = app(StudentIncidentReportService::class);
+        $schedule = $record?->schedule;
+        $classroomId = $schedule?->classroom_id ?? $schedule?->group?->classroom_id;
+
+        $students = Student::query()
+            ->when($classroomId, function ($q) use ($classroomId) {
+                $q->whereHas('group', fn ($g) => $g->where('classroom_id', $classroomId));
+            })
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get()
+            ->mapWithKeys(fn (Student $s) => [
+                $s->id => "{$s->full_name} (".($s->group?->name ?? 'الفوج العام').')',
+            ])
+            ->all();
+
+        return [
+            Grid::make(2)->schema([
+                Select::make('student_id')
+                    ->label(__('التلميذ(ة) المعني(ة) بالتقرير'))
+                    ->options($students)
+                    ->searchable()
+                    ->required(),
+
+                Select::make('category')
+                    ->label(__('طبيعة وفئة التقرير'))
+                    ->options($service->getCategories())
+                    ->default('disciplinary')
+                    ->required()
+                    ->live()
+                    ->afterStateUpdated(function (Set $set): void {
+                        $set('template_facts', []);
+                        $set('template_actions', []);
+                        $set('template_recommendations', []);
+                    }),
+            ]),
+
+            CheckboxList::make('template_facts')
+                ->label(__('1. الوقائع والسلوكيات المرصودة (حدد ما ينطبق)'))
+                ->options(fn (Get $get, StudentIncidentReportService $svc): array => $svc->getObservedFactsOptions($get('category') ?: 'disciplinary'))
+                ->maxItems(3)
+                ->helperText(__('حد أقصى: 3 خيارات — تتغير الخيارات تلقائياً بحسب فئة التقرير لمنع التعارض.'))
+                ->columns(2),
+
+            CheckboxList::make('template_actions')
+                ->label(__('2. الإجراءات التربوية الأولية المتخذة من طرفك كأستاذ'))
+                ->options(fn (Get $get, StudentIncidentReportService $svc): array => $svc->getPedagogicalActionsOptions($get('category') ?: 'disciplinary'))
+                ->maxItems(2)
+                ->helperText(__('حد أقصى: خياران'))
+                ->columns(2),
+
+            CheckboxList::make('template_recommendations')
+                ->label(__('3. المطلب والمقترحات المرفوعة لإدارة المؤسسة'))
+                ->options(fn (Get $get, StudentIncidentReportService $svc): array => $svc->getRecommendationsOptions($get('category') ?: 'disciplinary'))
+                ->maxItems(2)
+                ->helperText(__('حد أقصى: خياران'))
+                ->columns(2),
+
+            Textarea::make('custom_notes')
+                ->label(__('ملاحظات وتفاصيل إضافية خاصة (اختياري)'))
+                ->placeholder(__('أي تفاصيل إضافية خاصة بالواقعة تود إضافتها للتقرير...'))
+                ->rows(2),
+        ];
+    }
+
+    /**
+     * Executes report creation from modal data.
+     */
+    private static function executeStudentReportCreation(DailyLog $record, array $data): void
+    {
+        $service = app(StudentIncidentReportService::class);
+        $student = Student::with('group.classroom')->findOrFail($data['student_id']);
+        $teacher = Auth::user();
+
+        $assembled = $service->assembleReportText(
+            student: $student,
+            teacher: $teacher instanceof User ? $teacher : null,
+            category: $data['category'] ?? 'disciplinary',
+            facts: $data['template_facts'] ?? [],
+            actions: $data['template_actions'] ?? [],
+            recommendations: $data['template_recommendations'] ?? [],
+            incidentDate: $record->date?->format('Y/m/d') ?? today()->format('Y/m/d'),
+            subjectName: $record->schedule?->subject?->name,
+            customNotes: $data['custom_notes'] ?? null,
+        );
+
+        $observation = BehaviorObservation::create([
+            'student_id' => $student->id,
+            'schedule_id' => $record->schedule_id,
+            'recorded_by_id' => $teacher?->id,
+            'category' => $data['category'] ?? 'disciplinary',
+            'notes' => $assembled,
+            'date' => $record->date ?? today(),
+            'is_followed_up' => false,
+        ]);
+
+        $printUrl = route('print.student-behavior-report', [
+            'locale' => app()->getLocale(),
+            'behaviorObservation' => $observation,
+        ]);
+
+        Notification::make()
+            ->success()
+            ->title(__('تم تسجيل تقرير التلميذ(ة) بنجاح وحفظه رسمياً'))
+            ->body(__('تم دمج الخيارات وصياغة التقرير الإداري للتلميذ(ة): :name.', ['name' => $student->full_name]))
+            ->actions([
+                Action::make('print')
+                    ->label(__('طباعة التقرير (A4)'))
+                    ->url($printUrl)
+                    ->openUrlInNewTab(),
+            ])
+            ->persistent()
+            ->send();
+    }
+
+    /**
+     * Table row action to write a student report for that session.
+     */
+    public static function studentReportTableAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('reportStudent')
+            ->label(__('تقرير عن تلميذ'))
+            ->icon('heroicon-o-document-text')
+            ->color('warning')
+            ->tooltip(__('كتابة تقرير بيداغوجي / سلوكي عن تلميذ في هذه الحصة بنقرة زر'))
+            ->modalHeading(fn (DailyLog $record): string => __('كتابة تقرير عن تلميذ — :classroom (:subject)', [
+                'classroom' => $record->schedule?->classroom?->name ?? $record->schedule?->group?->classroom?->name ?? '—',
+                'subject' => $record->schedule?->subject?->name ?? '—',
+            ]))
+            ->modalDescription(__('اختر التلميذ وحدد البنود المناسبة من النماذج الجاهزة ليتم دمجها في تقرير إداري وبيداغوجي شامل.'))
+            ->modalSubmitActionLabel(__('⚡ دمج وتوليد التقرير وحفظه رسمياً'))
+            ->modalWidth('4xl')
+            ->form(fn (DailyLog $record): array => static::studentReportModalForm($record))
+            ->action(fn (DailyLog $record, array $data) => static::executeStudentReportCreation($record, $data));
+    }
+
+    /**
+     * Form action to write a student report directly inside the DailyLog execution tab.
+     */
+    public static function studentReportFormAction(): FormAction
+    {
+        return FormAction::make('reportStudentForm')
+            ->label(__('📝 كتابة تقرير عن تلميذ في هذه الحصة'))
+            ->icon('heroicon-o-document-text')
+            ->color('warning')
+            ->modalHeading(__('كتابة تقرير بيداغوجي / سلوكي عن تلميذ'))
+            ->modalDescription(__('حدد التلميذ والخيارات المناسبة من النماذج الجاهزة ليتم دمجها في تقرير إداري شامل.'))
+            ->modalSubmitActionLabel(__('⚡ دمج وتوليد التقرير وحفظه رسمياً'))
+            ->modalWidth('4xl')
+            ->visible(fn (?DailyLog $record): bool => $record !== null)
+            ->form(fn (?DailyLog $record): array => static::studentReportModalForm($record))
+            ->action(fn (DailyLog $record, array $data) => static::executeStudentReportCreation($record, $data));
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -1067,6 +1237,7 @@ class DailyLogResource extends Resource
             ->actions([
                 static::confirmCompletionTableAction(),
                 static::administrativeVisaTableAction(),
+                static::studentReportTableAction(),
                 Tables\Actions\Action::make('printRegister')
                     ->label(__('دفتر النصوص'))
                     ->icon('heroicon-o-book-open')

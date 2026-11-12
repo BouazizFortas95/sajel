@@ -97,6 +97,10 @@ class OfficialReportsTest extends TestCase
             ->assertSee('الإعلام الآلي')
             ->assertSee('الأستاذة أمينة')
             ->assertSee('1 م 1')
+            ->assertSee('جدول التوقيت الأسبوعي الرسمي')
+            ->assertSee('إمضاء وتأشيرة الأستاذ(ة)')
+            ->assertSee('تأشيرة السيد(ة) ناظر(ة) الدروس')
+            ->assertSee('تأشيرة وختم السيد(ة) مدير(ة) المؤسسة')
             ->assertDontSee('الرياضيات')
             ->assertDontSee('الأستاذ علي');
     }
