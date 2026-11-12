@@ -23,6 +23,12 @@ class BehaviorObservation extends Model
         });
     }
 
+    protected $attributes = [
+        'administrative_action' => 'pending',
+        'is_guardian_receipt_returned' => false,
+        'guardian_attendance_status' => 'pending',
+    ];
+
     protected $fillable = [
         'student_id',
         'schedule_id',
@@ -38,6 +44,10 @@ class BehaviorObservation extends Model
         'guardian_summons_sent_at',
         'guardian_summons_appointment_at',
         'guardian_summons_notes',
+        'is_guardian_receipt_returned',
+        'guardian_receipt_returned_at',
+        'guardian_attendance_status',
+        'guardian_attendance_notes',
     ];
 
     protected function casts(): array
@@ -47,6 +57,8 @@ class BehaviorObservation extends Model
             'is_followed_up' => 'boolean',
             'guardian_summons_sent_at' => 'date',
             'guardian_summons_appointment_at' => 'datetime',
+            'is_guardian_receipt_returned' => 'boolean',
+            'guardian_receipt_returned_at' => 'datetime',
         ];
     }
 
@@ -237,5 +249,56 @@ class BehaviorObservation extends Model
             'title' => __('⏳ الحالة: قيد المتابعة'),
             'body' => __('تم ضبط حالة التقرير كقيد المتابعة والانتظار.'),
         ];
+    }
+
+    public function hasGuardianReceiptReturned(): bool
+    {
+        return (bool) $this->is_guardian_receipt_returned;
+    }
+
+    public function guardianAttendanceStatusLabel(): string
+    {
+        return match ($this->guardian_attendance_status) {
+            'attended' => __('حضر الولي'),
+            'absent' => __('غائب / لم يحضر'),
+            'excused' => __('معذور / تأجيل'),
+            default => __('قيد الانتظار'),
+        };
+    }
+
+    public function guardianAttendanceStatusColor(): string
+    {
+        return match ($this->guardian_attendance_status) {
+            'attended' => 'success',
+            'absent' => 'danger',
+            'excused' => 'warning',
+            default => 'gray',
+        };
+    }
+
+    public function markReceiptReturned(bool $returned = true): void
+    {
+        $this->update([
+            'is_guardian_receipt_returned' => $returned,
+            'guardian_receipt_returned_at' => $returned ? now() : null,
+        ]);
+    }
+
+    public function updateGuardianAttendance(string $status, ?string $notes = null): void
+    {
+        $updates = [
+            'guardian_attendance_status' => $status,
+        ];
+
+        if ($notes !== null) {
+            $updates['guardian_attendance_notes'] = $notes;
+        }
+
+        if ($status === 'attended') {
+            $updates['is_followed_up'] = true;
+            $updates['follow_up_notes'] = trim(($this->follow_up_notes ? $this->follow_up_notes."\n" : '').__('تمت مقابلة ولي الأمر والاستماع إليه والاتفاق على المتابعة.'));
+        }
+
+        $this->update($updates);
     }
 }

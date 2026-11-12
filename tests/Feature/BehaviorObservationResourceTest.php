@@ -457,4 +457,50 @@ class BehaviorObservationResourceTest extends TestCase
             ]))
             ->assertDownload();
     }
+
+    public function test_guardian_receipt_and_attendance_tracking(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $student = Student::factory()->create();
+        $observation = BehaviorObservation::create([
+            'student_id' => $student->id,
+            'category' => 'disciplinary',
+            'notes' => 'مخالفة انضباطية تستوجب استدعاء الولي.',
+            'date' => today(),
+            'administrative_action' => 'guardian_summons',
+            'guardian_summons_sent_at' => today(),
+            'guardian_summons_appointment_at' => now()->addDay(),
+        ]);
+
+        $this->assertFalse($observation->hasGuardianReceiptReturned());
+        $this->assertSame('pending', $observation->guardian_attendance_status);
+
+        // Mark receipt returned
+        $observation->markReceiptReturned(true);
+        $observation->refresh();
+        $this->assertTrue($observation->hasGuardianReceiptReturned());
+        $this->assertNotNull($observation->guardian_receipt_returned_at);
+
+        // Update attendance to attended with notes
+        $observation->updateGuardianAttendance('attended', 'تعهد الولي بمراقبة كراس التلميذ يومياً.');
+        $observation->refresh();
+        $this->assertSame('attended', $observation->guardian_attendance_status);
+        $this->assertSame('حضر الولي', $observation->guardianAttendanceStatusLabel());
+        $this->assertSame('success', $observation->guardianAttendanceStatusColor());
+        $this->assertTrue($observation->is_followed_up);
+        $this->assertStringContainsString('تعهد الولي', $observation->guardian_attendance_notes);
+
+        // Test Livewire table interaction
+        Livewire::actingAs($admin)
+            ->test(ListBehaviorObservations::class)
+            ->assertCanSeeTableRecords([$observation])
+            ->assertTableColumnExists('is_guardian_receipt_returned')
+            ->assertTableColumnExists('guardian_attendance_status')
+            ->call('updateTableColumnState', 'is_guardian_receipt_returned', (string) $observation->getKey(), false)
+            ->call('updateTableColumnState', 'guardian_attendance_status', (string) $observation->getKey(), 'absent');
+
+        $observation->refresh();
+        $this->assertFalse($observation->hasGuardianReceiptReturned());
+        $this->assertSame('absent', $observation->guardian_attendance_status);
+    }
 }

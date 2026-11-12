@@ -30,6 +30,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -270,6 +271,36 @@ class BehaviorObservationResource extends Resource
                             ->rows(2),
                     ]),
                 ]),
+
+            Section::make(__('متابعة استدعاء واستقبال ولي الأمر'))
+                ->icon('heroicon-o-user-group')
+                ->schema([
+                    Grid::make(3)->schema([
+                        Placeholder::make('appointment_info')
+                            ->label(__('موعد الاستقبال المحدد'))
+                            ->content(fn (?BehaviorObservation $record): string => $record?->guardian_summons_appointment_at ? $record->guardian_summons_appointment_at->format('Y/m/d H:i') : '—'),
+
+                        Toggle::make('is_guardian_receipt_returned')
+                            ->label(__('تم استرجاع وصل الاستدعاء موقعاً')),
+
+                        Select::make('guardian_attendance_status')
+                            ->label(__('حالة حضور ولي الأمر'))
+                            ->options([
+                                'pending' => __('⏳ قيد الانتظار'),
+                                'attended' => __('✅ حضر الولي'),
+                                'absent' => __('❌ لم يحضر'),
+                                'excused' => __('⚠️ معذور / تأجيل'),
+                            ])
+                            ->default('pending'),
+                    ]),
+
+                    Textarea::make('guardian_attendance_notes')
+                        ->label(__('مخرجات المقابلة والتعهدات المشتركة'))
+                        ->placeholder(__('تدوين التزامات وتعهدات ولي الأمر وما تم الاتفاق عليه خلال المقابلة...'))
+                        ->rows(2),
+                ])
+                ->visible(fn (?BehaviorObservation $record): bool => $record?->administrative_action === 'guardian_summons')
+                ->collapsible(),
         ]);
     }
 
@@ -369,6 +400,64 @@ class BehaviorObservationResource extends Resource
                         return $state;
                     })
                     ->width('215px'),
+
+                ToggleColumn::make('is_guardian_receipt_returned')
+                    ->label(__('وصل الاستلام'))
+                    ->disabled(fn (BehaviorObservation $record): bool => $record->administrative_action !== 'guardian_summons')
+                    ->updateStateUsing(function (BehaviorObservation $record, bool $state): bool {
+                        $record->markReceiptReturned($state);
+
+                        Notification::make()
+                            ->title($state ? __('تم استرجاع الوصل موقعاً') : __('تم إلغاء استرجاع الوصل'))
+                            ->body($state
+                                ? __('تم تسجيل استرجاع وصل استدعاء ولي الأمر موقعاً.')
+                                : __('تم إعادة ضبط حالة وصل الاستدعاء إلى قيد الانتظار.'))
+                            ->color($state ? 'success' : 'gray')
+                            ->send();
+
+                        return $state;
+                    })
+                    ->tooltip(fn (BehaviorObservation $record): string => $record->administrative_action !== 'guardian_summons'
+                        ? __('خاص باستدعاء ولي الأمر')
+                        : ($record->is_guardian_receipt_returned ? __('تم استرجاع الوصل موقعاً من الولي') : __('في انتظار استرجاع الوصل'))),
+
+                SelectColumn::make('guardian_attendance_status')
+                    ->label(__('حضور المقابلة'))
+                    ->options([
+                        'pending' => __('⏳ قيد الانتظار'),
+                        'attended' => __('✅ حضر الولي'),
+                        'absent' => __('❌ لم يحضر'),
+                        'excused' => __('⚠️ معذور / تأجيل'),
+                    ])
+                    ->selectablePlaceholder(false)
+                    ->disabled(fn (BehaviorObservation $record): bool => $record->administrative_action !== 'guardian_summons')
+                    ->updateStateUsing(function (BehaviorObservation $record, string $state): string {
+                        $record->updateGuardianAttendance($state);
+
+                        $notification = Notification::make();
+
+                        if ($state === 'attended') {
+                            $notification->title(__('✅ تم تسجيل حضور ولي الأمر'))
+                                ->body(__('تمت مقابلة ولي الأمر واعتماد المتابعة البيداغوجية بنجاح.'))
+                                ->success();
+                        } elseif ($state === 'absent') {
+                            $notification->title(__('❌ غياب ولي الأمر عن المقابلة'))
+                                ->body(__('تم تسجيل تخلف ولي الأمر عن الحضور في الموعد المحدد.'))
+                                ->danger();
+                        } elseif ($state === 'excused') {
+                            $notification->title(__('⚠️ تم تسجيل عذر ولي الأمر'))
+                                ->body(__('تم تدوين عذر الولي وطلب إعادة جدولة المقابلة.'))
+                                ->warning();
+                        } else {
+                            $notification->title(__('⏳ الموعد قيد الانتظار'))
+                                ->info();
+                        }
+
+                        $notification->send();
+
+                        return $state;
+                    })
+                    ->width('170px'),
             ])
             ->defaultSort('date', 'desc')
             ->filters([
@@ -392,6 +481,20 @@ class BehaviorObservationResource extends Resource
                 Filter::make('guardian_summoned')
                     ->label(__('استدعاءات الأولياء الصادرة'))
                     ->query(fn (Builder $query) => $query->whereNotNull('guardian_summons_sent_at')),
+                SelectFilter::make('guardian_attendance_status')
+                    ->label(__('حضور ولي الأمر'))
+                    ->options([
+                        'attended' => __('حضر الولي'),
+                        'absent' => __('لم يحضر (غائب)'),
+                        'excused' => __('معذور / تأجيل'),
+                        'pending' => __('قيد الانتظار'),
+                    ]),
+                SelectFilter::make('is_guardian_receipt_returned')
+                    ->label(__('وصل الاستدعاء'))
+                    ->options([
+                        '1' => __('تم استرجاع الوصل'),
+                        '0' => __('في الانتظار (لم يسترجع)'),
+                    ]),
             ])
             ->actions([
                 // Quick Action 1: Refer to Disciplinary Council
@@ -537,6 +640,50 @@ class BehaviorObservationResource extends Resource
                                     ->url($summonsPdfUrl),
                             ])
                             ->persistent()
+                            ->send();
+                    }),
+
+                // Record Interview Outcome & Receipt (مخرجات مقابلة الولي والتعهد)
+                Tables\Actions\Action::make('recordInterviewOutcome')
+                    ->label(__('مخرجات المقابلة والتعهد'))
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->color('success')
+                    ->visible(fn (BehaviorObservation $record): bool => $record->administrative_action === 'guardian_summons' || $record->hasGuardianSummons())
+                    ->modalHeading(fn (BehaviorObservation $record): string => __('تسجيل مخرجات مقابلة ولي أمر التلميذ(ة): :name', ['name' => $record->student?->full_name ?? '—']))
+                    ->modalDescription(__('توثيق استلام الوصل المقتطع، حضور ولي الأمر في الموعد المحدد، وما تم الاتفاق عليه من تعهدات وإجراءات.'))
+                    ->modalWidth('xl')
+                    ->form([
+                        Toggle::make('is_guardian_receipt_returned')
+                            ->label(__('تم استرجاع وصل الاستدعاء موقعاً ومقتطعاً من ولي الأمر'))
+                            ->default(fn (BehaviorObservation $record): bool => (bool) $record->is_guardian_receipt_returned),
+
+                        Select::make('guardian_attendance_status')
+                            ->label(__('حالة حضور ولي الأمر للمقابلة'))
+                            ->options([
+                                'attended' => __('✅ حضر الولي وأجريت المقابلة'),
+                                'absent' => __('❌ لم يحضر (تخلف عن الحضور)'),
+                                'excused' => __('⚠️ معذور / طلب تأجيل الموعد'),
+                                'pending' => __('⏳ قيد الانتظار'),
+                            ])
+                            ->default(fn (BehaviorObservation $record): string => $record->guardian_attendance_status ?: 'attended')
+                            ->required(),
+
+                        Textarea::make('guardian_attendance_notes')
+                            ->label(__('مخرجات المقابلة والتعهدات المتفق عليها'))
+                            ->placeholder(__('تدوين ما تم الاتفاق عليه مع ولي الأمر، تعهداته بالانضباط، أو الإجراءات البيداغوجية المتخذة...'))
+                            ->default(fn (BehaviorObservation $record): ?string => $record->guardian_attendance_notes)
+                            ->rows(4),
+                    ])
+                    ->action(function (BehaviorObservation $record, array $data): void {
+                        $record->markReceiptReturned((bool) ($data['is_guardian_receipt_returned'] ?? false));
+                        $record->updateGuardianAttendance(
+                            $data['guardian_attendance_status'] ?? 'pending',
+                            $data['guardian_attendance_notes'] ?? null
+                        );
+
+                        Notification::make()
+                            ->title(__('تم حفظ مخرجات المقابلة وحالة الاستدعاء بنجاح'))
+                            ->success()
                             ->send();
                     }),
 
