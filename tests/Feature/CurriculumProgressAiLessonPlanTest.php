@@ -354,6 +354,37 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
         $this->assertStringContainsString('annual-curriculum-distribution', (string) $response->headers->get('content-disposition'));
     }
 
+    public function test_annual_curriculum_distribution_supports_all_middle_school_levels(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $this->actingAs($teacher);
+
+        // Level 2 (2AM)
+        $res2 = $this->get(route('print.annual-curriculum-distribution', ['locale' => 'ar', 'level' => 2]));
+        $res2->assertOk();
+        $res2->assertSee('التوزيع السنوي للسنة الثانية من التعليم المتوسط');
+        $res2->assertSee('الجداول');
+        $res2->assertSee('مدخل إلى سكراتش');
+        $res2->assertSee('الشبكة');
+
+        // Level 3 (3AM)
+        $res3 = $this->get(route('print.annual-curriculum-distribution', ['locale' => 'ar', 'level' => 3]));
+        $res3->assertOk();
+        $res3->assertSee('التوزيع السنوي للسنة الثالثة من التعليم المتوسط');
+        $res3->assertSee('الأصوات في سكراتش');
+        $res3->assertSee('المجدول');
+        $res3->assertSee('العروض التقديمية');
+        $res3->assertSee('البريد الإلكتروني');
+
+        // Level 4 (4AM)
+        $res4 = $this->get(route('print.annual-curriculum-distribution', ['locale' => 'ar', 'level' => 4]));
+        $res4->assertOk();
+        $res4->assertSee('التوزيع السنوي للسنة الرابعة من التعليم المتوسط');
+        $res4->assertSee('المتغيرات في سكراتش');
+        $res4->assertSee('المخططات البيانية');
+        $res4->assertSee('شهادة BEM');
+    }
+
     public function test_curriculum_progress_page_contains_annual_distribution_print_link(): void
     {
         $teacher = User::factory()->create(['role' => Role::Teacher->value]);

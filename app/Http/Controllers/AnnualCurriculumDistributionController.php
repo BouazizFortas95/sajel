@@ -22,8 +22,9 @@ class AnnualCurriculumDistributionController extends Controller
         $classroomId = $request->query('classroom') ? (int) $request->query('classroom') : null;
         $teacherId = $user->isTeacher() ? $user->id : ($request->query('teacher') ? (int) $request->query('teacher') : null);
         $academicYear = $request->query('year');
+        $level = $request->query('level');
 
-        $data = $service->getDistributionData($subjectId, $classroomId, $teacherId, $academicYear);
+        $data = $service->getDistributionData($subjectId, $classroomId, $teacherId, $academicYear, $level);
 
         return view('print.annual-curriculum-distribution', $data);
     }
@@ -40,10 +41,10 @@ class AnnualCurriculumDistributionController extends Controller
         $classroomId = $request->query('classroom') ? (int) $request->query('classroom') : null;
         $teacherId = $user->isTeacher() ? $user->id : ($request->query('teacher') ? (int) $request->query('teacher') : null);
         $academicYear = $request->query('year');
+        $level = $request->query('level');
 
-        $data = $service->getDistributionData($subjectId, $classroomId, $teacherId, $academicYear);
+        $data = $service->getDistributionData($subjectId, $classroomId, $teacherId, $academicYear, $level);
 
         return $service->pdfResponse($data);
     }
 }
-

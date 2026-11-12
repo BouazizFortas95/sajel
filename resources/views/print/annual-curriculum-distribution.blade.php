@@ -6,7 +6,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'التوزيع السنوي للسنة الأولى من التعليم المتوسط' }}</title>
+    <title>{{ $title ?? 'التوزيع السنوي لمادة المعلوماتية' }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,8 +32,8 @@
             background: #ffffff;
             color: #000000;
             font-family: 'Amiri', 'Cairo', serif;
-            font-size: 8.2pt;
-            line-height: 1.15;
+            font-size: 8pt;
+            line-height: 1.1;
             direction: rtl;
             -webkit-font-smoothing: antialiased;
         }
@@ -53,16 +53,22 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
+        .level-switcher {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
         .no-print .btn-group {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
             padding: 3px 8px;
             font-size: 10px;
             font-weight: 700;
@@ -75,6 +81,8 @@
 
         .btn-amber { background: #f59e0b; color: #0f172a; }
         .btn-amber:hover { background: #d97706; }
+        .btn-emerald { background: #10b981; color: #ffffff; }
+        .btn-emerald:hover { background: #059669; }
         .btn-slate { background: #334155; color: #f1f5f9; }
         .btn-slate:hover { background: #475569; }
 
@@ -90,7 +98,7 @@
         /* Document Header */
         .doc-title {
             text-align: center;
-            font-size: 15.5pt;
+            font-size: 14.5pt;
             font-weight: 700;
             margin-bottom: 2px;
             font-family: 'Amiri', serif;
@@ -100,10 +108,10 @@
         .meta-grid {
             display: flex;
             justify-content: space-between;
-            font-size: 8.8pt;
+            font-size: 8.5pt;
             font-weight: 700;
-            margin-bottom: 3px;
-            line-height: 1.25;
+            margin-bottom: 2px;
+            line-height: 1.2;
             padding: 0 4px;
         }
 
@@ -126,52 +134,66 @@
             width: 100%;
             border-collapse: collapse;
             border: 1.2px solid #000000;
-            font-size: 8.2pt;
+            font-size: 8pt;
             text-align: center;
         }
 
         .distribution-table th,
         .distribution-table td {
             border: 1px solid #000000;
-            padding: 5.2px 2px;
+            padding: 3.2px 2px;
             vertical-align: middle;
         }
 
         .distribution-table thead th {
             font-weight: 700;
-            font-size: 8.5pt;
+            font-size: 8.2pt;
             background-color: #ffffff;
             color: #000000;
-            padding: 3.5px 1px;
+            padding: 2.5px 1px;
         }
 
         /* Vertical Rotated Text for Domain & Competence */
         .vertical-cell {
             vertical-align: middle;
             text-align: center;
-            padding: 2px 0 !important;
-            width: 28px;
-            max-width: 32px;
+            padding: 2px 1px !important;
         }
 
         .vertical-text {
             writing-mode: vertical-rl;
             transform: rotate(180deg);
-            white-space: nowrap;
-            font-size: 8pt;
+            font-size: 7.2pt;
             font-weight: 700;
             display: inline-block;
             margin: 0 auto;
-            line-height: 1;
+            line-height: 1.1;
         }
 
-        .col-domain { width: 28px; }
-        .col-competence { width: 34px; }
-        .col-sequence { width: 85px; font-weight: 700; font-size: 8.2pt; }
-        .col-lesson { text-align: center; font-size: 8.2pt; }
-        .col-hours { width: 45px; font-size: 7.8pt; white-space: nowrap; }
-        .col-date { width: 120px; font-size: 7.8pt; white-space: nowrap; }
-        .col-week { width: 26px; font-size: 8pt; font-weight: 700; }
+        .col-domain {
+            width: 28px;
+        }
+
+        .col-domain .vertical-text {
+            white-space: nowrap;
+            font-size: 8pt;
+        }
+
+        .col-competence {
+            width: 36px;
+            max-width: 38px;
+        }
+
+        .col-competence .vertical-text {
+            font-size: 6.8pt;
+            line-height: 1.05;
+        }
+
+        .col-sequence { width: 85px; font-weight: 700; font-size: 8pt; }
+        .col-lesson { text-align: center; font-size: 8pt; }
+        .col-hours { width: 45px; font-size: 7.5pt; white-space: nowrap; }
+        .col-date { width: 120px; font-size: 7.5pt; white-space: nowrap; }
+        .col-week { width: 26px; font-size: 7.8pt; font-weight: 700; }
 
         /* Highlighted Lesson Cells */
         .cell-exam-red {
@@ -189,25 +211,25 @@
         .break-cell-vacation {
             color: #c00000;
             font-weight: 700;
-            font-size: 8pt;
+            font-size: 7.8pt;
             text-align: center;
-            padding: 5.2px 2px !important;
+            padding: 3px 2px !important;
         }
 
         .break-cell-exam {
             color: #1e3a8a;
             font-weight: 700;
-            font-size: 8pt;
+            font-size: 7.8pt;
             text-align: center;
-            padding: 5.2px 2px !important;
+            padding: 3px 2px !important;
         }
 
         /* Signatures Section */
         .signatures-grid {
-            margin-top: 18px;
+            margin-top: 8px;
             display: flex;
             justify-content: space-between;
-            font-size: 9.5pt;
+            font-size: 9pt;
             font-weight: 700;
             padding: 0 15px;
         }
@@ -236,19 +258,32 @@
 </head>
 <body>
     <div class="no-print">
-        <div>
-            <strong>التوزيع السنوي للتعلمات</strong>
-            <span style="opacity: 0.7; margin: 0 6px;">|</span>
-            <span>{{ $level_name }} — {{ $subject_name }}</span>
+        <div class="level-switcher">
+            <span style="opacity: 0.8; margin-left: 4px;">{{ __('المستوى:') }}</span>
+            @foreach ($available_levels as $lvl => $label)
+                <a
+                    href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'level' => $lvl, 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
+                    class="btn {{ ($level_number ?? 1) == $lvl ? 'btn-amber' : 'btn-slate' }}"
+                >
+                    {{ $label }}
+                </a>
+            @endforeach
         </div>
 
         <div class="btn-group">
+            <a
+                href="{{ route('print.annual-curriculum-distribution.pdf', ['locale' => app()->getLocale(), 'level' => $level_number ?? 1, 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
+                class="btn btn-emerald"
+            >
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                {{ __('تحميل PDF') }}
+            </a>
             <button type="button" onclick="window.print()" class="btn btn-amber">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.83h10.56M6.72 17.25h10.56M6.75 6.75h10.5v3.75H6.75V6.75Zm-1.5 3.75h13.5a1.5 1.5 0 0 1 1.5 1.5v5.25a1.5 1.5 0 0 1-1.5 1.5h-1.5v-3H6.75v3h-1.5a1.5 1.5 0 0 1-1.5-1.5V12a1.5 1.5 0 0 1 1.5-1.5Z"/></svg>
-                طباعة A4
+                {{ __('طباعة A4') }}
             </button>
             <a href="{{ route('filament.auth.pages.curriculum-progress') }}" class="btn btn-slate">
-                العودة إلى تقدم المنهاج
+                {{ __('العودة إلى تقدم المنهاج') }}
             </a>
         </div>
     </div>
@@ -285,146 +320,41 @@
                 </tr>
             </thead>
             <tbody>
-                {{-- Domain 1: استخدام الحاسوب --}}
-                @php
-                    $d1 = $domains[0];
-                    $d1Seq1 = $d1['sequences'][0];
-                    $d1Seq2 = $d1['sequences'][1] ?? null;
-                @endphp
-                {{-- Row 1: First item of Seq 1 with Domain 1 & Competence 1 spanned --}}
-                <tr>
-                    <td rowspan="{{ $d1['rowspan'] }}" class="vertical-cell col-domain">
-                        <span class="vertical-text">{{ $d1['name'] }}</span>
-                    </td>
-                    <td rowspan="{{ $d1['rowspan'] }}" class="vertical-cell col-competence">
-                        <span class="vertical-text">{{ $d1['competence'] }}</span>
-                    </td>
-                    <td rowspan="{{ $d1Seq1['rowspan'] }}" class="col-sequence">{{ $d1Seq1['name'] }}</td>
-                    <td class="col-lesson">{{ $d1Seq1['items'][0]['lesson'] }}</td>
-                    <td class="col-hours">{{ $d1Seq1['items'][0]['hours'] }}</td>
-                    <td class="col-date">{{ $d1Seq1['items'][0]['date'] }}</td>
-                    <td class="col-week">{{ $d1Seq1['items'][0]['week'] }}</td>
-                </tr>
-                {{-- Rows 2 to 5 of Sequence 1 (بيئة التعامل مع الحاسوب) --}}
-                @foreach (array_slice($d1Seq1['items'], 1) as $item)
-                    <tr>
-                        <td class="col-lesson">{{ $item['lesson'] }}</td>
-                        <td class="col-hours">{{ $item['hours'] }}</td>
-                        <td class="col-date">{{ $item['date'] }}</td>
-                        <td class="col-week">{{ $item['week'] }}</td>
-                    </tr>
-                @endforeach
+                @foreach ($domains as $domain)
+                    @foreach ($domain['rows'] as $index => $row)
+                        <tr>
+                            @if ($index === 0)
+                                <td rowspan="{{ $domain['rowspan'] }}" class="vertical-cell col-domain">
+                                    <span class="vertical-text">{{ $domain['name'] }}</span>
+                                </td>
+                                <td rowspan="{{ $domain['rowspan'] }}" class="vertical-cell col-competence">
+                                    <span class="vertical-text">{!! $domain['competence'] !!}</span>
+                                </td>
+                            @endif
 
-                {{-- Sequence 2: نظام التشغيل (contains مفهوم نظام التشغيل, break, remaining items) --}}
-                @if ($d1Seq2)
-                    <tr>
-                        <td rowspan="{{ $d1Seq2['rowspan'] }}" class="col-sequence">{{ $d1Seq2['name'] }}</td>
-                        <td class="col-lesson">{{ $d1Seq2['first_item']['lesson'] }}</td>
-                        <td class="col-hours">{{ $d1Seq2['first_item']['hours'] }}</td>
-                        <td class="col-date">{{ $d1Seq2['first_item']['date'] }}</td>
-                        <td class="col-week">{{ $d1Seq2['first_item']['week'] }}</td>
-                    </tr>
-                    @if (!empty($d1Seq2['break']))
-                        <tr>
-                            <td colspan="4" class="break-cell-vacation">
-                                {{ $d1Seq2['break']['text'] }}
-                            </td>
-                        </tr>
-                    @endif
-                    @foreach ($d1Seq2['remaining_items'] as $item)
-                        <tr>
-                            <td @class(['col-lesson', 'cell-exam-red' => $item['type'] === 'exam_red', 'cell-remedial-yellow' => $item['type'] === 'remedial_yellow'])>
-                                {{ $item['lesson'] }}
-                            </td>
-                            <td class="col-hours">{{ $item['hours'] }}</td>
-                            <td class="col-date">{{ $item['date'] }}</td>
-                            <td class="col-week">{{ $item['week'] }}</td>
+                            @if (!empty($row['is_break']))
+                                <td colspan="{{ $row['colspan'] ?? 5 }}" class="{{ ($row['break_type'] ?? '') === 'vacation' ? 'break-cell-vacation' : 'break-cell-exam' }}">
+                                    {{ $row['text'] }}
+                                </td>
+                            @else
+                                @if (!empty($row['sequence']))
+                                    <td rowspan="{{ $row['sequence']['rowspan'] }}" class="col-sequence">
+                                        {{ $row['sequence']['name'] }}
+                                    </td>
+                                @endif
+                                <td @class([
+                                    'col-lesson',
+                                    'cell-exam-red' => ($row['type'] ?? '') === 'exam_red',
+                                    'cell-remedial-yellow' => ($row['type'] ?? '') === 'remedial_yellow',
+                                ])>
+                                    {{ $row['lesson'] }}
+                                </td>
+                                <td class="col-hours">{{ $row['hours'] }}</td>
+                                <td class="col-date">{{ $row['date'] }}</td>
+                                <td class="col-week">{{ $row['week'] }}</td>
+                            @endif
                         </tr>
                     @endforeach
-                @endif
-
-                {{-- Breaks & Remaining Sequences of Domain 1 --}}
-                @foreach ($d1['breaks_and_sequences'] as $entry)
-                    @if ($entry['type'] === 'break')
-                        <tr>
-                            <td colspan="5" class="{{ $entry['break_type'] === 'vacation' ? 'break-cell-vacation' : 'break-cell-exam' }}">
-                                {{ $entry['text'] }}
-                            </td>
-                        </tr>
-                    @else
-                        {{-- Sequence entry --}}
-                        <tr>
-                            <td rowspan="{{ $entry['rowspan'] }}" class="col-sequence">{{ $entry['name'] }}</td>
-                            <td @class(['col-lesson', 'cell-exam-red' => $entry['items'][0]['type'] === 'exam_red', 'cell-remedial-yellow' => $entry['items'][0]['type'] === 'remedial_yellow'])>
-                                {{ $entry['items'][0]['lesson'] }}
-                            </td>
-                            <td class="col-hours">{{ $entry['items'][0]['hours'] }}</td>
-                            <td class="col-date">{{ $entry['items'][0]['date'] }}</td>
-                            <td class="col-week">{{ $entry['items'][0]['week'] }}</td>
-                        </tr>
-                        @foreach (array_slice($entry['items'], 1) as $item)
-                            <tr>
-                                <td @class(['col-lesson', 'cell-exam-red' => $item['type'] === 'exam_red', 'cell-remedial-yellow' => $item['type'] === 'remedial_yellow'])>
-                                    {{ $item['lesson'] }}
-                                </td>
-                                <td class="col-hours">{{ $item['hours'] }}</td>
-                                <td class="col-date">{{ $item['date'] }}</td>
-                                <td class="col-week">{{ $item['week'] }}</td>
-                            </tr>
-                        @endforeach
-                    @endif
-                @endforeach
-
-                {{-- Domain 2: معالج النصوص --}}
-                @php
-                    $d2 = $domains[1];
-                    $d2Seq1 = $d2['sequences'][0];
-                @endphp
-                {{-- Row 1 of Domain 2 (Week 16) --}}
-                <tr>
-                    <td rowspan="{{ $d2['rowspan'] }}" class="vertical-cell col-domain">
-                        <span class="vertical-text">{{ $d2['name'] }}</span>
-                    </td>
-                    <td rowspan="{{ $d2['rowspan'] }}" class="vertical-cell col-competence">
-                        <span class="vertical-text">{{ $d2['competence'] }}</span>
-                    </td>
-                    <td rowspan="{{ $d2Seq1['rowspan'] }}" class="col-sequence">{{ $d2Seq1['name'] }}</td>
-                    <td class="col-lesson">{{ $d2Seq1['items'][0]['lesson'] }}</td>
-                    <td class="col-hours">{{ $d2Seq1['items'][0]['hours'] }}</td>
-                    <td class="col-date">{{ $d2Seq1['items'][0]['date'] }}</td>
-                    <td class="col-week">{{ $d2Seq1['items'][0]['week'] }}</td>
-                </tr>
-
-                {{-- Breaks & Remaining Sequences of Domain 2 --}}
-                @foreach ($d2['breaks_and_sequences'] as $entry)
-                    @if ($entry['type'] === 'break')
-                        <tr>
-                            <td colspan="5" class="{{ $entry['break_type'] === 'vacation' ? 'break-cell-vacation' : 'break-cell-exam' }}">
-                                {{ $entry['text'] }}
-                            </td>
-                        </tr>
-                    @else
-                        {{-- Sequence entry --}}
-                        <tr>
-                            <td rowspan="{{ $entry['rowspan'] }}" class="col-sequence">{{ $entry['name'] }}</td>
-                            <td @class(['col-lesson', 'cell-exam-red' => $entry['items'][0]['type'] === 'exam_red', 'cell-remedial-yellow' => $entry['items'][0]['type'] === 'remedial_yellow'])>
-                                {{ $entry['items'][0]['lesson'] }}
-                            </td>
-                            <td class="col-hours">{{ $entry['items'][0]['hours'] }}</td>
-                            <td class="col-date">{{ $entry['items'][0]['date'] }}</td>
-                            <td class="col-week">{{ $entry['items'][0]['week'] }}</td>
-                        </tr>
-                        @foreach (array_slice($entry['items'], 1) as $item)
-                            <tr>
-                                <td @class(['col-lesson', 'cell-exam-red' => $item['type'] === 'exam_red', 'cell-remedial-yellow' => $item['type'] === 'remedial_yellow'])>
-                                    {{ $item['lesson'] }}
-                                </td>
-                                <td class="col-hours">{{ $item['hours'] }}</td>
-                                <td class="col-date">{{ $item['date'] }}</td>
-                                <td class="col-week">{{ $item['week'] }}</td>
-                            </tr>
-                        @endforeach
-                    @endif
                 @endforeach
             </tbody>
         </table>
