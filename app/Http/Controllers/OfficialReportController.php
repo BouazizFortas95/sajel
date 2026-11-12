@@ -237,6 +237,53 @@ class OfficialReportController extends Controller
         );
     }
 
+    public function interviewMinutes(
+        Request $request,
+        string $locale,
+        BehaviorObservation $behaviorObservation,
+        StudentIncidentReportService $reportService,
+    ): View {
+        $user = $request->user();
+        if ($user->isTeacher() && ! $user->isAdmin()) {
+            abort_unless(
+                $behaviorObservation->recorded_by_id === $user->id
+                || $behaviorObservation->schedule?->user_id === $user->id,
+                403
+            );
+        }
+
+        return view('print.guardian-interview-minutes', $reportService->interviewMinutesViewData(
+            $behaviorObservation,
+            $user,
+            autoPrint: $request->boolean('autoprint', true),
+        ));
+    }
+
+    public function interviewMinutesPdf(
+        Request $request,
+        string $locale,
+        BehaviorObservation $behaviorObservation,
+        StudentIncidentReportService $reportService,
+        OfficialReportService $reports,
+    ): StreamedResponse {
+        $user = $request->user();
+        if ($user->isTeacher() && ! $user->isAdmin()) {
+            abort_unless(
+                $behaviorObservation->recorded_by_id === $user->id
+                || $behaviorObservation->schedule?->user_id === $user->id,
+                403
+            );
+        }
+
+        return $this->pdf(
+            $reports,
+            'print.guardian-interview-minutes',
+            $reportService->interviewMinutesViewData($behaviorObservation, $user, autoPrint: false),
+            'محضر-مقابلة-ولي-أمر-'.($behaviorObservation->student?->full_name ?: $behaviorObservation->id).'-'.now()->format('Y-m-d').'.pdf',
+            landscape: false,
+        );
+    }
+
     /**
      * @return array{0: int|null, 1: int|null}
      */

@@ -366,7 +366,7 @@ class StudentIncidentReportService
                 if (! empty($cleanedLines)) {
                     $capped = array_slice($cleanedLines, 0, 3);
 
-                    return "نظراً لتسجيل الملاحظات والسلوكيات التالية أثناء الحصة:\n".implode("\n", $capped)."\nيُرجى حضوركم لمقابلة الإدارة والأستاذ(ة) المعني(ة) لمتابعة التلميذ(ة).";
+                    return "نظراً لتسجيل الملاحظات والسلوكيات التالية أثناء الحصة:\n".implode("\n", $capped)."\nيرجى حضوركم لمقابلة الإدارة والأستاذ(ة) المعني(ة) لمتابعة التلميذ(ة).";
                 }
             }
         }
@@ -376,5 +376,23 @@ class StudentIncidentReportService
         }
 
         return __('استدعاء لمقابلة الإدارة والأستاذ(ة) المعني(ة) لبحث الوضعية السلوكية والتربوية للتلميذ(ة) ووضع خطة متابعة مشتركة.');
+    }
+
+    /**
+     * Prepare data for official Parent Interview & Commitment Minutes document (A4 single page).
+     *
+     * @return array<string, mixed>
+     */
+    public function interviewMinutesViewData(
+        BehaviorObservation $observation,
+        ?User $viewer = null,
+        bool $autoPrint = true,
+    ): array {
+        $data = $this->guardianSummonsViewData($observation, $viewer, $autoPrint);
+        $data['attendanceNotes'] = $observation->guardian_attendance_notes
+            ?: __('تم الاستماع إلى ولي الأمر وإطلاعه على الوقائع المرصودة، وتعهد بالحرص على انضباط ابنه(ها) ومتابعة نتائجه وسلوكه بصفة يومية مستمرة.');
+        $data['interviewDate'] = $observation->guardian_summons_appointment_at ?? now();
+
+        return $data;
     }
 }

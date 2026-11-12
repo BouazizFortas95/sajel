@@ -503,4 +503,35 @@ class BehaviorObservationResourceTest extends TestCase
         $this->assertFalse($observation->hasGuardianReceiptReturned());
         $this->assertSame('absent', $observation->guardian_attendance_status);
     }
+
+    public function test_guardian_interview_minutes_generation_and_official_print_view(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $teacher = User::factory()->create(['role' => Role::Teacher->value, 'name' => 'الأستاذ أحمد']);
+        $student = Student::factory()->create(['first_name' => 'خالد', 'last_name' => 'بشير', 'guardian_name' => 'بشير محمد']);
+
+        $observation = BehaviorObservation::query()->create([
+            'student_id' => $student->id,
+            'category' => 'negative',
+            'notes' => 'تكرار عدم إحضار الأدوات والتشويش.',
+            'date' => today(),
+            'observed_by' => $teacher->name,
+            'administrative_action' => 'guardian_summons',
+            'guardian_summons_sent_at' => today(),
+            'guardian_summons_appointment_at' => now()->addDay()->setTime(10, 0),
+            'guardian_attendance_status' => 'attended',
+            'guardian_attendance_notes' => 'حضر الولي وتعهد بتوفير الأدوات كاملة ومتابعة الفروض.',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('print.student-behavior-report.interview-minutes', ['locale' => 'ar', 'behaviorObservation' => $observation]))
+            ->assertOk()
+            ->assertSee('محضر مقابلة وتعهد ولي أمر التلميذ(ة)')
+            ->assertSee('خالد بشير')
+            ->assertSee('بشير محمد')
+            ->assertSee('توقيع وبصمة ولي الأمر')
+            ->assertSee('إمضاء وتأشيرة الأستاذ(ة)')
+            ->assertSee('تأشيرة مستشار(ة) التربية')
+            ->assertSee('تأشيرة وختم مدير(ة) المؤسسة');
+    }
 }

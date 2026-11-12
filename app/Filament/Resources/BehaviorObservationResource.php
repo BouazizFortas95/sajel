@@ -681,11 +681,36 @@ class BehaviorObservationResource extends Resource
                             $data['guardian_attendance_notes'] ?? null
                         );
 
-                        Notification::make()
+                        $notification = Notification::make()
                             ->title(__('تم حفظ مخرجات المقابلة وحالة الاستدعاء بنجاح'))
-                            ->success()
-                            ->send();
+                            ->success();
+
+                        if ($record->guardian_attendance_status === 'attended') {
+                            $notification->actions([
+                                NotificationAction::make('printMinutes')
+                                    ->label(__('🖨️ طباعة محضر المقابلة (A4)'))
+                                    ->url(route('print.student-behavior-report.interview-minutes', [
+                                        'locale' => app()->getLocale(),
+                                        'behaviorObservation' => $record,
+                                    ]))
+                                    ->openUrlInNewTab(),
+                            ])->persistent();
+                        }
+
+                        $notification->send();
                     }),
+
+                // Print Interview Minutes (محضر المقابلة والتعهد)
+                Tables\Actions\Action::make('printInterviewMinutes')
+                    ->label(__('محضر المقابلة (A4)'))
+                    ->icon('heroicon-o-document-check')
+                    ->color('success')
+                    ->visible(fn (BehaviorObservation $record): bool => $record->hasGuardianSummons() && $record->guardian_attendance_status === 'attended')
+                    ->url(fn (BehaviorObservation $record): string => route('print.student-behavior-report.interview-minutes', [
+                        'locale' => app()->getLocale(),
+                        'behaviorObservation' => $record,
+                    ]))
+                    ->openUrlInNewTab(),
 
                 // Print Disciplinary Summons if already referred
                 Tables\Actions\Action::make('printDisciplinarySummons')
