@@ -247,23 +247,24 @@
 
     /* Signatures */
     .signature-grid {
-        margin-top: 5px !important;
+        margin-top: 6px !important;
         display: grid !important;
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 8px !important;
+        gap: 16px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
     }
 
     .signature-box {
-        border: 1px dashed #cbd5e1 !important;
-        border-radius: 4px !important;
-        background: #f8fafc !important;
-        padding: 3px 6px !important;
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
         text-align: center !important;
         font-family: 'Cairo', sans-serif !important;
     }
 
     .signature-box strong {
-        font-size: 7.5pt !important;
+        font-size: 8pt !important;
         color: #1a237e !important;
         display: block !important;
     }
@@ -276,16 +277,8 @@
         display: block !important;
     }
 
-    .signature-box .signature-line {
-        margin-top: 12px !important;
-        margin-bottom: 2px !important;
-        border-top: 1px dotted #94a3b8 !important;
-    }
-
-    .signature-box small {
-        font-size: 6.5pt !important;
-        color: #94a3b8 !important;
-        display: block !important;
+    .signature-box .signature-space {
+        height: 45px !important;
     }
 
     .doc-footer {
@@ -409,25 +402,22 @@
         </table>
     </div>
 
-    {{-- Signatures Grid (Key members: Teacher, Director of Studies / Counselor, Principal) --}}
+    {{-- Signatures Area (Teacher, Director of Studies / Counselor, Principal) --}}
     <div class="signature-grid">
         <div class="signature-box">
             <strong>{{ __('إمضاء وتأشيرة الأستاذ(ة)') }}</strong>
             <span>{{ $teacherName }}</span>
-            <div class="signature-line"></div>
-            <small>{{ __('التاريخ والإمضاء') }}</small>
+            <div class="signature-space"></div>
         </div>
         <div class="signature-box">
             <strong>{{ __('تأشيرة السيد(ة) ناظر(ة) الدروس') }}</strong>
             <span>{{ $schoolSetting->counselor_name ?: __('ناظر(ة) الدروس / مستشار(ة) التربية') }}</span>
-            <div class="signature-line"></div>
-            <small>{{ __('المعاينة والمطابقة البيداغوجية') }}</small>
+            <div class="signature-space"></div>
         </div>
         <div class="signature-box">
             <strong>{{ __('تأشيرة وختم السيد(ة) مدير(ة) المؤسسة') }}</strong>
             <span>{{ $schoolSetting->principal_name ?: __('مدير المؤسسة') }}</span>
-            <div class="signature-line"></div>
-            <small>{{ __('المصادقة والاعتماد الرسمي') }}</small>
+            <div class="signature-space"></div>
         </div>
     </div>
 

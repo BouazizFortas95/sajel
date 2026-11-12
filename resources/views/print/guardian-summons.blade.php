@@ -150,23 +150,18 @@
     .signatures-row {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
+        gap: 14px;
         margin-top: 4px;
-        margin-bottom: 5px;
+        margin-bottom: 4px;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
     }
 
     .signature-card {
-        border: 1px dashed #94a3b8;
-        border-radius: 4px;
-        padding: 3px 5px;
+        border: none;
+        background: transparent;
+        padding: 0;
         text-align: center;
-        background: #f8fafc;
-        min-height: 38px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
     }
 
     .signature-role {
@@ -177,9 +172,14 @@
     }
 
     .signature-sub {
-        font-size: 6.5pt;
-        color: #64748b;
+        font-size: 7pt;
+        color: #0f172a;
+        font-weight: 600;
         margin: 1px 0 0 0;
+    }
+
+    .signature-space {
+        height: 36px;
     }
 
     .tear-off-section {
@@ -279,30 +279,24 @@
     {{ __('إن المتابعة الدورية والمشتركة بين الأسرة والمؤسسة التربوية هي الركيزة الأساسية لضمان النجاح البيداغوجي والانضباط السلوكي للتلميذ. حضوركم في الموعد المحدد إلزامي لتفادي اتخاذ الإجراءات التأديبية المنصوص عليها في النظام الداخلي.') }}
 </div>
 
-{{-- Official Institutional Signatures (3 Boxes on same page) --}}
+{{-- Official Institutional Signatures Area (3 Roles) --}}
 <div class="signatures-row">
     <div class="signature-card">
-        <div>
-            <p class="signature-role">{{ __('إمضاء وتأشيرة الأستاذ(ة)') }}</p>
-            <p class="signature-sub">{{ $teacherName }}</p>
-        </div>
-        <p class="signature-sub" style="font-size: 6pt; color: #94a3b8;">{{ __('التاريخ والإمضاء') }}</p>
+        <p class="signature-role">{{ __('إمضاء وتأشيرة الأستاذ(ة)') }}</p>
+        <p class="signature-sub">{{ $teacherName }}</p>
+        <div class="signature-space"></div>
     </div>
 
     <div class="signature-card">
-        <div>
-            <p class="signature-role">{{ __('تأشيرة مستشار(ة) التربية / ناظر(ة) الدروس') }}</p>
-            <p class="signature-sub">{{ __('المعاينة والمتابعة') }}</p>
-        </div>
-        <p class="signature-sub" style="font-size: 6pt; color: #94a3b8;">{{ __('التأشيرة والختم') }}</p>
+        <p class="signature-role">{{ __('تأشيرة مستشار(ة) التربية / ناظر(ة) الدروس') }}</p>
+        <p class="signature-sub">{{ $schoolSetting->counselor_name ?: __('الاستشارة التربوية') }}</p>
+        <div class="signature-space"></div>
     </div>
 
     <div class="signature-card">
-        <div>
-            <p class="signature-role">{{ __('تأشيرة وختم السيد(ة) مدير(ة) المؤسسة') }}</p>
-            <p class="signature-sub">{{ $schoolSetting?->principal_name ?? __('إدارة المؤسسة') }}</p>
-        </div>
-        <p class="signature-sub" style="font-size: 6pt; color: #94a3b8;">{{ __('المصادقة والاعتماد') }}</p>
+        <p class="signature-role">{{ __('تأشيرة وختم السيد(ة) مدير(ة) المؤسسة') }}</p>
+        <p class="signature-sub">{{ $schoolSetting?->principal_name ?? __('إدارة المؤسسة') }}</p>
+        <div class="signature-space"></div>
     </div>
 </div>
 

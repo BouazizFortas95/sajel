@@ -193,19 +193,18 @@
 
     /* Signatures Section */
     .signatures-grid {
-        margin-top: 6px !important;
+        margin-top: 8px !important;
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 16px !important;
+        gap: 24px !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
     }
 
     .signature-card {
-        border: 1px dashed #94a3b8 !important;
-        border-radius: 4px !important;
-        background: #f8fafc !important;
-        padding: 4px 10px !important;
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
         text-align: center !important;
         font-family: 'Cairo', sans-serif !important;
     }
@@ -224,16 +223,8 @@
         margin-top: 1px !important;
     }
 
-    .signature-card .signature-line {
-        margin-top: 16px !important;
-        margin-bottom: 2px !important;
-        border-top: 1px dotted #94a3b8 !important;
-    }
-
-    .signature-card small {
-        font-size: 6.5pt !important;
-        color: #64748b !important;
-        display: block !important;
+    .signature-card .signature-space {
+        height: 48px !important;
     }
 
     .doc-footer {
@@ -383,19 +374,17 @@
     </tbody>
 </table>
 
-{{-- Institutional Signatures Grid --}}
+{{-- Institutional Signatures Area --}}
 <div class="signatures-grid">
     <div class="signature-card">
         <strong>{{ __('تأشيرة السيد(ة) مستشار(ة) التربية / ناظر(ة) الدروس') }}</strong>
         <span>{{ $schoolSetting->counselor_name ?: __('مصلحة الاستشارة التربوية') }}</span>
-        <div class="signature-line"></div>
-        <small>{{ __('المعاينة والتنسيق مع جدول التوقيت') }}</small>
+        <div class="signature-space"></div>
     </div>
     <div class="signature-card">
         <strong>{{ __('المصادقة والاعتماد: السيد(ة) مدير(ة) المؤسسة') }}</strong>
         <span>{{ $schoolSetting->principal_name ?: __('إدارة المؤسسة') }}</span>
-        <div class="signature-line"></div>
-        <small>{{ __('التأشيرة والختم الرسمي') }}</small>
+        <div class="signature-space"></div>
     </div>
 </div>
 

@@ -200,16 +200,16 @@
         </div>
 
         {{-- Signature Block --}}
-        <div class="flex items-center justify-between text-xs text-center mb-8">
+        <div class="flex items-center justify-between text-xs text-center mb-6">
             <div>
                 <p class="font-bold text-slate-700">{{ __('المستشار الرئيسي للتربية') }}</p>
-                <div class="h-10 border-b border-dashed border-slate-300 w-32 mx-auto"></div>
+                <div class="h-12 w-32 mx-auto"></div>
             </div>
 
             <div>
                 <p class="font-bold text-slate-900">{{ __('مدير المؤسسة والختم الرسمي') }}</p>
                 <p class="text-[10px] text-slate-500">{{ $schoolSetting?->director_name ?? __('الإدارة') }}</p>
-                <div class="h-10 border-b border-dashed border-slate-300 w-36 mx-auto"></div>
+                <div class="h-12 w-36 mx-auto"></div>
             </div>
         </div>
 

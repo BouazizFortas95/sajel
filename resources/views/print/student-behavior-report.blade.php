@@ -111,29 +111,24 @@
     }
 
     .signatures-section {
-        margin-top: 10px !important;
+        margin-top: 8px !important;
         display: grid !important;
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 8px !important;
+        gap: 16px !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
     }
 
     .sign-box {
-        border: 1.5px dashed #cbd5e1 !important;
-        border-radius: 4px !important;
-        background: #f8fafc !important;
-        padding: 4px 6px !important;
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
         text-align: center !important;
         font-family: 'Cairo', sans-serif !important;
-        min-height: 72px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: space-between !important;
     }
 
     .sign-box strong {
-        font-size: 7.5pt !important;
+        font-size: 8pt !important;
         color: #1a237e !important;
         display: block !important;
     }
@@ -146,16 +141,8 @@
         margin-top: 1px !important;
     }
 
-    .sign-box .sign-line {
-        margin-top: 18px !important;
-        margin-bottom: 2px !important;
-        border-top: 1px dotted #94a3b8 !important;
-    }
-
-    .sign-box small {
-        font-size: 6.5pt !important;
-        color: #64748b !important;
-        display: block !important;
+    .sign-box .sign-space {
+        height: 48px !important;
     }
 
     .doc-footer {
@@ -243,25 +230,22 @@
         <div class="report-narrative-box" style="min-height: 45px; background: #f8fafc;">{{ $observation->follow_up_notes }}</div>
     @endif
 
-    {{-- Signatures Grid --}}
+    {{-- Signatures Area --}}
     <div class="signatures-section">
         <div class="sign-box">
             <strong>{{ __('إمضاء وتأشيرة الأستاذ(ة)') }}</strong>
             <span>{{ $teacherName }}</span>
-            <div class="sign-line"></div>
-            <small>{{ __('التاريخ والإمضاء') }}</small>
+            <div class="sign-space"></div>
         </div>
         <div class="sign-box">
             <strong>{{ __('تأشيرة السيد(ة) مستشار(ة) التربية') }}</strong>
             <span>{{ $schoolSetting->counselor_name ?: __('مستشار(ة) التربية / ناظر(ة) الدروس') }}</span>
-            <div class="sign-line"></div>
-            <small>{{ __('المعاينة والمتابعة السلوكية') }}</small>
+            <div class="sign-space"></div>
         </div>
         <div class="sign-box">
             <strong>{{ __('قرار وتأشيرة السيد(ة) مدير(ة) المؤسسة') }}</strong>
             <span>{{ $schoolSetting->principal_name ?: __('مدير المؤسسة') }}</span>
-            <div class="sign-line"></div>
-            <small>{{ __('المصادقة والاعتماد الرسمي') }}</small>
+            <div class="sign-space"></div>
         </div>
     </div>
 
