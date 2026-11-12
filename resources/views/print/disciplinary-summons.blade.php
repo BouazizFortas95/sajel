@@ -130,7 +130,7 @@
         <div class="my-6 text-center">
             <div class="inline-block px-8 py-2 rounded-xl double-border bg-amber-50/50">
                 <h3 class="text-lg font-black text-slate-900 tracking-wider">
-                    {{ __('اسْتِدْعَاءٌ لِلْمُثُولِ أَمَامَ مَجْلِسِ التَّأْدِيبِ') }}
+                    {{ __('استدعاء للمثول أمام مجلس التأديب') }}
                 </h3>
                 <p class="text-[11px] font-bold text-slate-600 tracking-widest uppercase mt-0.5">
                     Convocation Devant le Conseil de Discipline

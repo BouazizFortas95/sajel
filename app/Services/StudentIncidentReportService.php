@@ -328,6 +328,53 @@ class StudentIncidentReportService
             'academicYear' => $schoolSetting?->academic_year ?: '2026-2027',
             'appointmentDate' => $observation->guardian_summons_appointment_at ?? now()->addDay()->setTime(10, 0),
             'sentDate' => $observation->guardian_summons_sent_at ?? now(),
+            'formattedMotive' => $this->formatSummonsMotive($observation),
         ];
+    }
+
+    /**
+     * Format a concise, parent-appropriate motive for guardian summons.
+     * Prevents dumping full internal administrative correspondence into the summons.
+     */
+    public function formatSummonsMotive(BehaviorObservation $observation): string
+    {
+        $custom = $observation->guardian_summons_notes;
+
+        if (filled($custom)
+            && ! str_contains($custom, 'يشرفني أن أرفع إلى عنايتكم')
+            && ! str_contains($custom, 'إلى السيد(ة): مدير(ة) المؤسسة')) {
+            return trim($custom);
+        }
+
+        $notes = (string) $observation->notes;
+
+        // Extract bullet points from the observed facts section
+        if (preg_match('/(?:الوقائع والسلوكيات المرصودة|الوقائع المرصودة)[:\s]*(.*?)(?:ثانياً|المطلب|الإجراءات|تقبلوا|$)/us', $notes, $matches)) {
+            $factsText = trim($matches[1]);
+            $lines = array_filter(array_map('trim', explode("\n", $factsText)));
+
+            if (! empty($lines)) {
+                $cleanedLines = [];
+                foreach ($lines as $line) {
+                    if (str_starts_with($line, '•') || str_starts_with($line, '-')) {
+                        $cleanedLines[] = $line;
+                    } elseif (filled($line)) {
+                        $cleanedLines[] = '• '.ltrim($line, '•- ');
+                    }
+                }
+
+                if (! empty($cleanedLines)) {
+                    $capped = array_slice($cleanedLines, 0, 3);
+
+                    return "نظراً لتسجيل الملاحظات والسلوكيات التالية أثناء الحصة:\n".implode("\n", $capped)."\nيُرجى حضوركم لمقابلة الإدارة والأستاذ(ة) المعني(ة) لمتابعة التلميذ(ة).";
+                }
+            }
+        }
+
+        if (filled($notes) && ! str_contains($notes, 'يشرفني أن أرفع إلى عنايتكم')) {
+            return trim($notes);
+        }
+
+        return __('استدعاء لمقابلة الإدارة والأستاذ(ة) المعني(ة) لبحث الوضعية السلوكية والتربوية للتلميذ(ة) ووضع خطة متابعة مشتركة.');
     }
 }

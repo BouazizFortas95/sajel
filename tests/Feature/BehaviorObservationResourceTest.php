@@ -421,7 +421,7 @@ class BehaviorObservationResourceTest extends TestCase
             ]));
 
         $response->assertOk()
-            ->assertSee('اسْتِدْعَاءُ وَلِيِّ أَمْرِ التِّلْمِيذ(ة)')
+            ->assertSee('استدعاء ولي أمر التلميذ(ة)')
             ->assertSee('سارة منصوري')
             ->assertSee('منصوري كمال')
             ->assertSee('0661234567')

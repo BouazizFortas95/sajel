@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\InfractionDegree;
 use App\Services\DisciplinaryCouncilService;
+use App\Services\StudentIncidentReportService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -170,12 +171,13 @@ class BehaviorObservation extends Model
     protected function applyGuardianSummons(): array
     {
         $appointment = $this->guardian_summons_appointment_at ?? now()->addDay()->setTime(10, 0);
+        $motive = $this->guardian_summons_notes ?: app(StudentIncidentReportService::class)->formatSummonsMotive($this);
 
         $this->update([
             'administrative_action' => 'guardian_summons',
             'guardian_summons_sent_at' => now(),
             'guardian_summons_appointment_at' => $appointment,
-            'guardian_summons_notes' => $this->guardian_summons_notes ?: $this->notes,
+            'guardian_summons_notes' => $motive,
             'is_followed_up' => true,
             'follow_up_notes' => trim(($this->follow_up_notes ? $this->follow_up_notes."\n" : '').__('تم إصدار استدعاء رسمي لولي الأمر لمقابلة الإدارة والأستاذ.')),
         ]);
