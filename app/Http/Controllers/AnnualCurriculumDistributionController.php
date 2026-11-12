@@ -46,3 +46,4 @@ class AnnualCurriculumDistributionController extends Controller
         return $service->pdfResponse($data);
     }
 }
+

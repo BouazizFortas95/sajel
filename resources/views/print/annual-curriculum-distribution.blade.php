@@ -23,7 +23,7 @@
 
         @page {
             size: A4 portrait;
-            margin: 4mm 6mm 4mm 6mm;
+            margin: 5mm 6mm 5mm 6mm;
         }
 
         html, body {
@@ -32,14 +32,14 @@
             background: #ffffff;
             color: #000000;
             font-family: 'Amiri', 'Cairo', serif;
-            font-size: 7.8pt;
-            line-height: 1.1;
+            font-size: 8.2pt;
+            line-height: 1.15;
             direction: rtl;
             -webkit-font-smoothing: antialiased;
         }
 
         .no-print {
-            max-width: 195mm;
+            max-width: 198mm;
             margin: 4px auto 8px auto;
             display: flex;
             align-items: center;
@@ -80,9 +80,9 @@
 
         .sheet {
             width: 100%;
-            max-width: 196mm;
+            max-width: 198mm;
             margin: 0 auto;
-            padding: 1mm 1mm;
+            padding: 0;
             box-sizing: border-box;
             background: #ffffff;
         }
@@ -90,20 +90,21 @@
         /* Document Header */
         .doc-title {
             text-align: center;
-            font-size: 13.5pt;
+            font-size: 15.5pt;
             font-weight: 700;
             margin-bottom: 2px;
             font-family: 'Amiri', serif;
+            line-height: 1.1;
         }
 
         .meta-grid {
             display: flex;
             justify-content: space-between;
-            font-size: 8.5pt;
+            font-size: 8.8pt;
             font-weight: 700;
             margin-bottom: 3px;
             line-height: 1.25;
-            padding: 0 2px;
+            padding: 0 4px;
         }
 
         .meta-col {
@@ -124,24 +125,24 @@
         .distribution-table {
             width: 100%;
             border-collapse: collapse;
-            border: 1px solid #000000;
-            font-size: 7.5pt;
+            border: 1.2px solid #000000;
+            font-size: 8.2pt;
             text-align: center;
         }
 
         .distribution-table th,
         .distribution-table td {
             border: 1px solid #000000;
-            padding: 1.5px 2px;
+            padding: 5.2px 2px;
             vertical-align: middle;
         }
 
         .distribution-table thead th {
             font-weight: 700;
-            font-size: 8pt;
+            font-size: 8.5pt;
             background-color: #ffffff;
             color: #000000;
-            padding: 2.5px 1px;
+            padding: 3.5px 1px;
         }
 
         /* Vertical Rotated Text for Domain & Competence */
@@ -157,7 +158,7 @@
             writing-mode: vertical-rl;
             transform: rotate(180deg);
             white-space: nowrap;
-            font-size: 7.8pt;
+            font-size: 8pt;
             font-weight: 700;
             display: inline-block;
             margin: 0 auto;
@@ -166,11 +167,11 @@
 
         .col-domain { width: 28px; }
         .col-competence { width: 34px; }
-        .col-sequence { width: 85px; font-weight: 700; font-size: 7.5pt; }
-        .col-lesson { text-align: center; font-size: 7.5pt; }
-        .col-hours { width: 45px; font-size: 7.5pt; white-space: nowrap; }
-        .col-date { width: 120px; font-size: 7.5pt; white-space: nowrap; }
-        .col-week { width: 26px; font-size: 7.5pt; font-weight: 700; }
+        .col-sequence { width: 85px; font-weight: 700; font-size: 8.2pt; }
+        .col-lesson { text-align: center; font-size: 8.2pt; }
+        .col-hours { width: 45px; font-size: 7.8pt; white-space: nowrap; }
+        .col-date { width: 120px; font-size: 7.8pt; white-space: nowrap; }
+        .col-week { width: 26px; font-size: 8pt; font-weight: 700; }
 
         /* Highlighted Lesson Cells */
         .cell-exam-red {
@@ -188,25 +189,25 @@
         .break-cell-vacation {
             color: #c00000;
             font-weight: 700;
-            font-size: 7.5pt;
+            font-size: 8pt;
             text-align: center;
-            padding: 1.5px 2px !important;
+            padding: 5.2px 2px !important;
         }
 
         .break-cell-exam {
             color: #1e3a8a;
             font-weight: 700;
-            font-size: 7.5pt;
+            font-size: 8pt;
             text-align: center;
-            padding: 1.5px 2px !important;
+            padding: 5.2px 2px !important;
         }
 
         /* Signatures Section */
         .signatures-grid {
-            margin-top: 6px;
+            margin-top: 18px;
             display: flex;
             justify-content: space-between;
-            font-size: 9pt;
+            font-size: 9.5pt;
             font-weight: 700;
             padding: 0 15px;
         }
@@ -288,6 +289,7 @@
                 @php
                     $d1 = $domains[0];
                     $d1Seq1 = $d1['sequences'][0];
+                    $d1Seq2 = $d1['sequences'][1] ?? null;
                 @endphp
                 {{-- Row 1: First item of Seq 1 with Domain 1 & Competence 1 spanned --}}
                 <tr>
@@ -303,7 +305,7 @@
                     <td class="col-date">{{ $d1Seq1['items'][0]['date'] }}</td>
                     <td class="col-week">{{ $d1Seq1['items'][0]['week'] }}</td>
                 </tr>
-                {{-- Rows 2 to 6 of Sequence 1 --}}
+                {{-- Rows 2 to 5 of Sequence 1 (بيئة التعامل مع الحاسوب) --}}
                 @foreach (array_slice($d1Seq1['items'], 1) as $item)
                     <tr>
                         <td class="col-lesson">{{ $item['lesson'] }}</td>
@@ -312,6 +314,34 @@
                         <td class="col-week">{{ $item['week'] }}</td>
                     </tr>
                 @endforeach
+
+                {{-- Sequence 2: نظام التشغيل (contains مفهوم نظام التشغيل, break, remaining items) --}}
+                @if ($d1Seq2)
+                    <tr>
+                        <td rowspan="{{ $d1Seq2['rowspan'] }}" class="col-sequence">{{ $d1Seq2['name'] }}</td>
+                        <td class="col-lesson">{{ $d1Seq2['first_item']['lesson'] }}</td>
+                        <td class="col-hours">{{ $d1Seq2['first_item']['hours'] }}</td>
+                        <td class="col-date">{{ $d1Seq2['first_item']['date'] }}</td>
+                        <td class="col-week">{{ $d1Seq2['first_item']['week'] }}</td>
+                    </tr>
+                    @if (!empty($d1Seq2['break']))
+                        <tr>
+                            <td colspan="4" class="break-cell-vacation">
+                                {{ $d1Seq2['break']['text'] }}
+                            </td>
+                        </tr>
+                    @endif
+                    @foreach ($d1Seq2['remaining_items'] as $item)
+                        <tr>
+                            <td @class(['col-lesson', 'cell-exam-red' => $item['type'] === 'exam_red', 'cell-remedial-yellow' => $item['type'] === 'remedial_yellow'])>
+                                {{ $item['lesson'] }}
+                            </td>
+                            <td class="col-hours">{{ $item['hours'] }}</td>
+                            <td class="col-date">{{ $item['date'] }}</td>
+                            <td class="col-week">{{ $item['week'] }}</td>
+                        </tr>
+                    @endforeach
+                @endif
 
                 {{-- Breaks & Remaining Sequences of Domain 1 --}}
                 @foreach ($d1['breaks_and_sequences'] as $entry)

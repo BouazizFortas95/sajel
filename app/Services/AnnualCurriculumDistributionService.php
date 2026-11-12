@@ -49,30 +49,30 @@ class AnnualCurriculumDistributionService
                 'sequences' => [
                     [
                         'name' => 'بيئة التعامل مع الحاسوب',
-                        'rowspan' => 6,
+                        'rowspan' => 5,
                         'items' => [
                             ['week' => 1, 'date' => 'من 21 سبتمبر إلى 24 سبتمبر', 'hours' => '/', 'lesson' => 'استقبال التلاميذ', 'type' => 'normal'],
                             ['week' => 2, 'date' => 'من 27 سبتمبر إلى 01 أكتوبر', 'hours' => '01 ساعة', 'lesson' => 'حصة تعارف', 'type' => 'normal'],
                             ['week' => 3, 'date' => 'من 04 أكتوبر إلى 08 أكتوبر', 'hours' => '01 ساعة', 'lesson' => 'تعريف المعلوماتية والحاسوب', 'type' => 'normal'],
                             ['week' => 4, 'date' => 'من 11 أكتوبر إلى 15 أكتوبر', 'hours' => '01 ساعة', 'lesson' => 'مكونات الحاسوب', 'type' => 'normal'],
                             ['week' => 5, 'date' => 'من 18 أكتوبر إلى 22 أكتوبر', 'hours' => '01 ساعة', 'lesson' => 'وسائط التخزين', 'type' => 'normal'],
-                            ['week' => 6, 'date' => 'من 25 أكتوبر إلى 29 أكتوبر', 'hours' => '01 ساعة', 'lesson' => 'مفهوم نظام التشغيل', 'type' => 'normal'],
                         ],
                     ],
-                ],
-                'breaks_and_sequences' => [
-                    ['type' => 'break', 'break_type' => 'vacation', 'text' => 'عطلة الخريف من مساء يوم الثلاثاء 2026/10/27 إلى صباح يوم الإثنين 2026/11/02 (7)'],
                     [
-                        'type' => 'sequence',
                         'name' => 'نظام التشغيل',
-                        'rowspan' => 4,
-                        'items' => [
+                        'rowspan' => 6,
+                        'has_vacation_break' => true,
+                        'first_item' => ['week' => 6, 'date' => 'من 25 أكتوبر إلى 29 أكتوبر', 'hours' => '01 ساعة', 'lesson' => 'مفهوم نظام التشغيل', 'type' => 'normal'],
+                        'break' => ['type' => 'break', 'break_type' => 'vacation', 'text' => 'عطلة الخريف من مساء يوم الثلاثاء 2026/10/27 إلى صباح يوم الإثنين 2026/11/02 (7)'],
+                        'remaining_items' => [
                             ['week' => 8, 'date' => 'من 02 نوفمبر إلى 05 نوفمبر', 'hours' => '01 ساعة', 'lesson' => 'واجهة نظام التشغيل ويندوز', 'type' => 'normal'],
                             ['week' => 9, 'date' => 'من 08 نوفمبر إلى 12 نوفمبر', 'hours' => '01 ساعة', 'lesson' => 'فرض الثلاثي الأول', 'type' => 'exam_red'],
                             ['week' => 10, 'date' => 'من 15 نوفمبر إلى 19 نوفمبر', 'hours' => '01 ساعة', 'lesson' => 'برنامج الرسام', 'type' => 'normal'],
                             ['week' => 11, 'date' => 'من 22 نوفمبر إلى 26 نوفمبر', 'hours' => '01 ساعة', 'lesson' => 'برنامج الدفتر', 'type' => 'normal'],
                         ],
                     ],
+                ],
+                'breaks_and_sequences' => [
                     [
                         'type' => 'sequence',
                         'name' => 'تنظيم المعلومات في الحاسوب',
