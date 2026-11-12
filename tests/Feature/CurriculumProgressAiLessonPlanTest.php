@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\Role;
 use App\Filament\Pages\CurriculumProgress;
+use App\Filament\Resources\PedagogicalMemoResource\Pages\CreatePedagogicalMemo;
 use App\Filament\Resources\PedagogicalMemoResource\Pages\ListPedagogicalMemos;
 use App\Models\ActiveLearningStrategy;
 use App\Models\Classroom;
@@ -282,5 +283,33 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
             'title' => 'مربع مجموع ومربع فرق',
             'phase' => 'المتطابقات الشهيرة',
         ]);
+    }
+
+    public function test_create_pedagogical_memo_page_form_action_populates_fields_with_ai(): void
+    {
+        $this->fakeGeminiWithPlan();
+
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $subject = Subject::factory()->create(['name' => 'العلوم الفيزيائية']);
+        $level = Level::factory()->create(['name' => 'السنة الأولى متوسط']);
+
+        $this->actingAs($teacher);
+
+        Livewire::test(CreatePedagogicalMemo::class)
+            ->fillForm([
+                'title' => 'الخلائط المتجانسة وغير المتجانسة',
+                'subject_id' => $subject->id,
+                'level_id' => $level->id,
+                'phase' => 'المادة وتحولاتها',
+            ])
+            ->callFormComponentAction('title', 'generateAiContent', data: [
+                'preferred_strategy' => null,
+                'custom_instructions' => null,
+            ])
+            ->assertHasNoFormComponentActionErrors()
+            ->assertFormSet([
+                'competence' => 'يتحكم التلميذ في مفهوم خوارزمية التكرار ويوظفها لحل مسائل برمجية.',
+                'starting_situation' => 'طرح إشكالية رسم أشكال هندسية مكررة لاكتشاف الحاجة إلى حلقة التكرار.',
+            ]);
     }
 }

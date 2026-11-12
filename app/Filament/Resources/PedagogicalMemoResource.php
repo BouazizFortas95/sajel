@@ -12,6 +12,7 @@ use App\Models\PedagogicalMemo;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\AiLessonPlannerService;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -118,6 +119,7 @@ class PedagogicalMemoResource extends Resource
                             ->placeholder(__('مثال: مذكرة الأعداد الطبيعية'))
                             ->required()
                             ->maxLength(255)
+                            ->suffixAction(static::generateAiContentFormAction())
                             ->columnSpanFull(),
 
                         Select::make('subject_id')
@@ -169,6 +171,10 @@ class PedagogicalMemoResource extends Resource
                     ]),
 
                 Section::make(__('المحتوى البيداغوجي'))
+                    ->description(__('يمكنك تحرير عناصر المذكرة يدوياً أو توليدها مباشرة بالذكاء الاصطناعي موظفاً استراتيجيات التعلم النشط.'))
+                    ->headerActions([
+                        static::generateAiContentFormAction(),
+                    ])
                     ->columns(2)
                     ->schema([
                         Textarea::make('competence')
@@ -557,6 +563,90 @@ class PedagogicalMemoResource extends Resource
                     Notification::make()
                         ->danger()
                         ->title(__('تعذر توليد المذكرة بالذكاء الاصطناعي'))
+                        ->body($e->getMessage())
+                        ->send();
+                } catch (\Throwable $e) {
+                    report($e);
+                    Notification::make()
+                        ->danger()
+                        ->title(__('حدث خطأ غير متوقع'))
+                        ->body(__('تعذر إتمام عملية التوليد. حاول مرة أخرى لاحقاً.'))
+                        ->send();
+                }
+            });
+    }
+
+    /**
+     * Form action to populate the pedagogical memo fields with AI on the create/edit form.
+     */
+    public static function generateAiContentFormAction(): FormAction
+    {
+        return FormAction::make('generateAiContent')
+            ->label(__('توليد بالذكاء الاصطناعي'))
+            ->icon('heroicon-o-sparkles')
+            ->color('warning')
+            ->tooltip(__('توليد الكفاءة والوضعية الانطلاقية والأنشطة والتقويم بالذكاء الاصطناعي.'))
+            ->modalHeading(__('توليد المحتوى البيداغوجي بالذكاء الاصطناعي'))
+            ->modalDescription(__('سيقوم المساعد الذكي بتحليل عنوان المذكرة والمادة والمستوى لتوليد الكفاءة المستهدفة، الوضعية الانطلاقية، سير الأنشطة، الموارد، والتقويم وتعبئتها في النموذج.'))
+            ->modalSubmitActionLabel(__('توليد المحتوى'))
+            ->form([
+                Select::make('preferred_strategy')
+                    ->label(__('استراتيجية التعلم النشط المفضلة'))
+                    ->options(fn (): array => ActiveLearningStrategy::query()->where('is_active', true)->orderBy('sort_order')->pluck('name', 'name')->all())
+                    ->searchable()
+                    ->placeholder(__('اختيار تلقائي من الذكاء الاصطناعي وفق طبيعة الدرس')),
+
+                Textarea::make('custom_instructions')
+                    ->label(__('توجيهات أو إضافات خاصة بالأستاذ (اختياري)'))
+                    ->placeholder(__('مثال: التركيز على العمل الفوجي، إدماج الوسائل الرقمية، مراعاة الفروق الفردية...'))
+                    ->rows(2),
+            ])
+            ->action(function (array $data, Get $get, Set $set, AiLessonPlannerService $planner): void {
+                $title = trim((string) $get('title'));
+                $subjectId = $get('subject_id');
+                $levelId = $get('level_id');
+                $phase = $get('phase');
+
+                if ($title === '' || blank($subjectId) || blank($levelId)) {
+                    Notification::make()
+                        ->warning()
+                        ->title(__('بيانات ناقصة'))
+                        ->body(__('يرجى إدخال عنوان المذكرة وتحديد المادة والمستوى أولاً قبل التوليد.'))
+                        ->send();
+
+                    return;
+                }
+
+                $subject = Subject::find($subjectId);
+                $level = Level::find($levelId);
+
+                try {
+                    $plan = $planner->generatePedagogicalMemo(
+                        topic: $title,
+                        subject: $subject?->name ?? '',
+                        level: $level?->display_name() ?? '',
+                        phase: filled($phase) ? (string) $phase : null,
+                        locale: app()->getLocale(),
+                        preferredStrategy: filled($data['preferred_strategy'] ?? null) ? (string) $data['preferred_strategy'] : null,
+                        customInstructions: filled($data['custom_instructions'] ?? null) ? (string) $data['custom_instructions'] : null,
+                    );
+
+                    $set('competence', $plan['competence']);
+                    $set('starting_situation', $plan['starting_situation']);
+                    $set('activities', $plan['activities']);
+                    $set('resources', $plan['resources']);
+                    $set('evaluation', $plan['evaluation']);
+                    $set('notes', $plan['notes']);
+
+                    Notification::make()
+                        ->success()
+                        ->title(__('تم توليد المحتوى البيداغوجي بنجاح'))
+                        ->body(__('تمت تعبئة عناصر المذكرة في النموذج. يمكنك مراجعتها وتعديلها قبل الحفظ.'))
+                        ->send();
+                } catch (AiLessonPlannerException $e) {
+                    Notification::make()
+                        ->danger()
+                        ->title(__('تعذر توليد المحتوى بالذكاء الاصطناعي'))
                         ->body($e->getMessage())
                         ->send();
                 } catch (\Throwable $e) {
