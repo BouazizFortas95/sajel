@@ -183,32 +183,131 @@
     }
 
     .tear-off-section {
-        border-top: 1.5px dashed #94a3b8;
-        padding-top: 4px;
+        border-top: 1.5px dashed #64748b;
+        padding-top: 3px;
         margin-top: 4px;
         font-family: 'Cairo', sans-serif;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
     }
 
-    .tear-off-header {
+    .tear-off-cut-line {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 7pt;
+        font-size: 6.5pt;
         font-weight: 700;
         color: #64748b;
         margin-bottom: 2px;
+        padding: 0 4px;
+    }
+
+    .cut-line-ref {
+        font-family: monospace;
+        font-size: 7pt;
+        color: #1e3a8a;
     }
 
     .tear-off-card {
-        border: 1px solid #cbd5e1;
-        background: #f8fafc;
+        border: 1px solid #1e3a8a;
+        background: #ffffff;
         border-radius: 4px;
         padding: 4px 8px;
+        font-family: 'Cairo', sans-serif;
+    }
+
+    .slip-header {
+        display: grid;
+        grid-template-columns: 1.2fr 1.6fr 1.2fr;
+        gap: 6px;
+        border-bottom: 1px solid #cbd5e1;
+        padding-bottom: 2px;
+        margin-bottom: 3px;
+        align-items: center;
+    }
+
+    .slip-header-col {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.25;
+    }
+
+    .slip-header-right {
+        text-align: right;
+    }
+
+    .slip-header-center {
+        text-align: center;
+        align-items: center;
+    }
+
+    .slip-header-left {
+        text-align: left;
+        align-items: flex-end;
+        font-size: 6.5pt;
+        color: #475569;
+    }
+
+    .slip-republic {
+        font-size: 7.5pt;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .slip-ministry {
+        font-size: 6.5pt;
+        font-weight: 600;
+        color: #1e3a8a;
+    }
+
+    .slip-school {
+        font-size: 8pt;
+        font-weight: 800;
+        color: #1e3a8a;
+    }
+
+    .slip-sub {
+        font-size: 6.5pt;
+        color: #475569;
+        font-weight: 600;
+    }
+
+    .slip-title-badge {
+        display: inline-block;
+        background: #1e3a8a;
+        color: #ffffff;
+        font-size: 7.5pt;
+        font-weight: 700;
+        padding: 1px 10px;
+        border-radius: 3px;
+        margin-top: 1px;
+    }
+
+    .slip-body {
+        margin-top: 2px;
+    }
+
+    .slip-text {
+        margin: 0 0 3px 0;
+        font-weight: 700;
         font-size: 7pt;
         line-height: 1.35;
-        color: #1e293b;
+        color: #0f172a;
+    }
+
+    .slip-signatures {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px dotted #cbd5e1;
+        padding-top: 2px;
+        font-size: 6.5pt;
+        color: #334155;
+    }
+
+    .slip-sign-label {
+        font-weight: 700;
+        color: #0f172a;
     }
 </style>
 
@@ -302,22 +401,45 @@
 
 {{-- Tear-off Acknowledgment Slip (وصل استلام استدعاء ولي الأمر) --}}
 <div class="tear-off-section">
-    <div class="tear-off-header">
-        <span>✂️ {{ __('وصل استلام استدعاء ولي الأمر (يُقتطع ويُعاد فوراً إلى مصلحة الاستشارة التربوية موقعاً)') }}</span>
-        <span style="font-family: monospace;">Ref: SUM-{{ sprintf('%04d', $observation->id) }}</span>
+    <div class="tear-off-cut-line">
+        <span>✂️ {{ __('يقتطع هذا الوصل ويعاد فورا إلى مصلحة الاستشارة التربوية بعد توقيعه من طرف ولي الأمر') }}</span>
+        <span class="cut-line-ref">Ref: SUM-{{ sprintf('%04d', $observation->id) }}</span>
     </div>
 
     <div class="tear-off-card">
-        <p style="margin: 0 0 3px 0; font-weight: 700;">
-            {{ __('أنا الموقع أسفله، السيد(ة): ............................................................. ولي أمر التلميذ(ة): :name (قسم: :classroom)، أشهد بأنني تسلمت الاستدعاء الرسمي الموجه لي، وألتزم بالحضور إلى المؤسسة لمقابلة الإدارة والأستاذ(ة) في الموعد المحدد (:date).', [
-                'name' => $studentName,
-                'classroom' => $classroomName,
-                'date' => $formatDateTime($appointment),
-            ]) }}
-        </p>
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dotted #cbd5e1; padding-top: 2px; font-size: 6.5pt; color: #475569;">
-            <span>{{ __('تاريخ الاستلام:') }} ...... / ...... / 2026</span>
-            <span style="font-weight: 700; color: #0f172a;">{{ __('توقيع ولي الأمر:') }} ..................................................</span>
+        {{-- Slip Mini Official Header --}}
+        <div class="slip-header">
+            <div class="slip-header-col slip-header-right">
+                <span class="slip-republic">{{ __('الجمهورية الجزائرية الديمقراطية الشعبية') }}</span>
+                <span class="slip-ministry">{{ __('وزارة التربية الوطنية') }}</span>
+                <span class="slip-sub">{{ $schoolSetting->directorate_name ?: __('مديرية التربية') }}</span>
+            </div>
+            <div class="slip-header-col slip-header-center">
+                <span class="slip-school">{{ $schoolSetting->school_name }}</span>
+                <span class="slip-sub">{{ __('مصلحة الاستشارة التربوية') }}</span>
+                <div class="slip-title-badge">{{ __('وصل استلام استدعاء ولي الأمر') }}</div>
+            </div>
+            <div class="slip-header-col slip-header-left">
+                <span>{{ __('السنة الدراسية:') }} {{ $academicYear ?: $schoolSetting->academic_year }}</span>
+                <span>{{ __('رقم الاستدعاء:') }} SUM-{{ sprintf('%04d', $observation->id) }}</span>
+                <span>{{ __('تاريخ الإرسال:') }} {{ $formatDate($sentDate) }}</span>
+            </div>
+        </div>
+
+        {{-- Slip Acknowledgment Statement --}}
+        <div class="slip-body">
+            <p class="slip-text">
+                {{ __('أنا الموقع أسفله، السيد(ة): ............................................................. ولي أمر التلميذ(ة): :name (قسم: :classroom)، أشهد بأنني تسلمت الاستدعاء الرسمي الموجه لي، وألتزم بالحضور إلى المؤسسة لمقابلة الإدارة والأستاذ(ة) في الموعد المحدد (:date) بـ :loc.', [
+                    'name' => $studentName,
+                    'classroom' => $classroomName,
+                    'date' => $formatDateTime($appointment),
+                    'loc' => $receptionLocation,
+                ]) }}
+            </p>
+            <div class="slip-signatures">
+                <span>{{ __('تاريخ الاستلام:') }} ...... / ...... / 2026</span>
+                <span class="slip-sign-label">{{ __('توقيع وبصمة ولي الأمر:') }} ..................................................</span>
+            </div>
         </div>
     </div>
 </div>

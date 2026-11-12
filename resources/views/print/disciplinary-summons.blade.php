@@ -214,23 +214,44 @@
         </div>
 
         {{-- Tear-off Acknowledgment Slip (وصل الاستلام المقتطع) --}}
-        <div class="border-t-2 border-dashed border-slate-400 pt-4 mt-6">
-            <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-2">
-                <span>✂️ {{ __('وصل استلام استدعاء مجلس التأديب والتأكيد على الحضور (يُعاد فوراً إلى مصلحة التمدرس)') }}</span>
-                <span>Ref: SUM-{{ $record->id }}</span>
+        <div class="border-t-2 border-dashed border-slate-400 pt-3 mt-4">
+            <div class="flex items-center justify-between text-[9px] font-mono text-slate-500 mb-1.5 px-1">
+                <span>✂️ {{ __('يقتطع هذا الوصل ويعاد فورا إلى مصلحة التمدرس والاستشارة التربوية بعد توقيعه') }}</span>
+                <span>Ref: DISC-{{ $record->id }}</span>
             </div>
 
-            <div class="bg-slate-50 border border-slate-300 rounded-lg p-3 text-xs leading-relaxed">
-                <p class="font-bold text-slate-900">
-                    {{ __('أنا الموقع أسفله، السيد(ة): ............................................ ولي أمر التلميذ(ة): :name (قسم: :cls)، أشهد بأنني استلمت الاستدعاء للمثول أمام مجلس التأديب المبرمج بتاريخ :date وألتزم بالحضور في الموعد المحدد.', [
+            <div class="bg-white border border-slate-300 rounded-lg p-3 text-xs leading-relaxed shadow-none">
+                {{-- Slip Official Mini Header --}}
+                <div class="grid grid-cols-3 gap-2 pb-2 mb-2 border-b border-slate-200 text-center items-center text-[10px]">
+                    <div class="text-right leading-tight">
+                        <p class="font-bold text-slate-900">{{ __('الجمهورية الجزائرية الديمقراطية الشعبية') }}</p>
+                        <p class="text-[9px] text-blue-900 font-semibold">{{ __('وزارة التربية الوطنية') }}</p>
+                        <p class="text-[8.5px] text-slate-500">{{ $schoolSetting?->directorate_name ?: __('مديرية التربية') }}</p>
+                    </div>
+                    <div class="text-center leading-tight">
+                        <p class="font-bold text-blue-900 text-[11px]">{{ $schoolSetting?->school_name }}</p>
+                        <p class="text-[9px] text-slate-600">{{ __('مصلحة الاستشارة التربوية — مجلس التأديب') }}</p>
+                        <span class="inline-block bg-blue-900 text-white font-bold text-[9px] px-2 py-0.5 rounded mt-0.5">
+                            {{ __('وصل استلام استدعاء مجلس التأديب') }}
+                        </span>
+                    </div>
+                    <div class="text-left text-[9px] text-slate-500 leading-tight">
+                        <p>{{ __('السنة الدراسية:') }} {{ $schoolSetting?->academic_year }}</p>
+                        <p>{{ __('رقم الملف:') }} DISC-{{ $record->id }}</p>
+                        <p>{{ __('تاريخ الجلسة:') }} {{ $formatDateTime($record->session_date) }}</p>
+                    </div>
+                </div>
+
+                <p class="font-bold text-slate-900 text-[11px] leading-normal">
+                    {{ __('أنا الموقع أسفله، السيد(ة): ............................................ ولي أمر التلميذ(ة): :name (قسم: :cls)، أشهد بأنني استلمت الاستدعاء الرسمي للمثول أمام مجلس التأديب المبرمج بتاريخ :date وألتزم بالحضور في الموعد المحدد.', [
                         'name' => $student?->full_name,
                         'cls' => $classroom?->name ?? '—',
                         'date' => $formatDateTime($record->session_date),
                     ]) }}
                 </p>
-                <div class="flex items-center justify-between pt-2 mt-2 border-t border-slate-200 text-[11px]">
+                <div class="flex items-center justify-between pt-2 mt-2 border-t border-slate-200 text-[10px]">
                     <span class="text-slate-500">{{ __('تاريخ الاستلام') }}: ..... / ..... / 2026</span>
-                    <span class="font-bold text-slate-800">{{ __('توقيع ولي الأمر') }}: ........................................</span>
+                    <span class="font-bold text-slate-900">{{ __('توقيع وبصمة ولي الأمر') }}: ........................................</span>
                 </div>
             </div>
         </div>
