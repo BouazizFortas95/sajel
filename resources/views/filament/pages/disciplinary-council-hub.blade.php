@@ -51,18 +51,11 @@
                 <a
                     href="{{ route('print.disciplinary.ledger', ['locale' => app()->getLocale(), 'academic_year' => $academicYear]) }}"
                     target="_blank"
-                    class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-white/10 shadow-sm flex items-center gap-1.5 transition"
+                    class="px-3 py-1.5 text-xs font-bold rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-white/10 shadow-sm flex items-center gap-1.5 transition"
+                    title="{{ __('طباعة السجل السنوي لمجالس التأديب') }}"
                 >
-                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                    <span>{{ __('معاينة السجل السنوي') }}</span>
-                </a>
-                <a
-                    href="{{ route('print.disciplinary.ledger.pdf', ['locale' => app()->getLocale(), 'academic_year' => $academicYear]) }}"
-                    target="_blank"
-                    class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-sm flex items-center gap-1.5 transition"
-                >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    <span>{{ __('تحميل السجل PDF') }}</span>
+                    <svg class="w-4 h-4 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    <span>{{ __('طباعة السجل السنوي لمجالس التأديب') }}</span>
                 </a>
             </div>
         </div>
@@ -213,47 +206,59 @@
                                         @endif
                                     </td>
                                     <td class="p-3 text-center">
-                                        <div class="flex items-center justify-center gap-1 flex-wrap">
-                                            {{-- Summons Print --}}
-                                            <a
-                                                href="{{ route('print.disciplinary.summons', ['locale' => app()->getLocale(), 'record' => $record->id]) }}"
-                                                target="_blank"
-                                                class="px-2 py-1 text-[10px] font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded transition"
-                                                title="{{ __('استدعاء الجلسة') }}"
-                                            >
-                                                ✉️ {{ __('استدعاء') }}
-                                            </a>
-
-                                            {{-- Deliberation Modal Trigger --}}
+                                        <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                                            {{-- Deliberation Modal Trigger for Scheduled Sessions --}}
                                             @if($isAdmin && $record->status === \App\Enums\DisciplinaryStatus::Scheduled)
                                                 <button
                                                     wire:click="openDeliberationModal({{ $record->id }})"
                                                     type="button"
-                                                    class="px-2 py-1 text-[10px] font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded transition"
+                                                    class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-sm transition cursor-pointer"
+                                                    title="{{ __('فتح جلسة المداولة السرية وإصدار مقرر العقوبة') }}"
                                                 >
-                                                    ⚖️ {{ __('المداولة') }}
+                                                    ⚖️ {{ __('تسجيل المداولة') }}
                                                 </button>
-                                            @endif
-
-                                            {{-- Minutes PV Print --}}
-                                            @if($record->status === \App\Enums\DisciplinaryStatus::Deliberated)
-                                                <a
-                                                    href="{{ route('print.disciplinary.minutes', ['locale' => app()->getLocale(), 'record' => $record->id]) }}"
-                                                    target="_blank"
-                                                    class="px-2 py-1 text-[10px] font-semibold bg-slate-700 hover:bg-slate-800 text-white rounded transition"
-                                                    title="{{ __('محضر الجلسة') }}"
-                                                >
-                                                    📄 {{ __('المحضر') }}
-                                                </a>
 
                                                 <a
-                                                    href="{{ route('print.disciplinary.notification', ['locale' => app()->getLocale(), 'record' => $record->id]) }}"
+                                                    href="{{ route('print.disciplinary.summons', ['locale' => app()->getLocale(), 'record' => $record->id]) }}"
                                                     target="_blank"
-                                                    class="px-2 py-1 text-[10px] font-semibold bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200 rounded transition"
-                                                    title="{{ __('إشعار الولي بالقرار مع حق الطعن') }}"
+                                                    class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg border border-gray-300 dark:border-gray-600 transition"
+                                                    title="{{ __('طباعة استدعاء المثول أمام مجلس التأديب (صفحتان مع وصل الاسترجاع)') }}"
                                                 >
-                                                    📢 {{ __('الإشعار') }}
+                                                    🖨️ {{ __('الاستدعاء') }}
                                                 </a>
+                                            @else
+                                                {{-- Deliberated Session: Unified Documents Print Group --}}
+                                                <div class="inline-flex items-center rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden divide-x divide-x-reverse divide-gray-200 dark:divide-gray-700 text-[11px] bg-white dark:bg-gray-800">
+                                                    <a
+                                                        href="{{ route('print.disciplinary.summons', ['locale' => app()->getLocale(), 'record' => $record->id]) }}"
+                                                        target="_blank"
+                                                        class="px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold inline-flex items-center gap-1 transition"
+                                                        title="{{ __('طباعة استدعاء المثول أمام مجلس التأديب') }}"
+                                                    >
+                                                        <span>✉️</span>
+                                                        <span>{{ __('استدعاء') }}</span>
+                                                    </a>
+
+                                                    <a
+                                                        href="{{ route('print.disciplinary.minutes', ['locale' => app()->getLocale(), 'record' => $record->id]) }}"
+                                                        target="_blank"
+                                                        class="px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-700 text-slate-800 dark:text-slate-200 font-bold inline-flex items-center gap-1 transition"
+                                                        title="{{ __('طباعة محضر اجتماع مجلس التأديب الرسمي (A4 صفحة واحدة)') }}"
+                                                    >
+                                                        <span>📄</span>
+                                                        <span>{{ __('المحضر') }}</span>
+                                                    </a>
+
+                                                    <a
+                                                        href="{{ route('print.disciplinary.notification', ['locale' => app()->getLocale(), 'record' => $record->id]) }}"
+                                                        target="_blank"
+                                                        class="px-2 py-1 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-rose-700 dark:text-rose-400 font-bold inline-flex items-center gap-1 transition"
+                                                        title="{{ __('طباعة إشعار رسمي بقرار مجلس التأديب مع حق الطعن القانوني') }}"
+                                                    >
+                                                        <span>📢</span>
+                                                        <span>{{ __('الإشعار') }}</span>
+                                                    </a>
+                                                </div>
                                             @endif
                                         </div>
                                     </td>
@@ -291,14 +296,19 @@
                         </div>
                         <div class="mt-3 space-y-2 max-h-80 overflow-y-auto text-xs">
                             @forelse($exclusions as $ex)
-                                <div class="bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-rose-200 dark:border-rose-900/40 flex justify-between items-center">
+                                <div class="bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-rose-200 dark:border-rose-900/40 flex justify-between items-center gap-2">
                                     <div>
                                         <div class="font-bold text-gray-900 dark:text-white">{{ $ex->student?->full_name }}</div>
                                         <div class="text-[10px] text-gray-500 dark:text-gray-400 font-mono">{{ $ex->sanction->getLabel() }} ({{ $ex->exclusion_days }} {{ __('أيام') }})</div>
                                     </div>
-                                    <a href="{{ route('print.disciplinary.notification', ['locale' => app()->getLocale(), 'record' => $ex->id]) }}" target="_blank" class="text-rose-700 dark:text-rose-400 hover:underline text-[10px] font-bold">
-                                        {{ __('الإشعار') }} ↗
-                                    </a>
+                                    <div class="flex items-center gap-1 shrink-0">
+                                        <a href="{{ route('print.disciplinary.minutes', ['locale' => app()->getLocale(), 'record' => $ex->id]) }}" target="_blank" class="px-2 py-0.5 text-[10px] font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded transition" title="{{ __('طباعة محضر الجلسة') }}">
+                                            📄 {{ __('المحضر') }}
+                                        </a>
+                                        <a href="{{ route('print.disciplinary.notification', ['locale' => app()->getLocale(), 'record' => $ex->id]) }}" target="_blank" class="px-2 py-0.5 text-[10px] font-bold bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/50 text-rose-800 dark:text-rose-200 rounded transition" title="{{ __('طباعة الإشعار بالقرار وحق الطعن') }}">
+                                            📢 {{ __('الإشعار') }}
+                                        </a>
+                                    </div>
                                 </div>
                             @empty
                                 <p class="text-[11px] text-gray-400 dark:text-gray-500 italic text-center py-4">{{ __('لا توجد قرارات إقصاء مسجلة') }}</p>
@@ -314,14 +324,19 @@
                         </div>
                         <div class="mt-3 space-y-2 max-h-80 overflow-y-auto text-xs">
                             @forelse($warnings as $w)
-                                <div class="bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-blue-200 dark:border-blue-900/40 flex justify-between items-center">
+                                <div class="bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-blue-200 dark:border-blue-900/40 flex justify-between items-center gap-2">
                                     <div>
                                         <div class="font-bold text-gray-900 dark:text-white">{{ $w->student?->full_name }}</div>
                                         <div class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">{{ $w->sanction->getLabel() }}</div>
                                     </div>
-                                    <a href="{{ route('print.disciplinary.minutes', ['locale' => app()->getLocale(), 'record' => $w->id]) }}" target="_blank" class="text-blue-700 dark:text-blue-400 hover:underline text-[10px] font-bold">
-                                        {{ __('المحضر') }} ↗
-                                    </a>
+                                    <div class="flex items-center gap-1 shrink-0">
+                                        <a href="{{ route('print.disciplinary.minutes', ['locale' => app()->getLocale(), 'record' => $w->id]) }}" target="_blank" class="px-2 py-0.5 text-[10px] font-bold bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 rounded transition" title="{{ __('طباعة محضر الجلسة') }}">
+                                            📄 {{ __('المحضر') }}
+                                        </a>
+                                        <a href="{{ route('print.disciplinary.notification', ['locale' => app()->getLocale(), 'record' => $w->id]) }}" target="_blank" class="px-2 py-0.5 text-[10px] font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded transition" title="{{ __('طباعة الإشعار بالقرار وحق الطعن') }}">
+                                            📢 {{ __('الإشعار') }}
+                                        </a>
+                                    </div>
                                 </div>
                             @empty
                                 <p class="text-[11px] text-gray-400 dark:text-gray-500 italic text-center py-4">{{ __('لا توجد إنذارات أو توبيخات') }}</p>
@@ -337,12 +352,19 @@
                         </div>
                         <div class="mt-3 space-y-2 max-h-80 overflow-y-auto text-xs">
                             @forelse($restitutions as $r)
-                                <div class="bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-amber-200 dark:border-amber-900/40 flex justify-between items-center">
+                                <div class="bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-amber-200 dark:border-amber-900/40 flex justify-between items-center gap-2">
                                     <div>
                                         <div class="font-bold text-gray-900 dark:text-white">{{ $r->student?->full_name }}</div>
                                         <div class="text-[10px] text-amber-700 dark:text-amber-400 font-mono font-bold">{{ number_format($r->restitution_amount, 2) }} DZD</div>
                                     </div>
-                                    <span class="text-[10px] text-gray-500 dark:text-gray-400 font-mono">{{ $formatDate($r->deliberated_at) }}</span>
+                                    <div class="flex items-center gap-1 shrink-0">
+                                        <a href="{{ route('print.disciplinary.minutes', ['locale' => app()->getLocale(), 'record' => $r->id]) }}" target="_blank" class="px-2 py-0.5 text-[10px] font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded transition" title="{{ __('طباعة محضر الجلسة') }}">
+                                            📄 {{ __('المحضر') }}
+                                        </a>
+                                        <a href="{{ route('print.disciplinary.notification', ['locale' => app()->getLocale(), 'record' => $r->id]) }}" target="_blank" class="px-2 py-0.5 text-[10px] font-bold bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 rounded transition" title="{{ __('طباعة الإشعار بالقرار وحق الطعن') }}">
+                                            📢 {{ __('الإشعار') }}
+                                        </a>
+                                    </div>
                                 </div>
                             @empty
                                 <p class="text-[11px] text-gray-400 dark:text-gray-500 italic text-center py-4">{{ __('لا توجد تعويضات مالية مقررة') }}</p>

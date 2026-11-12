@@ -164,8 +164,8 @@ class DisciplinaryCouncilHub extends Page
                 });
 
             $actions[] = Action::make('printLedger')
-                ->label(__('سجل مجالس التأديب السنوي'))
-                ->icon('heroicon-o-document-text')
+                ->label(__('طباعة السجل السنوي لمجالس التأديب'))
+                ->icon('heroicon-o-printer')
                 ->color('gray')
                 ->url(fn (): string => route('print.disciplinary.ledger', [
                     'locale' => app()->getLocale(),
