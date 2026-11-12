@@ -71,15 +71,61 @@ class AiLessonPlannerService
     }
 
     /**
+     * Generate an authentic Algerian Pedagogical Memo (Fiche pédagogique)
+     * adhering to competency-based education and active learning standards.
+     *
+     * @return array{
+     *     competence: string,
+     *     starting_situation: string,
+     *     activities: list<array{name: string, duration: int, strategy: ?string, content: string}>,
+     *     resources: string,
+     *     evaluation: string,
+     *     notes: string
+     * }
+     *
+     * @throws AiLessonPlannerException
+     */
+    public function generatePedagogicalMemo(
+        string $topic,
+        string $subject,
+        string $level,
+        ?string $phase = null,
+        ?string $locale = null,
+        ?string $preferredStrategy = null,
+        ?string $customInstructions = null,
+    ): array {
+        $requestedLocale = $locale ?? app()->getLocale();
+        $locale = in_array($requestedLocale, ['ar', 'en', 'fr'], true)
+            ? $requestedLocale
+            : 'ar';
+
+        $prompt = $this->buildMemoPrompt(
+            $topic,
+            $subject,
+            $level,
+            $phase,
+            $locale,
+            $preferredStrategy,
+            $customInstructions,
+        );
+
+        $schema = $this->memoSchema($locale);
+        $text = $this->requestPlan($prompt, $locale, $schema);
+        $decoded = $this->decodePlan($text);
+
+        return $this->normalizeMemoPlan($decoded, $topic, $subject, $level);
+    }
+
+    /**
      * Send the prompt to the configured provider and return its text answer.
      *
      * @throws AiLessonPlannerException
      */
-    protected function requestPlan(string $prompt, string $locale): string
+    protected function requestPlan(string $prompt, string $locale, ?array $schema = null): string
     {
         return match (config('ai.provider', 'gemini')) {
             'openai' => $this->requestOpenAi($prompt, $locale),
-            default => $this->requestGemini($prompt, $locale),
+            default => $this->requestGemini($prompt, $locale, $schema),
         };
     }
 
@@ -88,7 +134,7 @@ class AiLessonPlannerService
      *
      * @throws AiLessonPlannerException
      */
-    protected function requestGemini(string $prompt, string $locale): string
+    protected function requestGemini(string $prompt, string $locale, ?array $schema = null): string
     {
         $key = config('ai.gemini.key');
 
@@ -109,7 +155,7 @@ class AiLessonPlannerService
             'generationConfig' => [
                 'temperature' => 0.4,
                 'responseMimeType' => 'application/json',
-                'responseSchema' => $this->planSchema($locale),
+                'responseSchema' => $schema ?? $this->planSchema($locale),
             ],
         ];
 
@@ -419,6 +465,229 @@ class AiLessonPlannerService
           ]
         }
         PROMPT;
+    }
+
+    /**
+     * Gemini structured-output schema for a full Algerian Pedagogical Memo.
+     *
+     * @return array<string, mixed>
+     */
+    protected function memoSchema(string $locale): array
+    {
+        return [
+            'type' => 'OBJECT',
+            'properties' => [
+                'competence' => [
+                    'type' => 'STRING',
+                    'description' => 'Target competence in one clear sentence.',
+                ],
+                'starting_situation' => [
+                    'type' => 'STRING',
+                    'description' => 'Starting problem situation (context, support, and challenging question).',
+                ],
+                'activities' => [
+                    'type' => 'ARRAY',
+                    'description' => 'Lesson activities and pedagogical phases in chronological order.',
+                    'items' => [
+                        'type' => 'OBJECT',
+                        'properties' => [
+                            'name' => [
+                                'type' => 'STRING',
+                                'description' => 'Activity name (e.g. وضعية الانطلاق، بناء التعلمات، استثمار المكتسبات، التقويم)',
+                            ],
+                            'duration' => [
+                                'type' => 'INTEGER',
+                                'description' => 'Suggested duration in minutes',
+                            ],
+                            'strategy' => [
+                                'type' => 'STRING',
+                                'description' => 'Active learning strategy applied in this phase',
+                            ],
+                            'content' => [
+                                'type' => 'STRING',
+                                'description' => 'Detailed pedagogical tasks for teacher and learners',
+                            ],
+                        ],
+                        'required' => ['name', 'content'],
+                    ],
+                ],
+                'resources' => [
+                    'type' => 'STRING',
+                    'description' => 'Didactic resources and educational materials',
+                ],
+                'evaluation' => [
+                    'type' => 'STRING',
+                    'description' => 'Formative and summative evaluation criteria',
+                ],
+                'notes' => [
+                    'type' => 'STRING',
+                    'description' => 'Pedagogical advice and teacher notes',
+                ],
+            ],
+            'required' => ['competence', 'starting_situation', 'activities', 'resources', 'evaluation'],
+        ];
+    }
+
+    /**
+     * Build prompt for generating a complete Algerian Pedagogical Memo.
+     */
+    protected function buildMemoPrompt(
+        string $topic,
+        string $subject,
+        string $level,
+        ?string $phase,
+        string $locale,
+        ?string $preferredStrategy = null,
+        ?string $customInstructions = null,
+    ): string {
+        $strategiesList = implode(', ', $this->activeLearningStrategies());
+        $phase = filled($phase) ? $phase : 'المقطع التعلمي المعني';
+
+        $customPart = filled($customInstructions)
+            ? "توجيهات وإضافات خاصة بالأستاذ: {$customInstructions}"
+            : '';
+
+        $strategyPart = filled($preferredStrategy)
+            ? "الاستراتيجية البيداغوجية الواجب التركيز عليها وتطبيقها: {$preferredStrategy}."
+            : "وظّف استراتيجيات التعلم النشط المناسبة لجعل المتعلم محوراً للعملية التعليمية (مثل: {$strategiesList}).";
+
+        return <<<PROMPT
+        أنت مفتش تربوي ومستشار بيداغوجي متخصص في مناهج وزارة التربية الوطنية الجزائرية (التعليم المتوسط — المقاربة بالكفاءات ومنهاج الجيل الثاني).
+        المطلوب تحرير مذكرة بيداغوجية رسمية متكاملة واحترافية لمادة «{$subject}» — المستوى «{$level}» — المقطع التعلمي: «{$phase}» حول موضوع الدرس: «{$topic}».
+
+        المعايير البيداغوجية الرسمية:
+        1. الكفاءة المستهدفة (competence): صياغة إجرائية دقيقة محددة بسلوك قابل للملاحظة والتقويم يتضمن الفعل والمعرفة والسياق.
+        2. الوضعية الانطلاقية (starting_situation): وضعية مشكلة دالة ومحفزة من الواقع تثير تساؤل ودافعية المتعلمين.
+        3. سير الحصة والأنشطة (activities): من 3 إلى 5 مراحل متتالية ومرتبة زمنياً (وضعية الانطلاق، بناء التعلمات / النشاط، استثمار المكتسبات، التقويم)، لكل مرحلة:
+           - name: اسم المرحلة البيداغوجية
+           - duration: المدة المقترحة بالدقائق (رقم صحيح مثلاً: 10، 25، 15، 10)
+           - strategy: استراتيجية التعلم النشط المطبقة
+           - content: المحتوى التعليمي، تعليمات الأستاذ، المهام المسندة للمتعلم، والمنتوج المنتظر
+        4. الموارد والوسائل (resources): السندات الديداكتيكية والأدوات المادية والرقمية اللازمة لإنجاز الحصة.
+        5. التقويم (evaluation): معايير ومؤشرات التحقق التكويني والختامي لمعالجة التعثرات.
+        6. توجيهات الأستاذ (notes): توصيات بيداغوجية لتسيير القسم، مراعاة الفروق الفردية، وتفادي الأخطاء الشائعة.
+
+        {$strategyPart}
+        {$customPart}
+
+        التعليمات:
+        أعد النتيجة على شكل كائن JSON صالح فقط، دون أي شرح أو وسوم markdown، بالبنية التالية:
+        {
+          "competence": "نص الكفاءة المستهدفة",
+          "starting_situation": "نص الوضعية الانطلاقية المشكلة",
+          "activities": [
+            { "name": "اسم المرحلة أو النشاط", "duration": 15, "strategy": "اسم الاستراتيجية", "content": "محتوى النشاط ودور الأستاذ والمتعلم" }
+          ],
+          "resources": "الوسائل والسندات التعليمية",
+          "evaluation": "معايير ومؤشرات التقويم",
+          "notes": "ملاحظات وتوجيهات بيداغوجية للأستاذ"
+        }
+        PROMPT;
+    }
+
+    /**
+     * Validate and normalize the pedagogical memo plan.
+     *
+     * @param  array<string, mixed>  $plan
+     * @return array{
+     *     competence: string,
+     *     starting_situation: string,
+     *     activities: list<array{name: string, duration: int, strategy: ?string, content: string}>,
+     *     resources: string,
+     *     evaluation: string,
+     *     notes: string
+     * }
+     *
+     * @throws AiLessonPlannerException
+     */
+    protected function normalizeMemoPlan(array $plan, string $topic, string $subject, string $level): array
+    {
+        $activities = [];
+        $rawActivities = $plan['activities'] ?? $plan['lesson_phases'] ?? [];
+
+        if (is_array($rawActivities)) {
+            foreach ($rawActivities as $act) {
+                if (! is_array($act)) {
+                    continue;
+                }
+
+                $name = trim((string) ($act['name'] ?? $act['phase_name'] ?? ''));
+                $duration = (int) ($act['duration'] ?? 15);
+                if ($duration <= 0) {
+                    $duration = 15;
+                }
+                $strategy = trim((string) ($act['strategy'] ?? $act['active_learning_strategy'] ?? ''));
+                $content = trim((string) ($act['content'] ?? ''));
+
+                if ($name === '' && $content === '') {
+                    continue;
+                }
+
+                $activities[] = [
+                    'name' => $name ?: __('مرحلة تعلمية'),
+                    'duration' => $duration,
+                    'strategy' => $strategy !== '' ? $strategy : null,
+                    'content' => $content,
+                ];
+            }
+        }
+
+        if (empty($activities)) {
+            $activities = [
+                [
+                    'name' => 'وضعية الانطلاق (التمهيد والتحفيز)',
+                    'duration' => 10,
+                    'strategy' => 'العصف الذهني المنظم',
+                    'content' => "طرح وضعية مشكلة دالة حول «{$topic}» لاسترجاع المكتسبات القبلية ووضع المتعلم في صلب الإشكالية.",
+                ],
+                [
+                    'name' => 'بناء التعلمات (البحث والمعالجة)',
+                    'duration' => 25,
+                    'strategy' => 'العمل الفوجي / حل المشكلات',
+                    'content' => "ملاحظة السندات واستنتاج المفاهيم الرئيسية حول «{$topic}»، وتدوين الحلول والنتائج في أفواج عمل.",
+                ],
+                [
+                    'name' => 'استثمار المكتسبات والتقويم',
+                    'duration' => 15,
+                    'strategy' => 'التفكير — المشاركة — العرض',
+                    'content' => 'إنجاز تطبيق فردي أو جماعي للتأكد من التحكم في المعارف مع تقديم تغذية راجعة فورية وتصحيح جماعي.',
+                ],
+            ];
+        }
+
+        $competence = trim((string) ($plan['competence'] ?? ''));
+        if ($competence === '') {
+            $competence = "يتحكم التلميذ في المفاهيم الأساسية لدرس «{$topic}» ويوظفها بكفاءة في حل وضعيات بيداغوجية مناسبة لمادة {$subject}.";
+        }
+
+        $startingSituation = trim((string) ($plan['starting_situation'] ?? ''));
+        if ($startingSituation === '') {
+            $startingSituation = "انطلاقاً من سياق دال ومكتسبات التلاميذ القبلية، يُطرح التساؤل الإشكالي حول «{$topic}» لتحفيز التفكير وبناء الحل.";
+        }
+
+        $resources = trim((string) ($plan['resources'] ?? ''));
+        if ($resources === '') {
+            $resources = 'الكتاب المدرسي، المنهاج الرسمي، السبورة، عارض البيانات (Data Show)، بطاقات الأنشطة الفوجية.';
+        }
+
+        $evaluation = trim((string) ($plan['evaluation'] ?? ''));
+        if ($evaluation === '') {
+            $evaluation = 'تقويم تكويني مرحلي من خلال متابعة إنجاز الأنشطة، وتقويم ختامي بحل تمرين تطبيقي فردي.';
+        }
+
+        $notes = trim((string) ($plan['notes'] ?? ''));
+        if ($notes === '') {
+            $notes = 'مراعاة الفروق الفردية بين المتعلمين، تشجيع المبادرة الذاتية، والحرص على تدبير التوقيت المخصص لكل مرحلة.';
+        }
+
+        return [
+            'competence' => $competence,
+            'starting_situation' => $startingSituation,
+            'activities' => $activities,
+            'resources' => $resources,
+            'evaluation' => $evaluation,
+            'notes' => $notes,
+        ];
     }
 
     /**

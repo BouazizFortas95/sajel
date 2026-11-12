@@ -2,11 +2,29 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\DailyLogStatus;
+use App\Exceptions\AiLessonPlannerException;
+use App\Filament\Resources\PedagogicalMemoResource;
+use App\Models\ActiveLearningStrategy;
 use App\Models\Classroom;
+use App\Models\CurriculumDomain;
+use App\Models\CurriculumResource;
+use App\Models\CurriculumSequence;
+use App\Models\DailyLog;
+use App\Models\PedagogicalMemo;
 use App\Models\Schedule;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\AiLessonPlannerService;
 use App\Services\CurriculumProgressService;
+use Carbon\Carbon;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Actions\Action as NotificationAction;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -45,6 +63,9 @@ class CurriculumProgress extends Page
 
     #[Url(as: 'per_page')]
     public int $perPage = 10;
+
+    #[Url(as: 'view')]
+    public string $curriculumView = 'annual';
 
     public static function canAccess(): bool
     {
@@ -536,5 +557,332 @@ class CurriculumProgress extends Page
                     ->orWhereHas('group', fn (Builder $query) => $query->where('classroom_id', $classroomId));
             })
             ->exists();
+    }
+
+    public function setCurriculumView(string $view): void
+    {
+        $this->curriculumView = in_array($view, ['annual', 'monthly'], true) ? $view : 'annual';
+    }
+
+    protected function getActions(): array
+    {
+        return [
+            $this->generateAiMemoAction(),
+        ];
+    }
+
+    /**
+     * Open the AI memo generation modal for a specific curriculum resource.
+     */
+    public function openAiMemoModal(int $resourceId): void
+    {
+        $resource = CurriculumResource::with(['sequence.domain'])->find($resourceId);
+
+        if (! $resource) {
+            return;
+        }
+
+        $this->mountAction('generateAiMemo', [
+            'resource_id' => $resource->id,
+            'lesson_title' => $resource->name,
+            'phase' => $resource->sequence?->name ?? '',
+        ]);
+    }
+
+    /**
+     * Filament action for generating a full Algerian Pedagogical Memo using AI.
+     */
+    public function generateAiMemoAction(): Action
+    {
+        return Action::make('generateAiMemo')
+            ->label(__('إنجاز مذكرة الدرس بالذكاء الاصطناعي'))
+            ->modalHeading(__('إعداد مذكرة الدرس بالذكاء الاصطناعي'))
+            ->modalDescription(__('توليد مذكرة بيداغوجية جزائرية رسمية وفق المقاربة بالكفاءات واستراتيجيات التعلم النشط وحفظها مباشرة في بنك المذكرات.'))
+            ->modalSubmitActionLabel(__('توليد وحفظ المذكرة'))
+            ->modalIcon('heroicon-o-sparkles')
+            ->form([
+                Hidden::make('resource_id'),
+
+                TextInput::make('lesson_title')
+                    ->label(__('عنوان الدرس / المورد المعرفي'))
+                    ->required()
+                    ->maxLength(255)
+                    ->helperText(__('عنوان الحصة أو المورد التعليمي كما سيظهر في المذكرة الرسمية.')),
+
+                TextInput::make('phase')
+                    ->label(__('المقطع التعلمي'))
+                    ->maxLength(255)
+                    ->helperText(__('المقطع البيداغوجي الذي يندرج ضمنه هذا الدرس.')),
+
+                Select::make('preferred_strategy')
+                    ->label(__('استراتيجية التعلم النشط المفضلة'))
+                    ->options(fn (): array => ActiveLearningStrategy::query()
+                        ->where('is_active', true)
+                        ->orderBy('sort_order')
+                        ->pluck('name', 'name')
+                        ->all())
+                    ->searchable()
+                    ->placeholder(__('اختيار تلقائي من الذكاء الاصطناعي وفق طبيعة الدرس'))
+                    ->helperText(__('يمكنك تحديد استراتيجية معينة (مثل: التفكير — المشاركة — العرض، جيكسو، بطاقة الخروج، حل المشكلات...) أو ترك الاختيار للذكاء الاصطناعي.')),
+
+                Textarea::make('custom_instructions')
+                    ->label(__('توجيهات أو إضافات خاصة بالأستاذ (اختياري)'))
+                    ->placeholder(__('مثال: التركيز على العمل الفوجي التعاوني، إدماج الوسائل الرقمية، مراعاة الفروق الفردية، وضعية تقويمية هادفة...'))
+                    ->rows(2),
+            ])
+            ->fillForm(fn (array $arguments): array => [
+                'resource_id' => $arguments['resource_id'] ?? null,
+                'lesson_title' => $arguments['lesson_title'] ?? '',
+                'phase' => $arguments['phase'] ?? '',
+            ])
+            ->action(function (array $data, AiLessonPlannerService $planner): void {
+                $classroom = Classroom::query()->with('level')->find($this->classroomId);
+                $subject = Subject::find($this->subjectId);
+
+                if (! $classroom || ! $subject) {
+                    Notification::make()
+                        ->warning()
+                        ->title(__('معلومات ناقصة'))
+                        ->body(__('يرجى تحديد المادة والقسم أولاً قبل توليد المذكرة.'))
+                        ->send();
+
+                    return;
+                }
+
+                try {
+                    $plan = $planner->generatePedagogicalMemo(
+                        topic: $data['lesson_title'],
+                        subject: $subject->name,
+                        level: $classroom->level?->display_name() ?? 'التعليم المتوسط',
+                        phase: filled($data['phase'] ?? null) ? $data['phase'] : null,
+                        locale: app()->getLocale(),
+                        preferredStrategy: filled($data['preferred_strategy'] ?? null) ? (string) $data['preferred_strategy'] : null,
+                        customInstructions: filled($data['custom_instructions'] ?? null) ? (string) $data['custom_instructions'] : null,
+                    );
+
+                    $memo = PedagogicalMemo::create([
+                        'user_id' => Auth::id(),
+                        'subject_id' => $subject->id,
+                        'level_id' => $classroom->level_id,
+                        'title' => $data['lesson_title'],
+                        'phase' => $data['phase'] ?? null,
+                        'competence' => $plan['competence'],
+                        'starting_situation' => $plan['starting_situation'],
+                        'activities' => $plan['activities'],
+                        'resources' => $plan['resources'],
+                        'evaluation' => $plan['evaluation'],
+                        'notes' => $plan['notes'],
+                        'is_template' => false,
+                        'is_archived' => false,
+                    ]);
+
+                    Notification::make()
+                        ->success()
+                        ->title(__('تم توليد وحفظ المذكرة البيداغوجية بنجاح'))
+                        ->body(__('تم إنشاء المذكرة البيداغوجية: «:title» وإضافتها إلى بنك مذكراتك.', ['title' => $memo->title]))
+                        ->actions([
+                            NotificationAction::make('print')
+                                ->label(__('معاينة وطباعة المذكرة'))
+                                ->icon('heroicon-o-printer')
+                                ->color('primary')
+                                ->url(route('print.pedagogical-memo', ['locale' => app()->getLocale(), 'memo' => $memo->id]))
+                                ->openUrlInNewTab(),
+                            NotificationAction::make('edit')
+                                ->label(__('تعديل في بنك المذكرات'))
+                                ->icon('heroicon-o-pencil-square')
+                                ->color('gray')
+                                ->url(PedagogicalMemoResource::getUrl('edit', ['record' => $memo->id]))
+                                ->openUrlInNewTab(),
+                        ])
+                        ->persistent()
+                        ->send();
+                } catch (AiLessonPlannerException $exception) {
+                    Notification::make()
+                        ->danger()
+                        ->title(__('تعذر توليد المذكرة بالذكاء الاصطناعي'))
+                        ->body($exception->getMessage())
+                        ->persistent()
+                        ->send();
+                } catch (\Throwable $exception) {
+                    report($exception);
+                    Notification::make()
+                        ->danger()
+                        ->title(__('حدث خطأ غير متوقع'))
+                        ->body(__('تعذر إتمام عملية التوليد. حاول مرة أخرى لاحقاً.'))
+                        ->persistent()
+                        ->send();
+                }
+            });
+    }
+
+    /**
+     * Map existing teacher pedagogical memos for this subject & level.
+     *
+     * @return Collection<string, PedagogicalMemo>
+     */
+    public function getTeacherMemosProperty(): Collection
+    {
+        if (blank($this->subjectId) || blank($this->classroomId)) {
+            return collect();
+        }
+
+        $classroom = Classroom::find($this->classroomId);
+
+        if (! $classroom) {
+            return collect();
+        }
+
+        $user = Auth::user();
+        $query = PedagogicalMemo::query()
+            ->where('subject_id', (int) $this->subjectId)
+            ->where('level_id', (int) $classroom->level_id);
+
+        if ($user?->isTeacher()) {
+            $query->where('user_id', $user->id);
+        }
+
+        return $query->get()->keyBy(fn (PedagogicalMemo $memo): string => Str::lower(trim($memo->title)));
+    }
+
+    /**
+     * Find an existing memo matching a curriculum resource.
+     */
+    public function findMemoForResource(CurriculumResource $resource): ?PedagogicalMemo
+    {
+        $memos = $this->teacherMemos;
+        $cleanName = Str::lower(trim($resource->name));
+
+        if ($memos->has($cleanName)) {
+            return $memos->get($cleanName);
+        }
+
+        return $memos->first(function (PedagogicalMemo $memo) use ($cleanName): bool {
+            $memoTitle = Str::lower(trim($memo->title));
+
+            return str_contains($memoTitle, $cleanName) || str_contains($cleanName, $memoTitle);
+        });
+    }
+
+    /**
+     * Monthly pacing distribution schedule (سبتمبر — ماي).
+     *
+     * @return array<string, array{
+     *     month_name: string,
+     *     month_num: string,
+     *     term: string,
+     *     badge_color: string,
+     *     total: int,
+     *     completed_count: int,
+     *     resources: list<array{
+     *         resource: CurriculumResource,
+     *         sequence: CurriculumSequence|null,
+     *         domain: CurriculumDomain|null,
+     *         completed: bool,
+     *         completed_date: string|null,
+     *         memo: PedagogicalMemo|null
+     *     }>
+     * }>
+     */
+    public function getMonthlyScheduleProperty(): array
+    {
+        $detail = $this->detail;
+
+        if (! $detail) {
+            return [];
+        }
+
+        $classroom = Classroom::find($this->classroomId);
+        $subject = Subject::find($this->subjectId);
+
+        if (! $classroom || ! $subject) {
+            return [];
+        }
+
+        $completedLogs = DailyLog::query()
+            ->where('status', DailyLogStatus::Completed->value)
+            ->whereNotNull('curriculum_resource_id')
+            ->whereHas('schedule', function ($query) use ($classroom, $subject): void {
+                $query->where('subject_id', $subject->id)
+                    ->where(function ($query) use ($classroom): void {
+                        $query->where('classroom_id', $classroom->id)
+                            ->orWhereHas('group', fn ($query) => $query->where('classroom_id', $classroom->id));
+                    });
+            })
+            ->pluck('date', 'curriculum_resource_id');
+
+        $allFlatResources = [];
+
+        foreach ($detail['domains'] as $domainRow) {
+            foreach ($domainRow['sequences'] as $sequenceRow) {
+                foreach ($sequenceRow['resources'] as $resRow) {
+                    $res = $resRow['resource'];
+                    $completed = (bool) $resRow['completed'];
+                    $date = $completedLogs->get($res->id);
+
+                    $allFlatResources[] = [
+                        'resource' => $res,
+                        'sequence' => $sequenceRow['sequence'],
+                        'domain' => $domainRow['domain'],
+                        'completed' => $completed,
+                        'completed_date' => $date ? Carbon::parse($date)->format('d/m/Y') : null,
+                        'completed_month' => $date ? Carbon::parse($date)->format('m') : null,
+                        'memo' => $this->findMemoForResource($res),
+                    ];
+                }
+            }
+        }
+
+        $monthsDef = [
+            '09' => ['month_name' => __('سبتمبر'), 'term' => __('الفصل الأول'), 'badge_color' => 'info'],
+            '10' => ['month_name' => __('أكتوبر'), 'term' => __('الفصل الأول'), 'badge_color' => 'info'],
+            '11' => ['month_name' => __('نوفمبر'), 'term' => __('الفصل الأول'), 'badge_color' => 'info'],
+            '12' => ['month_name' => __('ديسمبر'), 'term' => __('الفصل الأول'), 'badge_color' => 'info'],
+            '01' => ['month_name' => __('جانفي'), 'term' => __('الفصل الثاني'), 'badge_color' => 'warning'],
+            '02' => ['month_name' => __('فيفري'), 'term' => __('الفصل الثاني'), 'badge_color' => 'warning'],
+            '03' => ['month_name' => __('مارس'), 'term' => __('الفصل الثاني'), 'badge_color' => 'warning'],
+            '04' => ['month_name' => __('أفريل'), 'term' => __('الفصل الثالث'), 'badge_color' => 'success'],
+            '05' => ['month_name' => __('ماي'), 'term' => __('الفصل الثالث'), 'badge_color' => 'success'],
+        ];
+
+        $monthKeys = array_keys($monthsDef);
+        $totalResources = count($allFlatResources);
+        $schedule = [];
+
+        foreach ($monthsDef as $key => $meta) {
+            $schedule[$key] = [
+                'month_name' => $meta['month_name'],
+                'month_num' => $key,
+                'term' => $meta['term'],
+                'badge_color' => $meta['badge_color'],
+                'total' => 0,
+                'completed_count' => 0,
+                'resources' => [],
+            ];
+        }
+
+        if ($totalResources === 0) {
+            return $schedule;
+        }
+
+        $perMonth = max(1, (int) ceil($totalResources / count($monthKeys)));
+
+        foreach ($allFlatResources as $index => $item) {
+            $assignedMonth = $item['completed_month'];
+
+            if (! $assignedMonth || ! isset($schedule[$assignedMonth])) {
+                $monthIdx = (int) floor($index / $perMonth);
+                $monthIdx = min($monthIdx, count($monthKeys) - 1);
+                $assignedMonth = $monthKeys[$monthIdx];
+            }
+
+            $schedule[$assignedMonth]['resources'][] = $item;
+            $schedule[$assignedMonth]['total']++;
+
+            if ($item['completed']) {
+                $schedule[$assignedMonth]['completed_count']++;
+            }
+        }
+
+        return $schedule;
     }
 }

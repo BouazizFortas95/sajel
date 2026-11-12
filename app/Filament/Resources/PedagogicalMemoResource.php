@@ -3,11 +3,15 @@
 namespace App\Filament\Resources;
 
 use App\Enums\Role;
+use App\Exceptions\AiLessonPlannerException;
 use App\Filament\Resources\PedagogicalMemoResource\Pages;
+use App\Models\ActiveLearningStrategy;
+use App\Models\CurriculumResource;
 use App\Models\Level;
 use App\Models\PedagogicalMemo;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\AiLessonPlannerService;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -15,6 +19,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -369,6 +375,9 @@ class PedagogicalMemoResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
+            ->headerActions([
+                static::generateWithAiTableAction(),
+            ])
             ->defaultSort('updated_at', 'desc')
             ->emptyStateIcon('heroicon-o-document-duplicate')
             ->emptyStateHeading(__('لا توجد مذكرات بعد'))
@@ -409,6 +418,155 @@ class PedagogicalMemoResource extends Resource
                             ->url(static::getUrl('edit', ['record' => $copy])),
                     ])
                     ->send();
+            });
+    }
+
+    /**
+     * Action to generate a new pedagogical memo with AI directly from the memo bank.
+     */
+    public static function generateWithAiTableAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('generateWithAi')
+            ->label(__('إنجاز مذكرة بالذكاء الاصطناعي'))
+            ->icon('heroicon-o-sparkles')
+            ->color('warning')
+            ->modalHeading(__('إعداد مذكرة درس جديدة بالذكاء الاصطناعي'))
+            ->modalDescription(__('توليد مذكرة بيداغوجية جزائرية رسمية وفق المقاربة بالكفاءات واستراتيجيات التعلم النشط وحفظها مباشرة في بنك المذكرات.'))
+            ->modalSubmitActionLabel(__('توليد وحفظ المذكرة'))
+            ->form([
+                Select::make('subject_id')
+                    ->label(__('المادة'))
+                    ->options(fn (): array => Subject::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->searchable()
+                    ->live()
+                    ->required(),
+
+                Select::make('level_id')
+                    ->label(__('المستوى'))
+                    ->options(fn (): array => Level::query()->with('educationPhase')->get()->mapWithKeys(fn (Level $l): array => [$l->id => $l->display_name()])->all())
+                    ->searchable()
+                    ->live()
+                    ->required(),
+
+                Select::make('curriculum_resource_id')
+                    ->label(__('الدرس / المورد المعرفي من المنهاج الرسمي'))
+                    ->options(function (Get $get): array {
+                        $subjectId = $get('subject_id');
+                        $levelId = $get('level_id');
+                        if (! $subjectId || ! $levelId) {
+                            return [];
+                        }
+
+                        return CurriculumResource::query()
+                            ->whereHas('sequence.domain', fn ($q) => $q->where('subject_id', $subjectId)->where('level_id', $levelId))
+                            ->with('sequence.domain')
+                            ->ordered()
+                            ->get()
+                            ->mapWithKeys(fn (CurriculumResource $r): array => [
+                                $r->id => $r->label(),
+                            ])
+                            ->all();
+                    })
+                    ->searchable()
+                    ->live()
+                    ->afterStateUpdated(function ($state, Set $set): void {
+                        if ($state) {
+                            $resource = CurriculumResource::with('sequence')->find($state);
+                            if ($resource) {
+                                $set('title', $resource->name);
+                                $set('phase', $resource->sequence?->name ?? '');
+                            }
+                        }
+                    })
+                    ->helperText(__('يمكنك اختيار درس من المنهاج لملء العنوان والمقطع تلقائياً، أو كتابة عنوان مخصص أدناه.')),
+
+                TextInput::make('title')
+                    ->label(__('عنوان الدرس / المذكرة'))
+                    ->required()
+                    ->maxLength(255),
+
+                TextInput::make('phase')
+                    ->label(__('المقطع التعلمي'))
+                    ->maxLength(255),
+
+                Select::make('preferred_strategy')
+                    ->label(__('استراتيجية التعلم النشط المفضلة'))
+                    ->options(fn (): array => ActiveLearningStrategy::query()->where('is_active', true)->orderBy('sort_order')->pluck('name', 'name')->all())
+                    ->searchable()
+                    ->placeholder(__('اختيار تلقائي من الذكاء الاصطناعي وفق طبيعة الدرس')),
+
+                Textarea::make('custom_instructions')
+                    ->label(__('توجيهات أو إضافات خاصة بالأستاذ (اختياري)'))
+                    ->rows(2),
+            ])
+            ->action(function (array $data, AiLessonPlannerService $planner): void {
+                $subject = Subject::find($data['subject_id']);
+                $level = Level::find($data['level_id']);
+
+                if (! $subject || ! $level) {
+                    return;
+                }
+
+                try {
+                    $plan = $planner->generatePedagogicalMemo(
+                        topic: $data['title'],
+                        subject: $subject->name,
+                        level: $level->display_name(),
+                        phase: filled($data['phase'] ?? null) ? $data['phase'] : null,
+                        locale: app()->getLocale(),
+                        preferredStrategy: filled($data['preferred_strategy'] ?? null) ? (string) $data['preferred_strategy'] : null,
+                        customInstructions: filled($data['custom_instructions'] ?? null) ? (string) $data['custom_instructions'] : null,
+                    );
+
+                    $memo = PedagogicalMemo::create([
+                        'user_id' => Auth::id(),
+                        'subject_id' => $data['subject_id'],
+                        'level_id' => $data['level_id'],
+                        'title' => $data['title'],
+                        'phase' => $data['phase'] ?? null,
+                        'competence' => $plan['competence'],
+                        'starting_situation' => $plan['starting_situation'],
+                        'activities' => $plan['activities'],
+                        'resources' => $plan['resources'],
+                        'evaluation' => $plan['evaluation'],
+                        'notes' => $plan['notes'],
+                        'is_template' => false,
+                        'is_archived' => false,
+                    ]);
+
+                    Notification::make()
+                        ->success()
+                        ->title(__('تم توليد وحفظ المذكرة البيداغوجية بنجاح'))
+                        ->body(__('تم إنشاء المذكرة: «:title» وحفظها في بنك المذكرات.', ['title' => $memo->title]))
+                        ->actions([
+                            NotificationAction::make('print')
+                                ->label(__('معاينة وطباعة المذكرة'))
+                                ->icon('heroicon-o-printer')
+                                ->color('primary')
+                                ->url(static::getPrintUrl($memo))
+                                ->openUrlInNewTab(),
+                            NotificationAction::make('edit')
+                                ->label(__('تعديل المذكرة'))
+                                ->icon('heroicon-o-pencil-square')
+                                ->color('gray')
+                                ->url(static::getUrl('edit', ['record' => $memo->id])),
+                        ])
+                        ->persistent()
+                        ->send();
+                } catch (AiLessonPlannerException $e) {
+                    Notification::make()
+                        ->danger()
+                        ->title(__('تعذر توليد المذكرة بالذكاء الاصطناعي'))
+                        ->body($e->getMessage())
+                        ->send();
+                } catch (\Throwable $e) {
+                    report($e);
+                    Notification::make()
+                        ->danger()
+                        ->title(__('حدث خطأ غير متوقع'))
+                        ->body(__('تعذر إتمام عملية التوليد. حاول مرة أخرى لاحقاً.'))
+                        ->send();
+                }
             });
     }
 
