@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\InfractionDegree;
 use App\Enums\Role;
 use App\Filament\Resources\DailyLogResource;
 use App\Filament\Resources\DailyLogResource\Pages\ListDailyLogs;
@@ -13,6 +14,7 @@ use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\DisciplinaryCouncilService;
 use App\Services\OfficialReportService;
 use App\Services\StudentIncidentReportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -244,5 +246,130 @@ class BehaviorObservationResourceTest extends TestCase
         $this->assertStringContainsString('استخدام الهاتف النقال', $saved->notes);
         $this->assertStringContainsString('استدعاء ولي أمر التلميذ(ة)', $saved->notes);
         $this->assertStringContainsString('تم ضبط الهاتف بحوزة التلميذ', $saved->notes);
+        $this->assertTrue($saved->hasGuardianSummons());
+    }
+
+    public function test_behavior_observation_referral_to_disciplinary_council(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $student = Student::factory()->create(['first_name' => 'ياسين', 'last_name' => 'قادري']);
+        $classroom = Classroom::factory()->create(['name' => '4 م 2']);
+        $group = Group::factory()->create(['classroom_id' => $classroom->id]);
+        $student->update(['group_id' => $group->id]);
+
+        $observation = BehaviorObservation::create([
+            'student_id' => $student->id,
+            'category' => 'disciplinary',
+            'notes' => 'شجار عنيف واعتداء لفظي داخل القسم.',
+            'date' => today(),
+            'is_followed_up' => false,
+        ]);
+
+        $this->assertFalse($observation->hasDisciplinaryRecord());
+
+        $councilService = app(DisciplinaryCouncilService::class);
+        $discRecord = $councilService->scheduleSession(
+            student: $student,
+            data: [
+                'session_date' => now()->addDays(2)->setTime(11, 0),
+                'infraction_degree' => InfractionDegree::ThirdDegree,
+                'incident_description' => $observation->notes,
+                'incident_date' => $observation->date->toDateString(),
+                'guardian_summoned' => true,
+            ]
+        );
+
+        $observation->update([
+            'disciplinary_record_id' => $discRecord->id,
+            'is_followed_up' => true,
+            'follow_up_notes' => 'تمت الإحالة إلى مجلس التأديب (جلسة رقم: '.$discRecord->session_number.')',
+        ]);
+
+        $this->assertTrue($observation->fresh()->hasDisciplinaryRecord());
+        $this->assertEquals($discRecord->id, $observation->fresh()->disciplinary_record_id);
+
+        // Disciplinary summons route works and shows official contents
+        $response = $this->actingAs($admin)
+            ->get(route('print.disciplinary.summons', [
+                'locale' => 'ar',
+                'record' => $discRecord->id,
+            ]));
+
+        $response->assertOk()
+            ->assertSee('استدعاء للمثول أمام مجلس التأديب')
+            ->assertSee('ياسين قادري')
+            ->assertSee($discRecord->session_number)
+            ->assertSee('الجمهورية الجزائرية الديمقراطية الشعبية');
+    }
+
+    public function test_guardian_summons_generation_and_official_print_view(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value, 'name' => 'الأستاذ بن سالم']);
+        $student = Student::factory()->create([
+            'first_name' => 'سارة',
+            'last_name' => 'منصوري',
+            'guardian_name' => 'منصوري كمال',
+            'guardian_phone' => '0661234567',
+        ]);
+        $classroom = Classroom::factory()->create(['name' => '2 م 1']);
+        $group = Group::factory()->create(['classroom_id' => $classroom->id]);
+        $student->update(['group_id' => $group->id]);
+
+        $observation = BehaviorObservation::create([
+            'student_id' => $student->id,
+            'recorded_by_id' => $teacher->id,
+            'category' => 'disciplinary',
+            'notes' => 'تكرار التشويش وعدم إحضار الكراس والكتب بصفة مستمرة.',
+            'date' => today(),
+            'guardian_summons_sent_at' => today(),
+            'guardian_summons_appointment_at' => now()->addDay()->setTime(10, 0),
+            'guardian_summons_notes' => 'مقابلة السيد الأستاذ ومستشار التربية لبحث أسباب الإهمال المدرسي.',
+            'is_followed_up' => true,
+        ]);
+
+        $this->assertTrue($observation->hasGuardianSummons());
+
+        $response = $this->actingAs($teacher)
+            ->get(route('print.student-behavior-report.guardian-summons', [
+                'locale' => 'ar',
+                'behaviorObservation' => $observation,
+            ]));
+
+        $response->assertOk()
+            ->assertSee('اسْتِدْعَاءُ وَلِيِّ أَمْرِ التِّلْمِيذ(ة)')
+            ->assertSee('سارة منصوري')
+            ->assertSee('منصوري كمال')
+            ->assertSee('0661234567')
+            ->assertSee('2 م 1')
+            ->assertSee('إمضاء وتأشيرة الأستاذ(ة)')
+            ->assertSee('تأشيرة مستشار(ة) التربية / ناظر(ة) الدروس')
+            ->assertSee('تأشيرة وختم السيد(ة) مدير(ة) المؤسسة')
+            ->assertSee('وصل استلام استدعاء ولي الأمر');
+    }
+
+    public function test_guardian_summons_pdf_download(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $student = Student::factory()->create();
+        $observation = BehaviorObservation::create([
+            'student_id' => $student->id,
+            'recorded_by_id' => $teacher->id,
+            'category' => 'disciplinary',
+            'notes' => 'مخالفة انضباطية.',
+            'date' => today(),
+            'guardian_summons_sent_at' => today(),
+        ]);
+
+        $mockReports = $this->mock(OfficialReportService::class);
+        $mockReports->shouldReceive('pdfResponse')
+            ->once()
+            ->andReturn(response()->streamDownload(fn () => print ('PDF_BINARY_CONTENT'), 'summons.pdf'));
+
+        $this->actingAs($teacher)
+            ->get(route('print.student-behavior-report.guardian-summons.pdf', [
+                'locale' => 'ar',
+                'behaviorObservation' => $observation,
+            ]))
+            ->assertDownload();
     }
 }

@@ -298,4 +298,36 @@ class StudentIncidentReportService
             'academicYear' => $schoolSetting?->academic_year ?: '2026-2027',
         ];
     }
+
+    /**
+     * View data for official printable guardian summons letter (استدعاء ولي أمر تلميذ).
+     *
+     * @return array<string, mixed>
+     */
+    public function guardianSummonsViewData(BehaviorObservation $observation, User $viewer, bool $autoPrint = true): array
+    {
+        $schoolSetting = SchoolSetting::current();
+        $student = $observation->student()->with(['group.classroom.level'])->first();
+        $teacher = $observation->recorder ?? $viewer;
+        $schedule = $observation->schedule()->with(['subject', 'classroom'])->first();
+        $classroom = $student?->group?->classroom ?? $schedule?->classroom;
+        $subject = $schedule?->subject?->name ?? $teacher?->primarySubject?->name ?? __('التعليم المتوسط');
+        $guardianName = $student?->guardian_name ?: __('ولي أمر التلميذ(ة)');
+
+        return [
+            'observation' => $observation,
+            'student' => $student,
+            'teacher' => $teacher,
+            'schedule' => $schedule,
+            'classroom' => $classroom,
+            'subject' => $subject,
+            'guardianName' => $guardianName,
+            'guardianPhone' => $student?->guardian_phone,
+            'schoolSetting' => $schoolSetting,
+            'autoPrint' => $autoPrint,
+            'academicYear' => $schoolSetting?->academic_year ?: '2026-2027',
+            'appointmentDate' => $observation->guardian_summons_appointment_at ?? now()->addDay()->setTime(10, 0),
+            'sentDate' => $observation->guardian_summons_sent_at ?? now(),
+        ];
+    }
 }

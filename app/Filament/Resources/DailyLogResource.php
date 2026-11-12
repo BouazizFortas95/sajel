@@ -1021,6 +1021,9 @@ class DailyLogResource extends Resource
             customNotes: $data['custom_notes'] ?? null,
         );
 
+        $recoms = $data['template_recommendations'] ?? [];
+        $hasSummonsRecom = in_array('guardian_summons', $recoms, true);
+
         $observation = BehaviorObservation::create([
             'student_id' => $student->id,
             'schedule_id' => $record->schedule_id,
@@ -1029,6 +1032,9 @@ class DailyLogResource extends Resource
             'notes' => $assembled,
             'date' => $record->date ?? today(),
             'is_followed_up' => false,
+            'guardian_summons_sent_at' => $hasSummonsRecom ? today() : null,
+            'guardian_summons_appointment_at' => $hasSummonsRecom ? now()->addDay()->setTime(10, 0) : null,
+            'guardian_summons_notes' => $hasSummonsRecom ? $assembled : null,
         ]);
 
         $printUrl = route('print.student-behavior-report', [
@@ -1036,16 +1042,28 @@ class DailyLogResource extends Resource
             'behaviorObservation' => $observation,
         ]);
 
+        $notificationActions = [
+            Action::make('print')
+                ->label(__('طباعة التقرير (A4)'))
+                ->url($printUrl)
+                ->openUrlInNewTab(),
+        ];
+
+        if ($hasSummonsRecom) {
+            $notificationActions[] = Action::make('printSummons')
+                ->label(__('طباعة استدعاء الولي (A4)'))
+                ->url(route('print.student-behavior-report.guardian-summons', [
+                    'locale' => app()->getLocale(),
+                    'behaviorObservation' => $observation,
+                ]))
+                ->openUrlInNewTab();
+        }
+
         Notification::make()
             ->success()
             ->title(__('تم تسجيل تقرير التلميذ(ة) بنجاح وحفظه رسمياً'))
             ->body(__('تم دمج الخيارات وصياغة التقرير الإداري للتلميذ(ة): :name.', ['name' => $student->full_name]))
-            ->actions([
-                Action::make('print')
-                    ->label(__('طباعة التقرير (A4)'))
-                    ->url($printUrl)
-                    ->openUrlInNewTab(),
-            ])
+            ->actions($notificationActions)
             ->persistent()
             ->send();
     }

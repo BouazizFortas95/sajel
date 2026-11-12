@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DisciplinaryRecord extends Model
 {
@@ -45,6 +46,11 @@ class DisciplinaryRecord extends Model
     public function president(): BelongsTo
     {
         return $this->belongsTo(User::class, 'president_id');
+    }
+
+    public function behaviorObservations(): HasMany
+    {
+        return $this->hasMany(BehaviorObservation::class);
     }
 
     /*

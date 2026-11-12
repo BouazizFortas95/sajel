@@ -158,6 +158,53 @@ class OfficialReportController extends Controller
         );
     }
 
+    public function guardianSummons(
+        Request $request,
+        string $locale,
+        BehaviorObservation $behaviorObservation,
+        StudentIncidentReportService $reportService,
+    ): View {
+        $user = $request->user();
+        if ($user->isTeacher() && ! $user->isAdmin()) {
+            abort_unless(
+                $behaviorObservation->recorded_by_id === $user->id
+                || $behaviorObservation->schedule?->user_id === $user->id,
+                403
+            );
+        }
+
+        return view('print.guardian-summons', $reportService->guardianSummonsViewData(
+            $behaviorObservation,
+            $user,
+            autoPrint: $request->boolean('autoprint', true),
+        ));
+    }
+
+    public function guardianSummonsPdf(
+        Request $request,
+        string $locale,
+        BehaviorObservation $behaviorObservation,
+        StudentIncidentReportService $reportService,
+        OfficialReportService $reports,
+    ): StreamedResponse {
+        $user = $request->user();
+        if ($user->isTeacher() && ! $user->isAdmin()) {
+            abort_unless(
+                $behaviorObservation->recorded_by_id === $user->id
+                || $behaviorObservation->schedule?->user_id === $user->id,
+                403
+            );
+        }
+
+        return $this->pdf(
+            $reports,
+            'print.guardian-summons',
+            $reportService->guardianSummonsViewData($behaviorObservation, $user, autoPrint: false),
+            'استدعاء-ولي-أمر-'.($behaviorObservation->student?->full_name ?: $behaviorObservation->id).'-'.now()->format('Y-m-d').'.pdf',
+            landscape: false,
+        );
+    }
+
     /**
      * @return array{0: int|null, 1: int|null}
      */
