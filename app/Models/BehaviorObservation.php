@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Enums\InfractionDegree;
 use App\Services\DisciplinaryCouncilService;
 use App\Services\StudentIncidentReportService;
+use App\Services\TeacherParentReceptionService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -170,7 +172,16 @@ class BehaviorObservation extends Model
 
     protected function applyGuardianSummons(): array
     {
-        $appointment = $this->guardian_summons_appointment_at ?? now()->addDay()->setTime(10, 0);
+        $teacher = $this->schedule?->user ?? $this->recorder;
+        if (! $this->guardian_summons_appointment_at && $teacher) {
+            $appointment = app(TeacherParentReceptionService::class)->calculateNextReceptionDate(
+                $teacher,
+                $this->date ? Carbon::parse($this->date) : now()
+            );
+        } else {
+            $appointment = $this->guardian_summons_appointment_at ?? now()->addDay()->setTime(10, 0);
+        }
+
         $motive = $this->guardian_summons_notes ?: app(StudentIncidentReportService::class)->formatSummonsMotive($this);
 
         $this->update([

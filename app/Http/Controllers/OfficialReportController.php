@@ -8,6 +8,7 @@ use App\Models\Group;
 use App\Models\Subject;
 use App\Services\OfficialReportService;
 use App\Services\StudentIncidentReportService;
+use App\Services\TeacherParentReceptionService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -41,6 +42,37 @@ class OfficialReportController extends Controller
             'print.timetable',
             $reports->timetableViewData($request->user(), $teacherId, $classroomId),
             'جدول-التوقيت-'.now()->format('Y-m-d').'.pdf',
+            landscape: true,
+        );
+    }
+
+    public function teacherParentReceptions(
+        Request $request,
+        string $locale,
+        TeacherParentReceptionService $service,
+    ): View {
+        return view('print.teacher-parent-receptions', $service->viewData(
+            autoPrint: $request->boolean('autoprint', true),
+            teacherId: $request->filled('teacher') ? (int) $request->query('teacher') : null,
+            subjectId: $request->filled('subject') ? (int) $request->query('subject') : null,
+        ));
+    }
+
+    public function teacherParentReceptionsPdf(
+        Request $request,
+        string $locale,
+        TeacherParentReceptionService $service,
+        OfficialReportService $reports,
+    ): StreamedResponse {
+        return $this->pdf(
+            $reports,
+            'print.teacher-parent-receptions',
+            $service->viewData(
+                autoPrint: false,
+                teacherId: $request->filled('teacher') ? (int) $request->query('teacher') : null,
+                subjectId: $request->filled('subject') ? (int) $request->query('subject') : null,
+            ),
+            'جدول-استقبال-أولياء-التلاميذ-'.now()->format('Y-m-d').'.pdf',
             landscape: true,
         );
     }

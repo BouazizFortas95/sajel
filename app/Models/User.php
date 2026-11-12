@@ -45,6 +45,11 @@ class User extends Authenticatable implements FilamentUser
         'current_step_date',
         'statutory_grade',
         'diploma',
+        'parent_reception_day',
+        'parent_reception_start_time',
+        'parent_reception_end_time',
+        'parent_reception_location',
+        'parent_reception_notes',
     ];
 
     /**
@@ -235,6 +240,54 @@ class User extends Authenticatable implements FilamentUser
             'days' => $diff->d,
             'formatted' => "{$diff->y} سنة و {$diff->m} شهر",
         ];
+    }
+
+    public function hasParentReceptionSlot(): bool
+    {
+        return filled($this->parent_reception_day) && filled($this->parent_reception_start_time);
+    }
+
+    public function parentReceptionDayLabel(): ?string
+    {
+        if (blank($this->parent_reception_day)) {
+            return null;
+        }
+
+        $days = [
+            'sunday' => __('الأحد'),
+            'monday' => __('الإثنين'),
+            'tuesday' => __('الثلاثاء'),
+            'wednesday' => __('الأربعاء'),
+            'thursday' => __('الخميس'),
+        ];
+
+        return $days[strtolower((string) $this->parent_reception_day)] ?? (string) $this->parent_reception_day;
+    }
+
+    public function parentReceptionTimeRange(): ?string
+    {
+        if (blank($this->parent_reception_start_time)) {
+            return null;
+        }
+
+        $start = substr((string) $this->parent_reception_start_time, 0, 5);
+        $end = filled($this->parent_reception_end_time) ? substr((string) $this->parent_reception_end_time, 0, 5) : null;
+
+        return $end ? "{$start} — {$end}" : $start;
+    }
+
+    public function parentReceptionSummary(): ?string
+    {
+        if (! $this->hasParentReceptionSlot()) {
+            return null;
+        }
+
+        return sprintf(
+            '%s (%s) — %s',
+            $this->parentReceptionDayLabel(),
+            $this->parentReceptionTimeRange(),
+            $this->parent_reception_location ?? __('مكتب الاستشارة التربوية')
+        );
     }
 
     public function isAdmin(): bool

@@ -3,6 +3,7 @@
     $formatDate = fn ($value): string => $value ? \Carbon\Carbon::parse($value)->format('d/m/Y') : '—';
     $formatDateTime = fn ($value): string => $value ? \Carbon\Carbon::parse($value)->format('d/m/Y على الساعة H:i') : '—';
     $teacherName = $teacher?->name ?? $observation->observed_by ?? __('الأستاذ(ة)');
+    $receptionLocation = $teacher?->parent_reception_location ?: __('مكتب الاستشارة التربوية');
     $studentName = $student?->full_name ?? __('تلميذ غير محدد');
     $classroomName = $classroom?->name ?? $student?->group?->classroom?->name ?? '—';
     $levelName = $classroom?->level?->name ?? '—';
@@ -257,8 +258,10 @@
         <span>📅</span> {{ __('الموعد المحدد للمقابلة ومكان الاستقبال:') }}
     </div>
     <div class="appointment-details">
-        {{ __('يُرجى من السيد(ة) ولي أمر التلميذ(ة) الحضور إلى المؤسسة التعليمية (') . ($schoolSetting->school_name ?? __('المتوسطة')) . (') لمقابلة الإدارة والأستاذ(ة) المعني(ة) بمكتب الاستشارة التربوية، وذلك يوم:') }}
-        <strong style="color: #1e3a8a; font-size: 8.5pt;">{{ $formatDateTime($appointment) }}</strong>.
+        {{ __('يرجى من السيد(ة) ولي أمر التلميذ(ة) الحضور إلى المؤسسة التعليمية (') . ($schoolSetting->school_name ?? __('المتوسطة')) . (') لمقابلة الإدارة والأستاذ(ة) المعني(ة) بـ: ') }}
+        <strong>{{ $receptionLocation }}</strong>{{ __(', وذلك يوم:') }}
+        <strong style="color: #1e3a8a; font-size: 8.5pt;">{{ $formatDateTime($appointment) }}</strong>
+        <span style="color: #475569; font-size: 7pt;">({{ __('فترة الاستقبال الأسبوعية الرسمية للأستاذ(ة)') }})</span>.
     </div>
 </div>
 

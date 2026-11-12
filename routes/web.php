@@ -368,6 +368,16 @@ Route::get('/{locale}/print/timetables/pdf', [OfficialReportController::class, '
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.timetable.pdf');
 
+Route::get('/{locale}/print/teacher-parent-receptions', [OfficialReportController::class, 'teacherParentReceptions'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-parent-receptions');
+
+Route::get('/{locale}/print/teacher-parent-receptions/pdf', [OfficialReportController::class, 'teacherParentReceptionsPdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.teacher-parent-receptions.pdf');
+
 Route::get('/{locale}/print/attendance-summary', [OfficialReportController::class, 'attendanceSummary'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
