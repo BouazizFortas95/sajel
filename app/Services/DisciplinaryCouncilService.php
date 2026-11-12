@@ -354,7 +354,7 @@ class DisciplinaryCouncilService
 
         return BrowsershotFactory::html($html)
             ->portrait()
-            ->margins(10, 10, 10, 10)
+            ->margins(4, 8, 4, 8)
             ->pdf();
     }
 
@@ -368,7 +368,7 @@ class DisciplinaryCouncilService
 
         return BrowsershotFactory::html($html)
             ->portrait()
-            ->margins(10, 10, 10, 10)
+            ->margins(4, 8, 4, 8)
             ->pdf();
     }
 
@@ -382,7 +382,7 @@ class DisciplinaryCouncilService
 
         return BrowsershotFactory::html($html)
             ->portrait()
-            ->margins(10, 10, 10, 10)
+            ->margins(4, 8, 4, 8)
             ->pdf();
     }
 
