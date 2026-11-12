@@ -33,8 +33,11 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Collection;
 
 class BehaviorObservationResource extends Resource
 {
@@ -57,6 +60,14 @@ class BehaviorObservationResource extends Resource
     public static function getPluralModelLabel(): string
     {
         return __('تقارير السلوك وتسيير القسم');
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 
     public static function getNavigationGroup(): ?string
@@ -312,7 +323,14 @@ class BehaviorObservationResource extends Resource
                     ->label(__('التلميذ'))
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('bold')
+                    ->description(fn (BehaviorObservation $record): ?string => $record->trashed()
+                        ? __('🗑️ بالمحذوفات — أرسله: :by (:reason)', [
+                            'by' => $record->deletedBy?->name ?? __('المستخدم'),
+                            'reason' => $record->deletion_reason ?: __('طلب حذف'),
+                        ])
+                        : null
+                    ),
 
                 TextColumn::make('student.group.classroom.name')
                     ->label(__('القسم'))
@@ -355,7 +373,7 @@ class BehaviorObservationResource extends Resource
                     ])
                     ->selectablePlaceholder(false)
                     ->rules(['required', 'in:pending,internal_followup,guardian_summons,disciplinary_council'])
-                    ->disabled(fn (BehaviorObservation $record): bool => auth()->user() && auth()->user()->isTeacher() && ! auth()->user()->isAdmin() && $record->recorded_by_id !== auth()->id())
+                    ->disabled(fn (BehaviorObservation $record): bool => $record->trashed() || (auth()->user() && auth()->user()->isTeacher() && ! auth()->user()->isAdmin() && $record->recorded_by_id !== auth()->id()))
                     ->updateStateUsing(function (BehaviorObservation $record, string $state, DisciplinaryCouncilService $councilService): string {
                         $result = $record->applyAdministrativeAction($state, auth()->user(), $councilService);
 
@@ -380,11 +398,6 @@ class BehaviorObservationResource extends Resource
                                 ->url($result['print_url'])
                                 ->openUrlInNewTab();
                         }
-                        if (! empty($result['pdf_url'])) {
-                            $actions[] = NotificationAction::make('pdf')
-                                ->label(__('تحميل PDF'))
-                                ->url($result['pdf_url']);
-                        }
                         if ($state === 'disciplinary_council') {
                             $actions[] = NotificationAction::make('hub')
                                 ->label(__('مركز مجلس التأديب'))
@@ -403,7 +416,7 @@ class BehaviorObservationResource extends Resource
 
                 ToggleColumn::make('is_guardian_receipt_returned')
                     ->label(__('وصل الاستلام'))
-                    ->disabled(fn (BehaviorObservation $record): bool => $record->administrative_action !== 'guardian_summons')
+                    ->disabled(fn (BehaviorObservation $record): bool => $record->trashed() || $record->administrative_action !== 'guardian_summons')
                     ->updateStateUsing(function (BehaviorObservation $record, bool $state): bool {
                         $record->markReceiptReturned($state);
 
@@ -430,7 +443,7 @@ class BehaviorObservationResource extends Resource
                         'excused' => __('⚠️ معذور / تأجيل'),
                     ])
                     ->selectablePlaceholder(false)
-                    ->disabled(fn (BehaviorObservation $record): bool => $record->administrative_action !== 'guardian_summons')
+                    ->disabled(fn (BehaviorObservation $record): bool => $record->trashed() || $record->administrative_action !== 'guardian_summons')
                     ->updateStateUsing(function (BehaviorObservation $record, string $state): string {
                         $record->updateGuardianAttendance($state);
 
@@ -495,6 +508,12 @@ class BehaviorObservationResource extends Resource
                         '1' => __('تم استرجاع الوصل'),
                         '0' => __('في الانتظار (لم يسترجع)'),
                     ]),
+                TrashedFilter::make()
+                    ->label(__('سلة المحذوفات والأمان'))
+                    ->placeholder(__('التقارير النشطة فقط'))
+                    ->trueLabel(__('مع المحذوفات'))
+                    ->falseLabel(__('سلة المحذوفات فقط (بانتظار مصادقة الإدارة)'))
+                    ->native(false),
             ])
             ->actions([
                 // Quick Action 1: Refer to Disciplinary Council
@@ -502,7 +521,7 @@ class BehaviorObservationResource extends Resource
                     ->label(__('إحالة لمجلس التأديب'))
                     ->icon('heroicon-o-scale')
                     ->color('danger')
-                    ->visible(fn (BehaviorObservation $record): bool => ! $record->hasDisciplinaryRecord() && in_array($record->category, ['disciplinary', 'negative', 'observation']))
+                    ->visible(fn (BehaviorObservation $record): bool => ! $record->trashed() && ! $record->hasDisciplinaryRecord() && in_array($record->category, ['disciplinary', 'negative', 'observation']))
                     ->modalHeading(fn (BehaviorObservation $record): string => __('⚖️ إحالة التلميذ(ة): :name إلى مجلس التأديب', ['name' => $record->student?->full_name ?? '—']))
                     ->modalDescription(__('سيتم فتح ملف رسمي ضمن سجلات مجلس التأديب وتحديد موعد الجلسة مع إمكانية إصدار استدعاء الولي فوراً.'))
                     ->modalSubmitActionLabel(__('تأكيد الإحالة وجدولة جلسة المجلس'))
@@ -589,7 +608,7 @@ class BehaviorObservationResource extends Resource
                     ->label(__('استدعاء ولي الأمر'))
                     ->icon('heroicon-o-envelope')
                     ->color('warning')
-                    ->visible(fn (BehaviorObservation $record): bool => in_array($record->category, ['disciplinary', 'negative', 'observation']))
+                    ->visible(fn (BehaviorObservation $record): bool => ! $record->trashed() && ! $record->hasGuardianSummons() && in_array($record->category, ['disciplinary', 'negative', 'observation']))
                     ->modalHeading(fn (BehaviorObservation $record): string => __('✉️ إصدار استدعاء رسمي لولي أمر التلميذ(ة): :name', ['name' => $record->student?->full_name ?? '—']))
                     ->modalDescription(__('تحديد موعد المقابلة ومكان الاستقبال لتوليد وثيقة استدعاء رسمية ومطبوعة لولي الأمر.'))
                     ->modalSubmitActionLabel(__('تأكيد الموعد وإصدار الاستدعاء'))
@@ -619,11 +638,6 @@ class BehaviorObservationResource extends Resource
                             'behaviorObservation' => $record,
                         ]);
 
-                        $summonsPdfUrl = route('print.student-behavior-report.guardian-summons.pdf', [
-                            'locale' => app()->getLocale(),
-                            'behaviorObservation' => $record,
-                        ]);
-
                         Notification::make()
                             ->success()
                             ->title(__('تم تسجيل وإصدار استدعاء ولي الأمر بنجاح'))
@@ -635,9 +649,6 @@ class BehaviorObservationResource extends Resource
                                     ->label(__('طباعة الاستدعاء (A4)'))
                                     ->url($summonsPrintUrl)
                                     ->openUrlInNewTab(),
-                                NotificationAction::make('downloadPdf')
-                                    ->label(__('تحميل PDF'))
-                                    ->url($summonsPdfUrl),
                             ])
                             ->persistent()
                             ->send();
@@ -648,7 +659,7 @@ class BehaviorObservationResource extends Resource
                     ->label(__('مخرجات المقابلة والتعهد'))
                     ->icon('heroicon-o-clipboard-document-check')
                     ->color('success')
-                    ->visible(fn (BehaviorObservation $record): bool => $record->administrative_action === 'guardian_summons' || $record->hasGuardianSummons())
+                    ->visible(fn (BehaviorObservation $record): bool => ! $record->trashed() && ($record->administrative_action === 'guardian_summons' || $record->hasGuardianSummons()))
                     ->modalHeading(fn (BehaviorObservation $record): string => __('تسجيل مخرجات مقابلة ولي أمر التلميذ(ة): :name', ['name' => $record->student?->full_name ?? '—']))
                     ->modalDescription(__('توثيق استلام الوصل المقتطع، حضور ولي الأمر في الموعد المحدد، وما تم الاتفاق عليه من تعهدات وإجراءات.'))
                     ->modalWidth('xl')
@@ -700,66 +711,143 @@ class BehaviorObservationResource extends Resource
                         $notification->send();
                     }),
 
-                // Print Interview Minutes (محضر المقابلة والتعهد)
-                Tables\Actions\Action::make('printInterviewMinutes')
-                    ->label(__('محضر المقابلة (A4)'))
-                    ->icon('heroicon-o-document-check')
-                    ->color('success')
-                    ->visible(fn (BehaviorObservation $record): bool => $record->hasGuardianSummons() && $record->guardian_attendance_status === 'attended')
-                    ->url(fn (BehaviorObservation $record): string => route('print.student-behavior-report.interview-minutes', [
-                        'locale' => app()->getLocale(),
-                        'behaviorObservation' => $record,
-                    ]))
-                    ->openUrlInNewTab(),
+                // Unified Print Actions Group (Official Documents A4) - No direct PDF downloads, only clean A4 printing
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('printReport')
+                        ->label(__('طباعة التقرير البيداغوجي (A4)'))
+                        ->icon('heroicon-o-printer')
+                        ->color('primary')
+                        ->url(fn (BehaviorObservation $record): string => route('print.student-behavior-report', [
+                            'locale' => app()->getLocale(),
+                            'behaviorObservation' => $record,
+                        ]))
+                        ->openUrlInNewTab(),
 
-                // Print Disciplinary Summons if already referred
-                Tables\Actions\Action::make('printDisciplinarySummons')
-                    ->label(__('استدعاء مجلس التأديب (A4)'))
-                    ->icon('heroicon-o-scale')
-                    ->color('danger')
-                    ->visible(fn (BehaviorObservation $record): bool => $record->hasDisciplinaryRecord())
-                    ->url(fn (BehaviorObservation $record): string => route('print.disciplinary.summons', [
-                        'locale' => app()->getLocale(),
-                        'record' => $record->disciplinary_record_id,
-                    ]))
-                    ->openUrlInNewTab(),
+                    Tables\Actions\Action::make('printGuardianSummons')
+                        ->label(__('طباعة استدعاء ولي الأمر (A4)'))
+                        ->icon('heroicon-o-envelope')
+                        ->color('warning')
+                        ->visible(fn (BehaviorObservation $record): bool => $record->hasGuardianSummons())
+                        ->url(fn (BehaviorObservation $record): string => route('print.student-behavior-report.guardian-summons', [
+                            'locale' => app()->getLocale(),
+                            'behaviorObservation' => $record,
+                        ]))
+                        ->openUrlInNewTab(),
 
-                // Print Guardian Summons if issued
-                Tables\Actions\Action::make('printGuardianSummons')
-                    ->label(__('استدعاء الولي (A4)'))
-                    ->icon('heroicon-o-printer')
-                    ->color('warning')
-                    ->visible(fn (BehaviorObservation $record): bool => $record->hasGuardianSummons())
-                    ->url(fn (BehaviorObservation $record): string => route('print.student-behavior-report.guardian-summons', [
-                        'locale' => app()->getLocale(),
-                        'behaviorObservation' => $record,
-                    ]))
-                    ->openUrlInNewTab(),
+                    Tables\Actions\Action::make('printInterviewMinutes')
+                        ->label(__('طباعة محضر المقابلة والتعهد (A4)'))
+                        ->icon('heroicon-o-document-check')
+                        ->color('success')
+                        ->visible(fn (BehaviorObservation $record): bool => $record->hasGuardianSummons() && $record->guardian_attendance_status === 'attended')
+                        ->url(fn (BehaviorObservation $record): string => route('print.student-behavior-report.interview-minutes', [
+                            'locale' => app()->getLocale(),
+                            'behaviorObservation' => $record,
+                        ]))
+                        ->openUrlInNewTab(),
 
-                // Print Behavior Report
-                Tables\Actions\Action::make('printReport')
-                    ->label(__('طباعة التقرير (A4)'))
+                    Tables\Actions\Action::make('printDisciplinarySummons')
+                        ->label(__('طباعة استدعاء مجلس التأديب (A4)'))
+                        ->icon('heroicon-o-scale')
+                        ->color('danger')
+                        ->visible(fn (BehaviorObservation $record): bool => $record->hasDisciplinaryRecord())
+                        ->url(fn (BehaviorObservation $record): string => route('print.disciplinary.summons', [
+                            'locale' => app()->getLocale(),
+                            'record' => $record->disciplinary_record_id,
+                        ]))
+                        ->openUrlInNewTab(),
+                ])
+                    ->label(__('طباعة الوثائق'))
                     ->icon('heroicon-o-printer')
                     ->color('primary')
-                    ->url(fn (BehaviorObservation $record): string => route('print.student-behavior-report', [
-                        'locale' => app()->getLocale(),
-                        'behaviorObservation' => $record,
-                    ]))
-                    ->openUrlInNewTab(),
-
-                // Download Behavior Report PDF
-                Tables\Actions\Action::make('downloadPdf')
-                    ->label(__('تحميل PDF'))
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('gray')
-                    ->url(fn (BehaviorObservation $record): string => route('print.student-behavior-report.pdf', [
-                        'locale' => app()->getLocale(),
-                        'behaviorObservation' => $record,
-                    ])),
+                    ->tooltip(__('طباعة الوثائق الرسمية للتقرير (A4)'))
+                    ->visible(fn (BehaviorObservation $record): bool => ! $record->trashed()),
 
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (BehaviorObservation $record): bool => ! $record->trashed()),
+
+                // DeleteAction: moves to trash with justification (Soft Delete)
+                Tables\Actions\DeleteAction::make()
+                    ->label(fn () => auth()->user()?->isTeachingStaff() ? __('إرسال للمحذوفات') : __('حذف إلى المحذوفات'))
+                    ->modalHeading(__('إرسال التقرير إلى سلة المحذوفات'))
+                    ->modalDescription(__('كنوع من الأمان البيداغوجي، يتم حفظ التقرير في سلة المحذوفات، ولا يتم الحذف النهائي إلا بعد موافقة ومصادقة الإدارة ومستشار التربية.'))
+                    ->modalSubmitActionLabel(__('تأكيد الإرسال للمحذوفات'))
+                    ->form([
+                        Textarea::make('deletion_reason')
+                            ->label(__('سبب طلب الحذف (للعرض على الإدارة ومستشار التربية)'))
+                            ->placeholder(__('بيان مبرر طلب الحذف أو معالجة الإشكال...'))
+                            ->rows(3)
+                            ->required(),
+                    ])
+                    ->action(function (BehaviorObservation $record, array $data): void {
+                        $record->sendToTrash(auth()->user(), $data['deletion_reason'] ?? null);
+
+                        Notification::make()
+                            ->warning()
+                            ->title(__('تم إرسال التقرير إلى سلة المحذوفات'))
+                            ->body(__('التقرير الآن في سلة المحذوفات ويتطلب الحذف النهائي مصادقة الإدارة والمستشار.'))
+                            ->send();
+                    }),
+
+                // RestoreAction: restores from trash
+                Tables\Actions\RestoreAction::make()
+                    ->label(__('استرجاع التقرير'))
+                    ->modalHeading(__('استرجاع التقرير من سلة المحذوفات'))
+                    ->modalDescription(__('هل أنت متأكد من استرجاع هذا التقرير وإلغاء طلب الحذف وإعادته للسجلات النشطة؟'))
+                    ->modalSubmitActionLabel(__('تأكيد الاسترجاع'))
+                    ->visible(fn (BehaviorObservation $record): bool => $record->trashed() && (
+                        auth()->user()?->isLeadership() ||
+                        auth()->user()?->isGeneralSupervisor() ||
+                        auth()->user()?->isAdmin()
+                    ))
+                    ->action(function (BehaviorObservation $record): void {
+                        $record->restoreFromTrash();
+
+                        Notification::make()
+                            ->success()
+                            ->title(__('تم استرجاع التقرير بنجاح'))
+                            ->body(__('تمت إعادة التقرير إلى السجلات النشطة ومتابعة وضعه البيداغوجي.'))
+                            ->send();
+                    }),
+
+                // ForceDeleteAction: administrative permanent deletion approval
+                Tables\Actions\ForceDeleteAction::make()
+                    ->label(__('المصادقة على الحذف النهائي'))
+                    ->modalHeading(__('المصادقة والاعتماد الإداري للحذف النهائي'))
+                    ->modalDescription(__('تحذير أمني: هذه العملية تشكل موافقة رسمية من الرتب الإدارية على حذف التقرير نهائياً وبشكل لا رجعة فيه من السجلات.'))
+                    ->modalSubmitActionLabel(__('مصادقة واعتماد الحذف النهائي'))
+                    ->color('danger')
+                    ->visible(fn (BehaviorObservation $record): bool => $record->trashed() && (
+                        auth()->user()?->isLeadership() ||
+                        auth()->user()?->isGeneralSupervisor() ||
+                        auth()->user()?->isAdmin()
+                    )),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->label(__('إرسال المحدد للمحذوفات'))
+                        ->modalHeading(__('إرسال التقارير المحددة إلى سلة المحذوفات'))
+                        ->modalDescription(__('سيتم نقل كافة التقارير المحددة إلى المحذوفات كإجراء أمان للمراجعة الإدارية.'))
+                        ->action(function (Collection $records): void {
+                            $user = auth()->user();
+                            foreach ($records as $record) {
+                                $record->sendToTrash($user, __('حذف جماعي'));
+                            }
+                            Notification::make()
+                                ->warning()
+                                ->title(__('تم إرسال التقارير المحددة إلى المحذوفات'))
+                                ->send();
+                        }),
+
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('استرجاع التقارير المحددة'))
+                        ->visible(fn (): bool => auth()->user()?->isLeadership() || auth()->user()?->isGeneralSupervisor() || auth()->user()?->isAdmin()),
+
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('المصادقة على الحذف النهائي للمحدد'))
+                        ->visible(fn (): bool => auth()->user()?->isLeadership() || auth()->user()?->isGeneralSupervisor() || auth()->user()?->isAdmin()),
+                ]),
             ]);
     }
 

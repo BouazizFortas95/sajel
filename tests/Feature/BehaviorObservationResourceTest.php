@@ -534,4 +534,76 @@ class BehaviorObservationResourceTest extends TestCase
             ->assertSee('تأشيرة مستشار(ة) التربية')
             ->assertSee('تأشيرة وختم مدير(ة) المؤسسة');
     }
+
+    public function test_table_actions_have_unified_printing_and_no_direct_pdf_download(): void
+    {
+        $admin = User::factory()->create(['role' => Role::Admin->value]);
+        $student = Student::factory()->create();
+
+        $observation = BehaviorObservation::query()->create([
+            'student_id' => $student->id,
+            'category' => 'disciplinary',
+            'notes' => 'مخالفة انضباطية تستوجب المتابعة.',
+            'date' => today(),
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(ListBehaviorObservations::class)
+            ->assertCanSeeTableRecords([$observation])
+            ->assertTableActionExists('printReport')
+            ->assertTableActionDoesNotExist('downloadPdf');
+    }
+
+    public function test_deletion_moves_to_trash_and_requires_administrative_approval(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $principal = User::factory()->create(['role' => Role::Principal->value]);
+        $student = Student::factory()->create();
+
+        $observation = BehaviorObservation::query()->create([
+            'student_id' => $student->id,
+            'category' => 'disciplinary',
+            'notes' => 'تقرير بيداغوجي تمهيداً للإحالة.',
+            'date' => today(),
+            'recorded_by_id' => $teacher->id,
+        ]);
+
+        // 1. Teacher deletes -> moves to trash (Soft Delete)
+        Livewire::actingAs($teacher)
+            ->test(ListBehaviorObservations::class)
+            ->callTableAction('delete', $observation, data: [
+                'deletion_reason' => 'تسوية الإشكال ودياً داخل القسم بموافقة المندوبين.',
+            ]);
+
+        $observation->refresh();
+        $this->assertTrue($observation->trashed());
+        $this->assertSame($teacher->id, $observation->deleted_by_id);
+        $this->assertSame('تسوية الإشكال ودياً داخل القسم بموافقة المندوبين.', $observation->deletion_reason);
+        $this->assertSoftDeleted('behavior_observations', ['id' => $observation->id]);
+
+        // 2. Teacher CANNOT force delete (denied by policy)
+        $this->assertFalse($teacher->can('forceDelete', $observation));
+
+        // 3. Administrative ranks (Principal) CAN force delete or restore
+        $this->assertTrue($principal->can('forceDelete', $observation));
+        $this->assertTrue($principal->can('restore', $observation));
+
+        // 4. Principal restores from trash
+        $observation->restoreFromTrash();
+        $observation->refresh();
+        $this->assertFalse($observation->trashed());
+        $this->assertNull($observation->deleted_by_id);
+        $this->assertNull($observation->deletion_reason);
+
+        // 5. Send back to trash and principal permanently force deletes
+        $observation->sendToTrash($teacher, 'خطأ في التدوين');
+        $this->assertTrue($observation->trashed());
+
+        Livewire::actingAs($principal)
+            ->test(ListBehaviorObservations::class)
+            ->filterTable('trashed', true)
+            ->callTableAction('forceDelete', $observation);
+
+        $this->assertDatabaseMissing('behavior_observations', ['id' => $observation->id]);
+    }
 }

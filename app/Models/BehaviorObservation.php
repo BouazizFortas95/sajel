@@ -10,11 +10,13 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 
 class BehaviorObservation extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     protected static function booted(): void
     {
@@ -48,6 +50,8 @@ class BehaviorObservation extends Model
         'guardian_receipt_returned_at',
         'guardian_attendance_status',
         'guardian_attendance_notes',
+        'deleted_by_id',
+        'deletion_reason',
     ];
 
     protected function casts(): array
@@ -70,6 +74,11 @@ class BehaviorObservation extends Model
     public function recorder(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recorded_by_id');
+    }
+
+    public function deletedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'deleted_by_id');
     }
 
     public function schedule(): BelongsTo
@@ -300,5 +309,23 @@ class BehaviorObservation extends Model
         }
 
         $this->update($updates);
+    }
+
+    public function sendToTrash(?User $by = null, ?string $reason = null): bool
+    {
+        $this->deleted_by_id = $by?->id ?? Auth::id();
+        $this->deletion_reason = $reason;
+        $this->save();
+
+        return (bool) $this->delete();
+    }
+
+    public function restoreFromTrash(): bool
+    {
+        $this->deleted_by_id = null;
+        $this->deletion_reason = null;
+        $this->save();
+
+        return (bool) $this->restore();
     }
 }
