@@ -196,32 +196,43 @@
             icon="heroicon-o-academic-cap"
         >
             <x-slot name="headerEnd">
-                <div class="flex items-center gap-1.5 rounded-lg bg-gray-100 p-1 dark:bg-white/5">
-                    <button
-                        type="button"
-                        wire:click="setCurriculumView('annual')"
-                        @class([
-                            'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition',
-                            'bg-white text-primary-700 shadow-sm dark:bg-gray-800 dark:text-primary-400' => $this->curriculumView === 'annual',
-                            'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white' => $this->curriculumView !== 'annual',
-                        ])
+                <div class="flex flex-wrap items-center gap-2">
+                    <a
+                        href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'subject' => $this->subjectId, 'classroom' => $this->classroomId]) }}"
+                        target="_blank"
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500"
                     >
-                        <x-filament::icon icon="heroicon-o-calendar-days" class="h-4 w-4" />
-                        {{ __('التدرج السنوي') }}
-                    </button>
+                        <x-filament::icon icon="heroicon-o-printer" class="h-4 w-4" />
+                        {{ __('طباعة التوزيع السنوي الرسمي') }}
+                    </a>
 
-                    <button
-                        type="button"
-                        wire:click="setCurriculumView('monthly')"
-                        @class([
-                            'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition',
-                            'bg-white text-primary-700 shadow-sm dark:bg-gray-800 dark:text-primary-400' => $this->curriculumView === 'monthly',
-                            'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white' => $this->curriculumView !== 'monthly',
-                        ])
-                    >
-                        <x-filament::icon icon="heroicon-o-clock" class="h-4 w-4" />
-                        {{ __('المخطط الشهري') }}
-                    </button>
+                    <div class="flex items-center gap-1.5 rounded-lg bg-gray-100 p-1 dark:bg-white/5">
+                        <button
+                            type="button"
+                            wire:click="setCurriculumView('annual')"
+                            @class([
+                                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition',
+                                'bg-white text-primary-700 shadow-sm dark:bg-gray-800 dark:text-primary-400' => $this->curriculumView === 'annual',
+                                'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white' => $this->curriculumView !== 'annual',
+                            ])
+                        >
+                            <x-filament::icon icon="heroicon-o-calendar-days" class="h-4 w-4" />
+                            {{ __('التدرج السنوي') }}
+                        </button>
+
+                        <button
+                            type="button"
+                            wire:click="setCurriculumView('monthly')"
+                            @class([
+                                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition',
+                                'bg-white text-primary-700 shadow-sm dark:bg-gray-800 dark:text-primary-400' => $this->curriculumView === 'monthly',
+                                'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white' => $this->curriculumView !== 'monthly',
+                            ])
+                        >
+                            <x-filament::icon icon="heroicon-o-clock" class="h-4 w-4" />
+                            {{ __('المخطط الشهري') }}
+                        </button>
+                    </div>
                 </div>
             </x-slot>
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdministrativeArchiveController;
+use App\Http\Controllers\AnnualCurriculumDistributionController;
 use App\Http\Controllers\ClassCouncilController;
 use App\Http\Controllers\ClassCouncilDeliberationController;
 use App\Http\Controllers\CounselingController;
@@ -792,6 +793,16 @@ Route::get('/{locale}/print/pedagogical-council/curriculum-pacing/pdf', [Pedagog
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.pedagogical-council.curriculum-pacing.pdf');
+
+Route::get('/{locale}/print/annual-curriculum-distribution', [AnnualCurriculumDistributionController::class, 'show'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.annual-curriculum-distribution');
+
+Route::get('/{locale}/print/annual-curriculum-distribution/pdf', [AnnualCurriculumDistributionController::class, 'pdf'])
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.annual-curriculum-distribution.pdf');
 
 Route::get('/{locale}/print/pedagogical-council/seminar-calendar', [PedagogicalCouncilController::class, 'seminarCalendar'])
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))

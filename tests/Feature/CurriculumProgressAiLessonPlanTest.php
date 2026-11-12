@@ -312,4 +312,65 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
                 'starting_situation' => 'طرح إشكالية رسم أشكال هندسية مكررة لاكتشاف الحاجة إلى حلقة التكرار.',
             ]);
     }
+
+    public function test_annual_curriculum_distribution_page_renders_authentic_ministerial_layout(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $this->actingAs($teacher);
+
+        $response = $this->get(route('print.annual-curriculum-distribution', [
+            'locale' => 'ar',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('التوزيع السنوي للسنة الأولى من التعليم المتوسط');
+        $response->assertSee('استخدام الحاسوب');
+        $response->assertSee('معالج النصوص');
+        $response->assertSee('فرض الثلاثي الأول');
+        $response->assertSee('فرض الثلاثي الثاني');
+        $response->assertSee('فرض الثلاثي الثالث');
+        $response->assertSee('تصحيح الاختبار والتقويم والمعالجة');
+        $response->assertSee('عطلة الخريف');
+        $response->assertSee('عطلة الشتاء');
+        $response->assertSee('عطلة الربيع');
+        $response->assertSee('اختبارات الفصل الأول');
+        $response->assertSee('اختبارات الفصل الثاني');
+        $response->assertSee('اختبارات الفصل الثالث');
+        $response->assertSee('أستاذ المادة');
+        $response->assertSee('المدير');
+        $response->assertSee('المفتش');
+    }
+
+    public function test_annual_curriculum_distribution_pdf_route_streams_response(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $this->actingAs($teacher);
+
+        $response = $this->get(route('print.annual-curriculum-distribution.pdf', [
+            'locale' => 'ar',
+        ]));
+
+        $response->assertOk();
+        $this->assertStringContainsString('annual-curriculum-distribution', (string) $response->headers->get('content-disposition'));
+    }
+
+    public function test_curriculum_progress_page_contains_annual_distribution_print_link(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $subject = Subject::factory()->create(['name' => 'المعلوماتية']);
+        $level = Level::factory()->create(['name' => 'السنة الأولى متوسط']);
+        $classroom = Classroom::factory()->create(['level_id' => $level->id, 'name' => '1 م 1']);
+
+        Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'subject_id' => $subject->id,
+            'classroom_id' => $classroom->id,
+        ]);
+
+        $this->actingAs($teacher);
+
+        Livewire::test(CurriculumProgress::class)
+            ->assertSee('طباعة التوزيع السنوي الرسمي')
+            ->assertSee(route('print.annual-curriculum-distribution', ['locale' => 'ar']));
+    }
 }
