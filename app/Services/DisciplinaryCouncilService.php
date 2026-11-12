@@ -396,7 +396,7 @@ class DisciplinaryCouncilService
 
         return BrowsershotFactory::html($html)
             ->landscape()
-            ->margins(8, 8, 8, 8)
+            ->margins(6, 8, 6, 8)
             ->pdf();
     }
 }
