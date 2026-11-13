@@ -157,34 +157,6 @@
             line-height: 1.25;
         }
 
-        /* Meta Card Strip */
-        .meta-strip {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 3px;
-            margin-bottom: 3px;
-        }
-
-        .meta-item {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            padding: 1.5px 4px;
-            text-align: center;
-        }
-
-        .meta-item-label {
-            font-size: 6.5pt;
-            color: #64748b;
-            font-weight: 700;
-        }
-
-        .meta-item-value {
-            font-size: 7.5pt;
-            color: #0f172a;
-            font-weight: 800;
-        }
-
         /* Main Table */
         .distribution-table {
             width: 100%;
@@ -403,30 +375,6 @@
                 <div>الحجم الساعي: {{ $weekly_hours }}</div>
                 <div>معامل المادة: {{ $coefficient }}</div>
                 <div>الأستاذ: {{ $teacher_name }}</div>
-            </div>
-        </div>
-
-        {{-- Meta Card Strip --}}
-        <div class="meta-strip">
-            <div class="meta-item">
-                <div class="meta-item-label">المادة</div>
-                <div class="meta-item-value">المعلوماتية (الإعلام الآلي)</div>
-            </div>
-            <div class="meta-item">
-                <div class="meta-item-label">المستوى والطور</div>
-                <div class="meta-item-value">{{ $level_name }}</div>
-            </div>
-            <div class="meta-item">
-                <div class="meta-item-label">أستاذ المادة</div>
-                <div class="meta-item-value">{{ $teacher_name }}</div>
-            </div>
-            <div class="meta-item">
-                <div class="meta-item-label">الحجم الساعي والمعامل</div>
-                <div class="meta-item-value">{{ $weekly_hours }} — المعامل: {{ $coefficient }}</div>
-            </div>
-            <div class="meta-item">
-                <div class="meta-item-label">المؤسسة والسنة</div>
-                <div class="meta-item-value">{{ $school_name }} ({{ $academic_year }})</div>
             </div>
         </div>
 
