@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Services\AiLessonPlannerService;
 use App\Services\CurriculumProgressService;
 use Carbon\Carbon;
+use Database\Seeders\InformaticsCurriculumSeeder;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
@@ -544,7 +545,14 @@ class CurriculumProgress extends Page
             return null;
         }
 
-        return app(CurriculumProgressService::class)->detail($classroom, $subject);
+        $detail = app(CurriculumProgressService::class)->detail($classroom, $subject);
+
+        if (empty($detail['domains']) && (str_contains($subject->name, 'إعلام') || str_contains($subject->name, 'معلوماتية'))) {
+            app(InformaticsCurriculumSeeder::class)->run();
+            $detail = app(CurriculumProgressService::class)->detail($classroom, $subject);
+        }
+
+        return $detail;
     }
 
     private function teacherCanAccess(User $teacher, int $classroomId, int $subjectId): bool

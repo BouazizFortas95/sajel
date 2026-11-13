@@ -418,4 +418,41 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
             $this->assertSame(1, count($matches[0]), "Level {$level} PDF must fit strictly on 1 single A4 page.");
         }
     }
+
+    public function test_curriculum_progress_page_auto_seeds_and_displays_informatics_curriculum(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $subject = Subject::factory()->create(['name' => 'الإعلام الآلي']);
+        $level = Level::factory()->create(['name' => 'السنة الأولى متوسط']);
+        $classroom = Classroom::factory()->create(['level_id' => $level->id, 'name' => '1 م 1']);
+
+        Schedule::factory()->create([
+            'user_id' => $teacher->id,
+            'subject_id' => $subject->id,
+            'classroom_id' => $classroom->id,
+        ]);
+
+        $this->actingAs($teacher);
+
+        $this->assertDatabaseMissing('curriculum_domains', [
+            'subject_id' => $subject->id,
+            'level_id' => $level->id,
+        ]);
+
+        Livewire::test(CurriculumProgress::class)
+            ->set('subjectId', $subject->id)
+            ->set('classroomId', $classroom->id)
+            ->assertDontSee('لا يوجد منهاج معرف لهذه المادة والمستوى')
+            ->assertSee('استخدام الحاسوب')
+            ->assertSee('بيئة التعامل مع الحاسوب')
+            ->assertSee('مفهوم نظام التشغيل')
+            ->assertSee('معالج النصوص')
+            ->assertSee('إنجاز مذكرة بالذكاء الاصطناعي');
+
+        $this->assertDatabaseHas('curriculum_domains', [
+            'subject_id' => $subject->id,
+            'level_id' => $level->id,
+            'name' => 'استخدام الحاسوب',
+        ]);
+    }
 }

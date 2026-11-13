@@ -19,5 +19,6 @@ class DatabaseSeeder extends Seeder
         $this->call(RoleProfilesSeeder::class);
         $this->call(EducationalInstitutionSeeder::class);
         $this->call(ComprehensiveSchoolEcosystemSeeder::class);
+        $this->call(InformaticsCurriculumSeeder::class);
     }
 }
