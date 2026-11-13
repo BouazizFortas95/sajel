@@ -55,8 +55,7 @@ class AnnualCurriculumDistributionService
 
         $availableMonths = [
             'all' => 'جميع الأشهر',
-            '09' => 'سبتمبر',
-            '10' => 'أكتوبر',
+            '09_10' => 'سبتمبر وأكتوبر',
             '11' => 'نوفمبر',
             '12' => 'ديسمبر',
             '01' => 'جانفي',
@@ -68,7 +67,11 @@ class AnnualCurriculumDistributionService
 
         $monthlyPlans = $this->buildCollectedMonthlyPlans($selectedLevels);
         $monthStr = $month !== null ? (string) $month : '';
-        $normalizedMonth = ($monthStr === 'all' || $monthStr === '') ? 'all' : (is_numeric($monthStr) ? sprintf('%02d', (int) $monthStr) : $monthStr);
+        if ($monthStr === '09' || $monthStr === '10' || $monthStr === '9' || $monthStr === '09_10') {
+            $normalizedMonth = '09_10';
+        } else {
+            $normalizedMonth = ($monthStr === 'all' || $monthStr === '') ? 'all' : (is_numeric($monthStr) ? sprintf('%02d', (int) $monthStr) : $monthStr);
+        }
         $selectedMonth = isset($availableMonths[$normalizedMonth]) ? $normalizedMonth : 'all';
         $filteredMonthlyPlans = ($selectedMonth === 'all')
             ? $monthlyPlans
@@ -470,21 +473,19 @@ class AnnualCurriculumDistributionService
     public function buildMonthlyPlans(array $levelData): array
     {
         $monthNames = [
-            '09' => ['name' => 'سبتمبر', 'term' => 'الفصل الأول'],
-            '10' => ['name' => 'أكتوبر', 'term' => 'الفصل الأول'],
-            '11' => ['name' => 'نوفمبر', 'term' => 'الفصل الأول'],
-            '12' => ['name' => 'ديسمبر', 'term' => 'الفصل الأول'],
-            '01' => ['name' => 'جانفي', 'term' => 'الفصل الثاني'],
-            '02' => ['name' => 'فيفري', 'term' => 'الفصل الثاني'],
-            '03' => ['name' => 'مارس', 'term' => 'الفصل الثاني'],
-            '04' => ['name' => 'أفريل', 'term' => 'الفصل الثالث'],
-            '05' => ['name' => 'ماي', 'term' => 'الفصل الثالث'],
+            '09_10' => ['name' => 'سبتمبر وأكتوبر', 'term' => 'الفصل الأول', 'months' => ['09', '10']],
+            '11' => ['name' => 'نوفمبر', 'term' => 'الفصل الأول', 'months' => ['11']],
+            '12' => ['name' => 'ديسمبر', 'term' => 'الفصل الأول', 'months' => ['12']],
+            '01' => ['name' => 'جانفي', 'term' => 'الفصل الثاني', 'months' => ['01']],
+            '02' => ['name' => 'فيفري', 'term' => 'الفصل الثاني', 'months' => ['02']],
+            '03' => ['name' => 'مارس', 'term' => 'الفصل الثاني', 'months' => ['03']],
+            '04' => ['name' => 'أفريل', 'term' => 'الفصل الثالث', 'months' => ['04']],
+            '05' => ['name' => 'ماي', 'term' => 'الفصل الثالث', 'months' => ['05']],
         ];
 
         $plans = [];
 
-        foreach ($monthNames as $rawMonthKey => $monthInfo) {
-            $monthKey = sprintf('%02d', (int) $rawMonthKey);
+        foreach ($monthNames as $monthKey => $monthInfo) {
             $monthlyDomains = [];
 
             foreach ($levelData['domains'] as $domain) {
@@ -498,7 +499,7 @@ class AnnualCurriculumDistributionService
 
                     $m = $this->resolveRowMonth($row);
 
-                    if ((string) $m === (string) $monthKey) {
+                    if (in_array((string) $m, $monthInfo['months'], true)) {
                         $copiedRow = $row;
                         if (empty($copiedRow['is_break'])) {
                             $copiedRow['_seq_name'] = $currentSeqName ?? 'المقطع التعلمي';
@@ -599,8 +600,7 @@ class AnnualCurriculumDistributionService
         }
 
         $monthNames = [
-            '09' => ['name' => 'سبتمبر', 'term' => 'الفصل الأول'],
-            '10' => ['name' => 'أكتوبر', 'term' => 'الفصل الأول'],
+            '09_10' => ['name' => 'سبتمبر وأكتوبر', 'term' => 'الفصل الأول'],
             '11' => ['name' => 'نوفمبر', 'term' => 'الفصل الأول'],
             '12' => ['name' => 'ديسمبر', 'term' => 'الفصل الأول'],
             '01' => ['name' => 'جانفي', 'term' => 'الفصل الثاني'],
@@ -625,8 +625,7 @@ class AnnualCurriculumDistributionService
 
         $collected = [];
 
-        foreach ($monthNames as $rawMonthKey => $monthInfo) {
-            $monthKey = sprintf('%02d', (int) $rawMonthKey);
+        foreach ($monthNames as $monthKey => $monthInfo) {
             $levelSections = [];
             $allDomains = [];
 

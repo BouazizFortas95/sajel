@@ -566,7 +566,7 @@
                         <div class="title-badge">
                             <h1 class="title-main">المخطط الشهري للتعلمات</h1>
                             <div class="title-sub">
-                                شهر {{ $plan['month_name'] }} ({{ $plan['term'] }})
+                                {{ (str_contains($plan['month_name'], 'و') || str_contains($plan['month_name'], '—')) ? 'شهري' : 'شهر' }} {{ $plan['month_name'] }} ({{ $plan['term'] }})
                                 @if (!empty($plan['level_sections']) && count($plan['level_sections']) === 1)
                                     — {{ $plan['level_sections'][0]['level_name'] }}
                                 @elseif (($selected_level ?? null) !== 'all' && count($selected_levels ?? []) === 1)

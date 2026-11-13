@@ -422,7 +422,7 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('المخطط الشهري للتعلمات');
-        $response->assertSee('شهر أكتوبر');
+        $response->assertSee('سبتمبر وأكتوبر');
         $response->assertSee('بيئة التعامل مع الحاسوب');
         $response->assertSee('مفهوم نظام التشغيل');
 
@@ -459,13 +459,13 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
         $response = $this->get(route('print.annual-curriculum-distribution', [
             'locale' => 'ar',
             'mode' => 'monthly',
-            'month' => '10',
+            'month' => '09_10',
             'level' => 'all',
         ]));
 
         $response->assertOk();
         $response->assertSee('المخطط الشهري للتعلمات');
-        $response->assertSee('شهر أكتوبر');
+        $response->assertSee('سبتمبر وأكتوبر');
         // Separated by level banner rows
         $response->assertSee('السنة الأولى من التعليم المتوسط (1AM)');
         $response->assertSee('السنة الثالثة من التعليم المتوسط (3AM)');
@@ -476,7 +476,7 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
         $data = $service->getDistributionData(
             teacherId: $teacher->id,
             mode: 'monthly',
-            month: '10',
+            month: '09_10',
             level: 'all'
         );
         $pdf = $service->generatePdf($data);

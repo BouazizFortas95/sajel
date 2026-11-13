@@ -841,8 +841,7 @@ class CurriculumProgress extends Page
         }
 
         $monthsDef = [
-            '09' => ['month_name' => __('سبتمبر'), 'term' => __('الفصل الأول'), 'badge_color' => 'info'],
-            '10' => ['month_name' => __('أكتوبر'), 'term' => __('الفصل الأول'), 'badge_color' => 'info'],
+            '09_10' => ['month_name' => __('سبتمبر — أكتوبر'), 'term' => __('الفصل الأول'), 'badge_color' => 'info'],
             '11' => ['month_name' => __('نوفمبر'), 'term' => __('الفصل الأول'), 'badge_color' => 'info'],
             '12' => ['month_name' => __('ديسمبر'), 'term' => __('الفصل الأول'), 'badge_color' => 'info'],
             '01' => ['month_name' => __('جانفي'), 'term' => __('الفصل الثاني'), 'badge_color' => 'warning'],
@@ -876,6 +875,9 @@ class CurriculumProgress extends Page
 
         foreach ($allFlatResources as $index => $item) {
             $assignedMonth = $item['completed_month'];
+            if ($assignedMonth === '09' || $assignedMonth === '10') {
+                $assignedMonth = '09_10';
+            }
 
             if (! $assignedMonth || ! isset($schedule[$assignedMonth])) {
                 $monthIdx = (int) floor($index / $perMonth);
