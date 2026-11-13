@@ -316,39 +316,20 @@
 
         /* Signatures Section */
         .signatures-grid {
-            margin-top: 5px;
+            margin-top: 8px;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
+            padding: 2px 10px 0 10px;
         }
 
-        .signature-box {
-            border: 1px dashed #64748b;
-            background: #fbfcfe;
-            border-radius: 5px;
-            padding: 3px 6px;
+        .signature-col {
             text-align: center;
-            height: 44px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
         }
 
         .signature-title {
-            font-size: 7.5pt;
+            font-size: 8.5pt;
             font-weight: 800;
             color: #1e3a8a;
-        }
-
-        .signature-hint {
-            font-size: 6.5pt;
-            color: #64748b;
-        }
-
-        .signature-name {
-            font-size: 7.2pt;
-            font-weight: 700;
-            color: #0f172a;
         }
 
         @media print {
@@ -504,20 +485,14 @@
 
         {{-- Institutional Signatures Footer --}}
         <div class="signatures-grid">
-            <div class="signature-box">
+            <div class="signature-col">
                 <div class="signature-title">أستاذ(ة) المادة</div>
-                <div class="signature-name">{{ $teacher_name }}</div>
-                <div class="signature-hint">التاريخ والإمضاء: .......................................</div>
             </div>
-            <div class="signature-box">
+            <div class="signature-col">
                 <div class="signature-title">مدير(ة) المؤسسة</div>
-                <div class="signature-name">{{ $principal_name ?? 'أحمد بوزقاق' }}</div>
-                <div class="signature-hint">الختم الرسمي والإمضاء</div>
             </div>
-            <div class="signature-box">
+            <div class="signature-col">
                 <div class="signature-title">مفتش(ة) مادة المعلوماتية</div>
-                <div class="signature-name">التأشيرة والملاحظات</div>
-                <div class="signature-hint">الختم والتأشيرة: .......................................</div>
             </div>
         </div>
     </div>
