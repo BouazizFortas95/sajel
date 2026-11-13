@@ -402,8 +402,39 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
         $this->actingAs($teacher);
 
         Livewire::test(CurriculumProgress::class)
-            ->assertSee('طباعة التوزيع السنوي الرسمي')
+            ->assertSee('طباعة التوزيع السنوي')
+            ->assertSee('طباعة المخططات الشهرية')
             ->assertSee(route('print.annual-curriculum-distribution', ['locale' => 'ar']));
+    }
+
+    public function test_monthly_curriculum_plans_can_be_viewed_and_streamed(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $this->actingAs($teacher);
+
+        // Test monthly view with specific month
+        $response = $this->get(route('print.annual-curriculum-distribution', [
+            'locale' => 'ar',
+            'level' => 1,
+            'mode' => 'monthly',
+            'month' => '10',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('المخطط الشهري للتعلمات');
+        $response->assertSee('شهر أكتوبر');
+        $response->assertSee('بيئة التعامل مع الحاسوب');
+        $response->assertSee('مفهوم نظام التشغيل');
+
+        // Test monthly PDF route
+        $pdfResponse = $this->get(route('print.annual-curriculum-distribution.pdf', [
+            'locale' => 'ar',
+            'level' => 1,
+            'mode' => 'monthly',
+            'month' => '10',
+        ]));
+
+        $pdfResponse->assertOk();
     }
 
     public function test_annual_curriculum_distribution_pdf_is_single_a4_page_for_levels(): void

@@ -98,3 +98,4 @@ class InformaticsCurriculumSeeder extends Seeder
         }
     }
 }
+

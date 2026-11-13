@@ -25,6 +25,8 @@ class AnnualCurriculumDistributionService
         ?int $teacherId = null,
         ?string $academicYear = null,
         int|string|null $level = null,
+        string $mode = 'annual',
+        ?string $month = null,
     ): array {
         $school = SchoolSetting::current();
         $year = $academicYear ?? ($school?->academic_year ?? '2026 / 2027');
@@ -46,6 +48,27 @@ class AnnualCurriculumDistributionService
         $levelNumber = $this->resolveLevelNumber($level, $classroom);
         $levelData = $this->getLevelData($levelNumber);
 
+        $availableMonths = [
+            'all' => 'جميع الأشهر',
+            '09' => 'سبتمبر',
+            '10' => 'أكتوبر',
+            '11' => 'نوفمبر',
+            '12' => 'ديسمبر',
+            '01' => 'جانفي',
+            '02' => 'فيفري',
+            '03' => 'مارس',
+            '04' => 'أفريل',
+            '05' => 'ماي',
+        ];
+
+        $monthlyPlans = $this->buildMonthlyPlans($levelData);
+        $monthStr = $month !== null ? (string) $month : '';
+        $normalizedMonth = ($monthStr === 'all' || $monthStr === '') ? 'all' : (is_numeric($monthStr) ? sprintf('%02d', (int) $monthStr) : $monthStr);
+        $selectedMonth = isset($availableMonths[$normalizedMonth]) ? $normalizedMonth : 'all';
+        $filteredMonthlyPlans = ($selectedMonth === 'all')
+            ? $monthlyPlans
+            : array_filter($monthlyPlans, fn (array $p): bool => (string) $p['month_key'] === (string) $selectedMonth);
+
         return [
             'title' => $levelData['title'],
             'school_name' => $schoolName,
@@ -59,6 +82,10 @@ class AnnualCurriculumDistributionService
             'domains' => $levelData['domains'],
             'level_name' => $levelData['level_name'],
             'level_number' => $levelNumber,
+            'mode' => in_array($mode, ['annual', 'monthly'], true) ? $mode : 'annual',
+            'selected_month' => $selectedMonth,
+            'available_months' => $availableMonths,
+            'monthly_plans' => $filteredMonthlyPlans,
             'available_levels' => [
                 1 => 'السنة الأولى',
                 2 => 'السنة الثانية',
@@ -423,6 +450,191 @@ class AnnualCurriculumDistributionService
                 ],
             ],
         ];
+    }
+
+    /**
+     * Build monthly plans extracted and grouped from the full annual dataset.
+     *
+     * @param  array<string, mixed>  $levelData
+     * @return array<string, array<string, mixed>>
+     */
+    public function buildMonthlyPlans(array $levelData): array
+    {
+        $monthNames = [
+            '09' => ['name' => 'سبتمبر', 'term' => 'الفصل الأول'],
+            '10' => ['name' => 'أكتوبر', 'term' => 'الفصل الأول'],
+            '11' => ['name' => 'نوفمبر', 'term' => 'الفصل الأول'],
+            '12' => ['name' => 'ديسمبر', 'term' => 'الفصل الأول'],
+            '01' => ['name' => 'جانفي', 'term' => 'الفصل الثاني'],
+            '02' => ['name' => 'فيفري', 'term' => 'الفصل الثاني'],
+            '03' => ['name' => 'مارس', 'term' => 'الفصل الثاني'],
+            '04' => ['name' => 'أفريل', 'term' => 'الفصل الثالث'],
+            '05' => ['name' => 'ماي', 'term' => 'الفصل الثالث'],
+        ];
+
+        $plans = [];
+
+        foreach ($monthNames as $rawMonthKey => $monthInfo) {
+            $monthKey = sprintf('%02d', (int) $rawMonthKey);
+            $monthlyDomains = [];
+
+            foreach ($levelData['domains'] as $domain) {
+                $matchingRows = [];
+                $currentSeqName = null;
+
+                foreach ($domain['rows'] as $row) {
+                    if (! empty($row['sequence']['name'])) {
+                        $currentSeqName = $row['sequence']['name'];
+                    }
+
+                    $m = $this->resolveRowMonth($row);
+
+                    if ((string) $m === (string) $monthKey) {
+                        $copiedRow = $row;
+                        if (empty($copiedRow['is_break'])) {
+                            $copiedRow['_seq_name'] = $currentSeqName ?? 'المقطع التعلمي';
+                        }
+                        unset($copiedRow['sequence']);
+                        $matchingRows[] = $copiedRow;
+                    }
+                }
+
+                if (! empty($matchingRows)) {
+                    $processedRows = [];
+                    $i = 0;
+                    $n = count($matchingRows);
+                    while ($i < $n) {
+                        $r = $matchingRows[$i];
+                        if (! empty($r['is_break'])) {
+                            $processedRows[] = $r;
+                            $i++;
+
+                            continue;
+                        }
+                        $seq = $r['_seq_name'] ?? 'المقطع التعلمي';
+                        $seqSpan = 1;
+                        $j = $i + 1;
+                        while ($j < $n && empty($matchingRows[$j]['is_break']) && ($matchingRows[$j]['_seq_name'] ?? '') === $seq) {
+                            $seqSpan++;
+                            $j++;
+                        }
+                        $r['sequence'] = ['name' => $seq, 'rowspan' => $seqSpan];
+                        unset($r['_seq_name']);
+                        $processedRows[] = $r;
+                        $i++;
+                        while ($i < $j) {
+                            $subR = $matchingRows[$i];
+                            unset($subR['_seq_name']);
+                            $processedRows[] = $subR;
+                            $i++;
+                        }
+                    }
+
+                    $monthlyDomains[] = [
+                        'name' => $domain['name'],
+                        'competence' => $domain['competence'],
+                        'rowspan' => count($processedRows),
+                        'rows' => $processedRows,
+                    ];
+                }
+            }
+
+            $plans[$monthKey] = [
+                'month_key' => $monthKey,
+                'month_name' => $monthInfo['name'],
+                'term' => $monthInfo['term'],
+                'domains' => $monthlyDomains,
+            ];
+        }
+
+        return $plans;
+    }
+
+    /**
+     * Resolve the educational month for a specific curriculum distribution row.
+     *
+     * @param  array<string, mixed>  $row
+     */
+    public function resolveRowMonth(array $row): string
+    {
+        if (! empty($row['month'])) {
+            return (string) $row['month'];
+        }
+
+        if (isset($row['week'])) {
+            $w = (int) $row['week'];
+            if ($w <= 2) {
+                return '09';
+            }
+            if ($w <= 6) {
+                return '10';
+            }
+            if ($w <= 11) {
+                return '11';
+            }
+            if ($w <= 13) {
+                return '12';
+            }
+            if ($w <= 17) {
+                return '01';
+            }
+            if ($w <= 21) {
+                return '02';
+            }
+            if ($w <= 23) {
+                return '03';
+            }
+            if ($w <= 27) {
+                return '04';
+            }
+
+            return '05';
+        }
+
+        $date = (string) ($row['text'] ?? ($row['date'] ?? ''));
+
+        if (str_contains($date, 'الخريف')) {
+            return '10';
+        }
+        if (str_contains($date, 'الفصل الأول') || str_contains($date, 'الشتاء')) {
+            return '12';
+        }
+        if (str_contains($date, 'الفصل الثاني') || str_contains($date, 'الربيع')) {
+            return '03';
+        }
+        if (str_contains($date, 'الفصل الثالث') || str_contains($date, 'BEM')) {
+            return '05';
+        }
+
+        if (str_contains($date, 'سبتمبر')) {
+            return '09';
+        }
+        if (str_contains($date, 'أكتوبر')) {
+            return '10';
+        }
+        if (str_contains($date, 'نوفمبر')) {
+            return '11';
+        }
+        if (str_contains($date, 'ديسمبر')) {
+            return '12';
+        }
+        if (str_contains($date, 'جانفي')) {
+            return '01';
+        }
+        if (str_contains($date, 'فيفري')) {
+            return '02';
+        }
+        if (str_contains($date, 'مارس')) {
+            return '03';
+        }
+        if (str_contains($date, 'أفريل')) {
+            return '04';
+        }
+        if (str_contains($date, 'ماي')) {
+            return '05';
+        }
+
+        return '09';
     }
 
     /**

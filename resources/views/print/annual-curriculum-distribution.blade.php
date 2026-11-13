@@ -6,7 +6,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'التوزيع السنوي لمادة المعلوماتية' }} — سجِّل</title>
+    <title>{{ ($mode ?? 'annual') === 'monthly' ? __('المخططات الشهرية للتعلمات') : ($title ?? 'التوزيع السنوي لمادة المعلوماتية') }} — سجِّل</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,10 +52,33 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        .level-switcher {
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .level-switcher, .mode-switcher {
             display: flex;
             align-items: center;
             gap: 4px;
+        }
+
+        .month-bar {
+            max-width: 198mm;
+            margin: 0 auto 6px auto;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            gap: 4px;
+            background: #1e293b;
+            color: #ffffff;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 9.5px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         .btn-group {
@@ -76,12 +99,15 @@
             cursor: pointer;
             border: none;
             font-family: 'Cairo', sans-serif;
+            transition: all 0.15s ease;
         }
 
         .btn-amber { background: #f59e0b; color: #0f172a; }
         .btn-amber:hover { background: #d97706; }
         .btn-emerald { background: #10b981; color: #ffffff; }
         .btn-emerald:hover { background: #059669; }
+        .btn-sky { background: #0284c7; color: #ffffff; }
+        .btn-sky:hover { background: #0369a1; }
         .btn-slate { background: #334155; color: #f1f5f9; }
         .btn-slate:hover { background: #475569; }
 
@@ -99,7 +125,13 @@
                 border: 1px solid #cbd5e1;
                 border-radius: 6px;
                 box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+                margin: 0 auto 16px auto;
             }
+        }
+
+        .page-break {
+            page-break-after: always;
+            break-after: page;
         }
 
         /* Institutional National Header */
@@ -108,7 +140,7 @@
             grid-template-columns: 1.15fr 1.35fr 1.15fr;
             border-bottom: 2px solid #1e3a8a;
             padding-bottom: 3px;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
             align-items: center;
         }
 
@@ -322,22 +354,41 @@
     </style>
 </head>
 <body>
+    {{-- Navigation & Print Toolbar --}}
     <div class="no-print">
-        <div class="level-switcher">
-            <span style="opacity: 0.8; margin-left: 4px;">{{ __('المستوى:') }}</span>
-            @foreach ($available_levels as $lvl => $label)
+        <div class="toolbar-group">
+            <div class="level-switcher">
+                <span style="opacity: 0.8; margin-left: 2px;">{{ __('المستوى:') }}</span>
+                @foreach ($available_levels as $lvl => $label)
+                    <a
+                        href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'level' => $lvl, 'mode' => $mode ?? 'annual', 'month' => $selected_month ?? 'all', 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
+                        class="btn {{ ($level_number ?? 1) == $lvl ? 'btn-amber' : 'btn-slate' }}"
+                    >
+                        {{ $label }}
+                    </a>
+                @endforeach
+            </div>
+
+            <div class="mode-switcher">
+                <span style="opacity: 0.8; margin-left: 2px;">{{ __('المخطط:') }}</span>
                 <a
-                    href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'level' => $lvl, 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
-                    class="btn {{ ($level_number ?? 1) == $lvl ? 'btn-amber' : 'btn-slate' }}"
+                    href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'level' => $level_number ?? 1, 'mode' => 'annual', 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
+                    class="btn {{ ($mode ?? 'annual') === 'annual' ? 'btn-sky' : 'btn-slate' }}"
                 >
-                    {{ $label }}
+                    {{ __('التوزيع السنوي') }}
                 </a>
-            @endforeach
+                <a
+                    href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'level' => $level_number ?? 1, 'mode' => 'monthly', 'month' => $selected_month ?? 'all', 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
+                    class="btn {{ ($mode ?? 'annual') === 'monthly' ? 'btn-sky' : 'btn-slate' }}"
+                >
+                    {{ __('المخططات الشهرية') }}
+                </a>
+            </div>
         </div>
 
         <div class="btn-group">
             <a
-                href="{{ route('print.annual-curriculum-distribution.pdf', ['locale' => app()->getLocale(), 'level' => $level_number ?? 1, 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
+                href="{{ route('print.annual-curriculum-distribution.pdf', ['locale' => app()->getLocale(), 'level' => $level_number ?? 1, 'mode' => $mode ?? 'annual', 'month' => $selected_month ?? 'all', 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
                 class="btn btn-emerald"
             >
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
@@ -353,96 +404,210 @@
         </div>
     </div>
 
-    <div class="sheet">
-        {{-- National Institutional Header --}}
-        <div class="header-grid">
-            <div class="header-col-right">
-                <div>الجمهورية الجزائرية الديمقراطية الشعبية</div>
-                <div>وزارة التربية الوطنية</div>
-                <div>مديرية التربية لولاية {{ $directorate_name ?? 'المغير' }}</div>
-                <div>{{ $school_name }}</div>
-            </div>
+    {{-- Month selector bar when in Monthly mode --}}
+    @if (($mode ?? 'annual') === 'monthly' && !empty($available_months))
+        <div class="no-print month-bar">
+            <span style="opacity: 0.8; margin-left: 6px;">{{ __('الشهر المطلوب:') }}</span>
+            @foreach ($available_months as $mKey => $mLabel)
+                <a
+                    href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'level' => $level_number ?? 1, 'mode' => 'monthly', 'month' => $mKey, 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
+                    class="btn {{ ($selected_month ?? 'all') === $mKey ? 'btn-amber' : 'btn-slate' }}"
+                >
+                    {{ $mLabel }}
+                </a>
+            @endforeach
+        </div>
+    @endif
 
-            <div class="header-col-center">
-                <div class="title-badge">
-                    <h1 class="title-main">التوزيع السنوي للتعلمات</h1>
-                    <div class="title-sub">{{ $level_name }} — مادة المعلوماتية</div>
+    {{-- Render Printable Content --}}
+    @if (($mode ?? 'annual') === 'monthly')
+        {{-- Monthly Plans Render Loop --}}
+        @foreach ($monthly_plans as $plan)
+            <div class="sheet {{ $loop->last ? '' : 'page-break' }}">
+                {{-- National Institutional Header --}}
+                <div class="header-grid">
+                    <div class="header-col-right">
+                        <div>الجمهورية الجزائرية الديمقراطية الشعبية</div>
+                        <div>وزارة التربية الوطنية</div>
+                        <div>مديرية التربية لولاية {{ $directorate_name ?? 'المغير' }}</div>
+                        <div>{{ $school_name }}</div>
+                    </div>
+
+                    <div class="header-col-center">
+                        <div class="title-badge">
+                            <h1 class="title-main">المخطط الشهري للتعلمات</h1>
+                            <div class="title-sub">شهر {{ $plan['month_name'] }} ({{ $plan['term'] }}) — {{ $level_name }} — مادة المعلوماتية</div>
+                        </div>
+                    </div>
+
+                    <div class="header-col-left">
+                        <div>السنة الدراسية: {{ $academic_year }}</div>
+                        <div>الحجم الساعي: {{ $weekly_hours }}</div>
+                        <div>معامل المادة: {{ $coefficient }}</div>
+                        <div>الأستاذ: {{ $teacher_name }}</div>
+                    </div>
+                </div>
+
+                {{-- Monthly Table --}}
+                <table class="distribution-table">
+                    <thead>
+                        <tr>
+                            <th class="col-domain">الميدان</th>
+                            <th class="col-competence">الكفاءة الختامية</th>
+                            <th class="col-sequence">المقطع التعلمي</th>
+                            <th class="col-lesson">الوضعية التعلمية (الدرس)</th>
+                            <th class="col-hours">الحجم الساعي</th>
+                            <th class="col-date">التاريخ</th>
+                            <th class="col-week">الأسابيع</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($plan['domains'] as $domain)
+                            @foreach ($domain['rows'] as $index => $row)
+                                <tr>
+                                    @if ($index === 0)
+                                        <td rowspan="{{ $domain['rowspan'] }}" class="vertical-cell col-domain">
+                                            <span class="vertical-text">{{ $domain['name'] }}</span>
+                                        </td>
+                                        <td rowspan="{{ $domain['rowspan'] }}" class="vertical-cell col-competence">
+                                            <span class="vertical-text">{!! $domain['competence'] !!}</span>
+                                        </td>
+                                    @endif
+
+                                    @if (!empty($row['is_break']))
+                                        <td colspan="{{ $row['colspan'] ?? 5 }}" class="{{ ($row['break_type'] ?? '') === 'vacation' ? 'break-cell-vacation' : 'break-cell-exam' }}">
+                                            {{ $row['text'] }}
+                                        </td>
+                                    @else
+                                        @if (!empty($row['sequence']))
+                                            <td rowspan="{{ $row['sequence']['rowspan'] }}" class="col-sequence">
+                                                {{ $row['sequence']['name'] }}
+                                            </td>
+                                        @endif
+                                        <td @class([
+                                            'col-lesson',
+                                            'cell-exam-red' => ($row['type'] ?? '') === 'exam_red',
+                                            'cell-remedial-yellow' => ($row['type'] ?? '') === 'remedial_yellow',
+                                        ])>
+                                            {{ $row['lesson'] }}
+                                        </td>
+                                        <td class="col-hours">{{ $row['hours'] }}</td>
+                                        <td class="col-date">{{ $row['date'] }}</td>
+                                        <td class="col-week">{{ $row['week'] }}</td>
+                                    @endif
+                                </tr>
+                            @endforeach
+                        @endforeach
+                    </tbody>
+                </table>
+
+                {{-- Institutional Signatures Footer --}}
+                <div class="signatures-grid" style="margin-top: 18px;">
+                    <div class="signature-col">
+                        <div class="signature-title">أستاذ(ة) المادة</div>
+                    </div>
+                    <div class="signature-col">
+                        <div class="signature-title">مدير(ة) المؤسسة</div>
+                    </div>
+                    <div class="signature-col">
+                        <div class="signature-title">مفتش(ة) مادة المعلوماتية</div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    @else
+        {{-- Annual Distribution View (Full 35 Weeks) --}}
+        <div class="sheet">
+            {{-- National Institutional Header --}}
+            <div class="header-grid">
+                <div class="header-col-right">
+                    <div>الجمهورية الجزائرية الديمقراطية الشعبية</div>
+                    <div>وزارة التربية الوطنية</div>
+                    <div>مديرية التربية لولاية {{ $directorate_name ?? 'المغير' }}</div>
+                    <div>{{ $school_name }}</div>
+                </div>
+
+                <div class="header-col-center">
+                    <div class="title-badge">
+                        <h1 class="title-main">التوزيع السنوي للتعلمات</h1>
+                        <div class="title-sub">{{ $level_name }} — مادة المعلوماتية</div>
+                    </div>
+                </div>
+
+                <div class="header-col-left">
+                    <div>السنة الدراسية: {{ $academic_year }}</div>
+                    <div>الحجم الساعي: {{ $weekly_hours }}</div>
+                    <div>معامل المادة: {{ $coefficient }}</div>
+                    <div>الأستاذ: {{ $teacher_name }}</div>
                 </div>
             </div>
 
-            <div class="header-col-left">
-                <div>السنة الدراسية: {{ $academic_year }}</div>
-                <div>الحجم الساعي: {{ $weekly_hours }}</div>
-                <div>معامل المادة: {{ $coefficient }}</div>
-                <div>الأستاذ: {{ $teacher_name }}</div>
-            </div>
-        </div>
-
-        {{-- Main Annual Progression Table --}}
-        <table class="distribution-table">
-            <thead>
-                <tr>
-                    <th class="col-domain">الميدان</th>
-                    <th class="col-competence">الكفاءة الختامية</th>
-                    <th class="col-sequence">المقطع التعلمي</th>
-                    <th class="col-lesson">الوضعية التعلمية (الدرس)</th>
-                    <th class="col-hours">الحجم الساعي</th>
-                    <th class="col-date">التاريخ</th>
-                    <th class="col-week">الأسابيع</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($domains as $domain)
-                    @foreach ($domain['rows'] as $index => $row)
-                        <tr>
-                            @if ($index === 0)
-                                <td rowspan="{{ $domain['rowspan'] }}" class="vertical-cell col-domain">
-                                    <span class="vertical-text">{{ $domain['name'] }}</span>
-                                </td>
-                                <td rowspan="{{ $domain['rowspan'] }}" class="vertical-cell col-competence">
-                                    <span class="vertical-text">{!! $domain['competence'] !!}</span>
-                                </td>
-                            @endif
-
-                            @if (!empty($row['is_break']))
-                                <td colspan="{{ $row['colspan'] ?? 5 }}" class="{{ ($row['break_type'] ?? '') === 'vacation' ? 'break-cell-vacation' : 'break-cell-exam' }}">
-                                    {{ $row['text'] }}
-                                </td>
-                            @else
-                                @if (!empty($row['sequence']))
-                                    <td rowspan="{{ $row['sequence']['rowspan'] }}" class="col-sequence">
-                                        {{ $row['sequence']['name'] }}
+            {{-- Main Annual Progression Table --}}
+            <table class="distribution-table">
+                <thead>
+                    <tr>
+                        <th class="col-domain">الميدان</th>
+                        <th class="col-competence">الكفاءة الختامية</th>
+                        <th class="col-sequence">المقطع التعلمي</th>
+                        <th class="col-lesson">الوضعية التعلمية (الدرس)</th>
+                        <th class="col-hours">الحجم الساعي</th>
+                        <th class="col-date">التاريخ</th>
+                        <th class="col-week">الأسابيع</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($domains as $domain)
+                        @foreach ($domain['rows'] as $index => $row)
+                            <tr>
+                                @if ($index === 0)
+                                    <td rowspan="{{ $domain['rowspan'] }}" class="vertical-cell col-domain">
+                                        <span class="vertical-text">{{ $domain['name'] }}</span>
+                                    </td>
+                                    <td rowspan="{{ $domain['rowspan'] }}" class="vertical-cell col-competence">
+                                        <span class="vertical-text">{!! $domain['competence'] !!}</span>
                                     </td>
                                 @endif
-                                <td @class([
-                                    'col-lesson',
-                                    'cell-exam-red' => ($row['type'] ?? '') === 'exam_red',
-                                    'cell-remedial-yellow' => ($row['type'] ?? '') === 'remedial_yellow',
-                                ])>
-                                    {{ $row['lesson'] }}
-                                </td>
-                                <td class="col-hours">{{ $row['hours'] }}</td>
-                                <td class="col-date">{{ $row['date'] }}</td>
-                                <td class="col-week">{{ $row['week'] }}</td>
-                            @endif
-                        </tr>
-                    @endforeach
-                @endforeach
-            </tbody>
-        </table>
 
-        {{-- Institutional Signatures Footer --}}
-        <div class="signatures-grid">
-            <div class="signature-col">
-                <div class="signature-title">أستاذ(ة) المادة</div>
-            </div>
-            <div class="signature-col">
-                <div class="signature-title">مدير(ة) المؤسسة</div>
-            </div>
-            <div class="signature-col">
-                <div class="signature-title">مفتش(ة) مادة المعلوماتية</div>
+                                @if (!empty($row['is_break']))
+                                    <td colspan="{{ $row['colspan'] ?? 5 }}" class="{{ ($row['break_type'] ?? '') === 'vacation' ? 'break-cell-vacation' : 'break-cell-exam' }}">
+                                        {{ $row['text'] }}
+                                    </td>
+                                @else
+                                    @if (!empty($row['sequence']))
+                                        <td rowspan="{{ $row['sequence']['rowspan'] }}" class="col-sequence">
+                                            {{ $row['sequence']['name'] }}
+                                        </td>
+                                    @endif
+                                    <td @class([
+                                        'col-lesson',
+                                        'cell-exam-red' => ($row['type'] ?? '') === 'exam_red',
+                                        'cell-remedial-yellow' => ($row['type'] ?? '') === 'remedial_yellow',
+                                    ])>
+                                        {{ $row['lesson'] }}
+                                    </td>
+                                    <td class="col-hours">{{ $row['hours'] }}</td>
+                                    <td class="col-date">{{ $row['date'] }}</td>
+                                    <td class="col-week">{{ $row['week'] }}</td>
+                                @endif
+                            </tr>
+                        @endforeach
+                    @endforeach
+                </tbody>
+            </table>
+
+            {{-- Institutional Signatures Footer --}}
+            <div class="signatures-grid">
+                <div class="signature-col">
+                    <div class="signature-title">أستاذ(ة) المادة</div>
+                </div>
+                <div class="signature-col">
+                    <div class="signature-title">مدير(ة) المؤسسة</div>
+                </div>
+                <div class="signature-col">
+                    <div class="signature-title">مفتش(ة) مادة المعلوماتية</div>
+                </div>
             </div>
         </div>
-    </div>
+    @endif
 </body>
 </html>

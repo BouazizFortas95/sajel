@@ -198,12 +198,21 @@
             <x-slot name="headerEnd">
                 <div class="flex flex-wrap items-center gap-2">
                     <a
-                        href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'subject' => $this->subjectId, 'classroom' => $this->classroomId]) }}"
+                        href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'mode' => 'annual', 'subject' => $this->subjectId, 'classroom' => $this->classroomId]) }}"
                         target="_blank"
                         class="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500"
                     >
                         <x-filament::icon icon="heroicon-o-printer" class="h-4 w-4" />
-                        {{ __('طباعة التوزيع السنوي الرسمي') }}
+                        {{ __('طباعة التوزيع السنوي') }}
+                    </a>
+
+                    <a
+                        href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'mode' => 'monthly', 'month' => 'all', 'subject' => $this->subjectId, 'classroom' => $this->classroomId]) }}"
+                        target="_blank"
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-500"
+                    >
+                        <x-filament::icon icon="heroicon-o-calendar" class="h-4 w-4" />
+                        {{ __('طباعة المخططات الشهرية') }}
                     </a>
 
                     <div class="flex items-center gap-1.5 rounded-lg bg-gray-100 p-1 dark:bg-white/5">
