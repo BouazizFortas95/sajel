@@ -209,9 +209,9 @@
     @keydown.escape.window="$wire.emit('prev');"
     class="min-h-screen transition-colors duration-700"
     :class="{
-        'bg-slate-950 text-white': theme === 'cinema',
-        'bg-amber-50 text-slate-950': theme === 'whiteboard',
-        'bg-emerald-950 text-emerald-50': theme === 'chalkboard'
+        'bg-slate-950 text-white theme-cinema': theme === 'cinema',
+        'bg-amber-50 text-slate-950 theme-whiteboard': theme === 'whiteboard',
+        'bg-emerald-950 text-emerald-50 theme-chalkboard': theme === 'chalkboard'
     }"
 >
 
@@ -301,8 +301,125 @@
         </div>
     </div>
 
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(245, 158, 11, 0.4);
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(245, 158, 11, 0.7);
+        }
+
+        .datashow-content {
+            font-family: inherit;
+        }
+        .datashow-content h2 {
+            font-size: 1.5em;
+            font-weight: 900;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.65rem;
+            border-bottom: 2px solid rgba(245, 158, 11, 0.35);
+            text-align: center;
+            color: #fbbf24;
+        }
+        .theme-whiteboard .datashow-content h2 {
+            color: #1e3a8a;
+            border-bottom-color: rgba(30, 58, 138, 0.25);
+        }
+        .theme-chalkboard .datashow-content h2 {
+            color: #34d399;
+            border-bottom-color: rgba(52, 211, 153, 0.3);
+        }
+
+        .datashow-content h3 {
+            font-size: 1.2em;
+            font-weight: 800;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .theme-whiteboard .datashow-content h3 {
+            color: #0369a1;
+        }
+        .theme-chalkboard .datashow-content h3 {
+            color: #6ee7b7;
+        }
+
+        .datashow-content h4 {
+            font-size: 1.1em;
+            font-weight: 800;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding: 0.6rem 1rem;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 0.75rem;
+            border-right: 4px solid #f59e0b;
+            color: #f8fafc;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+        .theme-whiteboard .datashow-content h4 {
+            background: #f1f5f9;
+            color: #0f172a;
+            border-right-color: #d97706;
+        }
+        .theme-chalkboard .datashow-content h4 {
+            background: rgba(6, 78, 59, 0.5);
+            color: #ecfdf5;
+            border-right-color: #10b981;
+        }
+
+        .datashow-content .strategy-badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.78em;
+            font-weight: 700;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            background: rgba(245, 158, 11, 0.2);
+            color: #fde68a;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+        .theme-whiteboard .datashow-content .strategy-badge {
+            background: #fef3c7;
+            color: #92400e;
+            border-color: #fcd34d;
+        }
+        .theme-chalkboard .datashow-content .strategy-badge {
+            background: rgba(16, 185, 129, 0.2);
+            color: #a7f3d0;
+            border-color: rgba(52, 211, 153, 0.4);
+        }
+
+        .datashow-content p {
+            margin-bottom: 0.85rem;
+            line-height: 1.85;
+            text-align: right;
+            opacity: 0.95;
+        }
+        .theme-whiteboard .datashow-content p {
+            color: #334155;
+        }
+        .datashow-content p:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+
     {{-- Presentation Area --}}
-    <main class="relative h-[calc(100vh-56px)] flex flex-col justify-center items-center text-center px-6 md:px-16 overflow-hidden">
+    <main class="relative h-[calc(100vh-56px)] overflow-y-auto px-4 md:px-12 py-8 flex flex-col items-center custom-scrollbar">
         @if ($slides && count($slides) > 0)
             @php
                 $slide = $slides[$slideIndex] ?? null;
@@ -310,55 +427,129 @@
                 $scaleBody = match((int)floor($fontScale)) { 1 => 'text-xl', 2 => 'text-2xl', 3 => 'text-3xl', default => 'text-4xl' };
             @endphp
 
-            <div class="w-full max-w-6xl" :class="spotlight ? 'opacity-95 scale-[1.02]' : ''" x-transition.opacity.duration.300ms>
+            <div class="w-full max-w-5xl my-auto py-4" :class="spotlight ? 'opacity-95 scale-[1.02]' : ''" x-transition.opacity.duration.300ms>
                 @if ($slide['type'] === 'cover')
                     <div class="mb-4">
-                        <span class="inline-block px-3 py-1 rounded-full text-sm font-bold bg-amber-500 text-white">{{ $slide['subject_color'] ?? 'amber' }}</span>
+                        <span class="inline-block px-4 py-1.5 rounded-full text-sm font-bold bg-amber-500 text-white shadow-md">
+                            {{ $slide['subject_name'] ?? ($slide['subject_color'] ?? __('المادة')) }}
+                        </span>
                     </div>
-                    <h1 class="font-extrabold leading-tight mb-6 tracking-tight" style="font-size: calc(3.5rem + {{ $fontScale * 1.5 }}rem);" :class="theme==='whiteboard' ? 'text-slate-950' : 'text-amber-200'">
+                    <h1 class="font-extrabold leading-tight mb-6 tracking-tight" style="font-size: calc(3rem + {{ $fontScale * 1.2 }}rem);" :class="theme==='whiteboard' ? 'text-slate-950' : 'text-amber-200'">
                         {{ $slide['title'] ?? '' }}
                     </h1>
-                    <p class="text-xl md:text-2xl font-light opacity-70 mb-12">{{ $slide['subtitle'] ?? '' }}</p>
+                    <p class="text-xl md:text-2xl font-light opacity-70 mb-10">{{ $slide['subtitle'] ?? '' }}</p>
                     @if ($slide['competence'])
-                        <div class="border-r-4 border-amber-400 bg-white/5 rounded-xl p-6 max-w-3xl mx-auto text-right shadow-2xl">
-                            <h3 class="text-sm font-bold text-amber-300 mb-2 tracking-widest">{{ __('الكفاءة المستهدفة') }}</h3>
-                            <p class="text-2xl md:text-3xl leading-relaxed font-medium">{{ $slide['competence'] }}</p>
+                        <div class="border-r-4 border-amber-400 bg-white/5 rounded-2xl p-6 md:p-8 max-w-3xl mx-auto text-right shadow-2xl backdrop-blur-md"
+                             :class="theme==='whiteboard' ? 'bg-white border-amber-500 text-slate-800 shadow-lg' : ''">
+                            <h3 class="text-sm font-bold text-amber-300 mb-2 tracking-widest flex items-center gap-2">
+                                <span>🎯</span>
+                                <span>{{ __('الكفاءة المستهدفة') }}</span>
+                            </h3>
+                            <p class="text-xl md:text-2xl leading-relaxed font-medium">{{ $slide['competence'] }}</p>
                         </div>
                     @endif
                 @elseif ($slide['type'] === 'phase')
-                    <div class="flex items-start gap-4 mb-6">
+                    <div class="flex items-start gap-4 mb-4 justify-center md:justify-start">
                         <span class="flex-shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center font-extrabold text-xl shadow-lg">{{ $slide['phase_number'] }}</span>
-                        <h2 class="font-extrabold text-4xl md:text-6xl leading-tight" style="font-size: calc(2.5rem + {{ $fontScale * 1.2 }}rem);" :class="theme==='whiteboard' ? 'text-slate-950' : 'text-white'">{{ $slide['title'] }}</h2>
+                        <h2 class="font-extrabold text-3xl md:text-5xl leading-tight" style="font-size: calc(2.2rem + {{ $fontScale * 1.0 }}rem);" :class="theme==='whiteboard' ? 'text-slate-950' : 'text-white'">{{ $slide['title'] }}</h2>
                     </div>
-                    @if ($slide['duration'])
-                        <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/10 text-amber-200 text-sm mb-6 font-mono border border-white/10">
-                            ⏱️ {{ $slide['duration'] }} {{ __('دقيقة') }}
-                        </div>
-                    @endif
+
+                    <div class="flex items-center gap-2 mb-6 flex-wrap justify-center md:justify-start">
+                        @if (!empty($slide['strategy']))
+                            <div class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-sm font-bold border border-amber-400/30 shadow-sm"
+                                 :class="theme==='whiteboard' ? 'bg-amber-100 text-amber-900 border-amber-300' : ''">
+                                <span>⚡</span>
+                                <span>{{ __('الاستراتيجية:') }}</span>
+                                <span>{{ $slide['strategy'] }}</span>
+                            </div>
+                        @endif
+                        @if ($slide['duration'])
+                            <div class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/10 text-amber-200 text-sm font-mono border border-white/10"
+                                 :class="theme==='whiteboard' ? 'bg-slate-100 text-slate-700 border-slate-200' : ''">
+                                <span>⏱️</span>
+                                <span>{{ $slide['duration'] }} {{ __('دقيقة') }}</span>
+                            </div>
+                        @endif
+                    </div>
+
                     @if ($slide['description'])
-                        <div class="bg-white/5 border border-white/10 rounded-3xl p-8 md:p-12 shadow-2xl text-right leading-loose backdrop-blur-md" style="font-size: calc(1.2rem + {{ $fontScale * 0.8 }}rem);">
-                            <div class="prose prose-xl prose-invert max-w-none">{!! nl2br(e($slide['description'])) !!}</div>
+                        <div class="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-10 shadow-2xl text-right leading-loose backdrop-blur-md transition-colors"
+                             :class="{
+                                 'bg-white/5 border-white/10 text-slate-100': theme === 'cinema',
+                                 'bg-white border-slate-200 text-slate-800 shadow-lg': theme === 'whiteboard',
+                                 'bg-emerald-900/40 border-emerald-500/20 text-emerald-100': theme === 'chalkboard'
+                             }"
+                             style="font-size: calc(1.1rem + {{ $fontScale * 0.4 }}rem);">
+                            @if (strip_tags($slide['description']) !== $slide['description'])
+                                {!! $slide['description'] !!}
+                            @else
+                                <div class="whitespace-pre-line leading-relaxed">{!! nl2br(e($slide['description'])) !!}</div>
+                            @endif
                         </div>
                     @endif
                 @elseif ($slide['type'] === 'summary')
-                    <h2 class="font-extrabold text-4xl md:text-6xl mb-10" style="font-size: calc(2.5rem + {{ $fontScale * 1.2 }}rem);">{{ $slide['title'] }}</h2>
+                    <div class="mb-6 text-center">
+                        <span class="inline-block px-4 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30 mb-2">
+                            {{ __('سجل الحصة المعتمد') }}
+                        </span>
+                        <h2 class="font-extrabold text-3xl md:text-5xl" style="font-size: calc(2.2rem + {{ $fontScale * 1.0 }}rem);" :class="theme==='whiteboard' ? 'text-slate-900' : 'text-amber-200'">
+                            {{ $slide['title'] }}
+                        </h2>
+                    </div>
+
                     @if ($slide['register'])
-                        <div class="bg-white/5 border border-white/10 rounded-3xl p-8 md:p-12 shadow-2xl text-right text-xl md:text-2xl leading-loose mb-6">{!! nl2br(e(strip_tags($slide['register']))) !!}</div>
+                        @php
+                            $hasHtml = strip_tags($slide['register']) !== $slide['register'];
+                        @endphp
+                        <div class="datashow-content bg-white/5 border border-white/10 rounded-3xl p-6 md:p-10 shadow-2xl text-right mb-6 backdrop-blur-md transition-colors"
+                             :class="{
+                                 'bg-white/5 border-white/10 text-slate-100': theme === 'cinema',
+                                 'bg-white border-slate-200 text-slate-800 shadow-lg': theme === 'whiteboard',
+                                 'bg-emerald-900/40 border-emerald-500/20 text-emerald-100': theme === 'chalkboard'
+                             }"
+                             style="font-size: calc(1.05rem + {{ $fontScale * 0.35 }}rem); line-height: 1.85;">
+                            @if ($hasHtml)
+                                {!! $slide['register'] !!}
+                            @else
+                                <div class="whitespace-pre-line">{!! nl2br(e($slide['register'])) !!}</div>
+                            @endif
+                        </div>
                     @endif
+
                     @if ($slide['homework'])
-                        <div class="bg-amber-500/10 border border-amber-400/30 rounded-2xl p-6 text-amber-100 text-xl md:text-2xl font-medium leading-relaxed">{{ __('الواجب المنزلي') }}: {{ $slide['homework'] }}</div>
+                        <div class="bg-amber-500/10 border border-amber-400/30 rounded-2xl p-6 text-right mb-6 shadow-lg"
+                             :class="theme==='whiteboard' ? 'bg-amber-100/70 border-amber-300 text-amber-950' : 'text-amber-100'">
+                            <div class="flex items-center gap-2 text-sm font-bold text-amber-400 mb-1">
+                                <span>📝</span>
+                                <span>{{ __('الواجب المنزلي') }}</span>
+                            </div>
+                            <div class="text-xl md:text-2xl font-medium leading-relaxed">
+                                {{ $slide['homework'] }}
+                            </div>
+                        </div>
                     @endif
+
                     @if ($slide['observations'])
-                        <div class="mt-6 text-base md:text-xl text-white/60">{{ __('الملاحظات') }}: {{ $slide['observations'] }}</div>
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-right text-base text-white/70"
+                             :class="theme==='whiteboard' ? 'bg-slate-100 border-slate-200 text-slate-700' : ''">
+                            <span class="font-bold text-amber-300 ml-2">💡 {{ __('ملاحظات:') }}</span>
+                            <span>{{ $slide['observations'] }}</span>
+                        </div>
                     @endif
                 @endif
             </div>
 
-            {{-- Navigation dots --}}
-            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-30">
-                @foreach ($slides as $i => $s)
-                    <button @click="goSlide({{ $i }})" class="w-2.5 h-2.5 rounded-full transition {{ $i === $slideIndex ? 'bg-amber-400 scale-125' : 'bg-white/30 hover:bg-white/60' }}"></button>
-                @endforeach
+            {{-- Navigation controls & dots --}}
+            <div class="sticky bottom-2 mt-auto py-2 flex justify-center z-30 pointer-events-auto">
+                <div class="bg-black/60 backdrop-blur-md border border-white/15 px-4 py-2 rounded-full flex items-center gap-3 shadow-2xl">
+                    <button @click="prevSlide()" :disabled="slideIndex === 0" class="text-sm font-bold text-white/70 hover:text-white disabled:opacity-20 px-2 transition">◀ {{ __('السابق') }}</button>
+                    <div class="flex items-center gap-1.5 px-2">
+                        @foreach ($slides as $i => $s)
+                            <button @click="goSlide({{ $i }})" class="w-3 h-3 rounded-full transition {{ $i === $slideIndex ? 'bg-amber-400 scale-125' : 'bg-white/30 hover:bg-white/60' }}" title="{{ $s['title'] ?? '' }}"></button>
+                        @endforeach
+                    </div>
+                    <button @click="nextSlide()" :disabled="slideIndex === {{ count($slides) - 1 }}" class="text-sm font-bold text-white/70 hover:text-white disabled:opacity-20 px-2 transition">{{ __('التالي') }} ▶</button>
+                </div>
             </div>
         @else
             {{-- Empty state with selector --}}

@@ -112,6 +112,7 @@ class DataShowMode extends Component
             'subtitle' => ($log->schedule?->subject?->name ?? '').' — '.($log->schedule?->sectionName() ?? '').' — '.($log->date?->format('l, d/m/Y') ?? today()->format('l, d/m/Y')),
             'competence' => $competence ?? ($log->actual_content ? $this->extractFirstHeading($log->actual_content) : null),
             'starting_situation' => $startingSituation,
+            'subject_name' => $log->schedule?->subject?->name ?? __('المادة'),
             'subject_color' => $log->schedule?->subject?->color ?? 'amber',
         ];
         $cover['narration_text'] = $this->buildNarrationText([
@@ -135,16 +136,19 @@ class DataShowMode extends Component
                 ?? $phaseType?->label()
                 ?? ($phase['type'] ?? __('مرحلة'));
             $phaseContent = $phase['description'] ?? $phase['content'] ?? null;
+            $phaseStrategy = $phase['strategy'] ?? null;
             $phaseSlide = [
                 'type' => 'phase',
                 'phase_number' => $i + 1,
                 'title' => $phaseTitle,
+                'strategy' => $phaseStrategy,
                 'description' => $phaseContent,
                 'duration' => $phase['duration'] ?? null,
             ];
             $phaseSlide['narration_text'] = $this->buildNarrationText([
                 [__('عنوان الشريحة'), $lessonTitle],
                 [__('عنوان المرحلة'), $phaseTitle],
+                [__('الاستراتيجية'), $phaseStrategy],
                 [__('محتوى المرحلة'), $phaseContent],
             ]);
             $slides[] = $phaseSlide;
@@ -154,6 +158,8 @@ class DataShowMode extends Component
         $summary = [
             'type' => 'summary',
             'title' => __('الملخص والواجب المنزلي'),
+            'lesson_title' => $lessonTitle,
+            'competence' => $competence,
             'register' => $log->actual_content ?? $log->content_data['actual_content'] ?? null,
             'homework' => $log->homework ?? null,
             'observations' => $log->observations ?? null,
