@@ -29,6 +29,7 @@ class DailyLog extends Model
         'substitute_teacher_id',
         'schedule_id',
         'curriculum_resource_id',
+        'pedagogical_memo_id',
         'date',
         'title',
         'content_data',
@@ -60,6 +61,10 @@ class DailyLog extends Model
             if ($dailyLog->isCompleted() && blank($dailyLog->actual_content)) {
                 $dailyLog->actual_content = $dailyLog->generateRegisterSummary();
             }
+
+            if (blank($dailyLog->pedagogical_memo_id) && $dailyLog->schedule_id) {
+                $dailyLog->pedagogical_memo_id = $dailyLog->resolveMatchingMemoId();
+            }
         });
 
         static::saved(function (DailyLog $dailyLog): void {
@@ -87,6 +92,61 @@ class DailyLog extends Model
     public function curriculumResource(): BelongsTo
     {
         return $this->belongsTo(CurriculumResource::class);
+    }
+
+    public function pedagogicalMemo(): BelongsTo
+    {
+        return $this->belongsTo(PedagogicalMemo::class);
+    }
+
+    /**
+     * Attempt to match this daily log to an existing teacher pedagogical memo.
+     */
+    public function resolveMatchingMemoId(): ?int
+    {
+        $schedule = $this->relationLoaded('schedule') ? $this->schedule : $this->schedule()->with(['classroom.level', 'group.classroom.level'])->first();
+        if (! $schedule) {
+            return null;
+        }
+
+        $userId = $this->substitute_teacher_id ?: $schedule->user_id;
+        $subjectId = $schedule->subject_id;
+        $levelId = $schedule->classroom?->level_id ?? $schedule->group?->classroom?->level_id;
+
+        $query = PedagogicalMemo::query()
+            ->where('is_archived', false)
+            ->where('user_id', $userId);
+
+        if ($subjectId) {
+            $query->where('subject_id', $subjectId);
+        }
+        if ($levelId) {
+            $query->where('level_id', $levelId);
+        }
+
+        $candidates = $query->get();
+        if ($candidates->isEmpty()) {
+            return null;
+        }
+
+        $targetTitle = trim((string) $this->title);
+        $resourceTitle = $this->curriculumResource?->title ? trim((string) $this->curriculumResource->title) : '';
+
+        if ($targetTitle !== '') {
+            $match = $candidates->first(fn (PedagogicalMemo $m) => mb_stripos(trim($m->title), $targetTitle) !== false || mb_stripos($targetTitle, trim($m->title)) !== false);
+            if ($match) {
+                return $match->id;
+            }
+        }
+
+        if ($resourceTitle !== '') {
+            $match = $candidates->first(fn (PedagogicalMemo $m) => mb_stripos(trim($m->title), $resourceTitle) !== false || mb_stripos($resourceTitle, trim($m->title)) !== false);
+            if ($match) {
+                return $match->id;
+            }
+        }
+
+        return null;
     }
 
     public function reviewer(): BelongsTo

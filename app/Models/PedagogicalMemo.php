@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PedagogicalMemo extends Model
 {
@@ -57,6 +58,71 @@ class PedagogicalMemo extends Model
     public function level(): BelongsTo
     {
         return $this->belongsTo(Level::class);
+    }
+
+    public function dailyLogs(): HasMany
+    {
+        return $this->hasMany(DailyLog::class);
+    }
+
+    /**
+     * Transform pedagogical memo into structured DailyLog content blocks.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function toDailyLogContentData(): array
+    {
+        $phases = [];
+        $activities = is_array($this->activities) ? $this->activities : [];
+
+        if (filled($this->starting_situation)) {
+            $phases[] = [
+                'phase_name' => 'وضعية الانطلاق والتهيئة النفسية',
+                'strategy' => 'العصف الذهني',
+                'content' => $this->starting_situation,
+            ];
+        }
+
+        foreach ($activities as $idx => $act) {
+            $phaseName = $act['phase_name'] ?? ('بناء التعلمات — النشاط '.($idx + 1));
+            $text = '';
+            if (! empty($act['teacher_role'])) {
+                $text .= '<strong>دور الأستاذ:</strong> '.e($act['teacher_role']).'<br>';
+            }
+            if (! empty($act['student_role'])) {
+                $text .= '<strong>نشاط المتعلم:</strong> '.e($act['student_role']).'<br>';
+            }
+            if (! empty($act['written_trace'])) {
+                $text .= '<strong>الأثر الكتابي:</strong> '.e($act['written_trace']);
+            }
+            if ($text === '') {
+                $text = e($act['content'] ?? '');
+            }
+
+            $phases[] = [
+                'phase_name' => $phaseName,
+                'strategy' => $act['strategy'] ?? null,
+                'content' => $text,
+            ];
+        }
+
+        if (filled($this->evaluation)) {
+            $phases[] = [
+                'phase_name' => 'استثمار المكتسبات والتقويم الختامي',
+                'strategy' => 'التقويم التكويني',
+                'content' => $this->evaluation,
+            ];
+        }
+
+        return [
+            [
+                'type' => 'lesson_structure',
+                'data' => [
+                    'competence' => $this->competence,
+                    'lesson_phases' => $phases,
+                ],
+            ],
+        ];
     }
 
     public function scopeForTeacher(Builder $query, User|int $user): Builder

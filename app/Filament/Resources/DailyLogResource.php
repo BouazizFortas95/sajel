@@ -11,8 +11,11 @@ use App\Models\ActiveLearningStrategy;
 use App\Models\BehaviorObservation;
 use App\Models\CurriculumResource;
 use App\Models\DailyLog;
+use App\Models\Level;
+use App\Models\PedagogicalMemo;
 use App\Models\Schedule;
 use App\Models\Student;
+use App\Models\Subject;
 use App\Models\User;
 use App\Services\AiLessonPlannerService;
 use App\Services\DailyLogEvaluationWorkSyncService;
@@ -168,6 +171,50 @@ class DailyLogResource extends Resource
     }
 
     /**
+     * Retrieve available pedagogical memos for the selected schedule.
+     *
+     * @return array<int, string>
+     */
+    public static function pedagogicalMemoOptions(mixed $scheduleId): array
+    {
+        if (! is_numeric($scheduleId) || (int) $scheduleId <= 0) {
+            return [];
+        }
+
+        $schedule = Schedule::query()
+            ->with(['classroom', 'group.classroom'])
+            ->find($scheduleId);
+
+        if (! $schedule) {
+            return [];
+        }
+
+        $levelId = $schedule->classroom?->level_id
+            ?? $schedule->group?->classroom?->level_id;
+
+        $userId = Auth::id();
+
+        $query = PedagogicalMemo::query()
+            ->where('is_archived', false)
+            ->where('user_id', $userId);
+
+        if ($schedule->subject_id) {
+            $query->where('subject_id', $schedule->subject_id);
+        }
+
+        if ($levelId) {
+            $query->where('level_id', $levelId);
+        }
+
+        return $query->orderByDesc('id')
+            ->get()
+            ->mapWithKeys(fn (PedagogicalMemo $memo): array => [
+                $memo->id => sprintf('مذكرة %02d: %s', $memo->id, $memo->title),
+            ])
+            ->all();
+    }
+
+    /**
      * Reject a resource that does not belong to the selected schedule's
      * subject and level. The selector already limits options; this protects
      * against stale or forged form state.
@@ -264,6 +311,7 @@ class DailyLogResource extends Resource
                                             ->required()
                                             ->afterStateUpdated(function (Set $set, Get $get, ?string $state): void {
                                                 $set('curriculum_resource_id', null);
+                                                $set('pedagogical_memo_id', null);
 
                                                 if (blank($get('title')) && filled($state)) {
                                                     $schedule = Schedule::query()->with('subject')->find($state);
@@ -350,10 +398,161 @@ class DailyLogResource extends Resource
                                             ->options(fn (Get $get): array => static::curriculumResourceOptions($get('schedule_id')))
                                             ->searchable()
                                             ->preload()
+                                            ->live()
                                             ->nullable()
                                             ->columnSpanFull()
                                             ->helperText(__('اختياري: اربط الحصة بمورد معرفي من المنهاج الرسمي لحساب تقدم القسم.'))
-                                            ->rule(static::curriculumResourceRule()),
+                                            ->rule(static::curriculumResourceRule())
+                                            ->afterStateUpdated(function (Set $set, Get $get, ?string $state): void {
+                                                if (filled($state)) {
+                                                    $resource = CurriculumResource::query()->with('curriculumDomain')->find($state);
+                                                    if ($resource) {
+                                                        if (blank($get('title')) || str_starts_with((string) $get('title'), 'درس:')) {
+                                                            $set('title', $resource->title);
+                                                        }
+
+                                                        if (blank($get('pedagogical_memo_id'))) {
+                                                            $memoOptions = static::pedagogicalMemoOptions($get('schedule_id'));
+                                                            foreach ($memoOptions as $mId => $label) {
+                                                                if (mb_stripos($label, $resource->title) !== false || mb_stripos($resource->title, $label) !== false) {
+                                                                    $set('pedagogical_memo_id', $mId);
+                                                                    $memo = PedagogicalMemo::find($mId);
+                                                                    if ($memo && empty($get('content_data'))) {
+                                                                        $set('content_data', $memo->toDailyLogContentData());
+                                                                    }
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }),
+
+                                        Select::make('pedagogical_memo_id')
+                                            ->label(__('المذكرة البيداغوجية المرتبطة'))
+                                            ->options(fn (Get $get): array => static::pedagogicalMemoOptions($get('schedule_id')))
+                                            ->searchable()
+                                            ->preload()
+                                            ->live()
+                                            ->nullable()
+                                            ->columnSpanFull()
+                                            ->helperText(__('اربط هذه الحصة بمذكرة بيداغوجية معتمدة من بنك المذكرات، أو ولّد واحدة جديدة بالذكاء الاصطناعي بنقرة واحدة.'))
+                                            ->suffixActions([
+                                                FormAction::make('generate_memo')
+                                                    ->label(__('توليد بالذكاء الاصطناعي'))
+                                                    ->icon('heroicon-o-sparkles')
+                                                    ->color('warning')
+                                                    ->tooltip(__('توليد مذكرة رسمية بالذكاء الاصطناعي لهذه الحصة وربطها واستيراد تحضيرها فوراً'))
+                                                    ->visible(fn (Get $get): bool => filled($get('schedule_id')))
+                                                    ->action(function (Get $get, Set $set): void {
+                                                        $schedule = Schedule::query()->with(['subject', 'classroom.level', 'group.classroom.level'])->find($get('schedule_id'));
+                                                        if (! $schedule) {
+                                                            Notification::make()
+                                                                ->danger()
+                                                                ->title(__('يرجى تحديد الحصة أولاً'))
+                                                                ->send();
+
+                                                            return;
+                                                        }
+
+                                                        $resource = $get('curriculum_resource_id') ? CurriculumResource::query()->with('curriculumDomain')->find($get('curriculum_resource_id')) : null;
+                                                        $lessonTitle = $resource?->title ?: ($get('title') ?: ($schedule->subject?->name ?? 'درس بيداغوجي'));
+                                                        $level = $schedule->classroom?->level ?? $schedule->group?->classroom?->level;
+                                                        $levelName = $level?->name ?? 'التعليم المتوسط';
+                                                        $subject = $schedule->subject;
+
+                                                        try {
+                                                            $planner = app(AiLessonPlannerService::class);
+                                                            $plan = $planner->generatePedagogicalMemo(
+                                                                subjectName: $subject?->name ?? 'المادة',
+                                                                level: $levelName,
+                                                                domain: $resource?->curriculumDomain?->name ?? 'الميدان التعلمي العام',
+                                                                topic: $lessonTitle,
+                                                                teacherGuidelines: null,
+                                                                locale: 'ar',
+                                                            );
+
+                                                            $memo = PedagogicalMemo::create([
+                                                                'user_id' => Auth::id(),
+                                                                'subject_id' => $subject?->id ?? Subject::first()->id,
+                                                                'level_id' => $level?->id ?? Level::first()->id,
+                                                                'title' => $lessonTitle,
+                                                                'phase' => $resource?->curriculumDomain?->name,
+                                                                'competence' => $plan['competence'],
+                                                                'starting_situation' => $plan['starting_situation'],
+                                                                'activities' => $plan['activities'],
+                                                                'resources' => $plan['resources'],
+                                                                'evaluation' => $plan['evaluation'],
+                                                                'notes' => $plan['notes'],
+                                                                'is_template' => false,
+                                                                'is_archived' => false,
+                                                            ]);
+
+                                                            $set('pedagogical_memo_id', $memo->id);
+                                                            $set('title', $lessonTitle);
+                                                            $set('content_data', $memo->toDailyLogContentData());
+
+                                                            Notification::make()
+                                                                ->success()
+                                                                ->title(__('تم توليد المذكرة واستيراد تحضيرها بنجاح'))
+                                                                ->body(__('تم إعداد المذكرة: «:title» وربطها بالحصة.', ['title' => $memo->title]))
+                                                                ->actions([
+                                                                    Action::make('print')
+                                                                        ->label(__('معاينة المذكرة'))
+                                                                        ->icon('heroicon-o-printer')
+                                                                        ->url(route('print.pedagogical-memo', ['locale' => app()->getLocale(), 'memo' => $memo->id]))
+                                                                        ->openUrlInNewTab(),
+                                                                ])
+                                                                ->persistent()
+                                                                ->send();
+                                                        } catch (Throwable $e) {
+                                                            Notification::make()
+                                                                ->danger()
+                                                                ->title(__('تعذر توليد المذكرة'))
+                                                                ->body($e->getMessage())
+                                                                ->send();
+                                                        }
+                                                    }),
+
+                                                FormAction::make('import_memo_content')
+                                                    ->label(__('استيراد للتحضير'))
+                                                    ->icon('heroicon-o-arrow-down-tray')
+                                                    ->color('success')
+                                                    ->tooltip(__('نسخ مراحل المذكرة المحددة وكفاءتها إلى عناصر التحضير'))
+                                                    ->visible(fn (Get $get): bool => filled($get('pedagogical_memo_id')))
+                                                    ->action(function (Get $get, Set $set): void {
+                                                        $memo = PedagogicalMemo::find($get('pedagogical_memo_id'));
+                                                        if ($memo) {
+                                                            $set('content_data', $memo->toDailyLogContentData());
+                                                            Notification::make()
+                                                                ->success()
+                                                                ->title(__('تم استيراد عناصر التحضير من المذكرة بنجاح'))
+                                                                ->send();
+                                                        }
+                                                    }),
+
+                                                FormAction::make('view_memo')
+                                                    ->label(__('معاينة المذكرة'))
+                                                    ->icon('heroicon-o-eye')
+                                                    ->color('info')
+                                                    ->visible(fn (Get $get): bool => filled($get('pedagogical_memo_id')))
+                                                    ->url(fn (Get $get): ?string => $get('pedagogical_memo_id') ? route('print.pedagogical-memo', ['locale' => app()->getLocale(), 'memo' => $get('pedagogical_memo_id')]) : null)
+                                                    ->openUrlInNewTab(),
+                                            ])
+                                            ->afterStateUpdated(function (Set $set, Get $get, ?string $state): void {
+                                                if (filled($state)) {
+                                                    $memo = PedagogicalMemo::find($state);
+                                                    if ($memo) {
+                                                        if (blank($get('title')) || str_starts_with((string) $get('title'), 'درس:')) {
+                                                            $set('title', $memo->title);
+                                                        }
+                                                        $currentData = $get('content_data');
+                                                        if (empty($currentData)) {
+                                                            $set('content_data', $memo->toDailyLogContentData());
+                                                        }
+                                                    }
+                                                }
+                                            }),
                                     ]),
 
                                 Section::make(__('بطاقة الاستخلاف والتواصل البيداغوجي'))
@@ -1205,6 +1404,17 @@ class DailyLogResource extends Resource
                     ->wrap()
                     ->toggleable(isToggledHiddenByDefault: true),
 
+                Tables\Columns\TextColumn::make('pedagogical_memo')
+                    ->label(__('المذكرة البيداغوجية'))
+                    ->getStateUsing(fn (DailyLog $record): ?string => $record->pedagogicalMemo ? sprintf('مذكرة %02d: %s', $record->pedagogicalMemo->id, Str::limit($record->pedagogicalMemo->title, 20)) : null)
+                    ->badge()
+                    ->color('primary')
+                    ->icon('heroicon-o-document-duplicate')
+                    ->placeholder('—')
+                    ->url(fn (DailyLog $record): ?string => $record->pedagogical_memo_id ? route('print.pedagogical-memo', ['locale' => app()->getLocale(), 'memo' => $record->pedagogical_memo_id]) : null)
+                    ->openUrlInNewTab()
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('الحالة'))
                     ->badge()
@@ -1256,6 +1466,77 @@ class DailyLogResource extends Resource
                 static::confirmCompletionTableAction(),
                 static::administrativeVisaTableAction(),
                 static::studentReportTableAction(),
+                Tables\Actions\Action::make('pedagogicalMemoAction')
+                    ->label(fn (DailyLog $record): string => $record->pedagogical_memo_id ? __('المذكرة') : __('توليد مذكرة'))
+                    ->icon(fn (DailyLog $record): string => $record->pedagogical_memo_id ? 'heroicon-o-document-duplicate' : 'heroicon-o-sparkles')
+                    ->color(fn (DailyLog $record): string => $record->pedagogical_memo_id ? 'info' : 'warning')
+                    ->tooltip(fn (DailyLog $record): string => $record->pedagogical_memo_id ? __('معاينة وطباعة المذكرة البيداغوجية') : __('توليد مذكرة بيداغوجية بالذكاء الاصطناعي لهذه الحصة'))
+                    ->action(function (DailyLog $record, Tables\Actions\Action $action): void {
+                        if ($record->pedagogical_memo_id) {
+                            $url = route('print.pedagogical-memo', [
+                                'locale' => app()->getLocale(),
+                                'memo' => $record->pedagogical_memo_id,
+                            ]);
+                            $action->getLivewire()->js("window.open('{$url}', '_blank')");
+
+                            return;
+                        }
+
+                        $schedule = $record->schedule;
+                        $subject = $schedule?->subject;
+                        $level = $schedule?->classroom?->level ?? $schedule?->group?->classroom?->level;
+                        $levelName = $level?->name ?? 'التعليم المتوسط';
+                        $lessonTitle = $record->curriculumResource?->title ?: ($record->title ?: ($subject?->name ?? 'درس بيداغوجي'));
+
+                        try {
+                            $planner = app(AiLessonPlannerService::class);
+                            $plan = $planner->generatePedagogicalMemo(
+                                subjectName: $subject?->name ?? 'المادة',
+                                level: $levelName,
+                                domain: $record->curriculumResource?->curriculumDomain?->name ?? 'الميدان التعلمي',
+                                topic: $lessonTitle,
+                                teacherGuidelines: null,
+                                locale: 'ar',
+                            );
+
+                            $memo = PedagogicalMemo::create([
+                                'user_id' => $record->substitute_teacher_id ?: ($schedule?->user_id ?? Auth::id()),
+                                'subject_id' => $subject?->id ?? Subject::first()->id,
+                                'level_id' => $level?->id ?? Level::first()->id,
+                                'title' => $lessonTitle,
+                                'phase' => $record->curriculumResource?->curriculumDomain?->name,
+                                'competence' => $plan['competence'],
+                                'starting_situation' => $plan['starting_situation'],
+                                'activities' => $plan['activities'],
+                                'resources' => $plan['resources'],
+                                'evaluation' => $plan['evaluation'],
+                                'notes' => $plan['notes'],
+                                'is_template' => false,
+                                'is_archived' => false,
+                            ]);
+
+                            $record->update(['pedagogical_memo_id' => $memo->id]);
+
+                            Notification::make()
+                                ->success()
+                                ->title(__('تم توليد المذكرة البيداغوجية بنجاح'))
+                                ->body(__('تم إعداد المذكرة: «:title» وربطها بسجل الحصة.', ['title' => $memo->title]))
+                                ->actions([
+                                    Action::make('print')
+                                        ->label(__('معاينة المذكرة'))
+                                        ->icon('heroicon-o-printer')
+                                        ->url(route('print.pedagogical-memo', ['locale' => app()->getLocale(), 'memo' => $memo->id]))
+                                        ->openUrlInNewTab(),
+                                ])
+                                ->send();
+                        } catch (Throwable $e) {
+                            Notification::make()
+                                ->danger()
+                                ->title(__('تعذر توليد المذكرة'))
+                                ->body($e->getMessage())
+                                ->send();
+                        }
+                    }),
                 Tables\Actions\Action::make('printRegister')
                     ->label(__('دفتر النصوص'))
                     ->icon('heroicon-o-book-open')

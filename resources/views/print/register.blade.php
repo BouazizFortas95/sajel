@@ -283,6 +283,13 @@
                             {{ $log->title }}
                         </strong>
 
+                        @if ($log->pedagogicalMemo)
+                            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-inline-start: 3px solid #1e3a8a; padding: 2px 6px; border-radius: 2px; margin-top: 3px; font-size: 7.2pt; color: #1e3a8a; font-family: 'Cairo', sans-serif;">
+                                <span style="font-weight: bold;">📋 {{ __('المذكرة البيداغوجية:') }}</span>
+                                <span>{{ sprintf('رقم %02d — %s', $log->pedagogicalMemo->id, $log->pedagogicalMemo->title) }}</span>
+                            </div>
+                        @endif
+
                         @if ($competence)
                             <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-inline-start: 3px solid #16a34a; padding: 3px 6px; border-radius: 2px; margin-top: 4px; font-size: 7.5pt; line-height: 1.35; font-family: 'Cairo', sans-serif;">
                                 <span style="color: #166534; font-weight: bold; display: block;">🎯 {{ __('الكفاءة المستهدفة:') }}</span>
