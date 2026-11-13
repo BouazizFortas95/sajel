@@ -479,49 +479,49 @@ class AiLessonPlannerService
             'properties' => [
                 'competence' => [
                     'type' => 'STRING',
-                    'description' => 'Target competence in one clear sentence.',
+                    'description' => 'Target competence in one clear, concise sentence (max 25 words).',
                 ],
                 'starting_situation' => [
                     'type' => 'STRING',
-                    'description' => 'Starting problem situation (context, support, and challenging question).',
+                    'description' => 'Short starting problem situation (context and guiding question, max 40 words).',
                 ],
                 'activities' => [
                     'type' => 'ARRAY',
-                    'description' => 'Lesson activities and pedagogical phases in chronological order.',
+                    'description' => 'Chronological 3 official lesson phases: 1) وضعية الانطلاق (10 min), 2) العرض وإرساء الموارد (35 min), 3) التقويم والمعالجة (15 min).',
                     'items' => [
                         'type' => 'OBJECT',
                         'properties' => [
                             'name' => [
                                 'type' => 'STRING',
-                                'description' => 'Activity name (e.g. وضعية الانطلاق، بناء التعلمات، استثمار المكتسبات، التقويم)',
+                                'description' => 'Phase name (وضعية الانطلاق / العرض - إرساء الموارد / التقويم والمعالجة)',
                             ],
                             'duration' => [
                                 'type' => 'INTEGER',
-                                'description' => 'Suggested duration in minutes',
+                                'description' => 'Duration in minutes (10, 35, or 15)',
                             ],
                             'strategy' => [
                                 'type' => 'STRING',
-                                'description' => 'Active learning strategy applied in this phase',
+                                'description' => 'Active learning strategy (e.g. الحوار الموجه / التفكير-المشاركة-العرض / بطاقة الخروج)',
                             ],
                             'teacher_role' => [
                                 'type' => 'STRING',
-                                'description' => 'Teacher instructions, facilitation, guidance, and questions',
+                                'description' => 'Teacher instructions and guiding questions (max 2 short sentences).',
                             ],
                             'student_role' => [
                                 'type' => 'STRING',
-                                'description' => 'Learner activities, inquiry, collaborative work, and answers',
+                                'description' => 'Learner activity and tasks (max 2 short sentences).',
                             ],
                             'written_trace' => [
                                 'type' => 'STRING',
-                                'description' => 'Written trace recorded on board and notebook',
+                                'description' => 'Concise bullet points of knowledge trace for board and notebook (max 4 short bullets, NO long paragraphs).',
                             ],
                             'evaluation_indicator' => [
                                 'type' => 'STRING',
-                                'description' => 'Formative assessment criteria and checkpoint indicators',
+                                'description' => 'Observable behavioral indicator in one concise sentence (max 15 words).',
                             ],
                             'content' => [
                                 'type' => 'STRING',
-                                'description' => 'Detailed pedagogical tasks for teacher and learners',
+                                'description' => 'Brief overview of the activity (max 30 words).',
                             ],
                         ],
                         'required' => ['name', 'content'],
@@ -529,15 +529,15 @@ class AiLessonPlannerService
                 ],
                 'resources' => [
                     'type' => 'STRING',
-                    'description' => 'Didactic resources and educational materials',
+                    'description' => 'Short list of used tools (الكتاب، السبورة، الحواسيب، الداتاشو)',
                 ],
                 'evaluation' => [
                     'type' => 'STRING',
-                    'description' => 'Formative and summative evaluation criteria',
+                    'description' => 'Short practical evaluation exercise (max 25 words).',
                 ],
                 'notes' => [
                     'type' => 'STRING',
-                    'description' => 'Pedagogical advice and teacher notes',
+                    'description' => 'Brief pedagogical references (المنهاج، الوثيقة المرافقة)',
                 ],
             ],
             'required' => ['competence', 'starting_situation', 'activities', 'resources', 'evaluation'],
@@ -568,29 +568,25 @@ class AiLessonPlannerService
             : "وظّف استراتيجيات التعلم النشط المناسبة لجعل المتعلم محوراً للعملية التعليمية (مثل: {$strategiesList}).";
 
         return <<<PROMPT
-        أنت مفتش تربوي ومستشار بيداغوجي متخصص في مناهج وزارة التربية الوطنية الجزائرية (التعليم المتوسط — المقاربة بالكفاءات ومنهاج الجيل الثاني).
+        أنت مفتش تربوي متخصص في مناهج وزارة التربية الوطنية الجزائرية (التعليم المتوسط — المقاربة بالكفاءات ومنهاج الجيل الثاني).
         المطلوب تحرير مذكرة بيداغوجية رسمية متكاملة ومنهجية حديثة لمادة «{$subject}» — المستوى «{$level}» — المقطع التعلمي: «{$phase}» حول موضوع الدرس: «{$topic}».
 
-        المعايير المنهجية الرسمية وفق دليل المفتشية العامة للبيداغوجيا:
-        1. الكفاءة المستهدفة (competence): صياغة إجرائية دقيقة محددة بسلوك قابل للملاحظة والتقويم يربط بين الفعل، المعرفة والسياق (المركبة المستهدفة ومؤشر الكفاءة).
-        2. الوضعية المشكلة الانطلاقية (starting_situation): وضعية دالة من واقع التلميذ تشتمل على السياق، السند، والمهمة/التعليمة وتثير تساؤل ودافعية المتعلمين.
-        3. سيرورة التعلمات والأنشطة (activities): تتوزع الحصة (60 دقيقة) بدقة منهجية على 3 إلى 4 محطات رسمية:
-           - مرحلة الانطلاق (وضعية الانطلاق والتهيئة النفسية واستحضار المكتسبات) ~10 دقائق
-           - مرحلة بناء التعلمات (النشاط الأول: البحث والاستكشاف والتحليل) ~20 دقيقة
-           - مرحلة بناء التعلمات (النشاط الثاني: التركيب وإرساء المورد المعرفي) ~15 دقيقة
-           - مرحلة استثمار المكتسبات والتقويم (وضعية إدماج جزئي فردي/فوجي) ~15 دقيقة
-           لكل مرحلة اذكر بدقة:
-           - name: اسم المحطة البيداغوجية
-           - duration: المدة المقترحة بالدقائق (رقم صحيح مثلاً: 10، 20، 15، 15)
-           - strategy: استراتيجية التعلم النشط المطبقة ونمط التفويج (فردي، ثنائي، أفواج)
-           - teacher_role: دور ونشاط الأستاذ (التعليمات، التوجيه، التيسير، إلقاء الأسئلة الهادفة)
-           - student_role: نشاط ومهمات المتعلم (الملاحظة، الاستكشاف، التحليل، التناظر، الاستنتاج)
-           - written_trace: الأثر الكتابي المستخلص (الخلاصة أو النتيجة التي تُسجل في كراس الدروس وعلى السبورة)
-           - evaluation_indicator: مؤشر التقويم والتعديل المرحلي
-           - content: ملخص شامل يجمع الأنشطة لسيرورة المحطة
-        4. الموارد والسندات (resources): الوسائل الديداكتيكية والأدوات الرقمية والمادية (الكتاب المدرسي، المنهاج، السبورة، الداتاشو، بطاقات المهام، البرمجيات).
-        5. التقويم (evaluation): معايير ومؤشرات التحقق الرسمية: م1 الوجاهة، م2 الاستعمال السليم لأدوات المادة، م3 الانسجام، م4 الإتقان.
-        6. توجيهات الأستاذ والمعالجة (notes): توصيات بيداغوجية لتسيير القسم، مراعاة الفروق الفردية، وخطة المرافقة والدعم للمتعثرين.
+        تنبيه بيداغوجي صارم لمنع الإطناب والتكرار:
+        - المذكرة بطاقة تقنية إجرائية موجزة وعملية للأستاذ، وليست مقالاً إنشائياً.
+        - اعتمد أسلوب رؤوس الأقلام والنقاط التلغرافية المركزة والمحددة (1، 2، 3).
+        - ممنوع منعاً باتاً تكرار العبارات أو حشو الكلام أو العبارات العامة والشعارات.
+
+        هيكلة سيرورة الدرس (الحصة 60 دقيقة موزعة على 3 محطات رسمية حصراً):
+        1. وضعية الانطلاق (10 د):
+           - سياق مشكلة واقعي وموجز (سطران أو ثلاثة) ينتهي بتساؤل إشكالي دقيق.
+           - الأثر الأولي: تدوين الإشكالية والفرضيات الأولية على السبورة.
+        2. العرض (إرساء الموارد) (35 د):
+           - النشاط والتعليمات: نص النشاط التفاعلي والمهمة المطلوبة من الأفواج (سطران).
+           - الأثر الكتابي (written_trace): إرساء المورد المعرفي في نقاط تلغرافية مهيكلة ومخطط سيرورة رقمي/مفاهيمي بسيط يسهل نقله على كراس الدروس (أقصى حد 5 أسطر).
+           - مؤشر الكفاءة: مؤشر سلوكي دقيق وقابل للملاحظة.
+        3. التقويم والمعالجة (15 د):
+           - تمرين تطبيقي عملي محدد (مثل: تصنيف عناصر، إكمال مخطط، أو حل تمرين وجيز).
+           - المعالجة الفورية: آلية التصويب وتثبيت الحل النموذجي.
 
         {$strategyPart}
         {$customPart}
@@ -598,25 +594,72 @@ class AiLessonPlannerService
         التعليمات:
         أعد النتيجة على شكل كائن JSON صالح فقط، دون أي شرح أو وسوم markdown، بالبنية التالية:
         {
-          "competence": "نص الكفاءة المستهدفة الإجرائية",
-          "starting_situation": "نص الوضعية المشكلة الانطلاقية (السياق، السند، المهمة)",
+          "competence": "الكفاءة المستهدفة في جملة إجرائية دقيقة وموجزة (أقل من 20 كلمة)",
+          "starting_situation": "سياق المشكلة والتساؤل الإشكالي (سطران إلى 3 أسطر فقط)",
           "activities": [
             {
-              "name": "اسم المحطة البيداغوجية",
+              "name": "وضعية الانطلاق والتهيئة النفسية",
+              "duration": 10,
+              "strategy": "العصف الذهني والحوار الموجه",
+              "teacher_role": "طرح الوضعية وتوجيه الأسئلة واستثارة الدافعية (سطران)",
+              "student_role": "الملاحظة والتعبير الحر واقتراح الفرضيات (سطران)",
+              "written_trace": "تدوين الإشكالية والفرضيات الأولية المقترحة على السبورة",
+              "evaluation_indicator": "يستحضر المكتسبات القبلية ذات الصلة ويصوغ فرضيات منطقية",
+              "content": "طرح وضعية مشكلة دالة حول موضوع الدرس لاسترجاع المكتسبات القبلية"
+            },
+            {
+              "name": "العرض (إرساء الموارد وبناء التعلمات)",
+              "duration": 35,
+              "strategy": "التفكير — المشاركة — العرض",
+              "teacher_role": "تقديم السندات وإلقاء التعليمات وتيسير المناقشة الفوجية",
+              "student_role": "تحليل السند والتناظر داخل الفوج واستخلاص القواعد والمفاهيم",
+              "written_trace": "1- ضبط المفهوم الأساسي\\n2- الخصائص والمكونات\\n3- مخطط السيرورة",
+              "evaluation_indicator": "يحلل ويوظف أدوات ومصطلحات المادة بدقة ويستنتج القاعدة",
+              "content": "تنفيذ نشاط تعلمي تفاعلي واستخلاص المفاهيم الأساسية وإرساء المورد المعرفي"
+            },
+            {
+              "name": "التقويم والمعالجة (استثمار المكتسبات)",
               "duration": 15,
-              "strategy": "استراتيجية التعلم النشط ونمط العمل",
-              "teacher_role": "دور ونشاط الأستاذ وإلقاء التعليمات",
-              "student_role": "نشاط ومهمات المتعلم والأداء المطلوب",
-              "written_trace": "الأثر الكتابي المستخلص في الكراس والسبورة",
-              "evaluation_indicator": "مؤشر التقويم والتحقق المرحلي",
-              "content": "ملخص متكامل لسيرورة المحطة ودور الأستاذ والمتعلم"
+              "strategy": "بطاقة الخروج (عمل فردي موجه)",
+              "teacher_role": "طرح تمرين تطبيقي محدد ومتابعة الحل وتقديم التغذية الراجعة",
+              "student_role": "حل الوضعية التطبيقية فردياً والتحقق من صحة الإجابة",
+              "written_trace": "تسجيل الحل النموذجي للتمرين التطبيقي في كراس الدروس",
+              "evaluation_indicator": "يوظف المورد المكتسب بنجاح في حل التمرين التطبيقي",
+              "content": "تطبيق فوري لتقويم التحكم في المورد وتصويب التعثرات الفردية فورياً"
             }
           ],
-          "resources": "الوسائل والسندات التعليمية والديداكتيكية",
-          "evaluation": "معايير ومؤشرات التقويم الرسمية (م1، م2، م3، م4)",
-          "notes": "المعالجة والتوجيهات البيداغوجية ومراعاة الفروق الفردية"
+          "resources": "الوسائل والسندات (الكتاب، السبورة، عارض البيانات، الحواسيب)",
+          "evaluation": "تمرين تطبيقي فوري محدد لتقويم التحكم في المورد المعرفي",
+          "notes": "المنهاج الرسمي، الوثيقة المرافقة، مراعاة الفروق الفردية"
         }
         PROMPT;
+    }
+
+    /**
+     * Clean up repeating hallucinations, infinite loops, and enforce concise length limits.
+     */
+    protected function sanitizeMemoText(?string $text, int $maxChars = 400): string
+    {
+        if (blank($text)) {
+            return '';
+        }
+
+        $clean = trim((string) $text);
+
+        // Remove immediate repetition loops of phrases (10-80 chars) repeating 2+ times
+        $clean = preg_replace('/(\b.{10,80}\b)(?:\s*\1){2,}/u', '$1', $clean) ?? $clean;
+
+        // Strip hallucinated religious/patriotic looping filler
+        $patterns = [
+            '/(?:دائماً وأبداً\s*)+(?:آم[يـ]ن يا رب العالمين)?/u',
+            '/(?:بكل فخر واعتزاز|لا يتزعزع أبداً|عبر ربوع الوطن الحبيب والغالي|في متوسطات الوطن الحبيب)\s*/u',
+            '/(?:وصلى الله وسلم على سيدنا محمد وعلى آله وصحبه وسلم تسليما كثيرا)\s*/u',
+            '/(?:والحمد لله رب العالمين)\s*/u',
+        ];
+        $clean = preg_replace($patterns, ' ', $clean) ?? $clean;
+        $clean = preg_replace('/\s{2,}/u', ' ', $clean) ?? $clean;
+
+        return Str::limit(trim($clean), $maxChars, '...');
     }
 
     /**
@@ -645,21 +688,21 @@ class AiLessonPlannerService
                     continue;
                 }
 
-                $name = trim((string) ($act['name'] ?? $act['phase_name'] ?? ''));
+                $name = $this->sanitizeMemoText($act['name'] ?? $act['phase_name'] ?? '', 120);
                 $duration = (int) ($act['duration'] ?? 15);
                 if ($duration <= 0) {
                     $duration = 15;
                 }
-                $strategy = trim((string) ($act['strategy'] ?? $act['active_learning_strategy'] ?? ''));
-                $content = trim((string) ($act['content'] ?? ''));
+                $strategy = $this->sanitizeMemoText($act['strategy'] ?? $act['active_learning_strategy'] ?? '', 120);
+                $content = $this->sanitizeMemoText($act['content'] ?? '', 350);
 
-                $teacherRole = trim((string) ($act['teacher_role'] ?? ''));
-                $studentRole = trim((string) ($act['student_role'] ?? ''));
-                $writtenTrace = trim((string) ($act['written_trace'] ?? ''));
-                $evalIndicator = trim((string) ($act['evaluation_indicator'] ?? ''));
+                $teacherRole = $this->sanitizeMemoText($act['teacher_role'] ?? '', 250);
+                $studentRole = $this->sanitizeMemoText($act['student_role'] ?? '', 250);
+                $writtenTrace = $this->sanitizeMemoText($act['written_trace'] ?? '', 450);
+                $evalIndicator = $this->sanitizeMemoText($act['evaluation_indicator'] ?? '', 200);
 
                 if ($content === '' && ($teacherRole !== '' || $studentRole !== '')) {
-                    $content = trim("{$teacherRole}\n{$studentRole}");
+                    $content = $this->sanitizeMemoText("{$teacherRole}\n{$studentRole}", 350);
                 }
 
                 if ($name === '' && $content === '') {
@@ -735,27 +778,27 @@ class AiLessonPlannerService
             ];
         }
 
-        $competence = trim((string) ($plan['competence'] ?? ''));
+        $competence = $this->sanitizeMemoText($plan['competence'] ?? '', 200);
         if ($competence === '') {
             $competence = "يتحكم التلميذ في المفاهيم الأساسية لدرس «{$topic}» ويوظفها بكفاءة في حل وضعيات بيداغوجية مناسبة لمادة {$subject}.";
         }
 
-        $startingSituation = trim((string) ($plan['starting_situation'] ?? ''));
+        $startingSituation = $this->sanitizeMemoText($plan['starting_situation'] ?? '', 350);
         if ($startingSituation === '') {
             $startingSituation = "انطلاقاً من سياق دال ومكتسبات التلاميذ القبلية، يُطرح التساؤل الإشكالي حول «{$topic}» لتحفيز التفكير وبناء الحل.";
         }
 
-        $resources = trim((string) ($plan['resources'] ?? ''));
+        $resources = $this->sanitizeMemoText($plan['resources'] ?? '', 250);
         if ($resources === '') {
             $resources = 'الكتاب المدرسي، المنهاج الرسمي، السبورة، عارض البيانات (Data Show)، بطاقات الأنشطة الفوجية.';
         }
 
-        $evaluation = trim((string) ($plan['evaluation'] ?? ''));
+        $evaluation = $this->sanitizeMemoText($plan['evaluation'] ?? '', 250);
         if ($evaluation === '') {
             $evaluation = 'تقويم تكويني مرحلي من خلال متابعة إنجاز الأنشطة، وتقويم ختامي بحل تمرين تطبيقي فردي.';
         }
 
-        $notes = trim((string) ($plan['notes'] ?? ''));
+        $notes = $this->sanitizeMemoText($plan['notes'] ?? '', 250);
         if ($notes === '') {
             $notes = 'مراعاة الفروق الفردية بين المتعلمين، تشجيع المبادرة الذاتية، والحرص على تدبير التوقيت المخصص لكل مرحلة.';
         }

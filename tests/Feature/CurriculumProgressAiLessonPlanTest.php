@@ -704,4 +704,91 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
         $this->assertArrayHasKey($levelCem->id, $cemOptions);
         $this->assertArrayNotHasKey($levelPri->id, $cemOptions);
     }
+
+    public function test_ai_lesson_planner_and_print_view_sanitize_repetitions_and_fit_single_page(): void
+    {
+        $repeatingText = str_repeat('هذه جملة بيداغوجية تتكرر في حلقة مغلقة غير منتهية. ', 15);
+        $planWithLoops = [
+            'competence' => 'أن يتعرف المتعلم على بيئة التعامل مع الحاسوب.',
+            'starting_situation' => 'طرح إشكالية دور الحاسوب في الحياة اليومية. '.$repeatingText,
+            'activities' => [
+                [
+                    'name' => 'وضعية الانطلاق',
+                    'duration' => 10,
+                    'strategy' => 'العصف الذهني',
+                    'content' => 'استرجاع المكتسبات القبلية.',
+                    'written_trace' => 'أثر كتابي أولي. '.$repeatingText,
+                ],
+                [
+                    'name' => 'العرض (إرساء الموارد)',
+                    'duration' => 35,
+                    'strategy' => 'التفكير — المشاركة — العرض',
+                    'content' => 'بناء التعلمات وإرساء المورد المعرفي.',
+                    'written_trace' => 'المعارف المكتسبة ومخطط العمل. '.$repeatingText,
+                ],
+                [
+                    'name' => 'التقويم والمعالجة',
+                    'duration' => 15,
+                    'strategy' => 'بطاقة الخروج',
+                    'content' => 'تطبيق فوري لتقويم المكتسبات.',
+                    'written_trace' => 'الحل النموذجي للتمرين.',
+                ],
+            ],
+            'resources' => 'الكتاب والسبورة.',
+            'evaluation' => 'تمرين تطبيقي عملي.',
+            'notes' => 'مراعاة الفروق الفردية.',
+        ];
+
+        $this->fakeGeminiWithPlan($planWithLoops);
+
+        $service = app(AiLessonPlannerService::class);
+        $result = $service->generatePedagogicalMemo(
+            topic: 'تعريف الحاسوب',
+            subject: 'الإعلام الآلي',
+            level: 'السنة الأولى متوسط',
+            phase: 'بيئة التعامل مع الحاسوب',
+            locale: 'ar',
+        );
+
+        // Verify repetitions were stripped and capped
+        $this->assertLessThan(400, mb_strlen($result['starting_situation']));
+        $this->assertLessThan(500, mb_strlen($result['activities'][0]['written_trace']));
+        $this->assertLessThan(500, mb_strlen($result['activities'][1]['written_trace']));
+
+        // Verify printed Blade view renders single-page structure safely
+        $teacher = User::factory()->create(['role' => Role::Teacher->value]);
+        $subject = Subject::factory()->create(['name' => 'الإعلام الآلي']);
+        $level = Level::factory()->create(['name' => 'السنة الأولى متوسط']);
+
+        $memo = PedagogicalMemo::create([
+            'user_id' => $teacher->id,
+            'subject_id' => $subject->id,
+            'level_id' => $level->id,
+            'title' => 'تعريف المعلوماتية والحاسوب',
+            'phase' => 'بيئة التعامل مع الحاسوب',
+            'competence' => $result['competence'],
+            'starting_situation' => $result['starting_situation'],
+            'activities' => $result['activities'],
+            'resources' => $result['resources'],
+            'evaluation' => $result['evaluation'],
+            'notes' => $result['notes'],
+        ]);
+
+        $html = view('print.pedagogical-memo', [
+            'memo' => $memo,
+            'teacher' => $teacher,
+            'subject' => $subject,
+            'level' => $level,
+            'autoPrint' => false,
+        ])->render();
+
+        $this->assertStringContainsString('وضعية الانطلاق', $html);
+        $this->assertStringContainsString('العرض (إرساء الموارد)', $html);
+        $this->assertStringContainsString('التقويم والمعالجة', $html);
+        $this->assertStringContainsString('max-height: 282mm', $html);
+        $this->assertStringContainsString('overflow: hidden', $html);
+        $this->assertStringContainsString('تأشيرة أستاذ(ة) المادة', $html);
+        $this->assertStringContainsString('تأشيرة السيد مدير المؤسسة', $html);
+        $this->assertStringContainsString('تأشيرة السيد مفتش التربية الوطنية', $html);
+    }
 }
