@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>DataShow Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; margin: 0; padding: 0; background-color: #020617; }
+    </style>
+</head>
+<body class="bg-slate-950 text-white theme-cinema">
+    <div wire:id="P68wWhakaPxYISWrEFMY"
+    x-data="{
+        theme: window.Livewire.find('P68wWhakaPxYISWrEFMY').entangle('theme'),
+        fontScale: window.Livewire.find('P68wWhakaPxYISWrEFMY').entangle('fontScale'),
+        timerRunning: window.Livewire.find('P68wWhakaPxYISWrEFMY').entangle('timerRunning'),
+        timerSeconds: window.Livewire.find('P68wWhakaPxYISWrEFMY').entangle('timerSeconds'),
+        spotlight: window.Livewire.find('P68wWhakaPxYISWrEFMY').entangle('spotlight'),
+        pickedStudents: window.Livewire.find('P68wWhakaPxYISWrEFMY').entangle('pickedStudents'),
+        slideIndex: window.Livewire.find('P68wWhakaPxYISWrEFMY').entangle('slideIndex'),
+        slides: window.Livewire.find('P68wWhakaPxYISWrEFMY').entangle('content'),
+        logs: window.Livewire.find('P68wWhakaPxYISWrEFMY').entangle('logs'),
+        logId: window.Livewire.find('P68wWhakaPxYISWrEFMY').entangle('logId'),
+        speechLocale: 'ar-SA',
+        ttsSupported: 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window,
+        isSpeaking: false,
+        isPaused: false,
+        speechRate: 1.0,
+        availableVoices: [],
+        selectedVoiceURI: '',
+        activeUtterance: null,
+        speechLabels: {
+            play: '\u0642\u0631\u0627\u0621\u0629 \u0627\u0644\u0634\u0631\u064a\u062d\u0629 \u0635\u0648\u062a\u064a\u0627\u064b',
+            pause: '\u0625\u064a\u0642\u0627\u0641 \u0645\u0624\u0642\u062a',
+            resume: '\u0627\u0633\u062a\u0626\u0646\u0627\u0641',
+            stop: '\u0625\u064a\u0642\u0627\u0641 \u0627\u0644\u0642\u0631\u0627\u0621\u0629',
+            unsupported: '\u0627\u0644\u0645\u062a\u0635\u0641\u062d \u0627\u0644\u062d\u0627\u0644\u064a \u0644\u0627 \u064a\u062f\u0639\u0645 \u0627\u0644\u0642\u0631\u0627\u0621\u0629 \u0627\u0644\u0635\u0648\u062a\u064a\u0629',
+            voice: '\u0627\u0644\u0635\u0648\u062a',
+            defaultVoice: '\u0635\u0648\u062a \u0627\u0644\u0645\u062a\u0635\u0641\u062d \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a',
+            rate: '\u0633\u0631\u0639\u0629 \u0627\u0644\u0642\u0631\u0627\u0621\u0629',
+            speaking: '\u062c\u0627\u0631\u064a \u0627\u0644\u0642\u0631\u0627\u0621\u0629 \u0627\u0644\u0635\u0648\u062a\u064a\u0629...',
+        },
+        timerInterval: null,
+        voicesChangedHandler: null,
+        beforeUnloadHandler: null,
+        livewireNavigatingHandler: null,
+        formatTimer() {
+            const m = Math.floor(this.timerSeconds / 60).toString().padStart(2, '0');
+            const s = (this.timerSeconds % 60).toString().padStart(2, '0');
+            return m + ':' + s;
+        },
+        startTimer() { this.timerRunning = true; this.timerInterval = setInterval(() => { if (this.timerSeconds > 0) this.timerSeconds--; else { this.timerRunning = false; clearInterval(this.timerInterval); } }, 1000); },
+        stopTimer() { this.timerRunning = false; clearInterval(this.timerInterval); },
+        init() {
+            try {
+                const storedRate = Number(localStorage.getItem('sajel.datashow.speech_rate'));
+                if ([0.8, 1.0, 1.2].includes(storedRate)) this.speechRate = storedRate;
+            } catch (error) {
+                console.error('Unable to load the saved narration speed.', error);
+            }
+
+            if (this.ttsSupported) {
+                this.loadVoices();
+                this.voicesChangedHandler = () => this.loadVoices();
+                window.speechSynthesis.addEventListener('voiceschanged', this.voicesChangedHandler);
+            }
+
+            this.beforeUnloadHandler = () => this.stopSpeech();
+            this.livewireNavigatingHandler = () => this.stopSpeech();
+            window.addEventListener('beforeunload', this.beforeUnloadHandler);
+            document.addEventListener('livewire:navigating', this.livewireNavigatingHandler);
+            this.$watch('slideIndex', (value, previous) => {
+                if (value !== previous) this.stopSpeech();
+            });
+            this.$watch('logId', (value, previous) => {
+                if (value !== previous) this.stopSpeech();
+            });
+            this.$watch('speechRate', (value) => {
+                if (![0.8, 1.0, 1.2].includes(Number(value))) {
+                    this.speechRate = 1.0;
+
+                    return;
+                }
+
+                try {
+                    localStorage.setItem('sajel.datashow.speech_rate', String(value));
+                } catch (error) {
+                    console.error('Unable to save the narration speed.', error);
+                }
+
+                if (this.isSpeaking) this.speakSlide();
+            });
+            this.$watch('selectedVoiceURI', () => {
+                if (this.isSpeaking) this.speakSlide();
+            });
+        },
+        destroy() {
+            this.stopSpeech();
+            clearInterval(this.timerInterval);
+            window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+            document.removeEventListener('livewire:navigating', this.livewireNavigatingHandler);
+            if (this.ttsSupported && this.voicesChangedHandler) {
+                window.speechSynthesis.removeEventListener('voiceschanged', this.voicesChangedHandler);
+            }
+        },
+        loadVoices() {
+            this.availableVoices = window.speechSynthesis.getVoices();
+            if (!this.availableVoices.some((voice) => voice.voiceURI === this.selectedVoiceURI)) {
+                const language = this.speechLocale.split('-')[0].toLowerCase();
+                const matchingVoices = this.availableVoices.filter((voice) =>
+                    voice.lang.toLowerCase().startsWith(language),
+                );
+                const preferred = matchingVoices.find((voice) => voice.localService)
+                    ?? matchingVoices[0];
+                this.selectedVoiceURI = preferred?.voiceURI ?? '';
+            }
+        },
+        speakSlide() {
+            if (!this.ttsSupported) return;
+            const text = this.slides[Number(this.slideIndex)]?.narration_text?.trim();
+            if (!text) return;
+
+            this.stopSpeech();
+            const utterance = new SpeechSynthesisUtterance(text);
+            const voice = this.availableVoices.find((item) => item.voiceURI === this.selectedVoiceURI);
+            if (voice) utterance.voice = voice;
+            utterance.lang = voice?.lang ?? this.speechLocale;
+            utterance.rate = this.speechRate;
+            utterance.onstart = () => {
+                if (this.activeUtterance === utterance) this.isSpeaking = true;
+            };
+            utterance.onpause = () => {
+                if (this.activeUtterance === utterance) this.isPaused = true;
+            };
+            utterance.onresume = () => {
+                if (this.activeUtterance === utterance) this.isPaused = false;
+            };
+            utterance.onend = () => {
+                if (this.activeUtterance === utterance) {
+                    this.activeUtterance = null;
+                    this.isSpeaking = false;
+                    this.isPaused = false;
+                }
+            };
+            utterance.onerror = (event) => {
+                if (this.activeUtterance === utterance) {
+                    if (event.error !== 'canceled' && event.error !== 'interrupted') {
+                        console.error('Voice narration failed.', event.error);
+                    }
+                    this.activeUtterance = null;
+                    this.isSpeaking = false;
+                    this.isPaused = false;
+                }
+            };
+
+            this.activeUtterance = utterance;
+            this.isSpeaking = true;
+            this.isPaused = false;
+            window.speechSynthesis.speak(utterance);
+        },
+        toggleSpeech() {
+            if (this.isSpeaking) this.stopSpeech();
+            else this.speakSlide();
+        },
+        pauseResumeSpeech() {
+            if (!this.ttsSupported || !this.isSpeaking) return;
+            if (this.isPaused) window.speechSynthesis.resume();
+            else window.speechSynthesis.pause();
+        },
+        stopSpeech() {
+            if (this.ttsSupported) window.speechSynthesis.cancel();
+            this.activeUtterance = null;
+            this.isSpeaking = false;
+            this.isPaused = false;
+        },
+        selectLog(id) {
+            this.stopSpeech();
+            $wire.selectLog(id);
+        },
+        goSlide(i) {
+            this.stopSpeech();
+            $wire.goToSlide(i);
+        },
+        nextSlide() {
+            this.stopSpeech();
+            $wire.next();
+        },
+        prevSlide() {
+            this.stopSpeech();
+            $wire.prev();
+        },
+        handleVoiceShortcut(event) {
+            const target = event.target;
+            if (
+                event.key.toLowerCase() !== 'v'
+                || event.altKey
+                || event.ctrlKey
+                || event.metaKey
+                || target?.isContentEditable
+                || target?.closest?.('input, textarea, select, [contenteditable=true]')
+            ) return;
+
+            event.preventDefault();
+            this.toggleSpeech();
+        },
+        zoomIn() { $wire.zoomIn(); },
+        zoomOut() { $wire.zoomOut(); },
+        toggleTheme(t) { $wire.switchTheme(t); },
+        toggleSpotlight() { $wire.toggleSpotlight(); },
+        pickRandom() { $wire.pickRandomStudent(); },
+        fullscreen() { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); },
+    }"
+    x-init="if(!timerInterval && timerRunning) startTimer()"
+    @keydown.arrow-right.window="nextSlide(); $event.preventDefault();"
+    @keydown.arrow-left.window="prevSlide(); $event.preventDefault();"
+    @keydown.space.window="nextSlide(); $event.preventDefault();"
+    @keydown.f.window="fullscreen(); $event.preventDefault();"
+    @keydown.window="handleVoiceShortcut($event)"
+    @keydown.escape.window="$wire.emit('prev');"
+    class="min-h-screen transition-colors duration-700"
+    :class="{
+        'bg-slate-950 text-white theme-cinema': theme === 'cinema',
+        'bg-amber-50 text-slate-950 theme-whiteboard': theme === 'whiteboard',
+        'bg-emerald-950 text-emerald-50 theme-chalkboard': theme === 'chalkboard'
+    }"
+>
+
+    
+    <div class="sticky top-0 z-40 backdrop-blur-md border-b border-white/10 bg-white/5 dark:bg-black/20 px-4 py-2 flex items-center gap-3 text-sm">
+        <div class="flex items-center gap-2">
+            <label for="logSelect" class="text-xs opacity-70">الحصة:</label>
+            <select id="logSelect" @change="selectLog($event.target.value)" class="bg-white/10 border border-white/20 rounded px-2 py-1 text-xs min-w-[240px]">
+                <option value="">اختر السجل...</option>
+                <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->            </select>
+            <button wire:click="loadLogs" type="button" class="p-1 rounded hover:bg-white/10" title="تحديث القائمة">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            </button>
+        </div>
+
+        <div class="ml-auto flex items-center gap-2">
+            <div class="flex items-center gap-1 border-r border-white/20 pr-2">
+                <button
+                    type="button"
+                    @click="toggleSpeech()"
+                    :disabled="!ttsSupported || !slides[Number(slideIndex)]?.narration_text"
+                    title="المتصفح الحالي لا يدعم القراءة الصوتية"
+                    x-effect="$el.title = ttsSupported ? speechLabels.play : speechLabels.unsupported"
+                    :aria-label="speechLabels.play"
+                    class="px-2 py-1 rounded bg-amber-500 text-slate-950 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40"
+                >▶ <span x-text="speechLabels.play">قراءة الشريحة صوتياً</span></button>
+                <button
+                    type="button"
+                    x-show="isSpeaking"
+                    @click="pauseResumeSpeech()"
+                    :aria-label="isPaused ? speechLabels.resume : speechLabels.pause"
+                    class="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-xs"
+                ><span x-text="isPaused ? speechLabels.resume : speechLabels.pause">إيقاف مؤقت</span></button>
+                <button
+                    type="button"
+                    x-show="isSpeaking"
+                    @click="stopSpeech()"
+                    :aria-label="speechLabels.stop"
+                    class="px-2 py-1 rounded bg-rose-500/20 text-rose-200 text-xs"
+                    x-text="speechLabels.stop"
+                >إيقاف القراءة</button>
+                <label class="sr-only" for="speechRate" x-text="speechLabels.rate"></label>
+                <select id="speechRate" x-model.number="speechRate" class="bg-white/10 border border-white/20 rounded px-1 py-1 text-xs" :aria-label="speechLabels.rate">
+                    <option value="0.8">0.8x</option>
+                    <option value="1.0">1.0x</option>
+                    <option value="1.2">1.2x</option>
+                </select>
+                <label class="sr-only" for="speechVoice" x-text="speechLabels.voice"></label>
+                <select id="speechVoice" x-model="selectedVoiceURI" class="max-w-36 bg-white/10 border border-white/20 rounded px-1 py-1 text-xs" :aria-label="speechLabels.voice" :disabled="!ttsSupported || availableVoices.length === 0">
+                    <option value="" x-text="speechLabels.defaultVoice">صوت المتصفح الافتراضي</option>
+                    <template x-for="voice in availableVoices" :key="voice.voiceURI">
+                        <option :value="voice.voiceURI" x-text="`${voice.name} (${voice.lang})`"></option>
+                    </template>
+                </select>
+                <span
+                    x-cloak
+                    x-show="isSpeaking"
+                    role="status"
+                    class="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-1 text-xs font-semibold text-emerald-200"
+                ><span class="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span><span x-text="speechLabels.speaking">جاري القراءة الصوتية...</span></span>
+            </div>
+            <button @click="toggleTheme('cinema')" :class="theme==='cinema'?'bg-amber-400 text-slate-950':'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium transition">سينما</button>
+            <button @click="toggleTheme('whiteboard')" :class="theme==='whiteboard'?'bg-amber-400 text-slate-950':'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium transition">سبورة بيضاء</button>
+            <button @click="toggleTheme('chalkboard')" :class="theme==='chalkboard'?'bg-amber-400 text-slate-950':'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium transition">سبورة خضراء</button>
+
+            <button @click="zoomIn()" class="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-xs" title="A+">A+</button>
+            <button @click="zoomOut()" class="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-xs" title="A-">A-</button>
+
+            
+            <div class="flex items-center gap-2 px-2 py-0.5 rounded bg-gradient-to-r from-amber-500/20 to-amber-300/10 border border-amber-300/30 text-xs font-bold text-amber-200">
+                <span>⚡</span>
+                <span>طاقة تفاعل القسم:</span>
+                <span>1%</span>
+                <div class="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden" title="طاقة تفاعل القسم">
+                    <div class="h-full bg-gradient-to-r from-amber-400 to-amber-200 rounded-full" style="width: 1%"></div>
+                </div>
+            </div>
+
+            <button @click="toggleSpotlight()" :class="spotlight ? 'bg-amber-400 text-slate-950' : 'bg-white/10'" class="px-2 py-0.5 rounded text-xs font-medium" title="مؤشر التركيز">⚡</button>
+
+            <button @click="fullscreen()" class="px-2 py-0.5 rounded bg-amber-500 text-white text-xs font-bold" title="ملء الشاشة">⛶</button>
+
+            <a href="https://sajel.dev/ar/auth" class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-200 text-xs border border-rose-400/30 hover:bg-rose-500/30">عودة</a>
+        </div>
+    </div>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(245, 158, 11, 0.4);
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(245, 158, 11, 0.7);
+        }
+
+        .datashow-content {
+            font-family: inherit;
+        }
+        .datashow-content h2 {
+            font-size: 1.5em;
+            font-weight: 900;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.65rem;
+            border-bottom: 2px solid rgba(245, 158, 11, 0.35);
+            text-align: center;
+            color: #fbbf24;
+        }
+        .theme-whiteboard .datashow-content h2 {
+            color: #1e3a8a;
+            border-bottom-color: rgba(30, 58, 138, 0.25);
+        }
+        .theme-chalkboard .datashow-content h2 {
+            color: #34d399;
+            border-bottom-color: rgba(52, 211, 153, 0.3);
+        }
+
+        .datashow-content h3 {
+            font-size: 1.2em;
+            font-weight: 800;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .theme-whiteboard .datashow-content h3 {
+            color: #0369a1;
+        }
+        .theme-chalkboard .datashow-content h3 {
+            color: #6ee7b7;
+        }
+
+        .datashow-content h4 {
+            font-size: 1.1em;
+            font-weight: 800;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding: 0.6rem 1rem;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 0.75rem;
+            border-right: 4px solid #f59e0b;
+            color: #f8fafc;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+        .theme-whiteboard .datashow-content h4 {
+            background: #f1f5f9;
+            color: #0f172a;
+            border-right-color: #d97706;
+        }
+        .theme-chalkboard .datashow-content h4 {
+            background: rgba(6, 78, 59, 0.5);
+            color: #ecfdf5;
+            border-right-color: #10b981;
+        }
+
+        .datashow-content .strategy-badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.78em;
+            font-weight: 700;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            background: rgba(245, 158, 11, 0.2);
+            color: #fde68a;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+        .theme-whiteboard .datashow-content .strategy-badge {
+            background: #fef3c7;
+            color: #92400e;
+            border-color: #fcd34d;
+        }
+        .theme-chalkboard .datashow-content .strategy-badge {
+            background: rgba(16, 185, 129, 0.2);
+            color: #a7f3d0;
+            border-color: rgba(52, 211, 153, 0.4);
+        }
+
+        .datashow-content p {
+            margin-bottom: 0.85rem;
+            line-height: 1.85;
+            text-align: right;
+            opacity: 0.95;
+        }
+        .theme-whiteboard .datashow-content p {
+            color: #334155;
+        }
+        .datashow-content p:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+
+    
+    <main class="relative h-[calc(100vh-56px)] overflow-y-auto px-4 md:px-12 py-8 flex flex-col items-center custom-scrollbar">
+        <!--[if BLOCK]><![endif]-->            
+            <div class="w-full max-w-5xl my-auto py-4" :class="spotlight ? 'opacity-95 scale-[1.02]' : ''" x-transition.opacity.duration.300ms>
+                <!--[if BLOCK]><![endif]-->                    <div class="mb-6 text-center">
+                        <span class="inline-block px-4 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30 mb-2">
+                            سجل الحصة المعتمد
+                        </span>
+                        <h2 class="font-extrabold text-3xl md:text-5xl" style="font-size: calc(2.2rem + 1rem);" :class="theme==='whiteboard' ? 'text-slate-900' : 'text-amber-200'">
+                            الملخص والواجب المنزلي
+                        </h2>
+                    </div>
+
+                    <!--[if BLOCK]><![endif]-->                                                <div class="datashow-content bg-white/5 border border-white/10 rounded-3xl p-6 md:p-10 shadow-2xl text-right mb-6 backdrop-blur-md transition-colors"
+                             :class="{
+                                 'bg-white/5 border-white/10 text-slate-100': theme === 'cinema',
+                                 'bg-white border-slate-200 text-slate-800 shadow-lg': theme === 'whiteboard',
+                                 'bg-emerald-900/40 border-emerald-500/20 text-emerald-100': theme === 'chalkboard'
+                             }"
+                             style="font-size: calc(1.05rem + 0.35rem); line-height: 1.85;">
+                            <!--[if BLOCK]><![endif]-->                                <h2>نظام التشغيل (واجهة نظم التشغيل ويندوز)</h2>
+<h3>الكفاءة المستهدفة</h3><p>يستخدم التلميذ واجهة نظام التشغيل ويندوز للتعامل مع مكونات سطح المكتب وإدارة النوافذ بفعالية أثناء تنظيم محيط عمله الرقمي.</p>
+<h4>وضعية الانطلاق <span class="strategy-badge">استراتيجية: العصف الذهني المنظم (Brainstorming)</span></h4>
+<p>يطرح الأستاذ المشكلة التالية: بعد إقلاع جهاز الحاسوب، تظهر شاشة رئيسية تحتوي على عدة عناصر تفاعلية. ما اسم هذه الشاشة وما هي المكونات الأساسية التي تراها عليها؟ تدوين إجابات التلاميذ على السبورة وصياغة الهدف من الدرس خلال 10 دقائق.</p>
+<h4>بناء التعلمات: اكتشاف مكونات سطح المكتب <span class="strategy-badge">استراتيجية: التفكير — المشاركة — العرض (Think-Pair-Share)</span></h4>
+<p>يفكر كل تلميذ بمفرده لمدة دقيقة في تسمية 3 عناصر يلاحظها على الشاشة (الأيقونات، شريط المهام، زر ابدأ). يتشارك كل تلميذين مجاورين أفكارهما لمقارنة الإجابات لمدة 3 دقائق. يقدم ممثلو المجموعات إجاباتهم ويتم تطبيق التعرف عليها على الأجهزة الفعلية بتوجيه من الأستاذ لمدة 16 دقيقة (المدة الإجمالية: 20 دقيقة).</p>
+<h4>إعادة الهيكلة: التعامل مع النوافذ والقوائم <span class="strategy-badge">استراتيجية: حل المشكلات والتعلم بالاكتشاف (PBL)</span></h4>
+<p>يكلف الأستاذ التلاميذ بمهمة محددة: فتح نافذة جهاز الكمبيوتر، ثم تغيير حجمها، تصغيرها في شريط المهام، ثم إغلاقها، واستكشاف قائمة ابدأ (Start). يكتشف التلاميذ من خلال الممارسة المباشرة وظائف أزرار التحكم بالنوافذ وهيكلة القوائم لمدة 15 دقيقة.</p>
+<h4>استثمار المكتسبات والتقويم <span class="strategy-badge">استراتيجية: بطاقة الخروج (Exit Ticket)</span></h4>
+<p>يجيب كل تلميذ فردياً في بطاقة صغيرة على سؤالين: 1) حدد وظيفتين لشريط المهام. 2) ما الفرق بين الأيقونة والنافذة؟ يجمع الأستاذ البطاقات للتحقق من مدى تحقق الكفاءة وتصحيح المفاهيم قبل مغادرة القاعة خلال 15 دقيقة.</p>
+                            <!--[if ENDBLOCK]><![endif]-->                        </div>
+                    <!--[if ENDBLOCK]><![endif]-->
+                    <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->
+                    <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->                <!--[if ENDBLOCK]><![endif]-->            </div>
+
+            
+            <div class="sticky bottom-2 mt-auto py-2 flex justify-center z-30 pointer-events-auto">
+                <div class="bg-black/60 backdrop-blur-md border border-white/15 px-4 py-2 rounded-full flex items-center gap-3 shadow-2xl">
+                    <button @click="prevSlide()" :disabled="slideIndex === 0" class="text-sm font-bold text-white/70 hover:text-white disabled:opacity-20 px-2 transition">◀ السابق</button>
+                    <div class="flex items-center gap-1.5 px-2">
+                        <!--[if BLOCK]><![endif]-->                            <button @click="goSlide(0)" class="w-3 h-3 rounded-full transition bg-white/30 hover:bg-white/60" title="نظام التشغيل (واجهة نظم التشغيل ويندوز)"></button>
+                                                    <button @click="goSlide(1)" class="w-3 h-3 rounded-full transition bg-white/30 hover:bg-white/60" title="وضعية الانطلاق"></button>
+                                                    <button @click="goSlide(2)" class="w-3 h-3 rounded-full transition bg-white/30 hover:bg-white/60" title="بناء التعلمات: اكتشاف مكونات سطح المكتب"></button>
+                                                    <button @click="goSlide(3)" class="w-3 h-3 rounded-full transition bg-white/30 hover:bg-white/60" title="إعادة الهيكلة: التعامل مع النوافذ والقوائم"></button>
+                                                    <button @click="goSlide(4)" class="w-3 h-3 rounded-full transition bg-white/30 hover:bg-white/60" title="استثمار المكتسبات والتقويم"></button>
+                                                    <button @click="goSlide(5)" class="w-3 h-3 rounded-full transition bg-amber-400 scale-125" title="الملخص والواجب المنزلي"></button>
+                        <!--[if ENDBLOCK]><![endif]-->                    </div>
+                    <button @click="nextSlide()" :disabled="slideIndex === 5" class="text-sm font-bold text-white/70 hover:text-white disabled:opacity-20 px-2 transition">التالي ▶</button>
+                </div>
+            </div>
+        <!--[if ENDBLOCK]><![endif]-->
+        
+        <div class="absolute bottom-6 right-6 z-40 flex gap-2" x-data="{ open: false }">
+            <button @click="open = !open" class="w-12 h-12 rounded-full bg-amber-500 text-white shadow-2xl flex items-center justify-center text-xl hover:scale-105 transition" title="أدوات الحصة السريعة">⚡</button>
+            <div x-show="open" x-transition.origin.bottom.right class="absolute bottom-14 right-0 w-72 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl text-right">
+                <div class="text-xs font-bold text-amber-300 mb-3">أدوات الحصة السريعة</div>
+                <div class="space-y-2">
+                    <button wire:click="toggleTimer(5)" class="w-full text-right px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-sm">⏱️ 5 دقائق</button>
+                    <button wire:click="toggleTimer(10)" class="w-full text-right px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-sm">⏱️ 10 دقائق</button>
+                    <button wire:click="pickRandomStudent" class="w-full text-right px-3 py-2 rounded bg-emerald-600 text-white text-sm">🎲 قرعة عشوائية</button>
+                    <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->                    <button wire:click="toggleSpotlight" class="w-full text-right px-3 py-2 rounded bg-blue-600 text-white text-sm">🔦 مؤشر التركيز</button>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="absolute top-4 right-4 z-30 text-white/40 font-mono text-sm">6 / 6</div>
+    </main>
+</div>
+
+</body>
+</html>
