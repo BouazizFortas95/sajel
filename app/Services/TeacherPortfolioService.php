@@ -30,7 +30,7 @@ class TeacherPortfolioService
             ->whereNotNull('reviewed_at')
             ->count();
 
-        $memoCount = PedagogicalMemo::where('recorded_by_id', $teacher->id)->count();
+        $memoCount = PedagogicalMemo::where('user_id', $teacher->id)->where('is_archived', false)->count();
 
         $meetings = PedagogicalMeeting::where('user_id', $teacher->id)
             ->orderByDesc('date')
