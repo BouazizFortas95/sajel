@@ -533,4 +533,86 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
             'name' => 'استخدام الحاسوب',
         ]);
     }
+
+    public function test_artisan_seed_curriculum_command_seeds_subjects_and_teachers(): void
+    {
+        $subject = Subject::firstOrCreate(['name' => 'الرياضيات', 'code' => 'MATH']);
+        $teacher = User::factory()->create([
+            'role' => Role::Teacher->value,
+            'name' => 'أستاذ الرياضيات الجديد',
+            'primary_subject_id' => $subject->id,
+        ]);
+
+        $this->artisan('sajel:seed-curriculum', [
+            '--subject' => 'الرياضيات',
+            '--level' => '1',
+            '--teacher' => (string) $teacher->id,
+        ])
+            ->assertSuccessful();
+
+        $this->assertDatabaseHas('curriculum_domains', [
+            'subject_id' => $subject->id,
+            'name' => 'أنشطة عددية',
+        ]);
+
+        $this->assertDatabaseHas('schedules', [
+            'user_id' => $teacher->id,
+            'subject_id' => $subject->id,
+        ]);
+    }
+
+    public function test_other_teachers_can_generate_and_own_curriculum_plans(): void
+    {
+        $subject = Subject::firstOrCreate(['name' => 'العلوم الفيزيائية والتكنولوجيا', 'code' => 'PHYS']);
+        $teacher = User::factory()->create([
+            'role' => Role::Teacher->value,
+            'name' => 'أستاذ الفيزياء',
+            'primary_subject_id' => $subject->id,
+        ]);
+
+        $level = Level::where('name', 'like', '%الأولى%')->first()
+            ?? Level::factory()->create(['name' => 'السنة الأولى متوسط']);
+        $classroom = Classroom::where('level_id', $level->id)->first()
+            ?? Classroom::factory()->create(['level_id' => $level->id, 'name' => '1 م 1']);
+
+        Schedule::create([
+            'user_id' => $teacher->id,
+            'subject_id' => $subject->id,
+            'classroom_id' => $classroom->id,
+            'day_of_week' => 'monday',
+            'start_time' => '08:00',
+            'end_time' => '09:00',
+            'valid_from' => '2026-09-20',
+        ]);
+
+        $this->actingAs($teacher);
+
+        Livewire::test(CurriculumProgress::class)
+            ->set('subjectId', $subject->id)
+            ->set('classroomId', $classroom->id)
+            ->call('generateCurriculumPlan')
+            ->assertNotified()
+            ->assertSee('المادة وتحولاتها')
+            ->assertDontSee('لا يوجد منهاج معرف لهذه المادة والمستوى');
+
+        $this->assertDatabaseHas('curriculum_domains', [
+            'subject_id' => $subject->id,
+            'name' => 'المادة وتحولاتها',
+        ]);
+    }
+
+    public function test_annual_and_monthly_distribution_prints_dynamic_subject_data(): void
+    {
+        $subject = Subject::firstOrCreate(['name' => 'الرياضيات', 'code' => 'MATH']);
+        $service = app(AnnualCurriculumDistributionService::class);
+
+        $annualData = $service->getDistributionData(subjectId: $subject->id, level: 1, mode: 'annual');
+        $this->assertSame('الرياضيات', $annualData['subject_name']);
+        $this->assertStringContainsString('الرياضيات', $annualData['title']);
+        $this->assertSame('04 ساعات أسبوعياً', $annualData['weekly_hours']);
+
+        $monthlyData = $service->getDistributionData(subjectId: $subject->id, level: 1, mode: 'monthly', month: '09_10');
+        $this->assertSame('الرياضيات', $monthlyData['subject_name']);
+        $this->assertNotEmpty($monthlyData['monthly_plans']);
+    }
 }

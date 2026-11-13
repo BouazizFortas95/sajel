@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Classroom;
+use App\Models\CurriculumDomain;
+use App\Models\Schedule;
 use App\Models\SchoolSetting;
 use App\Models\Subject;
 use App\Models\User;
@@ -36,6 +38,20 @@ class AnnualCurriculumDistributionService
         $classroom = $classroomId ? Classroom::with('level')->find($classroomId) : null;
         $teacher = $teacherId ? User::find($teacherId) : null;
 
+        if (! $subject && $teacher) {
+            if ($teacher->primary_subject_id || $teacher->schedules()->exists()) {
+                $subject = app(CurriculumPlanGeneratorService::class)->resolveTeacherSubject($teacher);
+                $subjectId = $subject->id;
+            }
+        }
+
+        if (! $teacher && $classroom && $subject) {
+            $teacher = Schedule::where('classroom_id', $classroom->id)
+                ->where('subject_id', $subject->id)
+                ->with('teacher')
+                ->first()?->teacher;
+        }
+
         $rawSchoolName = $school?->school_name ?? 'حي 940 مسكن - المغير';
         $cleanedSchool = trim(preg_replace('/^متوسطة\s*:?\s*/u', '', $rawSchoolName));
         $schoolName = 'متوسطة: '.($cleanedSchool ?: 'حي 940 مسكن - المغير');
@@ -45,9 +61,9 @@ class AnnualCurriculumDistributionService
         $directorateName = $school?->directorate_name ?? 'المغير';
         $principalName = $school?->principal_name ?? 'أحمد بوزقاق';
 
-        $teacherActiveLevels = $this->getTeacherActiveLevels($teacher);
+        $teacherActiveLevels = $this->getTeacherActiveLevels($teacher, $subject);
         $levelNumber = $this->resolveLevelNumber($level, $classroom);
-        $levelData = $this->getLevelData($levelNumber);
+        $levelData = $this->getLevelData($levelNumber, $subject);
 
         $selectedLevels = ($level === 'all' || ($level === null && $mode === 'monthly'))
             ? $teacherActiveLevels
@@ -65,7 +81,7 @@ class AnnualCurriculumDistributionService
             '05' => 'ماي',
         ];
 
-        $monthlyPlans = $this->buildCollectedMonthlyPlans($selectedLevels);
+        $monthlyPlans = $this->buildCollectedMonthlyPlans($selectedLevels, $subject);
         $monthStr = $month !== null ? (string) $month : '';
         if ($monthStr === '09' || $monthStr === '10' || $monthStr === '9' || $monthStr === '09_10') {
             $normalizedMonth = '09_10';
@@ -77,6 +93,8 @@ class AnnualCurriculumDistributionService
             ? $monthlyPlans
             : array_filter($monthlyPlans, fn (array $p): bool => (string) $p['month_key'] === (string) $selectedMonth);
 
+        $meta = $subject ? $this->resolveSubjectMetadata($subject, $levelNumber) : ['hours' => '01 ساعة أسبوعياً لكل فوج', 'coefficient' => '01'];
+
         return [
             'title' => $levelData['title'],
             'school_name' => $schoolName,
@@ -85,8 +103,8 @@ class AnnualCurriculumDistributionService
             'subject_name' => $subjectName,
             'teacher_name' => $teacherName,
             'academic_year' => $formattedYear,
-            'weekly_hours' => '01 ساعة أسبوعياً لكل فوج',
-            'coefficient' => '01',
+            'weekly_hours' => $meta['hours'],
+            'coefficient' => $meta['coefficient'],
             'domains' => $levelData['domains'],
             'level_name' => $levelData['level_name'],
             'level_number' => $levelNumber,
@@ -150,13 +168,13 @@ class AnnualCurriculumDistributionService
     }
 
     /**
-     * Retrieve full pedagogical distribution dataset for the given middle school level.
+     * Retrieve the standard dates and holidays mapping for the 35-week Algerian school year.
      *
-     * @return array<string, mixed>
+     * @return array<int|string, string>
      */
-    public function getLevelData(int $level): array
+    public function getDates(): array
     {
-        $dates = [
+        return [
             1 => 'من 21 سبتمبر إلى 24 سبتمبر',
             2 => 'من 27 سبتمبر إلى 01 أكتوبر',
             3 => 'من 04 أكتوبر إلى 08 أكتوبر',
@@ -193,6 +211,23 @@ class AnnualCurriculumDistributionService
             30 => 'من 16 ماي إلى 20 ماي',
             'exam_term_3' => 'اختبارات الفصل الثالث من 23 إلى 27 ماي 2027',
         ];
+    }
+
+    /**
+     * Retrieve full pedagogical distribution dataset for the given middle school level.
+     *
+     * @return array<string, mixed>
+     */
+    public function getLevelData(int $level, ?Subject $subject = null): array
+    {
+        $dates = $this->getDates();
+
+        if ($subject !== null && ! str_contains($subject->name, 'إعلام') && ! str_contains($subject->name, 'معلوماتية')) {
+            $dynamic = $this->buildSubjectLevelData($level, $subject, $dates);
+            if (! empty($dynamic)) {
+                return $dynamic;
+            }
+        }
 
         // Level 1: السنة الأولى من التعليم المتوسط (1AM)
         if ($level === 1) {
@@ -565,13 +600,18 @@ class AnnualCurriculumDistributionService
      *
      * @return array<int>
      */
-    public function getTeacherActiveLevels(?User $teacher): array
+    public function getTeacherActiveLevels(?User $teacher, ?Subject $subject = null): array
     {
         if (! $teacher) {
             return [1, 2, 3, 4];
         }
 
-        $levels = $teacher->schedules()
+        $query = $teacher->schedules();
+        if ($subject) {
+            $query->where('subject_id', $subject->id);
+        }
+
+        $levels = $query
             ->with('classroom.level')
             ->get()
             ->map(function ($s): int {
@@ -583,6 +623,10 @@ class AnnualCurriculumDistributionService
             ->values()
             ->all();
 
+        if (empty($levels) && $subject) {
+            return $this->getTeacherActiveLevels($teacher, null);
+        }
+
         return ! empty($levels) ? $levels : [1, 2, 3, 4];
     }
 
@@ -592,7 +636,7 @@ class AnnualCurriculumDistributionService
      * @param  array<int|string>  $levels
      * @return array<string, array<string, mixed>>
      */
-    public function buildCollectedMonthlyPlans(array $levels): array
+    public function buildCollectedMonthlyPlans(array $levels, ?Subject $subject = null): array
     {
         $normalizedLevels = array_values(array_filter(array_map('intval', $levels), fn (int $lvl): bool => in_array($lvl, [1, 2, 3, 4], true)));
         if (empty($normalizedLevels)) {
@@ -620,7 +664,7 @@ class AnnualCurriculumDistributionService
         // Cache single-level monthly plans
         $levelPlansCache = [];
         foreach ($normalizedLevels as $lvl) {
-            $levelPlansCache[$lvl] = $this->buildMonthlyPlans($this->getLevelData($lvl));
+            $levelPlansCache[$lvl] = $this->buildMonthlyPlans($this->getLevelData($lvl, $subject));
         }
 
         $collected = [];
@@ -793,5 +837,334 @@ class AnnualCurriculumDistributionService
                 ['Content-Type' => 'text/html; charset=UTF-8']
             );
         }
+    }
+
+    /**
+     * Resolve official weekly hours and coefficient for a subject in Algerian middle school.
+     *
+     * @return array{hours: string, coefficient: string}
+     */
+    public function resolveSubjectMetadata(Subject $subject, int $level): array
+    {
+        $name = $subject->name;
+        if (str_contains($name, 'عربية')) {
+            return ['hours' => '04 ساعات أسبوعياً', 'coefficient' => $level === 4 ? '04' : '03'];
+        }
+        if (str_contains($name, 'رياضيات')) {
+            return ['hours' => '04 ساعات أسبوعياً', 'coefficient' => $level === 4 ? '04' : '03'];
+        }
+        if (str_contains($name, 'فيزياء') || str_contains($name, 'فيزيائية')) {
+            return ['hours' => '02 ساعتان أسبوعياً', 'coefficient' => '02'];
+        }
+        if (str_contains($name, 'طبيعة') || str_contains($name, 'علوم الطبيعة')) {
+            return ['hours' => '02 ساعتان أسبوعياً', 'coefficient' => '02'];
+        }
+        if (str_contains($name, 'تاريخ') || str_contains($name, 'جغرافيا')) {
+            return ['hours' => '03 ساعات أسبوعياً', 'coefficient' => '02'];
+        }
+        if (str_contains($name, 'فرنسية')) {
+            return ['hours' => '03 ساعات أسبوعياً', 'coefficient' => $level === 4 ? '03' : '02'];
+        }
+        if (str_contains($name, 'إنجليزية')) {
+            return ['hours' => '02 ساعتان أسبوعياً', 'coefficient' => $level === 4 ? '02' : '01'];
+        }
+        if (str_contains($name, 'إسلامية')) {
+            return ['hours' => '02 ساعتان أسبوعياً', 'coefficient' => '02'];
+        }
+        if (str_contains($name, 'مدنية')) {
+            return ['hours' => '01 ساعة أسبوعياً', 'coefficient' => '01'];
+        }
+        if (str_contains($name, 'بدنية')) {
+            return ['hours' => '02 ساعتان أسبوعياً', 'coefficient' => '01'];
+        }
+
+        return ['hours' => '01 ساعة أسبوعياً لكل فوج', 'coefficient' => '01'];
+    }
+
+    /**
+     * Dynamically build annual progression dataset for any subject and level.
+     *
+     * @param  array<int|string, string>  $dates
+     * @return array<string, mixed>
+     */
+    public function buildSubjectLevelData(int $level, Subject $subject, array $dates): array
+    {
+        $levelNames = [
+            1 => 'السنة الأولى من التعليم المتوسط',
+            2 => 'السنة الثانية من التعليم المتوسط',
+            3 => 'السنة الثالثة من التعليم المتوسط',
+            4 => 'السنة الرابعة من التعليم المتوسط',
+        ];
+        $levelName = $levelNames[$level] ?? "السنة {$level} من التعليم المتوسط";
+
+        $generator = app(CurriculumPlanGeneratorService::class);
+        $levelModel = $generator->findLevelByNumber($level);
+
+        $dbDomains = CurriculumDomain::where('subject_id', $subject->id)
+            ->where('level_id', $levelModel?->id)
+            ->with(['sequences.resources'])
+            ->orderBy('sort_order')
+            ->get();
+
+        if ($dbDomains->isEmpty() && $levelModel) {
+            $generator->generateForSubjectAndLevel($subject, $levelModel);
+            $dbDomains = CurriculumDomain::where('subject_id', $subject->id)
+                ->where('level_id', $levelModel->id)
+                ->with(['sequences.resources'])
+                ->orderBy('sort_order')
+                ->get();
+        }
+
+        $allLessons = [];
+        foreach ($dbDomains as $dom) {
+            foreach ($dom->sequences as $seq) {
+                foreach ($seq->resources as $res) {
+                    $allLessons[] = [
+                        'domain_name' => $dom->name,
+                        'competence' => $dom->description ?? $dom->name,
+                        'sequence_name' => $seq->name,
+                        'lesson_name' => $res->name,
+                    ];
+                }
+            }
+        }
+
+        if (empty($allLessons)) {
+            return [];
+        }
+
+        $meta = $this->resolveSubjectMetadata($subject, $level);
+        $hours = $meta['hours'];
+
+        $teachingWeeks = [
+            1, 2, 3, 4, 5, 6,
+            8, 9, 10, 11, 12,
+            13,
+            14, 15, 16, 17, 18, 19, 20, 21,
+            22,
+            23,
+            24, 25, 26, 27, 28, 29, 30,
+        ];
+
+        $weekSchedule = [];
+        $lessonIndex = 0;
+        $totalLessons = count($allLessons);
+
+        foreach ($teachingWeeks as $w) {
+            if ($w === 9) {
+                $weekSchedule[$w] = [
+                    'type' => 'exam_red',
+                    'lesson' => 'فرض الثلاثي الأول',
+                    'hours' => $hours,
+                ];
+
+                continue;
+            }
+            if ($w === 13) {
+                $weekSchedule[$w] = [
+                    'type' => 'remedial_yellow',
+                    'lesson' => 'تصحيح الاختبار والتقويم والمعالجة',
+                    'hours' => $hours,
+                    'sequence_override' => 'تقويم ومعالجة',
+                ];
+
+                continue;
+            }
+            if ($w === 19) {
+                $weekSchedule[$w] = [
+                    'type' => 'exam_red',
+                    'lesson' => 'فرض الثلاثي الثاني',
+                    'hours' => $hours,
+                ];
+
+                continue;
+            }
+            if ($w === 22) {
+                $weekSchedule[$w] = [
+                    'type' => 'remedial_yellow',
+                    'lesson' => 'تصحيح الاختبار وتقويم ومعالجة',
+                    'hours' => $hours,
+                    'sequence_override' => 'تقويم ومعالجة',
+                ];
+
+                continue;
+            }
+            if ($w === 26) {
+                $weekSchedule[$w] = [
+                    'type' => 'exam_red',
+                    'lesson' => 'فرض الثلاثي الثالث',
+                    'hours' => $hours,
+                ];
+
+                continue;
+            }
+            if ($w === 30) {
+                $weekSchedule[$w] = [
+                    'type' => 'normal',
+                    'lesson' => 'مراجعة عامة وتحضير للاختبارات',
+                    'hours' => $hours,
+                    'sequence_override' => 'إدماج ومراجعة',
+                ];
+
+                continue;
+            }
+
+            if ($lessonIndex < $totalLessons) {
+                $item = $allLessons[$lessonIndex++];
+                $weekSchedule[$w] = [
+                    'type' => 'normal',
+                    'lesson' => $item['lesson_name'],
+                    'domain_name' => $item['domain_name'],
+                    'competence' => $item['competence'],
+                    'sequence_name' => $item['sequence_name'],
+                    'hours' => $hours,
+                ];
+            } else {
+                $lastItem = end($allLessons);
+                $weekSchedule[$w] = [
+                    'type' => 'normal',
+                    'lesson' => 'تمارين تطبيقية ووضعيات إدماجية',
+                    'domain_name' => $lastItem['domain_name'] ?? 'أنشطة تطبيقية',
+                    'competence' => $lastItem['competence'] ?? '',
+                    'sequence_name' => $lastItem['sequence_name'] ?? 'إدماج',
+                    'hours' => $hours,
+                ];
+            }
+        }
+
+        $activeDomain = $dbDomains->first()?->name ?? 'الميدان الأول';
+        $activeCompetence = $dbDomains->first()?->description ?? '';
+
+        $weekDomainMap = [];
+        foreach ($teachingWeeks as $w) {
+            $info = $weekSchedule[$w] ?? [];
+            if (! empty($info['domain_name'])) {
+                $activeDomain = $info['domain_name'];
+                $activeCompetence = $info['competence'] ?? $activeDomain;
+            }
+            $weekDomainMap[$w] = [
+                'domain' => $activeDomain,
+                'competence' => $activeCompetence,
+                'sequence' => $info['sequence_override'] ?? ($info['sequence_name'] ?? 'المقطع التعلمي'),
+            ];
+        }
+
+        $timeline = [
+            1, 2, 3, 4, 5, 6,
+            'vacation_autumn',
+            8, 9, 10, 11, 12,
+            'exam_term_1',
+            13,
+            'vacation_winter',
+            14, 15, 16, 17, 18, 19, 20, 21,
+            'exam_term_2',
+            22, 23,
+            'vacation_spring',
+            24, 25, 26, 27, 28, 29, 30,
+            'exam_term_3',
+        ];
+
+        $groupedByDomain = [];
+        $currentGroup = null;
+
+        foreach ($timeline as $item) {
+            if (is_string($item)) {
+                $isVacation = str_starts_with($item, 'vacation');
+                $breakRow = [
+                    'is_break' => true,
+                    'break_type' => $isVacation ? 'vacation' : 'exam',
+                    'text' => $dates[$item] ?? $item,
+                    'colspan' => $isVacation ? 4 : 5,
+                ];
+                if ($currentGroup !== null) {
+                    $groupedByDomain[$currentGroup]['rows'][] = $breakRow;
+                }
+
+                continue;
+            }
+
+            $w = (int) $item;
+            $wInfo = $weekDomainMap[$w] ?? [
+                'domain' => 'الميدان الأول',
+                'competence' => '',
+                'sequence' => 'المقطع التعلمي',
+            ];
+            $domName = $wInfo['domain'];
+
+            if ($currentGroup !== $domName) {
+                $currentGroup = $domName;
+                if (! isset($groupedByDomain[$currentGroup])) {
+                    $groupedByDomain[$currentGroup] = [
+                        'name' => $domName,
+                        'competence' => $wInfo['competence'],
+                        'rows' => [],
+                    ];
+                }
+            }
+
+            $sched = $weekSchedule[$w] ?? [];
+            $groupedByDomain[$currentGroup]['rows'][] = [
+                'raw_sequence' => $wInfo['sequence'],
+                'lesson' => $sched['lesson'] ?? 'حصة تعليمية',
+                'hours' => $sched['hours'] ?? $hours,
+                'date' => $dates[$w] ?? '',
+                'week' => $w,
+                'type' => $sched['type'] ?? 'normal',
+            ];
+        }
+
+        $formattedDomains = [];
+        foreach ($groupedByDomain as $domName => $domData) {
+            $rawRows = $domData['rows'];
+            $processedRows = [];
+            $i = 0;
+            $n = count($rawRows);
+
+            while ($i < $n) {
+                $row = $rawRows[$i];
+                if (! empty($row['is_break'])) {
+                    $processedRows[] = $row;
+                    $i++;
+
+                    continue;
+                }
+
+                $seqName = $row['raw_sequence'];
+                $seqSpan = 1;
+                $j = $i + 1;
+                while ($j < $n && empty($rawRows[$j]['is_break']) && ($rawRows[$j]['raw_sequence'] ?? '') === $seqName) {
+                    $seqSpan++;
+                    $j++;
+                }
+
+                unset($row['raw_sequence']);
+                $row['sequence'] = [
+                    'name' => $seqName,
+                    'rowspan' => $seqSpan,
+                ];
+                $processedRows[] = $row;
+                $i++;
+
+                while ($i < $j) {
+                    $subRow = $rawRows[$i];
+                    unset($subRow['raw_sequence']);
+                    $processedRows[] = $subRow;
+                    $i++;
+                }
+            }
+
+            $formattedDomains[] = [
+                'name' => $domName,
+                'competence' => $domData['competence'],
+                'rowspan' => count($processedRows),
+                'rows' => $processedRows,
+            ];
+        }
+
+        return [
+            'level_name' => $levelName,
+            'title' => "التوزيع السنوي لمادة {$subject->name} — {$levelName}",
+            'domains' => $formattedDomains,
+        ];
     }
 }

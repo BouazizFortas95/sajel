@@ -16,6 +16,7 @@ use App\Models\Schedule;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\AiLessonPlannerService;
+use App\Services\CurriculumPlanGeneratorService;
 use App\Services\CurriculumProgressService;
 use Carbon\Carbon;
 use Database\Seeders\InformaticsCurriculumSeeder;
@@ -109,6 +110,15 @@ class CurriculumProgress extends Page
             ->forTeacher($user->id)
             ->with(['group'])
             ->first();
+
+        if (! $schedule) {
+            app(CurriculumPlanGeneratorService::class)->generateForTeacher($user);
+
+            $schedule = Schedule::query()
+                ->forTeacher($user->id)
+                ->with(['group'])
+                ->first();
+        }
 
         if (! $schedule) {
             return;
@@ -547,12 +557,48 @@ class CurriculumProgress extends Page
 
         $detail = app(CurriculumProgressService::class)->detail($classroom, $subject);
 
-        if (empty($detail['domains']) && (str_contains($subject->name, 'إعلام') || str_contains($subject->name, 'معلوماتية'))) {
-            app(InformaticsCurriculumSeeder::class)->run();
+        if (empty($detail['domains'])) {
+            if (str_contains($subject->name, 'إعلام') || str_contains($subject->name, 'معلوماتية')) {
+                app(InformaticsCurriculumSeeder::class)->run();
+            } else {
+                app(CurriculumPlanGeneratorService::class)->generateForSubjectAndLevel($subject, $classroom->level);
+            }
             $detail = app(CurriculumProgressService::class)->detail($classroom, $subject);
         }
 
         return $detail;
+    }
+
+    /**
+     * Generate or re-generate official Algerian curriculum and annual plan for current subject & classroom.
+     */
+    public function generateCurriculumPlan(): void
+    {
+        $classroom = Classroom::query()->with('level')->find($this->classroomId);
+        $subject = Subject::find($this->subjectId);
+
+        if (! $classroom || ! $subject) {
+            Notification::make()
+                ->title(__('تعذر التوليد'))
+                ->body(__('يرجى تحديد المادة والقسم أولاً.'))
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $res = app(CurriculumPlanGeneratorService::class)->generateForSubjectAndLevel($subject, $classroom->level, true);
+
+        Notification::make()
+            ->title(__('تم توليد واعتماد المنهاج والتوزيع السنوي بنجاح'))
+            ->body(__('تم إنشاء :domains ميادين و :sequences مقاطع و :resources موارد تعليمية رسمية لمادة :subject.', [
+                'domains' => $res['domains_count'] ?? 0,
+                'sequences' => $res['sequences_count'] ?? 0,
+                'resources' => $res['resources_count'] ?? 0,
+                'subject' => $subject->name,
+            ]))
+            ->success()
+            ->send();
     }
 
     private function teacherCanAccess(User $teacher, int $classroomId, int $subjectId): bool

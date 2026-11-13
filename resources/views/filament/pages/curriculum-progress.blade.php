@@ -197,6 +197,16 @@
         >
             <x-slot name="headerEnd">
                 <div class="flex flex-wrap items-center gap-2">
+                    <x-filament::button
+                        wire:click="generateCurriculumPlan"
+                        icon="heroicon-o-sparkles"
+                        color="success"
+                        size="xs"
+                        wire:loading.attr="disabled"
+                    >
+                        {{ __('توليد / تحديث المخطط الرسمي') }}
+                    </x-filament::button>
+
                     <a
                         href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'mode' => 'annual', 'subject' => $this->subjectId, 'classroom' => $this->classroomId]) }}"
                         target="_blank"
@@ -491,11 +501,27 @@
                         </div>
                     </div>
                 @empty
-                    <x-filament-tables::empty-state
-                        :heading="__('لا يوجد منهاج معرف لهذه المادة والمستوى.')"
-                        :description="__('يمكن لمدير النظام إضافة الميادين والمقاطع والموارد من شاشات المنهاج.')"
-                        icon="heroicon-o-map"
-                    />
+                    <div class="flex flex-col items-center justify-center p-8 text-center">
+                        <div class="mb-3 rounded-full bg-primary-50 p-3 text-primary-600 dark:bg-primary-950/50 dark:text-primary-400">
+                            <x-filament::icon icon="heroicon-o-academic-cap" class="h-8 w-8" />
+                        </div>
+                        <h3 class="text-base font-semibold text-gray-950 dark:text-white">
+                            {{ __('لا يوجد منهاج معرف لهذه المادة والمستوى بعد.') }}
+                        </h3>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                            {{ __('يمكنك الآن توليد واعتماد المنهاج الجزائري الرسمي ومخططاته السنوية والشهرية لهذه المادة بضغطة زر واحدة.') }}
+                        </p>
+                        <div class="mt-4">
+                            <x-filament::button
+                                wire:click="generateCurriculumPlan"
+                                icon="heroicon-o-sparkles"
+                                color="primary"
+                                size="sm"
+                            >
+                                {{ __('توليد واعتماد المنهاج الرسمي والتوزيع السنوي') }}
+                            </x-filament::button>
+                        </div>
+                    </div>
                 @endforelse
             @endif
         </x-filament::section>
