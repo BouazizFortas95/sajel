@@ -18,6 +18,7 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Services\AiLessonPlannerService;
 use App\Services\AnnualCurriculumDistributionService;
+use App\Services\CurriculumPlanGeneratorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -614,5 +615,47 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
         $monthlyData = $service->getDistributionData(subjectId: $subject->id, level: 1, mode: 'monthly', month: '09_10');
         $this->assertSame('الرياضيات', $monthlyData['subject_name']);
         $this->assertNotEmpty($monthlyData['monthly_plans']);
+    }
+
+    public function test_informatics_curriculum_generation_does_not_generate_mathematics_domains(): void
+    {
+        $subject = Subject::firstOrCreate(['name' => 'الإعلام الآلي', 'code' => 'INFO']);
+        $generator = app(CurriculumPlanGeneratorService::class);
+        $level4 = $generator->findLevelByNumber(4);
+
+        $this->assertNotNull($level4);
+
+        // Pre-create an incorrect math domain to ensure pruning works
+        CurriculumDomain::create([
+            'subject_id' => $subject->id,
+            'level_id' => $level4->id,
+            'name' => 'أنشطة عددية',
+            'description' => 'حساب الجذور والـ PGCD',
+            'sort_order' => 99,
+        ]);
+
+        $res = $generator->generateForSubjectAndLevel($subject, $level4, true);
+
+        $this->assertSame('created', $res['status']);
+        $this->assertSame(4, $res['domains_count']);
+
+        // Check that Informatics domains exist
+        $this->assertDatabaseHas('curriculum_domains', [
+            'subject_id' => $subject->id,
+            'level_id' => $level4->id,
+            'name' => 'بناء المشاريع',
+        ]);
+        $this->assertDatabaseHas('curriculum_domains', [
+            'subject_id' => $subject->id,
+            'level_id' => $level4->id,
+            'name' => 'المجدول',
+        ]);
+
+        // Check that Math domain was pruned and does not exist under Informatics
+        $this->assertDatabaseMissing('curriculum_domains', [
+            'subject_id' => $subject->id,
+            'level_id' => $level4->id,
+            'name' => 'أنشطة عددية',
+        ]);
     }
 }

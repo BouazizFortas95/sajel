@@ -102,6 +102,13 @@ class CurriculumPlanGeneratorService
         $totalResources = 0;
 
         DB::transaction(function () use ($subject, $level, $curriculum, &$domainOrder, &$totalSequences, &$totalResources): void {
+            // Prune foreign/obsolete domains for this subject and level that do not belong to the target curriculum
+            $targetDomainNames = array_column($curriculum, 'name');
+            CurriculumDomain::where('subject_id', $subject->id)
+                ->where('level_id', $level->id)
+                ->whereNotIn('name', $targetDomainNames)
+                ->delete();
+
             foreach ($curriculum as $dData) {
                 $domain = CurriculumDomain::updateOrCreate(
                     [
@@ -114,6 +121,11 @@ class CurriculumPlanGeneratorService
                         'sort_order' => $domainOrder++,
                     ]
                 );
+
+                $targetSequenceNames = array_column($dData['sequences'] ?? [], 'name');
+                CurriculumSequence::where('curriculum_domain_id', $domain->id)
+                    ->whereNotIn('name', $targetSequenceNames)
+                    ->delete();
 
                 $sequenceOrder = 1;
                 foreach ($dData['sequences'] as $sData) {
@@ -128,6 +140,11 @@ class CurriculumPlanGeneratorService
                         ]
                     );
                     $totalSequences++;
+
+                    $targetResourceNames = $sData['resources'] ?? [];
+                    CurriculumResource::where('curriculum_sequence_id', $sequence->id)
+                        ->whereNotIn('name', $targetResourceNames)
+                        ->delete();
 
                     $resourceOrder = 1;
                     foreach ($sData['resources'] as $resName) {
@@ -267,7 +284,11 @@ class CurriculumPlanGeneratorService
     {
         $clean = trim($subjectName);
 
-        if (str_contains($clean, 'رياضيات')) {
+        if (str_contains($clean, 'إعلام') || str_contains($clean, 'معلوماتية') || str_contains($clean, 'حاسوب') || str_contains(strtolower($clean), 'info')) {
+            return $this->getInformaticsCurriculum($level);
+        }
+
+        if (str_contains($clean, 'رياضيات') || str_contains(strtolower($clean), 'math')) {
             return $this->getMathCurriculum($level);
         }
 
@@ -295,16 +316,32 @@ class CurriculumPlanGeneratorService
             return $this->getCivicEducationCurriculum($level);
         }
 
-        if (str_contains($clean, 'فرنسية') || str_contains($clean, 'français')) {
+        if (str_contains($clean, 'بدنية') || (str_contains($clean, 'رياضية') && ! str_contains($clean, 'رياضيات'))) {
+            return $this->getPhysicalEducationCurriculum($level);
+        }
+
+        if (str_contains($clean, 'فنية') || str_contains($clean, 'تشكيلية') || str_contains($clean, 'رسم')) {
+            return $this->getArtEducationCurriculum($level);
+        }
+
+        if (str_contains($clean, 'موسيقية') || str_contains($clean, 'موسيقى')) {
+            return $this->getMusicEducationCurriculum($level);
+        }
+
+        if (str_contains($clean, 'أمازيغية') || str_contains(strtolower($clean), 'tamazight')) {
+            return $this->getTamazightCurriculum($level);
+        }
+
+        if (str_contains($clean, 'فرنسية') || str_contains(strtolower($clean), 'français')) {
             return $this->getFrenchCurriculum($level);
         }
 
-        if (str_contains($clean, 'إنجليزية') || str_contains($clean, 'english')) {
+        if (str_contains($clean, 'إنجليزية') || str_contains(strtolower($clean), 'english')) {
             return $this->getEnglishCurriculum($level);
         }
 
-        // Default: Mathematics baseline curriculum structure
-        return $this->getMathCurriculum($level);
+        // Generic fallback adapted to the subject name
+        return $this->getGenericSubjectCurriculum($clean, $level);
     }
 
     /**
@@ -933,6 +970,490 @@ class CurriculumPlanGeneratorService
                             'Reading comprehension: skimming and scanning techniques',
                             'Grammar, vocabulary in context, spelling and punctuation',
                             'Guided and free writing tasks: producing clear paragraphs',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Informatics (الإعلام الآلي) authentic middle school curriculum.
+     */
+    private function getInformaticsCurriculum(int $level): array
+    {
+        if ($level === 1) {
+            return [
+                [
+                    'name' => 'استخدام الحاسوب',
+                    'competence' => 'يميز بين مختلف مصطلحات المعلوماتية (العتاد والبرامج) ويتحكم في بيئة الحاسوب ونظام التشغيل.',
+                    'sequences' => [
+                        [
+                            'name' => 'بيئة التعامل مع الحاسوب',
+                            'resources' => [
+                                'استقبال التلاميذ',
+                                'حصة تعارف',
+                                'تعريف المعلوماتية والحاسوب',
+                                'مكونات الحاسوب',
+                                'وسائط التخزين',
+                            ],
+                        ],
+                        [
+                            'name' => 'نظام التشغيل',
+                            'resources' => [
+                                'مفهوم نظام التشغيل',
+                                'واجهة نظام التشغيل ويندوز',
+                                'برنامج الرسام',
+                                'برنامج الدفتر',
+                            ],
+                        ],
+                        [
+                            'name' => 'تنظيم المعلومات في الحاسوب',
+                            'resources' => [
+                                'مفهوم الملف والمجلد',
+                                'عمليات على الملف والمجلد',
+                                'مختلف طرق العرض',
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'name' => 'معالج النصوص',
+                    'competence' => 'يتحكم في وظائف معالج النصوص الأساسية لتحرير وتنسيق وطباعة وثيقة رقمية منظمة.',
+                    'sequences' => [
+                        [
+                            'name' => 'تقديم معالج النصوص',
+                            'resources' => [
+                                'تقديم معالج النصوص',
+                                'عمليات عامة على الوثيقة',
+                                'كتابة نص مع توظيف المدقق الإملائي',
+                                'البحث عن كلمة وتعويضها',
+                            ],
+                        ],
+                        [
+                            'name' => 'تنسيق الخط والفقرة',
+                            'resources' => [
+                                'تنسيق الخط',
+                                'تنسيق الفقرة',
+                                'التعداد النقطي والرقمي',
+                            ],
+                        ],
+                        [
+                            'name' => 'إعداد وطباعة وثيقة',
+                            'resources' => [
+                                'إعداد الصفحة',
+                                'كتابة نص على شكل أعمدة',
+                                'طباعة وثيقة',
+                                'مشروع إدماجي للتعلمات',
+                            ],
+                        ],
+                    ],
+                ],
+            ];
+        }
+
+        if ($level === 2) {
+            return [
+                [
+                    'name' => 'معالج النصوص',
+                    'competence' => 'يوظف وظائف معالج النصوص المتقدمة لإنشاء وتنسيق الجداول والأشكال وتنظيم الوثائق.',
+                    'sequences' => [
+                        [
+                            'name' => 'الجداول',
+                            'resources' => [
+                                'استقبال التلاميذ وحصة تعارف',
+                                'إدراج جدول',
+                                'تغيير عرض العمود وارتفاع السطر',
+                                'التحديد والتنسيق في الجدول',
+                                'إضافة وحذف أسطر وأعمدة',
+                                'دمج وتقسيم الخلايا',
+                                'الحدود والتظليل',
+                            ],
+                        ],
+                        [
+                            'name' => 'الأشكال والصور',
+                            'resources' => [
+                                'إدراج الأشكال وتغييرها',
+                                'ترتيب الأشكال وتجميعها',
+                                'إدراج صورة ونص فني',
+                                'إدراج الرموز والعبارات الرياضية',
+                            ],
+                        ],
+                        [
+                            'name' => 'تنظيم الوثيقة',
+                            'resources' => [
+                                'فواصل وأرقام الصفحات',
+                                'رأس وتذييل الصفحة',
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'name' => 'بناء المشاريع',
+                    'competence' => 'يكتشف بيئة البرمجة المرئية سكراتش ويوظف لبنات التحكم والحركة والمظاهر لبناء مقاطع برمجية تفاعلية.',
+                    'sequences' => [
+                        [
+                            'name' => 'تقديم سكراتش',
+                            'resources' => [
+                                'مدخل إلى سكراتش',
+                                'عمليات على مشروع سكراتش',
+                            ],
+                        ],
+                        [
+                            'name' => 'التحكم والحركة والمظاهر',
+                            'resources' => [
+                                'خاصية التحكم في سكراتش',
+                                'خاصية الحركة في سكراتش',
+                                'المظاهر في سكراتش',
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'name' => 'الشبكات',
+                    'competence' => 'يتعرف على مفهوم الشبكات وخدمات شبكة الإنترنت ويتقن الملاحة والتصفح الآمن.',
+                    'sequences' => [
+                        [
+                            'name' => 'مفهوم الشبكة وشبكة الإنترنت',
+                            'resources' => [
+                                'مفهوم وتصنيف الشبكات',
+                                'شبكة الإنترنت وخدماتها',
+                                'الملاحة والتصفح في الإنترنت',
+                                'إدماج كلي ومراجعة شاملة',
+                            ],
+                        ],
+                    ],
+                ],
+            ];
+        }
+
+        if ($level === 3) {
+            return [
+                [
+                    'name' => 'بناء المشاريع',
+                    'competence' => 'يوظف بيئة سكراتش لإدماج الصوت والرسم بالقلم وخصائص التحسس لإنجاز مشاريع تفاعلية.',
+                    'sequences' => [
+                        [
+                            'name' => 'سكراتش المتقدم',
+                            'resources' => [
+                                'استقبال التلاميذ وحصة تعارف',
+                                'استخدام الأصوات في سكراتش',
+                                'الرسم بالقلم في سكراتش',
+                                'خاصية التحسس في سكراتش',
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'name' => 'المجدول',
+                    'competence' => 'يتحكم في بيئة المجدول الإلكتروني لإدخال وتنسيق البيانات واستخدام الصيغ الحسابية.',
+                    'sequences' => [
+                        [
+                            'name' => 'تقديم المجدول والصيغ',
+                            'resources' => [
+                                'مدخل إلى المجدول',
+                                'المصنف وورقة العمل',
+                                'تنسيق الخلايا والكتابة',
+                                'نقل ونسخ الخلايا',
+                                'الصيغ الحسابية وكتابتها',
+                                'نسخ الصيغ',
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'name' => 'العروض التقديمية',
+                    'competence' => 'يصمم وينتج عروضاً تقديمية تفاعلية تتضمن وسائط متعددة وتأثيرات حركية مناسبة.',
+                    'sequences' => [
+                        [
+                            'name' => 'تصميم عروض تقديمية',
+                            'resources' => [
+                                'تقديم برنامج العروض التقديمية',
+                                'عمليات على الشرائح',
+                                'إدراج النصوص والصور',
+                                'إدراج الصوت والفيديو',
+                                'مراحل الانتقال بين الشرائح وطرق الحفظ',
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'name' => 'الشبكات',
+                    'competence' => 'يستخدم خدمات البريد الإلكتروني والتواصل عبر الإنترنت بمسؤولية وأمان.',
+                    'sequences' => [
+                        [
+                            'name' => 'البريد الإلكتروني والتواصل',
+                            'resources' => [
+                                'مفهوم البريد الإلكتروني',
+                                'إنشاء حساب بريد إلكتروني',
+                                'إرسال واستقبال الرسائل والمرفقات',
+                                'الرسائل متعددة الوجهات',
+                                'مشاريع إدماجية ختامية',
+                            ],
+                        ],
+                    ],
+                ],
+            ];
+        }
+
+        // Level 4 (4AM)
+        return [
+            [
+                'name' => 'بناء المشاريع',
+                'competence' => 'يوظف المتغيرات والعمليات الحسابية والمنطقية والنصية في سكراتش لحل خوارزميات ومسائل معقدة.',
+                'sequences' => [
+                    [
+                        'name' => 'المتغيرات',
+                        'resources' => [
+                            'استقبال التلاميذ وحصة تعارف',
+                            'المتغيرات في سكراتش',
+                            'العمليات الحسابية في سكراتش',
+                            'العمليات المنطقية في سكراتش',
+                            'حصة تمارين خوارزمية',
+                        ],
+                    ],
+                    [
+                        'name' => 'العمليات',
+                        'resources' => [
+                            'العمليات على النصوص في سكراتش',
+                            'إنجاز مشروع خوارزمي شامل',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'المجدول',
+                'competence' => 'يوظف الدوال الإحصائية والمنطقية المتقدمة والتخطيطات البيانية في معالجة وتحليل البيانات.',
+                'sequences' => [
+                    [
+                        'name' => 'الدوال',
+                        'resources' => [
+                            'الجمع التلقائي',
+                            'إدراج دالة والدوال البسيطة',
+                            'نسخ الدوال ونسخ الخلايا بارتباط',
+                            'برمجة القاسم المشترك الأكبر PGCD في المجدول',
+                        ],
+                    ],
+                    [
+                        'name' => 'التخطيطات',
+                        'resources' => [
+                            'المخططات البيانية',
+                            'تعديل بيانات وتخصيص التخطيطات',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'العروض التقديمية',
+                'competence' => 'يتحكم في التحريك المتقدم والارتباطات التشعبية لإنتاج مشاريع تفاعلية احترافية.',
+                'sequences' => [
+                    [
+                        'name' => 'التحريك والارتباطات',
+                        'resources' => [
+                            'الحركة وتنسيق الحركة في العروض التقديمية',
+                            'الارتباطات التشعبية والتفاعل',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'الشبكات',
+                'competence' => 'يتقن آليات ومحركات البحث المتقدمة في الويب وتحميل وتوثيق الموارد الرقمية بأمان تحضيراً لشهادة BEM.',
+                'sequences' => [
+                    [
+                        'name' => 'البحث المتقدم في الإنترنت',
+                        'resources' => [
+                            'محركات البحث في الإنترنت',
+                            'طرق وآليات البحث المتقدم',
+                            'حفظ وتحميل ملفات الويب',
+                            'تحضير امتحان شهادة التعليم المتوسط التجريبي والمراجعة الشاملة',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Physical Education (التربية البدنية والرياضية) curriculum.
+     */
+    private function getPhysicalEducationCurriculum(int $level): array
+    {
+        return [
+            [
+                'name' => 'الأنشطة الرياضية الفردية',
+                'competence' => 'ينمي القدرات البدنية والحركية الفردية ويوظف القواعد الفنية والأمنية للنشاط.',
+                'sequences' => [
+                    [
+                        'name' => 'ألعاب القوى والسرعة',
+                        'resources' => [
+                            'استقبال التلاميذ والتهيئة البدنية العامة والخاصة',
+                            'الجري السريع وتطوير السرعة الانتقالية',
+                            'الوثب الطويل وتنسيق مراحل القفز',
+                            'دفع الجلة والتحكم في الوضعيات الحركية والرمي',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'الأنشطة الرياضية الجماعية',
+                'competence' => 'يندمج في عمل الفريق ويتواصل إيجابياً لتطبيق الخطط التكتيكية الدفاعية والهجومية.',
+                'sequences' => [
+                    [
+                        'name' => 'الرياضات الجماعية (كرة اليد / السلة)',
+                        'resources' => [
+                            'تنظيم الفريق والتنقل بالكرة والتمرير والاستقبال',
+                            'الخطط الهجومية والتهديف والتعاون التكتيكي',
+                            'التموضع الدفاعي والرقابة والتصدي وفق قواعد اللعبة',
+                            'منافسات ومباريات تطبيقية تطبيقا للروح الرياضية',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Art Education (التربية الفنية والتشكيلية) curriculum.
+     */
+    private function getArtEducationCurriculum(int $level): array
+    {
+        return [
+            [
+                'name' => 'الرسم والتلوين',
+                'competence' => 'يوظف تقنيات الرسم والتلوين والانسجام اللوني للتعبير الفني عن موضوعات متنوعة.',
+                'sequences' => [
+                    [
+                        'name' => 'عناصر التشكيل الفني واللون',
+                        'resources' => [
+                            'استقبال التلاميذ والتعرف على أدوات وتقنيات التشكيل الفني',
+                            'دائرة الألوان، الألوان الأساسية والثانوية والتناغم اللوني',
+                            'الظل والنور وتجسيد الأبعاد والعمق في اللوحة',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'التصميم وفنون الخط',
+                'competence' => 'يتحكم في أسس التصميم والخط العربي والزخرفة لإنتاج أعمال فنية دالة.',
+                'sequences' => [
+                    [
+                        'name' => 'الخط العربي والزخرفة والتصميم',
+                        'resources' => [
+                            'قواعد الخط العربي وتناسق الحروف والكلمات',
+                            'الزخرفة النباتية والهندسية المتناظرة',
+                            'تصميم الملصقات والإعلانات التعبيرية والمشاريع الختامية',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Music Education (التربية الموسيقية) curriculum.
+     */
+    private function getMusicEducationCurriculum(int $level): array
+    {
+        return [
+            [
+                'name' => 'القواعد الموسيقية وتدريب السمع',
+                'competence' => 'يميز العناصر اللحنية والإيقاعية ويقرأ المدرج الموسيقي بدقة.',
+                'sequences' => [
+                    [
+                        'name' => 'السلم الموسيقي والإيقاع',
+                        'resources' => [
+                            'استقبال التلاميذ ومقدمة في الصوت الموسيقي والمدرج',
+                            'السلم الموسيقي ومواقع العلامات على المدرج',
+                            'الأشكال الإيقاعية والتحكم في الوزن الزمني',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'التذوق والأداء الصوتي',
+                'competence' => 'يؤدي الأناشيد الوطنية والتربوية ويقدر التراث الموسيقي الجزائري والعالمي.',
+                'sequences' => [
+                    [
+                        'name' => 'الأناشيد والتراث الصوتي',
+                        'resources' => [
+                            'تدريبات التنفس والأداء الصوتي الجماعي السليم',
+                            'أناشيد وطنية وتربوية هادفة',
+                            'الآلات الموسيقية والتراث الجزائري الأصيل',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Tamazight Language (اللغة الأمازيغية) curriculum.
+     */
+    private function getTamazightCurriculum(int $level): array
+    {
+        return [
+            [
+                'name' => 'فهم المنطوق والتعبير الشفوي (Tirawt d wawal)',
+                'competence' => 'يستمع ويفهم الخطابات الشفوية بالأمازيغية ويعبر بطلاقة في مواقف تواصلية مختلفة.',
+                'sequences' => [
+                    [
+                        'name' => 'التواصل الشفوي (Tmeslayt)',
+                        'resources' => [
+                            'استقبال التلاميذ والتهيئة التواصلية بالأمازيغية',
+                            'الاستماع لنصوص شفوية واستخراج الأفكار الرئيسية',
+                            'الحوار والمناقشة والتعبير الشفوي المنظم',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'فهم المكتوب وقواعد اللغة (Tajeṛṛumt)',
+                'competence' => 'يقرأ نصوصاً أمازيغية بتيفيناغ واللاتينية ويحلل البنى الصرفية والنحوية.',
+                'sequences' => [
+                    [
+                        'name' => 'النصوص وقواعد اللغة',
+                        'resources' => [
+                            'قراءة وفهم النصوص واستثمار المعجم والمصطلحات',
+                            'قواعد اللغة والصرف وتراكيب الجملة الأمازيغية',
+                            'الإنتاج الكتابي والورشات التطبيقية',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Generic curriculum fallback tailored to any custom subject.
+     */
+    private function getGenericSubjectCurriculum(string $subjectName, int $level): array
+    {
+        return [
+            [
+                'name' => "المفاهيم والأسس البيداغوجية لمادة {$subjectName}",
+                'competence' => "يتحكم المتعلم في المعارف والأسس المنهجية الخاصة بمادة {$subjectName} للسنة {$level} متوسط.",
+                'sequences' => [
+                    [
+                        'name' => "المدخل التمهيدي لمادة {$subjectName}",
+                        'resources' => [
+                            'استقبال التلاميذ وتشخيص المكتسبات القبلية',
+                            "المفاهيم المحورية للمادة في المستوى {$level} متوسط",
+                            'أنشطة استكشافية وتطبيقات أولية',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name' => "التطبيقات والأنشطة الميدانية لمادة {$subjectName}",
+                'competence' => 'يوظف المعارف والمكتسبات لإنجاز مهام وتطبيقات ومشاريع تعليمية متكاملة.',
+                'sequences' => [
+                    [
+                        'name' => 'الأنشطة التطبيقية والإدماج',
+                        'resources' => [
+                            'إنجاز أنشطة تطبيقية فردية وفوجية',
+                            'معالجة الوضعيات التقويمية',
+                            'مشروع إدماجي ختامي للتعلمات',
                         ],
                     ],
                 ],
