@@ -23,7 +23,7 @@
 
         @page {
             size: A4 portrait;
-            margin: 4mm 6mm 4mm 6mm;
+            margin: {{ ($mode ?? 'annual') === 'monthly' ? '2.5mm 4.5mm 2.5mm 4.5mm' : '4mm 6mm 4mm 6mm' }};
         }
 
         html, body {
@@ -36,6 +36,93 @@
             line-height: 1.15;
             direction: rtl;
             -webkit-font-smoothing: antialiased;
+        }
+
+        body.mode-monthly {
+            font-size: 6.8pt;
+            line-height: 1.1;
+        }
+
+        body.mode-monthly .header-grid {
+            padding-bottom: 2px;
+            margin-bottom: 2px;
+        }
+
+        body.mode-monthly .title-badge {
+            padding: 1px 10px;
+        }
+
+        body.mode-monthly .title-main {
+            font-size: 10pt;
+            line-height: 1.15;
+        }
+
+        body.mode-monthly .title-sub {
+            font-size: 7pt;
+        }
+
+        body.mode-monthly .distribution-table {
+            font-size: 6.8pt;
+        }
+
+        body.mode-monthly .distribution-table th,
+        body.mode-monthly .distribution-table td {
+            padding: 1.2px 1.5px;
+        }
+
+        body.mode-monthly .distribution-table thead th {
+            font-size: 7.2pt;
+            padding: 1.5px 1px;
+        }
+
+        body.mode-monthly .col-sequence {
+            font-size: 6.8pt;
+            width: 78px;
+        }
+
+        body.mode-monthly .col-lesson {
+            font-size: 6.8pt;
+        }
+
+        body.mode-monthly .col-hours {
+            font-size: 6.5pt;
+            width: 40px;
+        }
+
+        body.mode-monthly .col-date {
+            font-size: 6.5pt;
+            width: 110px;
+        }
+
+        body.mode-monthly .col-week {
+            font-size: 6.8pt;
+            width: 22px;
+        }
+
+        body.mode-monthly .vertical-text {
+            font-size: 6.2pt;
+        }
+
+        body.mode-monthly .col-domain .vertical-text {
+            font-size: 6.8pt;
+        }
+
+        body.mode-monthly .col-competence .vertical-text {
+            font-size: 5.8pt;
+        }
+
+        body.mode-monthly .break-cell-vacation,
+        body.mode-monthly .break-cell-exam {
+            font-size: 6.5pt;
+            padding: 1.2px 2px !important;
+        }
+
+        body.mode-monthly .signatures-grid {
+            margin-top: 4px;
+        }
+
+        body.mode-monthly .signature-title {
+            font-size: 7.5pt;
         }
 
         .no-print {
@@ -214,6 +301,38 @@
             border-color: #1e3a8a;
         }
 
+        /* Level Banner Row */
+        .level-banner-row td {
+            background: linear-gradient(90deg, #1e3a8a 0%, #2563eb 100%) !important;
+            color: #ffffff !important;
+            padding: 1.5px 6px !important;
+            text-align: right !important;
+            border-top: 1.2px solid #0f172a !important;
+            border-bottom: 1.2px solid #0f172a !important;
+        }
+
+        .level-banner-content {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .level-tag {
+            background: #f59e0b;
+            color: #0f172a;
+            font-size: 6.5pt;
+            font-weight: 900;
+            padding: 0 5px;
+            border-radius: 2px;
+        }
+
+        .level-title {
+            font-size: 7.8pt;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -0.1px;
+        }
+
         /* Vertical Rotated Text */
         .vertical-cell {
             vertical-align: middle;
@@ -353,32 +472,42 @@
         }
     </style>
 </head>
-<body>
+<body class="mode-{{ $mode ?? 'annual' }}">
     {{-- Navigation & Print Toolbar --}}
     <div class="no-print">
         <div class="toolbar-group">
             <div class="level-switcher">
                 <span style="opacity: 0.8; margin-left: 2px;">{{ __('المستوى:') }}</span>
                 @foreach ($available_levels as $lvl => $label)
-                    <a
-                        href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'level' => $lvl, 'mode' => $mode ?? 'annual', 'month' => $selected_month ?? 'all', 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
-                        class="btn {{ ($level_number ?? 1) == $lvl ? 'btn-amber' : 'btn-slate' }}"
-                    >
-                        {{ $label }}
-                    </a>
+                    @php
+                        $isAll = (string) $lvl === 'all';
+                        $isActive = $isAll
+                            ? (($selected_level ?? null) === 'all' || (($mode ?? 'annual') === 'monthly' && ($selected_level ?? null) === 'all'))
+                            : (($selected_level ?? null) !== 'all' && ($level_number ?? 1) == $lvl);
+                    @endphp
+                    @if (($mode ?? 'annual') === 'annual' && $isAll)
+                        {{-- Skip 'all' button in annual mode since annual is 35 weeks per level --}}
+                    @else
+                        <a
+                            href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'level' => $lvl, 'mode' => $mode ?? 'annual', 'month' => $selected_month ?? 'all', 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
+                            class="btn {{ $isActive ? 'btn-amber' : 'btn-slate' }}"
+                        >
+                            {{ $label }}
+                        </a>
+                    @endif
                 @endforeach
             </div>
 
             <div class="mode-switcher">
                 <span style="opacity: 0.8; margin-left: 2px;">{{ __('المخطط:') }}</span>
                 <a
-                    href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'level' => $level_number ?? 1, 'mode' => 'annual', 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
+                    href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'level' => ($selected_level ?? 1) === 'all' ? 1 : ($selected_level ?? 1), 'mode' => 'annual', 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
                     class="btn {{ ($mode ?? 'annual') === 'annual' ? 'btn-sky' : 'btn-slate' }}"
                 >
                     {{ __('التوزيع السنوي') }}
                 </a>
                 <a
-                    href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'level' => $level_number ?? 1, 'mode' => 'monthly', 'month' => $selected_month ?? 'all', 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
+                    href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'level' => $selected_level ?? 'all', 'mode' => 'monthly', 'month' => $selected_month ?? 'all', 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
                     class="btn {{ ($mode ?? 'annual') === 'monthly' ? 'btn-sky' : 'btn-slate' }}"
                 >
                     {{ __('المخططات الشهرية') }}
@@ -388,7 +517,7 @@
 
         <div class="btn-group">
             <a
-                href="{{ route('print.annual-curriculum-distribution.pdf', ['locale' => app()->getLocale(), 'level' => $level_number ?? 1, 'mode' => $mode ?? 'annual', 'month' => $selected_month ?? 'all', 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
+                href="{{ route('print.annual-curriculum-distribution.pdf', ['locale' => app()->getLocale(), 'level' => $selected_level ?? ($level_number ?? 1), 'mode' => $mode ?? 'annual', 'month' => $selected_month ?? 'all', 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
                 class="btn btn-emerald"
             >
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
@@ -410,8 +539,8 @@
             <span style="opacity: 0.8; margin-left: 6px;">{{ __('الشهر المطلوب:') }}</span>
             @foreach ($available_months as $mKey => $mLabel)
                 <a
-                    href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'level' => $level_number ?? 1, 'mode' => 'monthly', 'month' => $mKey, 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
-                    class="btn {{ ($selected_month ?? 'all') === $mKey ? 'btn-amber' : 'btn-slate' }}"
+                    href="{{ route('print.annual-curriculum-distribution', ['locale' => app()->getLocale(), 'level' => $selected_level ?? ($level_number ?? 1), 'mode' => 'monthly', 'month' => $mKey, 'subject' => $selected_subject_id ?? request('subject'), 'classroom' => $selected_classroom_id ?? request('classroom')]) }}"
+                    class="btn {{ ($selected_month ?? 'all') === (string) $mKey ? 'btn-amber' : 'btn-slate' }}"
                 >
                     {{ $mLabel }}
                 </a>
@@ -436,7 +565,15 @@
                     <div class="header-col-center">
                         <div class="title-badge">
                             <h1 class="title-main">المخطط الشهري للتعلمات</h1>
-                            <div class="title-sub">شهر {{ $plan['month_name'] }} ({{ $plan['term'] }}) — {{ $level_name }} — مادة المعلوماتية</div>
+                            <div class="title-sub">
+                                شهر {{ $plan['month_name'] }} ({{ $plan['term'] }})
+                                @if (!empty($plan['level_sections']) && count($plan['level_sections']) === 1)
+                                    — {{ $plan['level_sections'][0]['level_name'] }}
+                                @elseif (($selected_level ?? null) !== 'all' && count($selected_levels ?? []) === 1)
+                                    — {{ $level_name }}
+                                @endif
+                                — مادة المعلوماتية
+                            </div>
                         </div>
                     </div>
 
@@ -448,7 +585,7 @@
                     </div>
                 </div>
 
-                {{-- Monthly Table --}}
+                {{-- Unified Monthly Table --}}
                 <table class="distribution-table">
                     <thead>
                         <tr>
@@ -462,47 +599,98 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($plan['domains'] as $domain)
-                            @foreach ($domain['rows'] as $index => $row)
-                                <tr>
-                                    @if ($index === 0)
-                                        <td rowspan="{{ $domain['rowspan'] }}" class="vertical-cell col-domain">
-                                            <span class="vertical-text">{{ $domain['name'] }}</span>
+                        @if (!empty($plan['level_sections']))
+                            @foreach ($plan['level_sections'] as $section)
+                                @if (count($plan['level_sections']) > 1)
+                                    <tr class="level-banner-row">
+                                        <td colspan="7">
+                                            <div class="level-banner-content">
+                                                <span class="level-tag">المستوى:</span>
+                                                <span class="level-title">{{ $section['level_name'] }}</span>
+                                            </div>
                                         </td>
-                                        <td rowspan="{{ $domain['rowspan'] }}" class="vertical-cell col-competence">
-                                            <span class="vertical-text">{!! $domain['competence'] !!}</span>
-                                        </td>
-                                    @endif
+                                    </tr>
+                                @endif
+                                @foreach ($section['domains'] as $domain)
+                                    @foreach ($domain['rows'] as $index => $row)
+                                        <tr>
+                                            @if ($index === 0)
+                                                <td rowspan="{{ $domain['rowspan'] }}" class="vertical-cell col-domain">
+                                                    <span class="vertical-text">{{ $domain['name'] }}</span>
+                                                </td>
+                                                <td rowspan="{{ $domain['rowspan'] }}" class="vertical-cell col-competence">
+                                                    <span class="vertical-text">{!! $domain['competence'] !!}</span>
+                                                </td>
+                                            @endif
 
-                                    @if (!empty($row['is_break']))
-                                        <td colspan="{{ $row['colspan'] ?? 5 }}" class="{{ ($row['break_type'] ?? '') === 'vacation' ? 'break-cell-vacation' : 'break-cell-exam' }}">
-                                            {{ $row['text'] }}
-                                        </td>
-                                    @else
-                                        @if (!empty($row['sequence']))
-                                            <td rowspan="{{ $row['sequence']['rowspan'] }}" class="col-sequence">
-                                                {{ $row['sequence']['name'] }}
+                                            @if (!empty($row['is_break']))
+                                                <td colspan="{{ $row['colspan'] ?? 5 }}" class="{{ ($row['break_type'] ?? '') === 'vacation' ? 'break-cell-vacation' : 'break-cell-exam' }}">
+                                                    {{ $row['text'] }}
+                                                </td>
+                                            @else
+                                                @if (!empty($row['sequence']))
+                                                    <td rowspan="{{ $row['sequence']['rowspan'] }}" class="col-sequence">
+                                                        {{ $row['sequence']['name'] }}
+                                                    </td>
+                                                @endif
+                                                <td @class([
+                                                    'col-lesson',
+                                                    'cell-exam-red' => ($row['type'] ?? '') === 'exam_red',
+                                                    'cell-remedial-yellow' => ($row['type'] ?? '') === 'remedial_yellow',
+                                                ])>
+                                                    {{ $row['lesson'] }}
+                                                </td>
+                                                <td class="col-hours">{{ $row['hours'] }}</td>
+                                                <td class="col-date">{{ $row['date'] }}</td>
+                                                <td class="col-week">{{ $row['week'] }}</td>
+                                            @endif
+                                        </tr>
+                                    @endforeach
+                                @endforeach
+                            @endforeach
+                        @else
+                            @foreach ($plan['domains'] as $domain)
+                                @foreach ($domain['rows'] as $index => $row)
+                                    <tr>
+                                        @if ($index === 0)
+                                            <td rowspan="{{ $domain['rowspan'] }}" class="vertical-cell col-domain">
+                                                <span class="vertical-text">{{ $domain['name'] }}</span>
+                                            </td>
+                                            <td rowspan="{{ $domain['rowspan'] }}" class="vertical-cell col-competence">
+                                                <span class="vertical-text">{!! $domain['competence'] !!}</span>
                                             </td>
                                         @endif
-                                        <td @class([
-                                            'col-lesson',
-                                            'cell-exam-red' => ($row['type'] ?? '') === 'exam_red',
-                                            'cell-remedial-yellow' => ($row['type'] ?? '') === 'remedial_yellow',
-                                        ])>
-                                            {{ $row['lesson'] }}
-                                        </td>
-                                        <td class="col-hours">{{ $row['hours'] }}</td>
-                                        <td class="col-date">{{ $row['date'] }}</td>
-                                        <td class="col-week">{{ $row['week'] }}</td>
-                                    @endif
-                                </tr>
+
+                                        @if (!empty($row['is_break']))
+                                            <td colspan="{{ $row['colspan'] ?? 5 }}" class="{{ ($row['break_type'] ?? '') === 'vacation' ? 'break-cell-vacation' : 'break-cell-exam' }}">
+                                                {{ $row['text'] }}
+                                            </td>
+                                        @else
+                                            @if (!empty($row['sequence']))
+                                                <td rowspan="{{ $row['sequence']['rowspan'] }}" class="col-sequence">
+                                                    {{ $row['sequence']['name'] }}
+                                                </td>
+                                            @endif
+                                            <td @class([
+                                                'col-lesson',
+                                                'cell-exam-red' => ($row['type'] ?? '') === 'exam_red',
+                                                'cell-remedial-yellow' => ($row['type'] ?? '') === 'remedial_yellow',
+                                            ])>
+                                                {{ $row['lesson'] }}
+                                            </td>
+                                            <td class="col-hours">{{ $row['hours'] }}</td>
+                                            <td class="col-date">{{ $row['date'] }}</td>
+                                            <td class="col-week">{{ $row['week'] }}</td>
+                                        @endif
+                                    </tr>
+                                @endforeach
                             @endforeach
-                        @endforeach
+                        @endif
                     </tbody>
                 </table>
 
                 {{-- Institutional Signatures Footer --}}
-                <div class="signatures-grid" style="margin-top: 18px;">
+                <div class="signatures-grid">
                     <div class="signature-col">
                         <div class="signature-title">أستاذ(ة) المادة</div>
                     </div>
@@ -529,7 +717,7 @@
 
                 <div class="header-col-center">
                     <div class="title-badge">
-                        <h1 class="title-main">التوزيع السنوي للتعلمات</h1>
+                        <h1 class="title-main">{{ $title ?? 'التوزيع السنوي للتعلمات' }}</h1>
                         <div class="title-sub">{{ $level_name }} — مادة المعلوماتية</div>
                     </div>
                 </div>

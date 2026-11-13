@@ -35,4 +35,3 @@ class SeedInformaticsCurriculumCommand extends Command
         return self::SUCCESS;
     }
 }
-

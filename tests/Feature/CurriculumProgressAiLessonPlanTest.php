@@ -437,6 +437,53 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
         $pdfResponse->assertOk();
     }
 
+    public function test_collected_monthly_plan_gathers_all_teacher_active_levels_on_single_page(): void
+    {
+        $teacher = User::factory()->create(['role' => Role::Teacher->value, 'name' => 'فرطاس بوعزيز']);
+        $subject = Subject::factory()->create(['name' => 'المعلوماتية']);
+
+        $lvl1 = Level::factory()->create(['name' => 'السنة الأولى متوسط']);
+        $lvl3 = Level::factory()->create(['name' => 'السنة الثالثة متوسط']);
+        $lvl4 = Level::factory()->create(['name' => 'السنة الرابعة متوسط']);
+
+        $c1 = Classroom::factory()->create(['level_id' => $lvl1->id, 'name' => '1 م 1']);
+        $c3 = Classroom::factory()->create(['level_id' => $lvl3->id, 'name' => '3 م 1']);
+        $c4 = Classroom::factory()->create(['level_id' => $lvl4->id, 'name' => '4 م 1']);
+
+        Schedule::factory()->create(['user_id' => $teacher->id, 'subject_id' => $subject->id, 'classroom_id' => $c1->id]);
+        Schedule::factory()->create(['user_id' => $teacher->id, 'subject_id' => $subject->id, 'classroom_id' => $c3->id]);
+        Schedule::factory()->create(['user_id' => $teacher->id, 'subject_id' => $subject->id, 'classroom_id' => $c4->id]);
+
+        $this->actingAs($teacher);
+
+        $response = $this->get(route('print.annual-curriculum-distribution', [
+            'locale' => 'ar',
+            'mode' => 'monthly',
+            'month' => '10',
+            'level' => 'all',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('المخطط الشهري للتعلمات');
+        $response->assertSee('شهر أكتوبر');
+        // Separated by level banner rows
+        $response->assertSee('السنة الأولى من التعليم المتوسط (1AM)');
+        $response->assertSee('السنة الثالثة من التعليم المتوسط (3AM)');
+        $response->assertSee('السنة الرابعة من التعليم المتوسط (4AM)');
+
+        // Test single A4 page fit
+        $service = app(AnnualCurriculumDistributionService::class);
+        $data = $service->getDistributionData(
+            teacherId: $teacher->id,
+            mode: 'monthly',
+            month: '10',
+            level: 'all'
+        );
+        $pdf = $service->generatePdf($data);
+        preg_match_all('/\/Type\s*\/Page[^s]/', $pdf, $matches);
+        $this->assertSame(1, count($matches[0]), 'Collected monthly plan for teacher active levels must fit strictly on 1 single A4 page.');
+    }
+
     public function test_annual_curriculum_distribution_pdf_is_single_a4_page_for_levels(): void
     {
         $service = app(AnnualCurriculumDistributionService::class);

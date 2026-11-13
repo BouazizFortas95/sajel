@@ -40,13 +40,18 @@ class AnnualCurriculumDistributionService
         $cleanedSchool = trim(preg_replace('/^متوسطة\s*:?\s*/u', '', $rawSchoolName));
         $schoolName = 'متوسطة: '.($cleanedSchool ?: 'حي 940 مسكن - المغير');
 
-        $teacherName = $teacher?->name ?? 'قرطاس بوعزيز';
+        $teacherName = $teacher?->name ?? 'فرطاس بوعزيز';
         $subjectName = $subject?->name ?? 'مادة المعلوماتية';
         $directorateName = $school?->directorate_name ?? 'المغير';
         $principalName = $school?->principal_name ?? 'أحمد بوزقاق';
 
+        $teacherActiveLevels = $this->getTeacherActiveLevels($teacher);
         $levelNumber = $this->resolveLevelNumber($level, $classroom);
         $levelData = $this->getLevelData($levelNumber);
+
+        $selectedLevels = ($level === 'all' || ($level === null && $mode === 'monthly'))
+            ? $teacherActiveLevels
+            : [$levelNumber];
 
         $availableMonths = [
             'all' => 'جميع الأشهر',
@@ -61,7 +66,7 @@ class AnnualCurriculumDistributionService
             '05' => 'ماي',
         ];
 
-        $monthlyPlans = $this->buildMonthlyPlans($levelData);
+        $monthlyPlans = $this->buildCollectedMonthlyPlans($selectedLevels);
         $monthStr = $month !== null ? (string) $month : '';
         $normalizedMonth = ($monthStr === 'all' || $monthStr === '') ? 'all' : (is_numeric($monthStr) ? sprintf('%02d', (int) $monthStr) : $monthStr);
         $selectedMonth = isset($availableMonths[$normalizedMonth]) ? $normalizedMonth : 'all';
@@ -77,7 +82,7 @@ class AnnualCurriculumDistributionService
             'subject_name' => $subjectName,
             'teacher_name' => $teacherName,
             'academic_year' => $formattedYear,
-            'weekly_hours' => '01 ساعة أسبوعياً',
+            'weekly_hours' => '01 ساعة أسبوعياً لكل فوج',
             'coefficient' => '01',
             'domains' => $levelData['domains'],
             'level_name' => $levelData['level_name'],
@@ -86,7 +91,11 @@ class AnnualCurriculumDistributionService
             'selected_month' => $selectedMonth,
             'available_months' => $availableMonths,
             'monthly_plans' => $filteredMonthlyPlans,
+            'teacher_active_levels' => $teacherActiveLevels,
+            'selected_levels' => $selectedLevels,
+            'selected_level' => $level === 'all' ? 'all' : $levelNumber,
             'available_levels' => [
+                'all' => 'جميع مستويات الأستاذ (مجمّعة)',
                 1 => 'السنة الأولى',
                 2 => 'السنة الثانية',
                 3 => 'السنة الثالثة',
@@ -551,6 +560,103 @@ class AnnualCurriculumDistributionService
     }
 
     /**
+     * Resolve the active middle school levels taught by the teacher.
+     *
+     * @return array<int>
+     */
+    public function getTeacherActiveLevels(?User $teacher): array
+    {
+        if (! $teacher) {
+            return [1, 2, 3, 4];
+        }
+
+        $levels = $teacher->schedules()
+            ->with('classroom.level')
+            ->get()
+            ->map(function ($s): int {
+                return $this->resolveLevelNumber(null, $s->classroom);
+            })
+            ->filter(fn (int $lvl): bool => in_array($lvl, [1, 2, 3, 4], true))
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        return ! empty($levels) ? $levels : [1, 2, 3, 4];
+    }
+
+    /**
+     * Build collected monthly plans grouping all requested levels per month.
+     *
+     * @param  array<int|string>  $levels
+     * @return array<string, array<string, mixed>>
+     */
+    public function buildCollectedMonthlyPlans(array $levels): array
+    {
+        $normalizedLevels = array_values(array_filter(array_map('intval', $levels), fn (int $lvl): bool => in_array($lvl, [1, 2, 3, 4], true)));
+        if (empty($normalizedLevels)) {
+            $normalizedLevels = [1, 2, 3, 4];
+        }
+
+        $monthNames = [
+            '09' => ['name' => 'سبتمبر', 'term' => 'الفصل الأول'],
+            '10' => ['name' => 'أكتوبر', 'term' => 'الفصل الأول'],
+            '11' => ['name' => 'نوفمبر', 'term' => 'الفصل الأول'],
+            '12' => ['name' => 'ديسمبر', 'term' => 'الفصل الأول'],
+            '01' => ['name' => 'جانفي', 'term' => 'الفصل الثاني'],
+            '02' => ['name' => 'فيفري', 'term' => 'الفصل الثاني'],
+            '03' => ['name' => 'مارس', 'term' => 'الفصل الثاني'],
+            '04' => ['name' => 'أفريل', 'term' => 'الفصل الثالث'],
+            '05' => ['name' => 'ماي', 'term' => 'الفصل الثالث'],
+        ];
+
+        $levelNames = [
+            1 => 'السنة الأولى من التعليم المتوسط (1AM)',
+            2 => 'السنة الثانية من التعليم المتوسط (2AM)',
+            3 => 'السنة الثالثة من التعليم المتوسط (3AM)',
+            4 => 'السنة الرابعة من التعليم المتوسط (4AM)',
+        ];
+
+        // Cache single-level monthly plans
+        $levelPlansCache = [];
+        foreach ($normalizedLevels as $lvl) {
+            $levelPlansCache[$lvl] = $this->buildMonthlyPlans($this->getLevelData($lvl));
+        }
+
+        $collected = [];
+
+        foreach ($monthNames as $rawMonthKey => $monthInfo) {
+            $monthKey = sprintf('%02d', (int) $rawMonthKey);
+            $levelSections = [];
+            $allDomains = [];
+
+            foreach ($normalizedLevels as $lvl) {
+                $singlePlan = $levelPlansCache[$lvl][$monthKey] ?? null;
+                if ($singlePlan && ! empty($singlePlan['domains'])) {
+                    $levelSections[] = [
+                        'level_number' => $lvl,
+                        'level_name' => $levelNames[$lvl] ?? "السنة {$lvl} متوسط",
+                        'domains' => $singlePlan['domains'],
+                    ];
+                    foreach ($singlePlan['domains'] as $d) {
+                        $allDomains[] = $d;
+                    }
+                }
+            }
+
+            $collected[$monthKey] = [
+                'month_key' => $monthKey,
+                'month_name' => $monthInfo['name'],
+                'term' => $monthInfo['term'],
+                'level_sections' => $levelSections,
+                'domains' => $allDomains,
+            ];
+        }
+
+        return $collected;
+    }
+
+    /**
      * Resolve the educational month for a specific curriculum distribution row.
      *
      * @param  array<string, mixed>  $row
@@ -643,11 +749,14 @@ class AnnualCurriculumDistributionService
     public function generatePdf(array $data): string
     {
         $html = View::make('print.annual-curriculum-distribution', $data)->render();
+        $isMonthly = ($data['mode'] ?? 'annual') === 'monthly';
+        $topBottom = $isMonthly ? 2.5 : 4;
+        $leftRight = $isMonthly ? 4.5 : 6;
 
         return BrowsershotFactory::html($html)
             ->format('A4')
             ->landscape(false)
-            ->margins(4, 6, 4, 6)
+            ->margins($topBottom, $leftRight, $topBottom, $leftRight)
             ->showBackground()
             ->pdf();
     }
@@ -659,7 +768,10 @@ class AnnualCurriculumDistributionService
     {
         try {
             $pdf = $this->generatePdf($data);
-            $filename = 'annual-curriculum-distribution-'.($data['level_number'] ?? 1).'am.pdf';
+            $isMonthly = ($data['mode'] ?? 'annual') === 'monthly';
+            $filename = $isMonthly
+                ? 'monthly-curriculum-plan-'.($data['selected_month'] ?? 'all').'.pdf'
+                : 'annual-curriculum-distribution-'.($data['level_number'] ?? 1).'am.pdf';
 
             return response()->streamDownload(
                 function () use ($pdf): void {
