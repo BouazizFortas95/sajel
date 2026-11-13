@@ -6,6 +6,7 @@ use App\Http\Controllers\ClassCouncilController;
 use App\Http\Controllers\ClassCouncilDeliberationController;
 use App\Http\Controllers\CounselingController;
 use App\Http\Controllers\DisciplinaryCouncilController;
+use App\Http\Controllers\DownloadPedagogicalMemoBookletPdfController;
 use App\Http\Controllers\DownloadPedagogicalMemoPdfController;
 use App\Http\Controllers\EvaluationWorkReceiptController;
 use App\Http\Controllers\ExamTimetableController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\PedagogicalCouncilController;
 use App\Http\Controllers\PedagogicalPlanReceiptController;
 use App\Http\Controllers\PrintAssessmentController;
 use App\Http\Controllers\PrintDailyLogsController;
+use App\Http\Controllers\PrintPedagogicalMemoBookletController;
 use App\Http\Controllers\PrintPedagogicalMemoController;
 use App\Http\Controllers\RakmanaSyncController;
 use App\Http\Controllers\SchoolArchiveController;
@@ -428,6 +430,16 @@ Route::get('/{locale}/print/student-behavior-reports/{behaviorObservation}/inter
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
     ->middleware(['auth', SetFilamentLocale::class])
     ->name('print.student-behavior-report.interview-minutes.pdf');
+
+Route::get('/{locale}/print/pedagogical-memos/booklet/pdf', DownloadPedagogicalMemoBookletPdfController::class)
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.pedagogical-memo.booklet.pdf');
+
+Route::get('/{locale}/print/pedagogical-memos/booklet', PrintPedagogicalMemoBookletController::class)
+    ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))
+    ->middleware(['auth', SetFilamentLocale::class])
+    ->name('print.pedagogical-memo.booklet');
 
 Route::get('/{locale}/print/pedagogical-memos/{memo}/pdf', DownloadPedagogicalMemoPdfController::class)
     ->whereIn('locale', array_keys(config('laravellocalization.supportedLocales', [])))

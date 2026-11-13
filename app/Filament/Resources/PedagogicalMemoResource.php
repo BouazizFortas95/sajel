@@ -30,6 +30,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
@@ -107,6 +108,26 @@ class PedagogicalMemoResource extends Resource
             'locale' => app()->getLocale(),
             'memo' => $memo,
         ]);
+    }
+
+    /**
+     * Build a locale-aware URL for the pedagogical preparation booklet.
+     */
+    public static function getBookletPrintUrl(array $params = []): string
+    {
+        return route('print.pedagogical-memo.booklet', array_merge([
+            'locale' => app()->getLocale(),
+        ], $params));
+    }
+
+    /**
+     * Build a locale-aware URL for the pedagogical preparation booklet PDF.
+     */
+    public static function getBookletPdfUrl(array $params = []): string
+    {
+        return route('print.pedagogical-memo.booklet.pdf', array_merge([
+            'locale' => app()->getLocale(),
+        ], $params));
     }
 
     public static function form(Form $form): Form
@@ -388,10 +409,12 @@ class PedagogicalMemoResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    static::printBookletBulkAction(),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
             ->headerActions([
+                static::printBookletHeaderAction(),
                 static::generateWithAiTableAction(),
             ])
             ->defaultSort('updated_at', 'desc')
@@ -434,6 +457,59 @@ class PedagogicalMemoResource extends Resource
                             ->url(static::getUrl('edit', ['record' => $copy])),
                     ])
                     ->send();
+            });
+    }
+
+    /**
+     * Header action to open or print the pedagogical preparation booklet.
+     */
+    public static function printBookletHeaderAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('print_booklet')
+            ->label(__('دفتر التحضير البيداغوجي (Booklet)'))
+            ->icon('heroicon-o-book-open')
+            ->color('success')
+            ->form([
+                Select::make('subject_id')
+                    ->label(__('المادة'))
+                    ->options(fn () => static::getTeacherSubjectOptions(auth()->user()))
+                    ->default(fn () => auth()->user()?->primarySubject?->id ?? array_key_first(static::getTeacherSubjectOptions(auth()->user())))
+                    ->required(),
+                Select::make('level_id')
+                    ->label(__('المستوى التعليمي'))
+                    ->options(fn () => static::getLevelOptions(null, auth()->user()))
+                    ->placeholder(__('جميع المستويات (كراس تحضير شامل)')),
+            ])
+            ->modalHeading(__('دفتر التحضير البيداغوجي المجمع'))
+            ->modalDescription(__('طباعة كراس مذكرات الدروس كاملاً متضمناً صفحة الغلاف الرسمية وفهرس متابعة إرساء الموارد والمذكرات البيداغوجية المتتالية.'))
+            ->modalSubmitActionLabel(__('عرض وطباعة الكراس'))
+            ->action(function (array $data, Tables\Actions\Action $action): void {
+                $url = static::getBookletPrintUrl(array_filter([
+                    'subject' => $data['subject_id'] ?? null,
+                    'level' => $data['level_id'] ?? null,
+                ]));
+
+                $action->getLivewire()->js("window.open('{$url}', '_blank')");
+            });
+    }
+
+    /**
+     * Bulk action to print a customized booklet for selected memos.
+     */
+    public static function printBookletBulkAction(): Tables\Actions\BulkAction
+    {
+        return Tables\Actions\BulkAction::make('print_booklet_bulk')
+            ->label(__('تجميع وطباعة كراس مذكرات (Booklet)'))
+            ->icon('heroicon-o-book-open')
+            ->color('success')
+            ->deselectRecordsAfterCompletion()
+            ->action(function (Collection $records, Tables\Actions\BulkAction $action): void {
+                $memoIds = $records->pluck('id')->join(',');
+                $url = static::getBookletPrintUrl([
+                    'memos' => $memoIds,
+                ]);
+
+                $action->getLivewire()->js("window.open('{$url}', '_blank')");
             });
     }
 

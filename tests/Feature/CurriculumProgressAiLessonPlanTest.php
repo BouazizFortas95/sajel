@@ -791,4 +791,98 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
         $this->assertStringContainsString('تأشيرة السيد مدير المؤسسة', $html);
         $this->assertStringContainsString('تأشيرة السيد مفتش التربية الوطنية', $html);
     }
+
+    public function test_pedagogical_memo_booklet_route_renders_cover_index_and_memos(): void
+    {
+        $teacher = User::factory()->create([
+            'role' => Role::Teacher->value,
+            'name' => 'الأستاذ الممتاز',
+        ]);
+        $subject = Subject::factory()->create(['name' => 'الإعلام الآلي']);
+        $level = Level::factory()->create(['name' => 'السنة الأولى متوسط']);
+
+        $memo1 = PedagogicalMemo::create([
+            'user_id' => $teacher->id,
+            'subject_id' => $subject->id,
+            'level_id' => $level->id,
+            'title' => 'تعريف المعلوماتية والحاسوب',
+            'phase' => 'بيئة التعامل مع الحاسوب',
+            'competence' => 'أن يتعرف المتعلم على بيئة التعامل مع الحاسوب ومكوناته الأساسية.',
+            'starting_situation' => 'وضعية انطلاق تمهيدية لاكتشاف الحاسوب.',
+            'activities' => [
+                [
+                    'phase_name' => 'وضعية الانطلاق',
+                    'duration' => 10,
+                    'written_trace' => 'مكتسبات قبلية وتمهيد',
+                ],
+            ],
+        ]);
+
+        $memo2 = PedagogicalMemo::create([
+            'user_id' => $teacher->id,
+            'subject_id' => $subject->id,
+            'level_id' => $level->id,
+            'title' => 'نظام التشغيل ومفهوم الملف والمجلد',
+            'phase' => 'بيئة التعامل مع الحاسوب',
+            'competence' => 'أن يتحكم التلميذ في تنظيم الملفات والمجلدات داخل نظام التشغيل.',
+            'starting_situation' => 'كيف ننظم الملفات المدرسية داخل الحاسوب؟',
+            'activities' => [
+                [
+                    'phase_name' => 'بناء التعلمات',
+                    'duration' => 35,
+                    'written_trace' => 'مفهوم الملف والمجلد وطرق ترتيبها',
+                ],
+            ],
+        ]);
+
+        $this->actingAs($teacher);
+
+        $response = $this->get(route('print.pedagogical-memo.booklet', [
+            'locale' => 'ar',
+            'subject' => $subject->id,
+            'level' => $level->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('الجمهورية الجزائرية الديمقراطية الشعبية');
+        $response->assertSee('وزارة التربية الوطنية');
+        $response->assertSee('مديرية التربية : ولاية');
+        $response->assertSee('دَفْتَرُ التَّحْضِيرِ البِيدَاغُوجِيِّ');
+        $response->assertSee('فِهْرِسُ المُذَكَّرَاتِ البِيدَاغُوجِيَّةِ');
+        $response->assertSee('تعريف المعلوماتية والحاسوب');
+        $response->assertSee('نظام التشغيل ومفهوم الملف والمجلد');
+        $response->assertSee('تأشيرة وملاحظات السيد مفتش التربية الوطنية');
+    }
+
+    public function test_pedagogical_memo_booklet_pdf_stream_response(): void
+    {
+        $teacher = User::factory()->create([
+            'role' => Role::Teacher->value,
+            'name' => 'أستاذ التجربة',
+        ]);
+        $subject = Subject::factory()->create(['name' => 'الإعلام الآلي']);
+        $level = Level::factory()->create(['name' => 'السنة الثانية متوسط']);
+
+        PedagogicalMemo::create([
+            'user_id' => $teacher->id,
+            'subject_id' => $subject->id,
+            'level_id' => $level->id,
+            'title' => 'جداول البيانات إكسل',
+            'phase' => 'المجدول',
+            'competence' => 'التحكم في المجدول.',
+            'starting_situation' => 'حساب المعدلات.',
+            'activities' => [],
+        ]);
+
+        $this->actingAs($teacher);
+
+        $response = $this->get(route('print.pedagogical-memo.booklet.pdf', [
+            'locale' => 'ar',
+            'subject' => $subject->id,
+            'level' => $level->id,
+        ]));
+
+        $response->assertOk();
+        $this->assertEquals('application/pdf', $response->headers->get('content-type'));
+    }
 }

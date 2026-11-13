@@ -225,6 +225,15 @@
                         {{ __('طباعة المخططات الشهرية') }}
                     </a>
 
+                    <a
+                        href="{{ route('print.pedagogical-memo.booklet', ['locale' => app()->getLocale(), 'subject' => $this->subjectId, 'classroom' => $this->classroomId]) }}"
+                        target="_blank"
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                    >
+                        <x-filament::icon icon="heroicon-o-book-open" class="h-4 w-4" />
+                        {{ __('دفتر التحضير البيداغوجي') }}
+                    </a>
+
                     <div class="flex items-center gap-1.5 rounded-lg bg-gray-100 p-1 dark:bg-white/5">
                         <button
                             type="button"
