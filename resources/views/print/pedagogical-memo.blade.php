@@ -8,724 +8,850 @@
     $academicYear = $academicYear ?? $schoolSetting->academic_year ?? '2026 / 2027';
     $activities = is_array($memo->activities) ? array_values($memo->activities) : [];
 
-    // Helper to extract or structure methodological fields
-    $parseActivity = function (array $act, int $index) use ($memo): array {
-        $name = trim((string) ($act['name'] ?? ''));
-        $duration = (int) ($act['duration'] ?? 15);
-        $strategy = trim((string) ($act['strategy'] ?? ''));
-        $content = trim((string) ($act['content'] ?? ''));
+    // Helper to derive structured pedagogical memo parts according to Sajel's new methodology
+    $topicName = $memo->topic ?: ($memo->title ?: 'موضوع الدرس');
 
-        $teacherRole = trim((string) ($act['teacher_role'] ?? ''));
-        $studentRole = trim((string) ($act['student_role'] ?? ''));
-        $writtenTrace = trim((string) ($act['written_trace'] ?? ''));
-        $evalIndicator = trim((string) ($act['evaluation_indicator'] ?? ''));
+    // References
+    $referencesText = filled($memo->notes)
+        ? $memo->notes
+        : "• المنهاج والمخططات السنوية\n• الوثيقة المرافقة للأستاذ\n• معارف بيداغوجية ومراجع رقمية";
 
-        // If structured roles are not present, parse or derive them intelligently from content
-        if ($teacherRole === '' || $studentRole === '') {
-            if (str_contains($content, 'يطرح الأستاذ') || str_contains($content, 'يطلب الأستاذ') || str_contains($content, 'يوجه الأستاذ') || str_contains($content, 'يقسم الأستاذ')) {
-                $sentences = preg_split('/(?<=[.؛\n])\s+/u', $content);
-                $tSentences = [];
-                $sSentences = [];
-                foreach ($sentences as $s) {
-                    if (str_contains($s, 'أستاذ') || str_contains($s, 'توجيه') || str_contains($s, 'تعليمات') || str_contains($s, 'يقسم') || str_contains($s, 'يطرح')) {
-                        $tSentences[] = $s;
-                    } else {
-                        $sSentences[] = $s;
-                    }
-                }
-                if (! empty($tSentences)) {
-                    $teacherRole = implode(' ', $tSentences);
-                }
-                if (! empty($sSentences)) {
-                    $studentRole = implode(' ', $sSentences);
-                }
-            } elseif ($content !== '') {
-                $studentRole = $content;
+    // Used tools/resources
+    $resourcesText = filled($memo->resources)
+        ? $memo->resources
+        : 'السبورة، أجهزة الحواسيب، عارض البيانات (Data Show)، مطبوعات وبطاقات تقويمية.';
+
+    // Extract target knowledge items (المعارف المستهدفة)
+    $targetKnowledge = [];
+    if (str_contains($topicName, 'تعريف') || str_contains($topicName, 'الحاسوب') || str_contains($topicName, 'المعلوماتية')) {
+        $targetKnowledge = [
+            'تعريف المعلوماتية وأصل الكلمة',
+            'الفرق بين العتاد (المادي) والبرمجيات (اللامادية)',
+            'تعريف الحاسوب ووظائفه الأساسية',
+            'مخطط عمل الحاسوب (إدخال ⬅ معالجة وتخزين ⬅ إخراج)',
+        ];
+    } elseif (! empty($activities)) {
+        foreach ($activities as $act) {
+            if (! empty($act['written_trace'])) {
+                $targetKnowledge[] = Str::limit(strip_tags($act['written_trace']), 55);
             }
         }
+    }
 
-        // Fallbacks if still empty
-        if ($teacherRole === '') {
-            $teacherRole = match ($index) {
-                0 => 'يطرح الوضعية الانطلاقية المشكلة، يوجه أسئلة دافعة، ويسير الحوار لضبط تمثلات التلاميذ.',
-                1 => 'يقدم السند والتعليمات بدقة، ييسر العمل ويوجه التلاميذ نحو استثمار المعطيات واستنتاج المفاهيم.',
-                2 => 'يشرف على بناء الخلاصة وإرساء المورد، يصحح الأخطاء المفاهيمية ويوثق النتائج على السبورة.',
-                default => 'يطرح تمرين التقويم أو وضعية الإدماج الجزئي، يرصد التعثرات الفردية ويقدم التغذية الراجعة.',
-            };
-        }
-
-        if ($studentRole === '') {
-            $studentRole = match ($index) {
-                0 => 'يلاحظ السند، يناقش الإشكالية، يعبر عن تصوراته ويقترح فرضيات أولية للحل.',
-                1 => 'يحلل السند، يتناظر في إطار العمل الفوجي أو الثنائي، ويستخلص العلاقات والنتائج.',
-                2 => 'يشارك في صياغة القاعدة وتركيب المفاهيم، ويقارن النتائج بالفرضيات السابقة.',
-                default => 'يحل التطبيق فردياً، يتحقق من مكتسباته، ويدون الحل النموذجي في كراسه.',
-            };
-        }
-
-        if ($writtenTrace === '') {
-            $writtenTrace = match ($index) {
-                0 => 'تدوين الإشكالية والفرضيات الأولية على السبورة.',
-                1 => 'استخلاص العناصر الأساسية للنشاط وتسجيل النتائج الجزئية.',
-                2 => 'إرساء المورد: تدوين القاعدة / النتيجة المهيكلة في كراس الدروس.',
-                default => 'حل الوضعية التطبيقية / تسليم بطاقة التحقق والتقويم.',
-            };
-        }
-
-        if ($evalIndicator === '') {
-            $evalIndicator = match ($index) {
-                0 => 'يسترجع المكتسبات القبلية ويطرح فرضيات وجيهة.',
-                1 => 'يحلل السند ويوظف أدوات المادة بأسلوب سليم.',
-                2 => 'يستنتج القاعدة ويميز بين المفاهيم بدقة.',
-                default => 'يحل التمرين بنجاح ويحقق معايير الإتقان.',
-            };
-        }
-
-        if ($strategy === '') {
-            $strategy = match ($index) {
-                0 => 'العصف الذهني (حوار موجه)',
-                1 => 'التفكير — المشاركة — العرض (أفواج)',
-                2 => 'الخرائط المفاهيمية (عمل جماعي)',
-                default => 'بطاقة الخروج (عمل فردي)',
-            };
-        }
-
-        return [
-            'name' => $name ?: 'المحطة '.($index + 1),
-            'duration' => $duration > 0 ? $duration : 15,
-            'strategy' => $strategy,
-            'teacher_role' => $teacherRole,
-            'student_role' => $studentRole,
-            'written_trace' => $writtenTrace,
-            'evaluation_indicator' => $evalIndicator,
-            'content' => $content,
+    if (empty($targetKnowledge)) {
+        $targetKnowledge = [
+            "المفاهيم الأساسية حول «{$topicName}»",
+            'الخصائص والقواعد المنظمة للمورد المعرفي',
+            'مخطط عمل وتطبيق المكتسبات في وضعيات دالة',
         ];
-    };
+    }
 
-    $formatDate = fn ($value): string => $value?->format('d/m/Y') ?? date('d/m/Y');
+    // Standardize 3 official stages (وضعية الانطلاق، العرض / إرساء الموارد، التقويم والمعالجة)
+    // If activities has 3-4 items, map them gracefully
+    $mappedStages = [];
+
+    // 1. Starting Stage (وضعية الانطلاق)
+    $act0 = $activities[0] ?? null;
+    $startingDuration = (int) ($act0['duration'] ?? 10);
+    $startingIndicator = trim((string) ($act0['evaluation_indicator'] ?? $act0['indicator'] ?? 'يستمع، ينتبه، ويسترجع المكتسبات القبلية ذات الصلة.'));
+    $startingProblem = filled($memo->starting_situation)
+        ? $memo->starting_situation
+        : (string) ($act0['content'] ?? "شهد العالم تطوراً غير مسبوق في عالم التكنولوجيا والمعلوماتية، فأصبحت الحواسيب والتطبيقات ضرورة في شتى مجالات الحياة كالمؤسسات والتعليم والبنوك والصحة.\nفما المقصود بالمعلوماتية؟ وكيف يؤدي الحاسوب وظائفه المتنوعة؟");
+
+    $mappedStages[] = [
+        'type' => 'start',
+        'name' => 'وضعية الانطلاق',
+        'badge' => 'التهيئة والإشكالية',
+        'duration' => $startingDuration > 0 ? $startingDuration : 10,
+        'indicator' => $startingIndicator,
+        'problem' => $startingProblem,
+        'activity' => $act0['teacher_role'] ?? null,
+        'trace' => $act0['written_trace'] ?? 'تدوين الإشكالية والفرضيات الأولية المقترحة على السبورة.',
+    ];
+
+    // 2. Acquisition & Presentation Stage (العرض / إرساء الموارد)
+    // Could combine intermediate activities (1, 2)
+    $acquisitionDuration = 0;
+    $acquisitionIndicator = '';
+    $acquisitionActivities = [];
+    $acquisitionTraces = [];
+
+    for ($i = 1; $i < max(1, count($activities) - 1); $i++) {
+        $actItem = $activities[$i];
+        $acquisitionDuration += (int) ($actItem['duration'] ?? 15);
+        if (empty($acquisitionIndicator) && ! empty($actItem['evaluation_indicator'])) {
+            $acquisitionIndicator = $actItem['evaluation_indicator'];
+        }
+        if (! empty($actItem['content'])) {
+            $acquisitionActivities[] = $actItem['content'];
+        }
+        if (! empty($actItem['teacher_role'])) {
+            $acquisitionActivities[] = $actItem['teacher_role'];
+        }
+        if (! empty($actItem['written_trace'])) {
+            $acquisitionTraces[] = $actItem['written_trace'];
+        }
+    }
+
+    if ($acquisitionDuration === 0) {
+        $acquisitionDuration = 35;
+    }
+    if (empty($acquisitionIndicator)) {
+        $acquisitionIndicator = 'يناقش، يتبادل الأفكار ويستنتج. يستوعب المفاهيم ويثبت الأثر الكتابي المنظم.';
+    }
+
+    // Default instructional activity text
+    $acquisitionActivityText = ! empty($acquisitionActivities)
+        ? implode("\n\n", array_unique($acquisitionActivities))
+        : "استناداً إلى السندات والوضعيات التعليمية والمناقشة الموجهة في القسم:\n• ما المقصود بهذا المفهوم؟ وما هي عناصره الأساسية؟\n• اقترح نموذجاً ومخططاً يوضح العلاقات بين المكونات.\n(يمكن للأستاذ توظيف نشاط تفاعلي أو عمل فوجي مكافئ وفق خصوصية الفوج).";
+
+    $mappedStages[] = [
+        'type' => 'main',
+        'name' => 'العرض (إرساء الموارد)',
+        'badge' => 'بناء التعلمات',
+        'duration' => $acquisitionDuration,
+        'indicator' => $acquisitionIndicator,
+        'activity' => $acquisitionActivityText,
+        'traces' => $acquisitionTraces,
+    ];
+
+    // 3. Evaluation & Remediation Stage (التقويم والمعالجة)
+    $lastAct = count($activities) > 1 ? end($activities) : null;
+    $evalDuration = (int) ($lastAct['duration'] ?? 15);
+    $evalIndicator = trim((string) ($lastAct['evaluation_indicator'] ?? $lastAct['indicator'] ?? 'يستثمر مكتسباته، يحل الوضعية التطبيقية بدقة، ويتحقق من التحكم في المورد.'));
+    $evalContent = filled($memo->evaluation)
+        ? $memo->evaluation
+        : (string) ($lastAct['content'] ?? 'تطبيق فوري لتقويم التحكم في المورد المعرفي، رصد التعثرات الفردية وتقديم المعالجة البيداغوجية الفورية مع تثبيت الحل النموذجي.');
+
+    $mappedStages[] = [
+        'type' => 'eval',
+        'name' => 'التقويم والمعالجة',
+        'badge' => 'استثمار المكتسبات',
+        'duration' => $evalDuration > 0 ? $evalDuration : 15,
+        'indicator' => $evalIndicator,
+        'eval' => $evalContent,
+        'trace' => $lastAct['written_trace'] ?? 'تسجيل الحل النموذجي للتمرين التقويمي في كراس الدروس.',
+    ];
+
+    $formatDate = fn ($value): string => $value?->format('d/m/Y') ?? now()->format('d/m/Y');
 @endphp
-
 <!DOCTYPE html>
-<html dir="{{ $isRtl ? 'rtl' : 'ltr' }}" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ __('مذكرة بيداغوجية رسمية') }} — {{ $memo->title }} — سجِّل</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-
+    <title>{{ __('مذكرة بيداغوجية') }} — {{ $topicName }}</title>
+    @if ($inlineCss ?? false)
+        {{-- Inlined styles handled by print service --}}
+    @endif
     <style>
+        @page {
+            size: A4 portrait;
+            margin: 5mm 6mm;
+        }
+
         *, *::before, *::after {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
-        @page {
-            size: A4 portrait;
-            margin: 5mm 6mm 5mm 6mm;
-        }
-
         html, body {
-            margin: 0;
-            padding: 0;
-            background: #f8fafc;
+            background-color: #f1f5f9;
             color: #0f172a;
-            font-family: 'Cairo', ui-sans-serif, system-ui, -apple-system, sans-serif;
-            font-size: 7.8pt;
-            line-height: 1.25;
-            direction: rtl;
-            -webkit-font-smoothing: antialiased;
+            font-family: 'Cairo', 'Amiri', 'Traditional Arabic', 'Segoe UI', Tahoma, sans-serif;
+            font-size: 8.5pt;
+            line-height: 1.35;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
 
-        .no-print {
+        .screen-toolbar {
             position: sticky;
             top: 0;
             z-index: 50;
-            background: #ffffff;
-            border-bottom: 1px solid #cbd5e1;
-            padding: 8px 16px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .no-print-inner {
-            max-width: 210mm;
-            margin: 0 auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            padding: 8px 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
-        .btn-print {
+        .toolbar-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 11pt;
+            font-weight: 700;
+        }
+
+        .toolbar-btn {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: #1e3a8a;
-            color: #ffffff;
+            background: #d97706;
+            color: #fff;
+            font-size: 9.5pt;
             font-weight: 700;
-            font-size: 8.5pt;
-            padding: 6px 14px;
+            padding: 6px 16px;
             border-radius: 6px;
-            text-decoration: none;
             border: none;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.15s ease;
         }
 
-        .btn-print:hover {
-            background: #1e40af;
+        .toolbar-btn:hover {
+            background: #b45309;
         }
 
         .sheet {
-            width: 100%;
-            max-width: 200mm;
+            width: 210mm;
+            max-width: 100%;
             margin: 10px auto;
             background: #ffffff;
-            padding: 5mm 6mm;
             border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            padding: 6mm 7mm;
         }
 
-        @media print {
-            body {
-                background: #ffffff !important;
-            }
-            .no-print {
-                display: none !important;
-            }
-            .sheet {
-                border: none !important;
-                border-radius: 0 !important;
-                box-shadow: none !important;
-                margin: 0 auto !important;
-                padding: 0 !important;
-                max-width: 100% !important;
-            }
-            .page-break {
-                page-break-after: always;
-                break-after: page;
-            }
+        /* 1. Header (الترويسة) */
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1.5px solid #1e3a8a;
+            margin-bottom: 5px;
+            background: #ffffff;
         }
 
-        /* 1. National Official Header */
-        .national-header {
-            display: grid;
-            grid-template-columns: 1.2fr 1.6fr 1.2fr;
-            border-bottom: 2px solid #1e3a8a;
-            padding-bottom: 4px;
-            margin-bottom: 6px;
-            align-items: center;
-        }
-
-        .header-col {
-            line-height: 1.3;
+        .header-cell {
+            padding: 5px 8px;
+            vertical-align: middle;
+            font-size: 7.8pt;
         }
 
         .header-right {
+            width: 38%;
             text-align: right;
-            font-size: 7.2pt;
-            color: #1e293b;
-            font-weight: 700;
+            border-left: 1px solid #cbd5e1;
+            line-height: 1.45;
         }
 
         .header-center {
+            width: 24%;
             text-align: center;
-        }
-
-        .title-badge {
-            display: inline-block;
-            border: 1.5px solid #1e3a8a;
-            background: #f0f7ff;
-            border-radius: 6px;
-            padding: 2px 14px;
-        }
-
-        .main-title {
-            font-size: 11pt;
-            font-weight: 900;
-            color: #1e3a8a;
-            margin: 0;
-            line-height: 1.2;
-        }
-
-        .sub-title {
-            font-size: 7.4pt;
-            font-weight: 800;
-            color: #b45309;
-            margin-top: 1px;
-        }
-
-        .memo-meta-line {
-            font-size: 7.4pt;
-            font-weight: 800;
-            color: #334155;
-            margin-top: 2px;
+            border-left: 1px solid #cbd5e1;
+            background: linear-gradient(180deg, #f8fafc 0%, #f0f7ff 100%);
         }
 
         .header-left {
-            text-align: left;
-            font-size: 7.2pt;
-            color: #1e293b;
-            font-weight: 700;
+            width: 38%;
+            text-align: right;
+            line-height: 1.45;
         }
 
-        /* 2. Pedagogical Identification Cartouche */
-        .cartouche-table {
+        .memo-badge-box {
+            display: inline-block;
+            border: 1.8px solid #1e3a8a;
+            background: #ffffff;
+            border-radius: 6px;
+            padding: 4px 12px;
+            box-shadow: 0 1px 3px rgba(30, 58, 138, 0.1);
+        }
+
+        .memo-badge-title {
+            font-size: 8.5pt;
+            font-weight: 900;
+            color: #1e3a8a;
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        .memo-sajel-tag {
+            font-size: 6.8pt;
+            font-weight: 700;
+            color: #b45309;
+            margin-top: 1px;
+            display: block;
+        }
+
+        .meta-field {
+            margin-bottom: 2px;
+            color: #334155;
+        }
+
+        .meta-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .meta-label {
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .meta-val {
+            font-weight: 700;
+            color: #1e3a8a;
+        }
+
+        /* 2. Prominent Competence Banner */
+        .competence-banner {
+            border: 1.5px solid #1e3a8a;
+            background: linear-gradient(90deg, #eff6ff 0%, #f8fafc 100%);
+            border-radius: 4px;
+            padding: 5px 12px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .competence-title {
+            font-size: 9.5pt;
+            font-weight: 900;
+            color: #b45309;
+            white-space: nowrap;
+        }
+
+        .competence-body {
+            font-size: 9pt;
+            font-weight: 800;
+            color: #1e3a8a;
+        }
+
+        /* 3. Three-column Summary Card (المراجع | الوسائل | المعارف المستهدفة) */
+        .summary-table {
             width: 100%;
             border-collapse: collapse;
             border: 1.2px solid #1e3a8a;
             margin-bottom: 6px;
-            font-size: 7.6pt;
+            background: #ffffff;
+            font-size: 7.8pt;
         }
 
-        .cartouche-table th, .cartouche-table td {
-            border: 1px solid #64748b;
-            padding: 2.5px 4px;
-            vertical-align: middle;
-        }
-
-        .cartouche-table .label-cell {
-            background-color: #f1f5f9;
+        .summary-table th {
+            background: #f1f5f9;
             color: #1e3a8a;
-            font-weight: 800;
-            width: 14%;
+            font-weight: 900;
             text-align: center;
-            white-space: nowrap;
-        }
-
-        .cartouche-table .value-cell {
-            color: #0f172a;
-            font-weight: 700;
-            width: 36%;
-        }
-
-        .topic-banner-row td {
-            background-color: #eff6ff !important;
-            padding: 4px 6px !important;
-            border: 1.2px solid #1e3a8a !important;
-        }
-
-        .topic-title {
-            font-size: 8.8pt;
-            font-weight: 900;
-            color: #1e3a8a;
-        }
-
-        /* 3. Starting Situation Box */
-        .situation-box {
-            border: 1.2px solid #0284c7;
-            background: #f0f9ff;
-            border-radius: 4px;
-            padding: 4px 7px;
-            margin-bottom: 6px;
-            line-height: 1.35;
-        }
-
-        .box-heading {
+            padding: 3.5px 6px;
+            border: 1px solid #94a3b8;
             font-size: 8pt;
-            font-weight: 900;
-            color: #0369a1;
+        }
+
+        .summary-table td {
+            border: 1px solid #cbd5e1;
+            padding: 4px 8px;
+            vertical-align: top;
+            line-height: 1.4;
+        }
+
+        .summary-col-ref {
+            width: 30%;
+            background: #fafafa;
+        }
+
+        .summary-col-tools {
+            width: 30%;
+            background: #ffffff;
+        }
+
+        .summary-col-knowledge {
+            width: 40%;
+            background: #fdfdfd;
+        }
+
+        .knowledge-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .knowledge-item {
+            position: relative;
+            padding-right: 12px;
             margin-bottom: 2px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .box-body {
-            font-size: 7.6pt;
             color: #0f172a;
-            text-align: justify;
+            font-weight: 600;
         }
 
-        /* 4. Core Methodological Learning Progression Table */
-        .section-header-badge {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #1e3a8a;
-            color: #ffffff;
-            padding: 3px 8px;
+        .knowledge-item::before {
+            content: "•";
+            position: absolute;
+            right: 0;
+            color: #d97706;
             font-weight: 900;
-            font-size: 8.2pt;
-            border-radius: 3px 3px 0 0;
-            margin-top: 4px;
         }
 
-        .methodological-table {
+        /* 4. Main Progression Table (الجدول المنهجي لسير الحصة) */
+        .main-progression-table {
             width: 100%;
             border-collapse: collapse;
-            border: 1.2px solid #0f172a;
-            font-size: 7.5pt;
+            border: 1.5px solid #1e3a8a;
             margin-bottom: 6px;
+            font-size: 7.6pt;
+            background: #ffffff;
         }
 
-        .methodological-table th, .methodological-table td {
-            border: 1px solid #475569;
-            padding: 3px 4px;
-            vertical-align: top;
-        }
-
-        .methodological-table thead th {
-            background-color: #1e3a8a;
+        .main-progression-table th {
+            background: #1e3a8a;
             color: #ffffff;
-            font-weight: 800;
+            font-weight: 900;
             text-align: center;
-            font-size: 7.8pt;
-            padding: 3px 2px;
+            padding: 4.5px 6px;
+            border: 1px solid #1e40af;
+            font-size: 8pt;
+            letter-spacing: 0.2px;
+        }
+
+        .main-progression-table td {
+            border: 1px solid #94a3b8;
+            padding: 5px 6px;
+            vertical-align: top;
+            line-height: 1.4;
         }
 
         .col-stage {
-            width: 95px;
+            width: 13%;
             text-align: center;
-            background-color: #f8fafc;
-            font-weight: 800;
+            background: #f8fafc;
         }
 
         .stage-title {
-            color: #1e3a8a;
-            font-size: 8pt;
             font-weight: 900;
-            line-height: 1.2;
+            color: #1e3a8a;
+            font-size: 8.2pt;
+            line-height: 1.25;
+            margin-bottom: 3px;
         }
 
-        .stage-duration {
+        .stage-badge-pill {
             display: inline-block;
-            margin-top: 3px;
-            background: #e2e8f0;
-            color: #334155;
-            padding: 1px 6px;
-            border-radius: 10px;
+            background: #eff6ff;
+            color: #0284c7;
+            border: 1px solid #bae6fd;
+            border-radius: 4px;
+            padding: 1px 5px;
             font-size: 6.8pt;
             font-weight: 800;
         }
 
-        .col-roles {
-            text-align: right;
-            line-height: 1.35;
+        .col-time {
+            width: 7%;
+            text-align: center;
+            vertical-align: middle !important;
+            font-weight: 900;
+            color: #b45309;
+            background: #fffbeb;
+            font-size: 8.5pt;
         }
 
-        .role-section {
-            margin-bottom: 4px;
+        .col-indicator {
+            width: 22%;
+            background: #ffffff;
+            color: #1e293b;
+            font-weight: 600;
+            padding: 5px 8px;
         }
 
-        .role-section:last-child {
+        .indicator-header-tag {
+            font-weight: 800;
+            color: #0369a1;
+            margin-bottom: 3px;
+            display: block;
+            font-size: 7.2pt;
+        }
+
+        .col-activities {
+            width: 58%;
+            background: #ffffff;
+            color: #0f172a;
+            padding: 5px 8px;
+        }
+
+        /* Modern didactic badges within content */
+        .didactic-block {
+            margin-bottom: 6px;
+        }
+
+        .didactic-block:last-child {
             margin-bottom: 0;
         }
 
-        .role-badge {
+        .didactic-badge {
             display: inline-block;
-            padding: 1px 5px;
+            font-weight: 900;
             border-radius: 3px;
-            font-weight: 800;
-            font-size: 7pt;
-            margin-left: 3px;
+            padding: 1px 6px;
+            font-size: 7.5pt;
+            margin-left: 4px;
+            margin-bottom: 2px;
         }
 
-        .role-teacher {
-            background-color: #eff6ff;
+        .badge-problematic {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+        .badge-activity {
+            background: #eff6ff;
             color: #1d4ed8;
             border: 1px solid #bfdbfe;
         }
 
-        .role-student {
-            background-color: #ecfdf5;
+        .badge-knowledge {
+            background: #ecfdf5;
             color: #047857;
             border: 1px solid #a7f3d0;
         }
 
-        .col-strategy {
-            width: 110px;
-            text-align: center;
-            font-size: 7.3pt;
-            font-weight: 700;
-            background-color: #fcfdfe;
-            line-height: 1.3;
+        .badge-eval {
+            background: #faf5ff;
+            color: #7e22ce;
+            border: 1px solid #e9d5ff;
         }
 
-        .col-trace {
-            width: 140px;
-            text-align: right;
-            font-size: 7.3pt;
-            background-color: #fefce8;
-            color: #713f12;
-            line-height: 1.35;
-            font-weight: 600;
+        .didactic-note {
+            font-size: 7pt;
+            color: #64748b;
+            font-style: italic;
+            margin: 2px 0 4px;
         }
 
-        .col-eval {
-            width: 115px;
-            text-align: right;
-            font-size: 7.2pt;
-            background-color: #fbfcfe;
-            color: #334155;
-            line-height: 1.3;
-        }
-
-        /* 5. Evaluation and Pedagogical Notes Grid */
-        .bottom-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            margin-bottom: 8px;
-        }
-
-        .info-card {
-            border: 1px solid #94a3b8;
-            border-radius: 4px;
-            background: #ffffff;
-            padding: 4px 6px;
-            line-height: 1.3;
-        }
-
-        .info-card-header {
-            font-weight: 800;
-            font-size: 7.8pt;
-            color: #1e3a8a;
-            border-bottom: 1px dashed #cbd5e1;
-            padding-bottom: 2px;
-            margin-bottom: 3px;
+        /* Flow process boxes (e.g. مخطط عمل الحاسوب) */
+        .process-flow {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
+            gap: 6px;
+            margin: 4px 0;
+            padding: 4px;
+            background: #f8fafc;
+            border-radius: 4px;
+            border: 1px dashed #cbd5e1;
         }
 
-        .info-card-content {
-            font-size: 7.4pt;
-            color: #1e293b;
-            text-align: justify;
-        }
-
-        /* 6. Clean Official Visas Grid */
-        .signatures-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 12px;
-            margin-top: 6px;
-            padding-top: 4px;
-            border-top: 1px solid #cbd5e1;
+        .process-node {
+            background: #ffffff;
+            border: 1.2px solid #0284c7;
+            color: #0369a1;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-weight: 800;
+            font-size: 7.2pt;
             text-align: center;
         }
 
-        .signature-col {
-            padding: 3px;
+        .process-arrow {
+            color: #e11d48;
+            font-weight: 900;
+            font-size: 9pt;
         }
 
-        .signature-role {
-            font-size: 8pt;
+        .item-num {
+            font-weight: 800;
+            color: #b45309;
+            margin-left: 2px;
+        }
+
+        /* 5. Institutional Visas / Signatures */
+        .visas-grid {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #cbd5e1;
+            margin-top: 4px;
+            background: #ffffff;
+        }
+
+        .visa-cell {
+            width: 33.333%;
+            border: 1px solid #cbd5e1;
+            padding: 4px 6px;
+            text-align: center;
+        }
+
+        .visa-role {
+            font-size: 7.8pt;
             font-weight: 900;
             color: #1e3a8a;
-            margin-bottom: 26px;
+            margin-bottom: 24px;
         }
 
-        .signature-dots {
-            border-bottom: 1.2px dotted #94a3b8;
-            width: 70%;
-            margin: 0 auto;
+        .visa-dots {
+            border-bottom: 1px dashed #94a3b8;
+            width: 75%;
+            margin: 0 auto 3px;
         }
 
-        .footer-system-tag {
+        .footer-system-text {
             text-align: center;
-            font-size: 6.8pt;
-            color: #94a3b8;
-            margin-top: 6px;
+            font-size: 6.5pt;
+            color: #64748b;
+            margin-top: 3px;
+        }
+
+        @media print {
+            .screen-toolbar {
+                display: none !important;
+            }
+
+            body {
+                background: #ffffff !important;
+            }
+
+            .sheet {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+            }
         }
     </style>
 </head>
 <body>
-
-    <div class="no-print">
-        <div class="no-print-inner">
-            <div>
-                <strong style="color: #1e3a8a; font-size: 10pt;">المذكرة البيداغوجية الرسمية (الجيل الثاني)</strong>
-                <span style="color: #64748b; font-size: 8pt; margin-right: 8px;">{{ $memo->title }}</span>
-            </div>
-            <button type="button" onclick="window.print()" class="btn-print">
-                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.83h10.56M6.72 17.25h10.56M6.75 6.75h10.5v3.75H6.75V6.75Zm-1.5 3.75h13.5a1.5 1.5 0 0 1 1.5 1.5v5.25a1.5 1.5 0 0 1-1.5 1.5h-1.5v-3H6.75v3h-1.5a1.5 1.5 0 0 1-1.5-1.5V12a1.5 1.5 0 0 1 1.5-1.5Z"/></svg>
-                <span>طباعة المذكرة</span>
+    <div class="screen-toolbar">
+        <div class="toolbar-info">
+            <span>{{ __('مذكرة بيداغوجية:') }} {{ $topicName }}</span>
+            <span style="font-size: 9pt; color: #fbbf24;">({{ $subject?->name }} — {{ $level?->name }})</span>
+        </div>
+        <div>
+            <button onclick="window.print()" class="toolbar-btn">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                <span>{{ __('طباعة المذكرة') }}</span>
             </button>
         </div>
     </div>
 
     <main class="sheet">
-        {{-- 1. National Official Header --}}
-        <header class="national-header">
-            <div class="header-col header-right">
-                <p>الجمهورية الجزائرية الديمقراطية الشعبية</p>
-                <p>وزارة التربية الوطنية</p>
-                <p>مديرية التربية لولاية: <strong>{{ $schoolSetting->directorate_name ?: 'المغير' }}</strong></p>
-                <p>المؤسسة: <strong>متوسطة {{ $schoolSetting->school_name ?: 'حي 940 مسكن' }}</strong></p>
-            </div>
+        {{-- 1. Official Header Table --}}
+        <table class="header-table">
+            <tr>
+                <td class="header-cell header-right">
+                    <div class="meta-field"><span class="meta-label">المؤسسة :</span> متوسطة {{ $schoolSetting->school_name ?: 'حي 940 مسكن' }} — {{ $schoolSetting->directorate_name ?: 'المغير' }}</div>
+                    <div class="meta-field"><span class="meta-label">الأستاذ :</span> <span class="meta-val">{{ $teacher?->name ?: 'فرطاس بوعزيز' }}</span></div>
+                    <div class="meta-field"><span class="meta-label">الميدان :</span> <span class="meta-val">{{ $memo->domain_name ?: 'استخدام الحاسوب' }}</span></div>
+                    <div class="meta-field"><span class="meta-label">المقطع التعلمي :</span> <span class="meta-val">{{ $memo->phase ?: 'بيئة التعامل مع الحاسوب' }}</span></div>
+                </td>
 
-            <div class="header-col header-center">
-                <div class="title-badge">
-                    <h1 class="main-title">مُذَكَّرَة بِيـدَاغُوجِيَّة تَعْلِيمِيَّة</h1>
-                    <p class="sub-title">وفق المقاربة بالكفاءات — منهاج الجيل الثاني</p>
-                </div>
-                <p class="memo-meta-line">رقم المذكرة: <strong>{{ sprintf('%02d', $memo->id) }}</strong> | الحجم الساعي: <strong>01 ساعة</strong></p>
-            </div>
+                <td class="header-cell header-center">
+                    <div class="memo-badge-box">
+                        <div class="memo-badge-title">رقم المذكرة : {{ sprintf('%02d', $memo->id) }}</div>
+                        <span class="memo-sajel-tag">منصة سجِّل — الجيل الثاني</span>
+                    </div>
+                </td>
 
-            <div class="header-col header-left">
-                <p>السنة الدراسية: <strong>{{ $schoolSetting->academic_year ?: '2026 / 2027' }}</strong></p>
-                <p>الأستاذ(ة): <strong>{{ $teacher?->name ?: 'فرطاس بوعزيز' }}</strong></p>
-                <p>المادة: <strong>{{ $subject?->name ?: 'الإعلام الآلي' }}</strong></p>
-                <p>المستوى: <strong>{{ $level?->name ?: 'السنة الرابعة متوسط' }}</strong></p>
-            </div>
-        </header>
-
-        {{-- 2. Pedagogical Cartouche --}}
-        <table class="cartouche-table">
-            <tbody>
-                <tr class="topic-banner-row">
-                    <td class="label-cell" style="background:#e0f2fe; color:#0369a1;">المورد المعرفي:</td>
-                    <td colspan="3" class="topic-title">{{ $memo->title }}</td>
-                </tr>
-                <tr>
-                    <td class="label-cell">الميدان التعلمي:</td>
-                    <td class="value-cell">{{ $memo->domain_name ?: ($subject?->name.' — '.($level?->name ?? 'التعليم المتوسط')) }}</td>
-                    <td class="label-cell">المقطع التعلمي:</td>
-                    <td class="value-cell">{{ $memo->phase ?: 'المقطع البيداغوجي المعني' }}</td>
-                </tr>
-                <tr>
-                    <td class="label-cell">الكفاءة المستهدفة:</td>
-                    <td class="value-cell">{{ $memo->competence }}</td>
-                    <td class="label-cell">نوع الحصة:</td>
-                    <td class="value-cell">إرساء موارد معرفية وبناء كفاءات</td>
-                </tr>
-                <tr>
-                    <td class="label-cell">السندات والوسائل:</td>
-                    <td colspan="3" class="value-cell">{{ $memo->resources ?: 'الكتاب المدرسي، المنهاج، السبورة، عارض البيانات (Data Show)، بطاقات الأنشطة.' }}</td>
-                </tr>
-            </tbody>
+                <td class="header-cell header-left">
+                    <div class="meta-field"><span class="meta-label">السنة الدراسية :</span> <span class="meta-val">{{ $schoolSetting->academic_year ?: '2026 / 2027' }}</span></div>
+                    <div class="meta-field"><span class="meta-label">المادة :</span> <span class="meta-val">{{ $subject?->name ?: 'المعلوماتية' }}</span></div>
+                    <div class="meta-field"><span class="meta-label">المستوى :</span> <span class="meta-val">{{ $level?->name ?: 'السنة الأولى متوسط' }}</span></div>
+                    <div class="meta-field"><span class="meta-label">الحجم الساعي :</span> <span class="meta-val">01 ساعة</span></div>
+                </td>
+            </tr>
         </table>
 
-        {{-- 3. Starting Situation --}}
-        @if (filled($memo->starting_situation))
-            <div class="situation-box">
-                <div class="box-heading">
-                    <svg width="13" height="13" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
-                    <span>الوضعية المشكلة الانطلاقية (السياق — السند — المهمة والتعليمة):</span>
-                </div>
-                <div class="box-body">
-                    {!! nl2br(e($memo->starting_situation)) !!}
-                </div>
-            </div>
-        @endif
-
-        {{-- 4. Methodological Progression Table --}}
-        <div class="section-header-badge">
-            <span>سيرورة التعلمات ومحطات الحصة البيداغوجية</span>
-            <span style="font-size: 7.2pt; font-weight: 700;">عدد المحطات: {{ count($activities) }} محطات</span>
+        {{-- 2. Prominent Competence Banner --}}
+        <div class="competence-banner">
+            <span class="competence-title">الكفاءة المستهدفة :</span>
+            <span class="competence-body">{{ $memo->competence }}</span>
         </div>
 
-        <table class="methodological-table">
+        {{-- 3. Three-column Summary Card (المراجع | الوسائل المستعملة | المعارف المستهدفة) --}}
+        <table class="summary-table">
             <thead>
                 <tr>
-                    <th class="col-stage">المحطة والزمن</th>
-                    <th class="col-roles">سيرورة الأنشطة والمهام التعليمية التعلمية (نشاط الأستاذ / نشاط المتعلم)</th>
-                    <th class="col-strategy">استراتيجية التعلم ونمط العمل</th>
-                    <th class="col-trace">الأثر الكتابي المستخلص</th>
-                    <th class="col-eval">مؤشرات التقويم والتعديل</th>
+                    <th class="summary-col-ref">المراجع</th>
+                    <th class="summary-col-tools">الوسائل المستعملة</th>
+                    <th class="summary-col-knowledge">المعارف المستهدفة</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse ($activities as $index => $rawAct)
-                    @php
-                        $act = $parseActivity($rawAct, $index);
-                    @endphp
-                    <tr>
-                        <td class="col-stage">
-                            <div class="stage-title">{{ $act['name'] }}</div>
-                            <span class="stage-duration">{{ $act['duration'] }} دقيقة</span>
-                        </td>
-
-                        <td class="col-roles">
-                            <div class="role-section">
-                                <span class="role-badge role-teacher">دور ونشاط الأستاذ:</span>
-                                <span>{{ $act['teacher_role'] }}</span>
-                            </div>
-                            <div class="role-section" style="margin-top: 3px;">
-                                <span class="role-badge role-student">نشاط ومهمات المتعلم:</span>
-                                <span>{{ $act['student_role'] }}</span>
-                            </div>
-                        </td>
-
-                        <td class="col-strategy">
-                            {{ $act['strategy'] }}
-                        </td>
-
-                        <td class="col-trace">
-                            {{ $act['written_trace'] }}
-                        </td>
-
-                        <td class="col-eval">
-                            {{ $act['evaluation_indicator'] }}
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" style="text-align: center; padding: 10px; color: #64748b;">
-                            {{ __('لا توجد أنشطة مسجلة في هذه المذكرة.') }}
-                        </td>
-                    </tr>
-                @endforelse
+                <tr>
+                    <td class="summary-col-ref">
+                        {!! nl2br(e($referencesText)) !!}
+                    </td>
+                    <td class="summary-col-tools">
+                        {!! nl2br(e($resourcesText)) !!}
+                    </td>
+                    <td class="summary-col-knowledge">
+                        <ul class="knowledge-list">
+                            @foreach ($targetKnowledge as $kItem)
+                                <li class="knowledge-item">{{ $kItem }}</li>
+                            @endforeach
+                        </ul>
+                    </td>
+                </tr>
             </tbody>
         </table>
 
-        {{-- 5. Evaluation and Pedagogical Notes Grid --}}
-        <div class="bottom-grid">
-            <div class="info-card">
-                <div class="info-card-header">
-                    <span>شبكة معايير ومؤشرات التقويم (معايير التحقق)</span>
-                    <span style="font-size: 6.8pt; color: #64748b;">م1: الوجاهة | م2: الاستعمال السليم | م3: الانسجام | م4: الإتقان</span>
-                </div>
-                <div class="info-card-content">
-                    {!! nl2br(e($memo->evaluation ?: 'تقويم تكويني مرحلي لرصد التحكم في المورد، وتقويم ختامي بحل وضعية إدماج جزئي فردية.')) !!}
-                </div>
-            </div>
+        {{-- 4. Main Progression Table (الجدول المنهجي لسير الحصة) --}}
+        <table class="main-progression-table">
+            <thead>
+                <tr>
+                    <th class="col-stage">المراحل</th>
+                    <th class="col-time">الزمن</th>
+                    <th class="col-indicator">مؤشرات الكفاءة</th>
+                    <th class="col-activities">النشاطات و المعارف المكتسبة ( سير الدرس )</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{-- Stage 1: وضعية الانطلاق --}}
+                @php $stg1 = $mappedStages[0]; @endphp
+                <tr>
+                    <td class="col-stage">
+                        <div class="stage-title">{{ $stg1['name'] }}</div>
+                        <span class="stage-badge-pill">{{ $stg1['badge'] }}</span>
+                    </td>
+                    <td class="col-time">{{ $stg1['duration'] }} د</td>
+                    <td class="col-indicator">
+                        <span class="indicator-header-tag">مؤشر الانطلاق والملاحظة:</span>
+                        {{ $stg1['indicator'] }}
+                    </td>
+                    <td class="col-activities">
+                        <div class="didactic-block">
+                            <span class="didactic-badge badge-problematic">الإشكالية :</span>
+                            <span>{!! nl2br(e($stg1['problem'])) !!}</span>
+                        </div>
+                        @if (! empty($stg1['activity']))
+                            <div class="didactic-block" style="margin-top: 3px;">
+                                <span class="didactic-badge badge-activity">توجيه الأستاذ :</span>
+                                <span>{{ $stg1['activity'] }}</span>
+                            </div>
+                        @endif
+                        <div class="didactic-block" style="margin-top: 3px;">
+                            <span class="didactic-badge badge-knowledge">الأثر الأولي :</span>
+                            <span>{{ $stg1['trace'] }}</span>
+                        </div>
+                    </td>
+                </tr>
 
-            <div class="info-card">
-                <div class="info-card-header">
-                    <span>المعالجة والتوجيهات البيداغوجية (تسيير الفوارق الفردية)</span>
-                    <span style="font-size: 6.8pt; color: #64748b;">الدعم البيداغوجي والمرافقة</span>
-                </div>
-                <div class="info-card-content">
-                    {!! nl2br(e($memo->notes ?: 'مراعاة الفروق الفردية، تقديم تغذية راجعة فورية، مرافقة الأفواج المتعثرة، والحرص على تدبير التوقيت بدقة.')) !!}
-                </div>
-            </div>
+                {{-- Stage 2: العرض (إرساء الموارد) --}}
+                @php $stg2 = $mappedStages[1]; @endphp
+                <tr>
+                    <td class="col-stage">
+                        <div class="stage-title">{{ $stg2['name'] }}</div>
+                        <span class="stage-badge-pill">{{ $stg2['badge'] }}</span>
+                    </td>
+                    <td class="col-time">{{ $stg2['duration'] }} د</td>
+                    <td class="col-indicator">
+                        <span class="indicator-header-tag">مؤشرات إرساء الموارد:</span>
+                        {{ $stg2['indicator'] }}
+                    </td>
+                    <td class="col-activities">
+                        {{-- Didactic Activity --}}
+                        <div class="didactic-block">
+                            <span class="didactic-badge badge-activity">النشاط والتعليمات :</span>
+                            <span>{!! nl2br(e($stg2['activity'])) !!}</span>
+                            <div class="didactic-note">(يمكن للأستاذ توظيف نشاط بيداغوجي مكافئ وفق خصوصية المتعلمين).</div>
+                        </div>
+
+                        {{-- Didactic Knowledge & Written Trace --}}
+                        <div class="didactic-block" style="border-top: 1px dashed #cbd5e1; padding-top: 4px; margin-top: 4px;">
+                            <span class="didactic-badge badge-knowledge">المعارف المكتسبة والأثر الكتابي :</span>
+
+                            @if (str_contains($topicName, 'تعريف') || str_contains($topicName, 'الحاسوب') || str_contains($topicName, 'المعلوماتية'))
+                                <div style="margin-top: 3px; line-height: 1.45;">
+                                    <p><strong class="item-num">1- تعريف المعلوماتية :</strong> هي علم يسمح بمعالجة المعلومات بطريقة آلية باستعمال الحاسوب، وتعتمد على عنصرين أساسيين: <strong>العتاد</strong> و<strong>البرمجيات</strong>.</p>
+                                    <p style="margin-right: 12px; font-size: 7.2pt; color: #b45309;">* أصل التسمية: <strong>معلومات + آلية ⬅ معلوماتية (Informatique = Information + Automatique)</strong>.</p>
+
+                                    <p style="margin-top: 2px;"><strong class="item-num">2- الفرق بين العتاد والبرمجيات :</strong></p>
+                                    <p style="margin-right: 10px;"><strong>أ) العتاد (Matériel) :</strong> العناصر المادية الملموسة للحاسوب والأجهزة المتصلة به (الوحدة المركزية، الشاشة، الفأرة، لوحة المفاتيح...).</p>
+                                    <p style="margin-right: 10px;"><strong>ب) البرمجيات (Logiciels) :</strong> العناصر غير المادية والبرامج والأوامر التي توجه العتاد لإنجاز المهام المطلوبة.</p>
+
+                                    <p style="margin-top: 2px;"><strong class="item-num">3- تعريف الحاسوب :</strong> جهاز إلكتروني مبرمج يستقبل البيانات (إدخال)، يعالجها ويخزنها، ثم يخرج النتائج في شكل معلومات دقيقة.</p>
+
+                                    <p style="margin-top: 3px;"><strong class="item-num">4- مخطط عمل الحاسوب :</strong></p>
+                                    <div class="process-flow">
+                                        <div class="process-node">إدخال المعلومات (Input)</div>
+                                        <div class="process-arrow">⬅</div>
+                                        <div class="process-node" style="border-color: #b45309; background: #fffbeb; color: #b45309;">المعالجة والتخزين (Process & Storage)</div>
+                                        <div class="process-arrow">⬅</div>
+                                        <div class="process-node" style="border-color: #059669; background: #ecfdf5; color: #047857;">إخراج المعلومات (Output)</div>
+                                    </div>
+                                </div>
+                            @elseif (! empty($stg2['traces']))
+                                <div style="margin-top: 3px;">
+                                    @foreach ($stg2['traces'] as $trIdx => $traceItem)
+                                        <p style="margin-bottom: 2px;"><strong class="item-num">{{ $trIdx + 1 }}-</strong> {!! nl2br(e($traceItem)) !!}</p>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div style="margin-top: 3px;">
+                                    <p><strong class="item-num">1- المفهوم المحوري :</strong> ضبط التعريف الإجرائي والقاعدة الأساسية للمورد المعرفي في كراس المتعلم.</p>
+                                    <p><strong class="item-num">2- العلاقات والخصائص :</strong> تصنيف عناصر الدرس وتحديد القواعد التطبيقية والاستخدام السليم لأدوات المادة.</p>
+                                    <p><strong class="item-num">3- الخلاصة التركيبية :</strong> رسم المخطط المفاهيمي الهيكل للتعلمات لتثبيت المكتسبات بوضوح.</p>
+                                </div>
+                            @endif
+                        </div>
+                    </td>
+                </tr>
+
+                {{-- Stage 3: التقويم والمعالجة --}}
+                @php $stg3 = $mappedStages[2]; @endphp
+                <tr>
+                    <td class="col-stage">
+                        <div class="stage-title">{{ $stg3['name'] }}</div>
+                        <span class="stage-badge-pill">{{ $stg3['badge'] }}</span>
+                    </td>
+                    <td class="col-time">{{ $stg3['duration'] }} د</td>
+                    <td class="col-indicator">
+                        <span class="indicator-header-tag">مؤشر التقويم والتحقق:</span>
+                        {{ $stg3['indicator'] }}
+                    </td>
+                    <td class="col-activities">
+                        <div class="didactic-block">
+                            <span class="didactic-badge badge-eval">التقويم والتطبيق :</span>
+                            @if (str_contains($topicName, 'تعريف') || str_contains($topicName, 'الحاسوب') || str_contains($topicName, 'المعلوماتية'))
+                                <span>صنّف العناصر التالية في جدول ذي عمودين (<strong>العتاد</strong> / <strong>البرمجيات</strong>):</span>
+                                <div style="margin: 3px 0; font-weight: 700; color: #1e3a8a; background: #f8fafc; padding: 3px 6px; border: 1px dashed #cbd5e1; border-radius: 4px;">
+                                    لوحة المفاتيح — برنامج الرسام — الفأرة — فوتوشوب (Photoshop) — شاشة العرض — نظام ويندوز — الطابعة — معالج النصوص Word.
+                                </div>
+                            @else
+                                <span>{!! nl2br(e($stg3['eval'])) !!}</span>
+                            @endif
+                        </div>
+                        <div class="didactic-block" style="margin-top: 3px;">
+                            <span class="didactic-badge badge-knowledge">المعالجة الفورية :</span>
+                            <span>{{ $stg3['trace'] }}</span>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        {{-- 5. Official Visas / Signatures --}}
+        <table class="visas-grid">
+            <tr>
+                <td class="visa-cell">
+                    <div class="visa-role">تأشيرة أستاذ(ة) المادة</div>
+                    <div class="visa-dots"></div>
+                </td>
+                <td class="visa-cell">
+                    <div class="visa-role">تأشيرة السيد مدير المؤسسة</div>
+                    <div class="visa-dots"></div>
+                </td>
+                <td class="visa-cell">
+                    <div class="visa-role">تأشيرة السيد مفتش التربية الوطنية</div>
+                    <div class="visa-dots"></div>
+                </td>
+            </tr>
+        </table>
+
+        {{-- System Footer --}}
+        <div class="footer-system-text">
+            منصة سجِّل لإدارة التعليم المتوسط — تم توليد واعتماد المذكرة البيداغوجية بتاريخ {{ $formatDate($memo->updated_at) }}
         </div>
-
-        {{-- 6. Official Visas / Signatures --}}
-        <footer class="signatures-grid">
-            <div class="signature-col">
-                <p class="signature-role">تأشيرة أستاذ(ة) المادة</p>
-                <div class="signature-dots"></div>
-            </div>
-
-            <div class="signature-col">
-                <p class="signature-role">تأشيرة السيد مدير المؤسسة</p>
-                <div class="signature-dots"></div>
-            </div>
-
-            <div class="signature-col">
-                <p class="signature-role">تأشيرة السيد مفتش التربية الوطنية</p>
-                <div class="signature-dots"></div>
-            </div>
-        </footer>
-
-        <p class="footer-system-tag">
-            منصة سجِّل لإدارة التعليم المتوسط — تم توليد هذه المذكرة البيداغوجية بتاريخ {{ $formatDate($memo->updated_at) }}
-        </p>
     </main>
 
     @if ($autoPrint ?? true)
         <script>
-            window.addEventListener('load', () => {
-                window.setTimeout(() => window.print(), 250);
+            window.addEventListener('DOMContentLoaded', () => {
+                window.print();
             });
         </script>
     @endif
