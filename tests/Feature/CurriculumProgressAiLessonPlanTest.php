@@ -17,6 +17,7 @@ use App\Models\Schedule;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\AiLessonPlannerService;
+use App\Services\AnnualCurriculumDistributionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -336,9 +337,9 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
         $response->assertSee('اختبارات الفصل الأول');
         $response->assertSee('اختبارات الفصل الثاني');
         $response->assertSee('اختبارات الفصل الثالث');
-        $response->assertSee('أستاذ المادة');
-        $response->assertSee('المدير');
-        $response->assertSee('المفتش');
+        $response->assertSee('أستاذ(ة) المادة');
+        $response->assertSee('مدير(ة) المؤسسة');
+        $response->assertSee('مفتش(ة) مادة المعلوماتية');
     }
 
     public function test_annual_curriculum_distribution_pdf_route_streams_response(): void
@@ -403,5 +404,18 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
         Livewire::test(CurriculumProgress::class)
             ->assertSee('طباعة التوزيع السنوي الرسمي')
             ->assertSee(route('print.annual-curriculum-distribution', ['locale' => 'ar']));
+    }
+
+    public function test_annual_curriculum_distribution_pdf_is_single_a4_page_for_levels(): void
+    {
+        $service = app(AnnualCurriculumDistributionService::class);
+
+        // Test boundary levels: Level 1 and Level 4
+        foreach ([1, 4] as $level) {
+            $data = $service->getDistributionData(level: $level);
+            $pdf = $service->generatePdf($data);
+            preg_match_all('/\/Type\s*\/Page[^s]/', $pdf, $matches);
+            $this->assertSame(1, count($matches[0]), "Level {$level} PDF must fit strictly on 1 single A4 page.");
+        }
     }
 }

@@ -40,6 +40,8 @@ class AnnualCurriculumDistributionService
 
         $teacherName = $teacher?->name ?? 'قرطاس بوعزيز';
         $subjectName = $subject?->name ?? 'مادة المعلوماتية';
+        $directorateName = $school?->directorate_name ?? 'المغير';
+        $principalName = $school?->principal_name ?? 'أحمد بوزقاق';
 
         $levelNumber = $this->resolveLevelNumber($level, $classroom);
         $levelData = $this->getLevelData($levelNumber);
@@ -47,6 +49,8 @@ class AnnualCurriculumDistributionService
         return [
             'title' => $levelData['title'],
             'school_name' => $schoolName,
+            'directorate_name' => $directorateName,
+            'principal_name' => $principalName,
             'subject_name' => $subjectName,
             'teacher_name' => $teacherName,
             'academic_year' => $formattedYear,
@@ -284,7 +288,7 @@ class AnnualCurriculumDistributionService
                 'domains' => [
                     [
                         'name' => 'بناء المشاريع',
-                        'competence' => 'يبني مهاراته الفكرية بطريقة متسلسلة ومنطقية، عبر إنجاز مشاريع متعددة الوسائط.',
+                        'competence' => 'يبني مهاراته الفكرية بطريقة متسلسلة ومنطقية،<br>عبر إنجاز مشاريع متعددة الوسائط.',
                         'rowspan' => 7,
                         'rows' => [
                             ['sequence' => ['name' => 'استخدام الأصوات', 'rowspan' => 3], 'lesson' => 'استقبال التلاميذ', 'hours' => '/', 'date' => $dates[1], 'week' => 1, 'type' => 'normal'],
@@ -356,7 +360,7 @@ class AnnualCurriculumDistributionService
             'domains' => [
                 [
                     'name' => 'بناء المشاريع',
-                    'competence' => 'يبني مهاراته التحليلية والبرمجية ويكتسب فلسفة البرمجة عبر إنجاز مشاريع متعددة الوسائط.',
+                    'competence' => 'يبني مهاراته التحليلية والبرمجية ويكتسب فلسفة<br>البرمجة عبر إنجاز مشاريع متعددة الوسائط.',
                     'rowspan' => 11,
                     'rows' => [
                         ['sequence' => ['name' => 'المتغيرات', 'rowspan' => 6], 'lesson' => 'استقبال التلاميذ', 'hours' => '/', 'date' => $dates[1], 'week' => 1, 'type' => 'normal'],
@@ -390,7 +394,7 @@ class AnnualCurriculumDistributionService
                 ],
                 [
                     'name' => 'العروض التقديمية',
-                    'competence' => 'يصمم عروضا تقديمية متقدمة لخدمة مشاريعه وذات أثر بصرية.',
+                    'competence' => 'يصمم عروضا تقديمية متقدمة لخدمة مشاريعه<br>وذات أثر بصرية.',
                     'rowspan' => 6,
                     'rows' => [
                         ['sequence' => ['name' => 'الحركة', 'rowspan' => 3], 'lesson' => 'فرض الثلاثي الثاني', 'hours' => '01 ساعة', 'date' => $dates[19], 'week' => 19, 'type' => 'exam_red'],
@@ -403,7 +407,7 @@ class AnnualCurriculumDistributionService
                 ],
                 [
                     'name' => 'الشبكات',
-                    'competence' => 'يستعمل الإنترنت للبحث عن مختلف المعلومات المفيدة وطرق تحميلها.',
+                    'competence' => 'يستعمل الإنترنت للبحث عن مختلف المعلومات<br>المفيدة وطرق تحميلها.',
                     'rowspan' => 9,
                     'rows' => [
                         ['is_break' => true, 'break_type' => 'vacation', 'text' => $dates['vacation_spring'], 'colspan' => 5],
@@ -431,7 +435,7 @@ class AnnualCurriculumDistributionService
         return BrowsershotFactory::html($html)
             ->format('A4')
             ->landscape(false)
-            ->margins(5, 6, 5, 6)
+            ->margins(4, 6, 4, 6)
             ->showBackground()
             ->pdf();
     }

@@ -6,11 +6,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'التوزيع السنوي لمادة المعلوماتية' }}</title>
+    <title>{{ $title ?? 'التوزيع السنوي لمادة المعلوماتية' }} — سجِّل</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
         *, *::before, *::after {
@@ -23,24 +23,24 @@
 
         @page {
             size: A4 portrait;
-            margin: 5mm 6mm 5mm 6mm;
+            margin: 4mm 6mm 4mm 6mm;
         }
 
         html, body {
             margin: 0;
             padding: 0;
-            background: #ffffff;
-            color: #000000;
-            font-family: 'Amiri', 'Cairo', serif;
-            font-size: 8pt;
-            line-height: 1.1;
+            background: #f8fafc;
+            color: #0f172a;
+            font-family: 'Cairo', ui-sans-serif, system-ui, -apple-system, sans-serif;
+            font-size: 7.8pt;
+            line-height: 1.15;
             direction: rtl;
             -webkit-font-smoothing: antialiased;
         }
 
         .no-print {
             max-width: 198mm;
-            margin: 4px auto 8px auto;
+            margin: 4px auto 6px auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -48,18 +48,17 @@
             color: #ffffff;
             padding: 5px 12px;
             border-radius: 6px;
-            font-family: 'Cairo', sans-serif;
-            font-size: 10.5px;
+            font-size: 10px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         .level-switcher {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
         }
 
-        .no-print .btn-group {
+        .btn-group {
             display: flex;
             align-items: center;
             gap: 6px;
@@ -70,7 +69,7 @@
             align-items: center;
             gap: 4px;
             padding: 3px 8px;
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: 700;
             border-radius: 4px;
             text-decoration: none;
@@ -90,159 +89,270 @@
             width: 100%;
             max-width: 198mm;
             margin: 0 auto;
-            padding: 0;
+            padding: 1mm 2mm;
             box-sizing: border-box;
             background: #ffffff;
         }
 
-        /* Document Header */
-        .doc-title {
-            text-align: center;
-            font-size: 14.5pt;
-            font-weight: 700;
-            margin-bottom: 2px;
-            font-family: 'Amiri', serif;
-            line-height: 1.1;
+        @media screen {
+            .sheet {
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+            }
         }
 
-        .meta-grid {
-            display: flex;
-            justify-content: space-between;
-            font-size: 8.5pt;
-            font-weight: 700;
-            margin-bottom: 2px;
-            line-height: 1.2;
-            padding: 0 4px;
+        /* Institutional National Header */
+        .header-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 1.35fr 1.15fr;
+            border-bottom: 2px solid #1e3a8a;
+            padding-bottom: 3px;
+            margin-bottom: 3px;
+            align-items: center;
         }
 
-        .meta-col {
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-        }
-
-        .meta-col-right {
+        .header-col-right {
             text-align: right;
+            font-size: 7.2pt;
+            font-weight: 700;
+            color: #1e293b;
+            line-height: 1.25;
         }
 
-        .meta-col-left {
+        .header-col-center {
+            text-align: center;
+        }
+
+        .title-badge {
+            display: inline-block;
+            border: 1.5px solid #1e3a8a;
+            background: #f0f7ff;
+            border-radius: 5px;
+            padding: 2px 12px;
+            text-align: center;
+        }
+
+        .title-main {
+            font-size: 11pt;
+            font-weight: 900;
+            color: #1e3a8a;
+            margin: 0;
+            line-height: 1.2;
+            letter-spacing: -0.2px;
+        }
+
+        .title-sub {
+            font-size: 7.8pt;
+            font-weight: 800;
+            color: #b45309;
+            margin-top: 1px;
+        }
+
+        .header-col-left {
             text-align: left;
+            font-size: 7.2pt;
+            font-weight: 700;
+            color: #334155;
+            line-height: 1.25;
         }
 
-        /* The Main Table */
+        /* Meta Card Strip */
+        .meta-strip {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 3px;
+            margin-bottom: 3px;
+        }
+
+        .meta-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 1.5px 4px;
+            text-align: center;
+        }
+
+        .meta-item-label {
+            font-size: 6.5pt;
+            color: #64748b;
+            font-weight: 700;
+        }
+
+        .meta-item-value {
+            font-size: 7.5pt;
+            color: #0f172a;
+            font-weight: 800;
+        }
+
+        /* Main Table */
         .distribution-table {
             width: 100%;
             border-collapse: collapse;
-            border: 1.2px solid #000000;
-            font-size: 8pt;
+            border: 1.2px solid #0f172a;
+            font-size: 7.7pt;
             text-align: center;
         }
 
         .distribution-table th,
         .distribution-table td {
-            border: 1px solid #000000;
-            padding: 3.2px 2px;
+            border: 1px solid #334155;
+            padding: 2.8px 2px;
             vertical-align: middle;
         }
 
         .distribution-table thead th {
-            font-weight: 700;
-            font-size: 8.2pt;
-            background-color: #ffffff;
-            color: #000000;
+            font-weight: 800;
+            font-size: 8pt;
+            background-color: #1e3a8a;
+            color: #ffffff;
             padding: 2.5px 1px;
+            border-color: #1e3a8a;
         }
 
-        /* Vertical Rotated Text for Domain & Competence */
+        /* Vertical Rotated Text */
         .vertical-cell {
             vertical-align: middle;
             text-align: center;
             padding: 2px 1px !important;
+            background-color: #fbfcfe;
         }
 
         .vertical-text {
             writing-mode: vertical-rl;
             transform: rotate(180deg);
-            font-size: 7.2pt;
-            font-weight: 700;
+            font-size: 7pt;
+            font-weight: 800;
             display: inline-block;
             margin: 0 auto;
-            line-height: 1.1;
+            line-height: 1.05;
         }
 
         .col-domain {
-            width: 28px;
+            width: 27px;
         }
 
         .col-domain .vertical-text {
             white-space: nowrap;
-            font-size: 8pt;
+            font-size: 7.8pt;
+            color: #1e3a8a;
         }
 
         .col-competence {
-            width: 36px;
-            max-width: 38px;
+            width: 35px;
+            max-width: 37px;
         }
 
         .col-competence .vertical-text {
-            font-size: 6.8pt;
+            font-size: 6.6pt;
             line-height: 1.05;
+            color: #334155;
         }
 
-        .col-sequence { width: 85px; font-weight: 700; font-size: 8pt; }
-        .col-lesson { text-align: center; font-size: 8pt; }
-        .col-hours { width: 45px; font-size: 7.5pt; white-space: nowrap; }
-        .col-date { width: 120px; font-size: 7.5pt; white-space: nowrap; }
-        .col-week { width: 26px; font-size: 7.8pt; font-weight: 700; }
+        .col-sequence {
+            width: 82px;
+            font-weight: 800;
+            font-size: 7.6pt;
+            background-color: #fbfcfe;
+        }
 
-        /* Highlighted Lesson Cells */
+        .col-lesson {
+            text-align: center;
+            font-size: 7.7pt;
+            font-weight: 600;
+        }
+
+        .col-hours {
+            width: 44px;
+            font-size: 7.2pt;
+            white-space: nowrap;
+            color: #334155;
+        }
+
+        .col-date {
+            width: 118px;
+            font-size: 7.2pt;
+            white-space: nowrap;
+            color: #334155;
+        }
+
+        .col-week {
+            width: 25px;
+            font-size: 7.6pt;
+            font-weight: 800;
+            background-color: #fbfcfe;
+        }
+
+        /* Highlights */
         .cell-exam-red {
-            background-color: #c00000 !important;
+            background-color: #dc2626 !important;
             color: #ffffff !important;
-            font-weight: 700 !important;
+            font-weight: 800 !important;
         }
 
         .cell-remedial-yellow {
-            background-color: #facc15 !important;
-            color: #000000 !important;
-            font-weight: 700 !important;
+            background-color: #fef08a !important;
+            color: #854d0e !important;
+            font-weight: 800 !important;
         }
 
         .break-cell-vacation {
-            color: #c00000;
-            font-weight: 700;
-            font-size: 7.8pt;
+            color: #b91c1c;
+            background-color: #fef2f2 !important;
+            font-weight: 800;
+            font-size: 7.4pt;
             text-align: center;
-            padding: 3px 2px !important;
+            padding: 2.2px 2px !important;
         }
 
         .break-cell-exam {
-            color: #1e3a8a;
-            font-weight: 700;
-            font-size: 7.8pt;
+            color: #1e40af;
+            background-color: #eff6ff !important;
+            font-weight: 800;
+            font-size: 7.4pt;
             text-align: center;
-            padding: 3px 2px !important;
+            padding: 2.2px 2px !important;
         }
 
         /* Signatures Section */
         .signatures-grid {
-            margin-top: 8px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 9pt;
-            font-weight: 700;
-            padding: 0 15px;
+            margin-top: 5px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
         }
 
-        .signature-col {
+        .signature-box {
+            border: 1px dashed #64748b;
+            background: #fbfcfe;
+            border-radius: 5px;
+            padding: 3px 6px;
             text-align: center;
-            width: 140px;
+            height: 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .signature-title {
+            font-size: 7.5pt;
+            font-weight: 800;
+            color: #1e3a8a;
+        }
+
+        .signature-hint {
+            font-size: 6.5pt;
+            color: #64748b;
+        }
+
+        .signature-name {
+            font-size: 7.2pt;
+            font-weight: 700;
+            color: #0f172a;
         }
 
         @media print {
-            .no-print {
-                display: none !important;
-            }
+            .no-print { display: none !important; }
             body, html {
                 margin: 0 !important;
                 padding: 0 !important;
@@ -252,6 +362,8 @@
                 padding: 0 !important;
                 max-width: 100% !important;
                 margin: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
             }
         }
     </style>
@@ -289,20 +401,51 @@
     </div>
 
     <div class="sheet">
-        {{-- Document Header --}}
-        <div class="doc-title">{{ $title }}</div>
-
-        <div class="meta-grid">
-            <div class="meta-col meta-col-right">
+        {{-- National Institutional Header --}}
+        <div class="header-grid">
+            <div class="header-col-right">
+                <div>الجمهورية الجزائرية الديمقراطية الشعبية</div>
+                <div>وزارة التربية الوطنية</div>
+                <div>مديرية التربية لولاية {{ $directorate_name ?? 'المغير' }}</div>
                 <div>{{ $school_name }}</div>
-                <div>{{ $subject_name }}</div>
-                <div>الحجم الساعي: {{ $weekly_hours }}</div>
             </div>
 
-            <div class="meta-col meta-col-left">
-                <div>الأستاذ: {{ $teacher_name }}</div>
+            <div class="header-col-center">
+                <div class="title-badge">
+                    <h1 class="title-main">التوزيع السنوي للتعلمات</h1>
+                    <div class="title-sub">{{ $level_name }} — مادة المعلوماتية</div>
+                </div>
+            </div>
+
+            <div class="header-col-left">
                 <div>السنة الدراسية: {{ $academic_year }}</div>
+                <div>الحجم الساعي: {{ $weekly_hours }}</div>
                 <div>معامل المادة: {{ $coefficient }}</div>
+                <div>الأستاذ: {{ $teacher_name }}</div>
+            </div>
+        </div>
+
+        {{-- Meta Card Strip --}}
+        <div class="meta-strip">
+            <div class="meta-item">
+                <div class="meta-item-label">المادة</div>
+                <div class="meta-item-value">المعلوماتية (الإعلام الآلي)</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-item-label">المستوى والطور</div>
+                <div class="meta-item-value">{{ $level_name }}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-item-label">أستاذ المادة</div>
+                <div class="meta-item-value">{{ $teacher_name }}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-item-label">الحجم الساعي والمعامل</div>
+                <div class="meta-item-value">{{ $weekly_hours }} — المعامل: {{ $coefficient }}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-item-label">المؤسسة والسنة</div>
+                <div class="meta-item-value">{{ $school_name }} ({{ $academic_year }})</div>
             </div>
         </div>
 
@@ -359,16 +502,22 @@
             </tbody>
         </table>
 
-        {{-- Signatures Footer --}}
+        {{-- Institutional Signatures Footer --}}
         <div class="signatures-grid">
-            <div class="signature-col">
-                <div>المفتش</div>
+            <div class="signature-box">
+                <div class="signature-title">أستاذ(ة) المادة</div>
+                <div class="signature-name">{{ $teacher_name }}</div>
+                <div class="signature-hint">التاريخ والإمضاء: .......................................</div>
             </div>
-            <div class="signature-col">
-                <div>المدير</div>
+            <div class="signature-box">
+                <div class="signature-title">مدير(ة) المؤسسة</div>
+                <div class="signature-name">{{ $principal_name ?? 'أحمد بوزقاق' }}</div>
+                <div class="signature-hint">الختم الرسمي والإمضاء</div>
             </div>
-            <div class="signature-col">
-                <div>أستاذ المادة</div>
+            <div class="signature-box">
+                <div class="signature-title">مفتش(ة) مادة المعلوماتية</div>
+                <div class="signature-name">التأشيرة والملاحظات</div>
+                <div class="signature-hint">الختم والتأشيرة: .......................................</div>
             </div>
         </div>
     </div>
