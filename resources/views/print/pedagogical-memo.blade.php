@@ -288,6 +288,12 @@
             color: #1e3a8a;
         }
 
+        .directorate-name {
+            font-size: 7.6pt;
+            font-weight: 700;
+            color: #334155;
+        }
+
         /* 1. Header (الترويسة) */
         .header-table {
             width: 100%;
@@ -717,17 +723,17 @@
             <div class="republic-header">
                 <div class="republic-name">الجمهورية الجزائرية الديمقراطية الشعبية</div>
                 <div class="ministry-name">وزارة التربية الوطنية</div>
+                <div class="directorate-name">مديرية التربية : ولاية {{ preg_replace('/^مديرية\s*التربية\s*(?:لولاية\s*)?/u', '', $schoolSetting->directorate_name ?: 'المغير') }}</div>
             </div>
 
             {{-- 1. Official Header Table --}}
             <table class="header-table">
                 <tr>
                     <td class="header-cell header-right">
-                        <div class="meta-field"><span class="meta-label">مديرية التربية :</span> <span class="meta-val">ولاية {{ preg_replace('/^مديرية\s*التربية\s*(?:لولاية\s*)?/u', '', $schoolSetting->directorate_name ?: 'المغير') }}</span></div>
                         <div class="meta-field"><span class="meta-label">المؤسسة :</span> <span class="meta-val">متوسطة {{ $schoolSetting->school_name ?: 'حي 940 مسكن' }}</span></div>
                         <div class="meta-field"><span class="meta-label">الأستاذ(ة) :</span> <span class="meta-val">{{ $teacher?->name ?: 'فرطاس بوعزيز' }}</span></div>
                         <div class="meta-field"><span class="meta-label">الميدان :</span> <span class="meta-val">{{ $memo->domain_name ?: 'استخدام الحاسوب' }}</span></div>
-                        <div class="meta-field"><span class="meta-label">المقطع التعلمي :</span> <span class="meta-val">{{ Str::limit($memo->phase ?: 'بيئة التعامل مع الحاسوب', 40) }}</span></div>
+                        <div class="meta-field"><span class="meta-label">المقطع التعلمي :</span> <span class="meta-val">{{ Str::limit($memo->phase ?: 'بيئة التعامل مع الحاسوب', 45) }}</span></div>
                     </td>
 
                     <td class="header-cell header-center">
