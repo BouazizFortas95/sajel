@@ -1,5 +1,6 @@
 @php
     $isRtl = app()->getLocale() === 'ar';
+    $schoolSetting = $schoolSetting ?? \App\Models\SchoolSetting::current();
     $formatScore = fn ($value): string => $value === null
         ? '—'
         : number_format((float) $value, 2);
@@ -115,19 +116,26 @@
     </div>
 
     <main class="print-sheet mx-auto my-8 w-[210mm] max-w-full border border-amber-200/70 bg-[#fffdf8] p-[12mm] shadow-2xl shadow-stone-300/50">
-        <header class="flex items-start justify-between gap-6 border-b-2 border-amber-300 pb-5">
-            <div>
-                <p class="text-2xl font-black tracking-tight text-amber-700">سجِّل</p>
-                <p class="mt-1 text-[11px] font-semibold text-stone-500">{{ __('مساعد أستاذ المعلوماتية — التعليم المتوسط') }}</p>
+        <header class="border-b-2 border-amber-300 pb-4">
+            <div class="mb-3 text-center">
+                <p class="text-xs font-bold text-stone-900">{{ __('الجمهورية الجزائرية الديمقراطية الشعبية') }}</p>
+                <p class="text-[11px] font-semibold text-amber-800">{{ __('وزارة التربية الوطنية') }}</p>
             </div>
+            <div class="flex items-start justify-between gap-6">
+                <div>
+                    <p class="text-xs font-bold text-stone-800">{{ $schoolSetting?->directorate_name ?: __('مديرية التربية لولاية المغير') }}</p>
+                    <p class="text-xs font-bold text-stone-800">{{ __('متوسطة') }} {{ $schoolSetting?->school_name ?: 'حي 940 مسكن' }}</p>
+                    <p class="mt-1 text-[11px] font-semibold text-amber-700">{{ __('منصة سجِّل — التعليم المتوسط') }}</p>
+                </div>
 
-            <div class="text-end">
-                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-600">{{ __('كشف نقاط التقييم') }}</p>
-                <p class="mt-1 text-lg font-extrabold text-stone-900">{{ $assessment->title }}</p>
-                <p class="mt-1 text-[11px] text-stone-500">
-                    {{ __('السنة الدراسية') }}:
-                    <span class="font-bold text-stone-700">{{ $academicYear }}</span>
-                </p>
+                <div class="text-end">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-600">{{ __('كشف نقاط التقييم') }}</p>
+                    <p class="mt-1 text-base font-extrabold text-stone-900">{{ $assessment->title }}</p>
+                    <p class="mt-0.5 text-[11px] text-stone-500">
+                        {{ __('السنة الدراسية') }}:
+                        <span class="font-bold text-stone-700">{{ $academicYear }}</span>
+                    </p>
+                </div>
             </div>
         </header>
 

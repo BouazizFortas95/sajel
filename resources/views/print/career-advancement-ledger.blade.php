@@ -289,8 +289,8 @@
     <div class="sheet-container">
         <!-- Header -->
         <header class="header-section">
-            <div class="republic-title">الجمهـورية الجزائريـة الديمقراطيـة الشعبيـة</div>
-            <div class="ministry-title">وزارة التـربيـة الوطنيـة</div>
+            <div class="republic-title">{{ __('الجمهورية الجزائرية الديمقراطية الشعبية') }}</div>
+            <div class="ministry-title">{{ __('وزارة التربية الوطنية') }}</div>
             <div class="sub-header-grid">
                 <div>{{ $directorate ?? ($school?->directorate_name ?? 'مديرية التربية الوطنية') }}</div>
                 <div>{{ $school_name ?? ($school?->school_name ?? 'متوسطة ساجل النموذجية') }}</div>

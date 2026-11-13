@@ -262,10 +262,30 @@
             background: #ffffff;
             border: 1px solid #cbd5e1;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-            padding: 4mm 5mm;
+            padding: 3.5mm 5mm 4mm;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+        }
+
+        /* 0. National Institutional Header (الترويسة الرسمية للجمهورية) */
+        .republic-header {
+            text-align: center;
+            margin-bottom: 2.5px;
+            line-height: 1.22;
+        }
+
+        .republic-name {
+            font-size: 8.6pt;
+            font-weight: 900;
+            color: #0f172a;
+            letter-spacing: 0.2px;
+        }
+
+        .ministry-name {
+            font-size: 7.8pt;
+            font-weight: 800;
+            color: #1e3a8a;
         }
 
         /* 1. Header (الترويسة) */
@@ -693,14 +713,21 @@
 
     <main class="sheet">
         <div>
+            {{-- 0. Legal National Institutional Header --}}
+            <div class="republic-header">
+                <div class="republic-name">الجمهورية الجزائرية الديمقراطية الشعبية</div>
+                <div class="ministry-name">وزارة التربية الوطنية</div>
+            </div>
+
             {{-- 1. Official Header Table --}}
             <table class="header-table">
                 <tr>
                     <td class="header-cell header-right">
-                        <div class="meta-field"><span class="meta-label">المؤسسة :</span> متوسطة {{ $schoolSetting->school_name ?: 'حي 940 مسكن' }} — {{ $schoolSetting->directorate_name ?: 'المغير' }}</div>
-                        <div class="meta-field"><span class="meta-label">الأستاذ :</span> <span class="meta-val">{{ $teacher?->name ?: 'فرطاس بوعزيز' }}</span></div>
+                        <div class="meta-field"><span class="meta-label">مديرية التربية :</span> <span class="meta-val">ولاية {{ preg_replace('/^مديرية\s*التربية\s*(?:لولاية\s*)?/u', '', $schoolSetting->directorate_name ?: 'المغير') }}</span></div>
+                        <div class="meta-field"><span class="meta-label">المؤسسة :</span> <span class="meta-val">متوسطة {{ $schoolSetting->school_name ?: 'حي 940 مسكن' }}</span></div>
+                        <div class="meta-field"><span class="meta-label">الأستاذ(ة) :</span> <span class="meta-val">{{ $teacher?->name ?: 'فرطاس بوعزيز' }}</span></div>
                         <div class="meta-field"><span class="meta-label">الميدان :</span> <span class="meta-val">{{ $memo->domain_name ?: 'استخدام الحاسوب' }}</span></div>
-                        <div class="meta-field"><span class="meta-label">المقطع التعلمي :</span> <span class="meta-val">{{ Str::limit($memo->phase ?: 'بيئة التعامل مع الحاسوب', 50) }}</span></div>
+                        <div class="meta-field"><span class="meta-label">المقطع التعلمي :</span> <span class="meta-val">{{ Str::limit($memo->phase ?: 'بيئة التعامل مع الحاسوب', 40) }}</span></div>
                     </td>
 
                     <td class="header-cell header-center">
