@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\Role;
 use App\Filament\Pages\CurriculumProgress;
+use App\Filament\Resources\PedagogicalMemoResource;
 use App\Filament\Resources\PedagogicalMemoResource\Pages\CreatePedagogicalMemo;
 use App\Filament\Resources\PedagogicalMemoResource\Pages\ListPedagogicalMemos;
 use App\Models\ActiveLearningStrategy;
@@ -11,6 +12,7 @@ use App\Models\Classroom;
 use App\Models\CurriculumDomain;
 use App\Models\CurriculumResource;
 use App\Models\CurriculumSequence;
+use App\Models\EducationPhase;
 use App\Models\Level;
 use App\Models\PedagogicalMemo;
 use App\Models\Schedule;
@@ -657,5 +659,49 @@ class CurriculumProgressAiLessonPlanTest extends TestCase
             'level_id' => $level4->id,
             'name' => 'أنشطة عددية',
         ]);
+    }
+
+    public function test_memo_resource_filters_subjects_to_primary_and_secondary_and_levels_by_phase(): void
+    {
+        $primary = Subject::firstOrCreate(['name' => 'الإعلام الآلي', 'code' => 'INFO']);
+        $secondary = Subject::firstOrCreate(['name' => 'الرياضيات', 'code' => 'MATH']);
+        $other = Subject::firstOrCreate(['name' => 'العلوم الطبيعية', 'code' => 'SCI']);
+
+        $teacher = User::factory()->create([
+            'role' => Role::Teacher->value,
+            'primary_subject_id' => $primary->id,
+            'secondary_subject_id' => $secondary->id,
+        ]);
+
+        $this->actingAs($teacher);
+
+        $subjectOptions = PedagogicalMemoResource::getTeacherSubjectOptions($teacher);
+
+        // Must contain primary and secondary, and MUST NOT contain other subjects
+        $this->assertArrayHasKey($primary->id, $subjectOptions);
+        $this->assertArrayHasKey($secondary->id, $subjectOptions);
+        $this->assertArrayNotHasKey($other->id, $subjectOptions);
+        $this->assertCount(2, $subjectOptions);
+
+        // Test Phase filtering
+        $phasePri = EducationPhase::firstOrCreate(['code' => 'PRI'], ['name' => 'التعليم الابتدائي']);
+        $levelPri = Level::firstOrCreate(['name' => 'السنة الأولى ابتدائي'], [
+            'education_phase_id' => $phasePri->id,
+            'grade_number' => 1,
+        ]);
+
+        $phaseCem = EducationPhase::firstOrCreate(['code' => 'CEM'], ['name' => 'التعليم المتوسط']);
+        $levelCem = Level::firstOrCreate(['name' => 'السنة الأولى متوسط'], [
+            'education_phase_id' => $phaseCem->id,
+            'grade_number' => 1,
+        ]);
+
+        $priOptions = PedagogicalMemoResource::getLevelOptions($phasePri->id, $teacher);
+        $this->assertArrayHasKey($levelPri->id, $priOptions);
+        $this->assertArrayNotHasKey($levelCem->id, $priOptions);
+
+        $cemOptions = PedagogicalMemoResource::getLevelOptions($phaseCem->id, $teacher);
+        $this->assertArrayHasKey($levelCem->id, $cemOptions);
+        $this->assertArrayNotHasKey($levelPri->id, $cemOptions);
     }
 }

@@ -7,8 +7,10 @@ use App\Exceptions\AiLessonPlannerException;
 use App\Filament\Resources\PedagogicalMemoResource\Pages;
 use App\Models\ActiveLearningStrategy;
 use App\Models\CurriculumResource;
+use App\Models\EducationPhase;
 use App\Models\Level;
 use App\Models\PedagogicalMemo;
+use App\Models\SchoolSetting;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\AiLessonPlannerService;
@@ -124,23 +126,31 @@ class PedagogicalMemoResource extends Resource
 
                         Select::make('subject_id')
                             ->label(__('المادة'))
-                            ->options(fn (): array => Subject::query()
-                                ->orderBy('name')
-                                ->pluck('name', 'id')
-                                ->all())
+                            ->options(fn (Get $get): array => static::getTeacherSubjectOptions($get('user_id')))
+                            ->default(fn (): ?int => auth()->user()?->primary_subject_id ?? array_key_first(static::getTeacherSubjectOptions()))
                             ->searchable()
-                            ->required(),
+                            ->live()
+                            ->required()
+                            ->helperText(fn (): ?string => auth()->user()?->isTeacher() ? __('تقتصر القائمة على مادتك الأساسية والثانوية فقط.') : null),
+
+                        Select::make('education_phase_id')
+                            ->label(__('الطور التعليمي'))
+                            ->options(fn (): array => static::getEducationPhaseOptions())
+                            ->default(fn ($record): ?int => $record?->level?->education_phase_id ?? static::getDefaultEducationPhaseId())
+                            ->live()
+                            ->searchable()
+                            ->dehydrated(false)
+                            ->afterStateUpdated(function ($state, Set $set): void {
+                                $set('level_id', static::getDefaultLevelId($state));
+                            })
+                            ->helperText(__('تحديد الطور لعرض المستويات المقابلة (متوسطة، ابتدائية، ثانوية).')),
 
                         Select::make('level_id')
                             ->label(__('المستوى'))
-                            ->options(fn (): array => Level::query()
-                                ->with('educationPhase')
-                                ->get()
-                                ->mapWithKeys(fn (Level $level): array => [
-                                    $level->id => $level->display_name(),
-                                ])
-                                ->all())
+                            ->options(fn (Get $get): array => static::getLevelOptions($get('education_phase_id'), $get('user_id')))
+                            ->default(fn (Get $get): ?int => static::getDefaultLevelId($get('education_phase_id')))
                             ->searchable()
+                            ->live()
                             ->required(),
 
                         TextInput::make('phase')
@@ -428,6 +438,172 @@ class PedagogicalMemoResource extends Resource
     }
 
     /**
+     * Retrieve subject options filtered to teacher's primary & secondary subjects.
+     *
+     * @return array<int, string>
+     */
+    public static function getTeacherSubjectOptions(User|int|null $user = null): array
+    {
+        if (is_int($user)) {
+            $user = User::find($user);
+        }
+
+        $user = $user ?? auth()->user();
+
+        if (! $user) {
+            return Subject::query()->orderBy('name')->pluck('name', 'id')->all();
+        }
+
+        if ($user->isTeacher()) {
+            $subjectIds = array_filter([
+                $user->primary_subject_id,
+                $user->secondary_subject_id,
+            ]);
+
+            $scheduledSubjectIds = $user->schedules()->pluck('subject_id')->filter()->all();
+            $subjectIds = array_unique(array_merge($subjectIds, $scheduledSubjectIds));
+
+            if (! empty($subjectIds)) {
+                $subjects = Subject::whereIn('id', $subjectIds)->orderBy('name')->get();
+                $options = [];
+                foreach ($subjects as $s) {
+                    $badge = '';
+                    if ($s->id === $user->primary_subject_id) {
+                        $badge = ' ('.__('المادة الأساسية').')';
+                    } elseif ($s->id === $user->secondary_subject_id) {
+                        $badge = ' ('.__('المادة الثانوية').')';
+                    }
+                    $options[$s->id] = $s->name.$badge;
+                }
+
+                return $options;
+            }
+
+            return Subject::query()->orderBy('name')->pluck('name', 'id')->all();
+        }
+
+        return Subject::query()->orderBy('name')->pluck('name', 'id')->all();
+    }
+
+    /**
+     * Retrieve education phases available for middle, primary, and secondary school.
+     *
+     * @return array<int, string>
+     */
+    public static function getEducationPhaseOptions(): array
+    {
+        $phases = EducationPhase::query()
+            ->whereIn('code', ['PRI', 'CEM', 'LYC'])
+            ->orderBy('id')
+            ->pluck('name', 'id')
+            ->all();
+
+        if (! empty($phases)) {
+            return $phases;
+        }
+
+        return EducationPhase::query()->orderBy('id')->pluck('name', 'id')->all();
+    }
+
+    /**
+     * Resolve default education phase according to the teacher or institution.
+     */
+    public static function getDefaultEducationPhaseId(User|int|null $user = null): ?int
+    {
+        if (is_int($user)) {
+            $user = User::find($user);
+        }
+        $user = $user ?? auth()->user();
+
+        if ($user) {
+            $userPhaseId = Level::whereHas('classrooms.schedules', fn ($q) => $q->where('user_id', $user->id))
+                ->value('education_phase_id');
+            if ($userPhaseId) {
+                return (int) $userPhaseId;
+            }
+        }
+
+        $setting = SchoolSetting::current();
+        if ($setting->school_name) {
+            if (str_contains($setting->school_name, 'ابتدائ')) {
+                $p = EducationPhase::where('code', 'PRI')->orWhere('name', 'like', '%ابتدائ%')->first();
+                if ($p) {
+                    return $p->id;
+                }
+            }
+            if (str_contains($setting->school_name, 'ثانوي')) {
+                $p = EducationPhase::where('code', 'LYC')->orWhere('name', 'like', '%ثانوي%')->first();
+                if ($p) {
+                    return $p->id;
+                }
+            }
+        }
+
+        $cem = EducationPhase::where('code', 'CEM')->orWhere('name', 'like', '%متوسط%')->first();
+
+        return $cem?->id ?? EducationPhase::query()->first()?->id;
+    }
+
+    /**
+     * Retrieve levels filtered by selected education phase.
+     *
+     * @return array<int, string>
+     */
+    public static function getLevelOptions(?int $phaseId = null, User|int|null $user = null): array
+    {
+        if (is_int($user)) {
+            $user = User::find($user);
+        }
+        $user = $user ?? auth()->user();
+
+        $query = Level::query()->with('educationPhase');
+
+        if ($phaseId) {
+            $query->where('education_phase_id', $phaseId);
+        } else {
+            $defaultPhaseId = static::getDefaultEducationPhaseId($user);
+            if ($defaultPhaseId) {
+                $query->where('education_phase_id', $defaultPhaseId);
+            }
+        }
+
+        $levels = $query->orderBy('grade_number')->orderBy('name')->get();
+
+        if ($levels->isEmpty()) {
+            $levels = Level::query()->with('educationPhase')->orderBy('grade_number')->get();
+        }
+
+        return $levels->mapWithKeys(fn (Level $l): array => [
+            $l->id => $l->display_name(),
+        ])->all();
+    }
+
+    /**
+     * Resolve default level for selected phase and teacher.
+     */
+    public static function getDefaultLevelId(?int $phaseId = null, User|int|null $user = null): ?int
+    {
+        if (is_int($user)) {
+            $user = User::find($user);
+        }
+        $user = $user ?? auth()->user();
+
+        if ($user) {
+            $userLevelId = Level::whereHas('classrooms.schedules', fn ($q) => $q->where('user_id', $user->id))
+                ->when($phaseId, fn ($q) => $q->where('education_phase_id', $phaseId))
+                ->value('id');
+            if ($userLevelId) {
+                return (int) $userLevelId;
+            }
+        }
+
+        $targetPhaseId = $phaseId ?: static::getDefaultEducationPhaseId($user);
+
+        return Level::where('education_phase_id', $targetPhaseId)->orderBy('grade_number')->value('id')
+            ?? Level::query()->value('id');
+    }
+
+    /**
      * Action to generate a new pedagogical memo with AI directly from the memo bank.
      */
     public static function generateWithAiTableAction(): Tables\Actions\Action
@@ -442,14 +618,30 @@ class PedagogicalMemoResource extends Resource
             ->form([
                 Select::make('subject_id')
                     ->label(__('المادة'))
-                    ->options(fn (): array => Subject::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->options(fn (): array => static::getTeacherSubjectOptions())
+                    ->default(fn (): ?int => auth()->user()?->primary_subject_id ?? array_key_first(static::getTeacherSubjectOptions()))
                     ->searchable()
                     ->live()
-                    ->required(),
+                    ->required()
+                    ->helperText(fn (): ?string => auth()->user()?->isTeacher() ? __('تقتصر القائمة على مادتك الأساسية والثانوية المسندة إليك.') : null),
+
+                Select::make('education_phase_id')
+                    ->label(__('الطور التعليمي'))
+                    ->options(fn (): array => static::getEducationPhaseOptions())
+                    ->default(fn (): ?int => static::getDefaultEducationPhaseId())
+                    ->live()
+                    ->searchable()
+                    ->dehydrated(false)
+                    ->afterStateUpdated(function ($state, Set $set): void {
+                        $set('level_id', static::getDefaultLevelId($state));
+                        $set('curriculum_resource_id', null);
+                    })
+                    ->helperText(__('يمكنك التبديل بين أطوار التعليم (المتوسطة، الابتدائية، الثانوية) لعرض مستويات كل طور.')),
 
                 Select::make('level_id')
                     ->label(__('المستوى'))
-                    ->options(fn (): array => Level::query()->with('educationPhase')->get()->mapWithKeys(fn (Level $l): array => [$l->id => $l->display_name()])->all())
+                    ->options(fn (Get $get): array => static::getLevelOptions($get('education_phase_id')))
+                    ->default(fn (Get $get): ?int => static::getDefaultLevelId($get('education_phase_id')))
                     ->searchable()
                     ->live()
                     ->required(),
